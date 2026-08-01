@@ -1,4 +1,4 @@
-# ai-agent-store
+# CapNet — Capability Network
 
 상위 레포/작업 공간. **첫 제품·출품명: Capability Network (CapNet).**
 
