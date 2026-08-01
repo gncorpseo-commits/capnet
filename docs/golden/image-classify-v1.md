@@ -5,7 +5,7 @@
 **정본:** 이 파일 하나만. (구 v0.1 한글·중복 파일 폐기)
 
 대상 계약: `image.classify@1` (`output_kind = closed_set_labels`, `compute_tier = M`)  
-근거: [CapNet_기획서.md](../../CapNet_기획서.md) v4.4 §4.3 · [schema.sql](../schema.sql) v4.4 · [Contest_MVP_2026.md](../Contest_MVP_2026.md)  
+근거: [capnet-plan.md](../../capnet-plan.md) v4.4 §4.3 · [schema.sql](../schema.sql) v4.4 · [Contest_MVP_2026.md](../Contest_MVP_2026.md)  
 작성일: 2026-07-31 · 패치: 2026-08-01 (Contest 정합)
 
 > **대회 데모:** N=30–50 ([Contest §9](../Contest_MVP_2026.md)).  

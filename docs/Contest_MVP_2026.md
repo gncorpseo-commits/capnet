@@ -2,7 +2,7 @@
 
 **출품명:** CapNet (Capability Network)  
 **상위 레포/공간:** ai-agent-store  
-**근거:** [CapNet_기획서.md](../CapNet_기획서.md) v4.4 · [docs/schema.sql](./schema.sql) v4.4  
+**근거:** [capnet-plan.md](../capnet-plan.md) v4.4 · [docs/schema.sql](./schema.sql) v4.4  
 **쉬운 안내:** [docs/user-guide-ko.md](./user-guide-ko.md)  
 **골든셋 정본:** [docs/golden/image-classify-v1.md](./golden/image-classify-v1.md) v0.2  
 **대회:** [2026 오픈소스 개발자대회](https://www.oss.kr/pages/2) (접수 완료)  
@@ -337,7 +337,7 @@ compose → demo → demo_violations(M1–4, M25, M24).
 
 | 문서 | 역할 |
 |------|------|
-| [CapNet_기획서.md](../CapNet_기획서.md) | 본편 전략·스키마·Phase 1 |
+| [capnet-plan.md](../capnet-plan.md) | 본편 전략·스키마·Phase 1 |
 | [docs/schema.sql](./schema.sql) | DDL v4.4 |
 | [docs/user-guide-ko.md](./user-guide-ko.md) | **IT 비전문가용 안내** |
 | [docs/golden/image-classify-v1.md](./golden/image-classify-v1.md) | **골든셋 정본 v0.2** |

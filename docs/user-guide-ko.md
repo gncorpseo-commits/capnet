@@ -5,7 +5,7 @@
 프로그램을 만드는 방법이 아니라, CapNet이 **무엇을 위해 있고, 누가 무엇을 하면 되는지**만 말합니다.  
 IT 지식이 없어도 읽히도록 썼습니다.
 
-**관련:** [Contest MVP 계획](./Contest_MVP_2026.md) · [기획서](../CapNet_기획서.md) · [골든셋](./golden/image-classify-v1.md)
+**관련:** [Contest MVP 계획](./Contest_MVP_2026.md) · [기획서](../capnet-plan.md) · [골든셋](./golden/image-classify-v1.md)
 
 ---
 

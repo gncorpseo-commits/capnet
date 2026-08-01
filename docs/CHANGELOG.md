@@ -7,7 +7,7 @@
 - `gate_run`: runner NOT NULL + `node(id, is_gate_runner)` 복합 FK
 - `gate_run_passed` 증서 → `agent_capability` PASSED만 근거 있는 run에 연결
 - `domain_min_compatible` + task `capability_trust_domain_min`
-- 기획서 파일명 `CapNet_기획서.md`로 정리; `docs/_to_delete` 제거
+- 기획서 파일명 `capnet-plan.md`로 정리; `docs/_to_delete` 제거
 
 ## Naming — 2026-07-31
 

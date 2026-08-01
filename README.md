@@ -11,7 +11,7 @@
 
 | 파일 | 설명 |
 |------|------|
-| [CapNet_기획서.md](./CapNet_기획서.md) | 기준 기획서 v4.4 |
+| [capnet-plan.md](./capnet-plan.md) | 기준 기획서 v4.4 |
 | [docs/Contest_MVP_2026.md](./docs/Contest_MVP_2026.md) | **Contest MVP 계획 v0.3** |
 | [docs/user-guide-ko.md](./docs/user-guide-ko.md) | IT 비전문가용 안내 |
 | [docs/golden/image-classify-v1.md](./docs/golden/image-classify-v1.md) | 골든셋 정본 v0.2 |
