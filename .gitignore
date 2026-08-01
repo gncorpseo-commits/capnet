@@ -4,3 +4,4 @@ __pycache__/
 .env
 data/eurosat/
 *.safetensors
+docs/_to_delete/
