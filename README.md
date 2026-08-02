@@ -1,25 +1,62 @@
 # CapNet — Capability Network
 
-상위 레포/작업 공간. **첫 제품·출품명: Capability Network (CapNet).**
+**채점 가능한 Capability 계약을 게이트로 묶고, 신뢰 도메인 안의 Node에서 Task를 완결하는 오픈소스 실행 계층.**
 
-## CapNet
+2026년 오픈소스 개발자대회 출품작. `ai-agent-store`의 첫 번째 프로덕트.
 
-계약형 Capability 실행 계층.  
-짧은 호칭 **CapNet**, 약어 **CN** (`CN_`, `cn-`).
+---
+
+## 무엇이 다른가
+
+AI 에이전트를 모아놓은 스토어는 이미 많다. CapNet이 다루는 건 그 앞의 질문이다.
+
+> **"같은 능력을 표방하는 두 에이전트를, 사용자가 모르는 채로 서로 바꿔 끼울 수 있는가?"**
+
+이름표만으로는 보장되지 않는다. CapNet에서 Capability는 **이름이 아니라 계약**이다. 입출력 스키마, 골든셋, 통과 기준이 함께 묶여야 하나의 Capability가 되고, 그 계약을 통과하지 못한 Agent는 애초에 할당 대상이 되지 못한다.
+
+그리고 이 판정을 애플리케이션 코드가 하지 않는다. **데이터베이스가 한다.**
+
+## 핵심 설계 — 불가능한 상태를 표현할 수 없게 만든다
+
+라우팅 불변식을 앱의 `if` 문으로 지키면, 그 `if` 문을 빠뜨린 경로 하나가 전체를 무너뜨린다. CapNet은 이 규칙들을 PostgreSQL의 제약으로 옮겼다.
+
+- 게이트를 통과하지 못한 Agent에게는 Task를 **할당할 수 없다**
+- `team` 등급 Task는 `public` Node로 **내려갈 수 없다**
+- `L` 등급 계약은 `S` 등급 Node에서 **실행될 수 없다**
+- 할당이 살아 있는 동안 Node의 신뢰 등급을 **강등할 수 없다**
+- 가중치 해시가 일치하지 않으면 Node는 **READY가 될 수 없다**
+
+"하지 않는다"가 아니라 "할 수 없다"이다. `docs/schema.sql`의 복합 외래키·CHECK 제약·호환 행렬이 이를 강제하며, **위반 14종이 PostgreSQL 16에서 실제로 거부되는 것을 실측 확인했다.** 목록은 [`docs/context-handoff.md`](docs/context-handoff.md) §2에 있다.
+
+---
+
+## 빠른 시작
+
+> **작성 예정 (2026-08-18 ~ 08-24)** — `docker compose up` 한 번과 데모 스크립트 한 줄로
+> 「계약 등록 → 게이트 통과 → Task 완주 → 위반 거절」까지 재현되도록 이 절을 채운다.
+> 현재 저장소에는 설계 문서와 DDL이 들어 있으며, 실행 코드는 구현 중이다.
+
+---
 
 ## 문서
 
-| 파일 | 설명 |
+| 문서 | 내용 |
 |------|------|
-| [capnet-plan.md](./capnet-plan.md) | 기준 기획서 v4.4 |
-| [docs/Contest_MVP_2026.md](./docs/Contest_MVP_2026.md) | **Contest MVP 계획 v0.3** |
-| [docs/user-guide-ko.md](./docs/user-guide-ko.md) | IT 비전문가용 안내 |
-| [docs/golden/image-classify-v1.md](./docs/golden/image-classify-v1.md) | 골든셋 정본 v0.2 |
-| [docs/schema.sql](./docs/schema.sql) | DDL v4.4 |
-| [docs/CHANGELOG.md](./docs/CHANGELOG.md) | 버전 이력 |
+| [`capnet-plan.md`](capnet-plan.md) | 기준 기획서 v4.4 — 전체 구상과 근거 |
+| [`docs/schema.sql`](docs/schema.sql) | DDL v4.4 — 불변식이 실제로 구현된 곳 |
+| [`docs/golden/image-classify-v1.md`](docs/golden/image-classify-v1.md) | 골든셋 정본 — `image.classify@1` 계약과 채점 규칙 |
+| [`docs/Contest_MVP_2026.md`](docs/Contest_MVP_2026.md) | 대회 MVP 범위와 일정 |
+| [`docs/contest-submission-checklist.md`](docs/contest-submission-checklist.md) | 출품 준비 목록 |
+| [`docs/user-guide-ko.md`](docs/user-guide-ko.md) | IT 비전문가용 사용 안내 |
+| [`docs/context-handoff.md`](docs/context-handoff.md) | 확정된 결정·검증된 사실·함정 |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | 버전 이력 |
 
-## 다음 단계
+## 현재 상태
 
-1. Contest W0 잔여: LICENSE · 주최 문의 ([Contest §13](./docs/Contest_MVP_2026.md))
-2. W1: Core + `INSERT … SELECT` · M25 SQL
-3. W2: Node 1 · Agent 1 · Task 1 (8/16–17 버퍼)
+설계와 스키마는 동결되었고 실행 코드를 구현하는 단계다. 대회 MVP 목표일은 **2026년 8월 27일**.
+
+## 라이선스
+
+[Apache License 2.0](LICENSE). 고지 사항은 [`NOTICE`](NOTICE)를 참조한다.
+
+사전학습 가중치를 사용하거나 동봉하지 않는다. 모델은 EuroSAT 데이터로 처음부터 학습한 것만 쓴다. 데이터셋은 EuroSAT RGB 배포판(Zenodo `7711810`, MIT)이며 원본은 저장소에 포함하지 않고 내려받는다.

@@ -1,0 +1,37 @@
+CapNet (Capability Network)
+Copyright 2026 CapNet Contributors
+
+This product includes software developed by the CapNet project.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+--------------------------------------------------------------------------------
+Third-party components
+--------------------------------------------------------------------------------
+
+Third-party dependencies and their licenses are listed in
+THIRD-PARTY-LICENSES.md. A machine-readable software bill of materials
+is provided in sbom.json.
+
+--------------------------------------------------------------------------------
+Datasets and model weights
+--------------------------------------------------------------------------------
+
+This repository does NOT bundle any pre-trained model weights.
+All models referenced by this project are trained from scratch on EuroSAT.
+
+Dataset: EuroSAT (RGB distribution)
+  Source:  Zenodo record 7711810 <https://doi.org/10.5281/zenodo.7711810>
+  License: MIT
+  Note:    The dataset itself is NOT redistributed in this repository.
+           It is downloaded at setup time and verified by SHA-256 checksum.
+
+  Citation:
+    P. Helber, B. Bischke, A. Dengel, D. Borth,
+    "EuroSAT: A Novel Dataset and Deep Learning Benchmark for Land Use and
+    Land Cover Classification," IEEE Journal of Selected Topics in Applied
+    Earth Observations and Remote Sensing, 2019.
