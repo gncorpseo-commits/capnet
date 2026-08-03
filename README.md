@@ -42,6 +42,8 @@ AI 에이전트를 모아놓은 스토어는 이미 많다. CapNet이 다루는 
 
 | 문서 | 내용 |
 |------|------|
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | 협업 초단 요약 |
+| [`docs/github-team-guide.md`](docs/github-team-guide.md) | **팀 GitHub 사용 표준 가이드** (Wiki와 동일) |
 | [`capnet-plan.md`](capnet-plan.md) | 기준 기획서 v4.4 — 전체 구상과 근거 |
 | [`docs/schema.sql`](docs/schema.sql) | DDL v4.4 — 불변식이 실제로 구현된 곳 |
 | [`docs/golden/image-classify-v1.md`](docs/golden/image-classify-v1.md) | 골든셋 정본 — `image.classify@1` 계약과 채점 규칙 |
@@ -50,6 +52,7 @@ AI 에이전트를 모아놓은 스토어는 이미 많다. CapNet이 다루는 
 | [`docs/user-guide-ko.md`](docs/user-guide-ko.md) | IT 비전문가용 사용 안내 |
 | [`docs/context-handoff.md`](docs/context-handoff.md) | 확정된 결정·검증된 사실·함정 |
 | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | 버전 이력 |
+| [Wiki](https://github.com/gncorpseo-commits/capnet/wiki) | 팀 온보딩·GitHub 가이드 |
 
 ## 현재 상태
 

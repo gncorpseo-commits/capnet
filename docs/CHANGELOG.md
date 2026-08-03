@@ -1,5 +1,10 @@
 # Changelog
 
+## Docs — 2026-08-03
+
+- 팀 GitHub 사용 표준 가이드 v1.1 (`docs/github-team-guide.md`, Wiki 동기화)
+- `CONTRIBUTING.md` 추가
+
 ## v4.4 — 2026-07-31
 
 게이트 사슬·trust_domain_min 무결성. Phase 1 동결 후보.
