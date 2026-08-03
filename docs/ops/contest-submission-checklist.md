@@ -2,7 +2,7 @@
 
 > **전제**: 참가접수 완료 · 배점 비공개 · `contest@oss.kr` 문의는 발송하되 **회신이 없다고 가정**하고 준비를 완결한다.
 > **최종 마감 = 8.27**. 멘토링(9.18–10.9)과 2차 평가(10.12–10.28)는 있는 것으로 치지 않는다.
-> v1.0 / 2026-08-01 / 상위 문서: `docs/Contest_MVP_2026.md` v0.3, `docs/context-handoff.md`
+> v1.0 / 2026-08-01 / 상위 문서: `docs/ops/Contest_MVP_2026.md` v0.3, `docs/context-handoff.md`
 
 ---
 
@@ -52,7 +52,7 @@
 | 2 | Capability = 계약 (스키마 + 골든셋 + 게이트) | 계약 예시 1개 |
 | 3 | 아키텍처 | **게이트 사슬 다이어그램 1장** |
 | 4 | 불변식을 앱이 아니라 **DB로 강제한 설계** | 제약 구조 요약 |
-| 5 | **위반 14종 실측 표** ⭐ | `context-handoff.md` §2 표 그대로 + 터미널 캡처 2–3장 |
+| 5 | **위반 14종 실측 표** ⭐ | `docs/error/pg-violations.md` 표 그대로 + 터미널 캡처 2–3장 |
 | 6 | 골든셋과 채점 규칙 — closed-set · AND 조건 · sanity 3종 | 샘플 이미지 1장 |
 | 7 | 재현 절차 — clone → compose → demo, 예상 소요와 출력 | 명령 블록 |
 | 8 | **한계와 다음 단계** — N=50이면 SE≈0.05로 판정 불가임을 명시 | — |
@@ -114,7 +114,7 @@
 | G5 | `CLAUDE.md` · `STATE.md` 미커밋 | ❌ | W0 |
 | G6 | 코드 일체 없음 | 정상 (W1 착수 전) | — |
 
-이미 반영된 것: 저장소 description·topics, `capnet-plan.md` 파일명 영문화, LICENSE(Apache-2.0), `docs/context-handoff.md`.
+이미 반영된 것: 저장소 description·topics, `docs/design/capnet-plan.md` 파일명 영문화, LICENSE(Apache-2.0), `docs/context-handoff.md`.
 
 ---
 
@@ -163,8 +163,8 @@ W2 버퍼를 코드 다듬기에 쓰지 않는다. F2에 따라 1차는 글로�
 문서
 
 - [ ] README = 5분 기동 안내 (CapNet 명의)
-- [ ] `docs/golden/image-classify-v1.md` 정본 1개
-- [ ] `docs/user-guide-ko.md` 링크
+- [ ] `docs/spec/golden/image-classify-v1.md` 정본 1개
+- [ ] `docs/guide/user-guide-ko.md` 링크
 - [ ] 상대 링크 전부 클릭 확인
 
 ---
@@ -187,4 +187,4 @@ W2 버퍼를 코드 다듬기에 쓰지 않는다. F2에 따라 1차는 글로�
 ## 9. 이 문서를 바꾸는 규칙
 
 주최 회신이 오면 §2의 해당 행에 확정 내용을 적고 **대비를 축소한다**. 회신 전에는 축소하지 않는다.
-결정 변경은 `docs/context-handoff.md` §1에, 버전 이력은 `docs/CHANGELOG.md`에 남긴다.
+결정 변경은 `docs/context-handoff.md` §1에, 버전 이력은 `docs/history/CHANGELOG.md`에 남긴다.

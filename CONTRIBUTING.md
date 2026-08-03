@@ -3,7 +3,8 @@
 팀 지엔 협업은 **GitHub 사용 표준 가이드**를 따른다.
 
 - **Wiki:** [Team GitHub Guide](https://github.com/gncorpseo-commits/capnet/wiki/Team-GitHub-Guide)
-- **레포 사본:** [docs/github-team-guide.md](docs/github-team-guide.md)
+- **레포 사본:** [docs/guide/github-team-guide.md](docs/guide/github-team-guide.md)
+- **문서 지도:** [docs/INDEX.md](docs/INDEX.md)
 
 ## 초단 요약
 

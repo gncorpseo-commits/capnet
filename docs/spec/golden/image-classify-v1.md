@@ -1,14 +1,14 @@
 # CapNet 골든셋 정의서 — `image.classify@1`
 
 **문서 버전:** v0.2 · 2026-08-01  
-**파일:** `docs/golden/image-classify-v1.md` (영문 파일명 · zip/리눅스 제출 대비)  
+**파일:** `docs/spec/golden/image-classify-v1.md` (영문 파일명 · zip/리눅스 제출 대비)  
 **정본:** 이 파일 하나만. (구 v0.1 한글·중복 파일 폐기)
 
 대상 계약: `image.classify@1` (`output_kind = closed_set_labels`, `compute_tier = M`)  
-근거: [capnet-plan.md](../../capnet-plan.md) v4.4 §4.3 · [schema.sql](../schema.sql) v4.4 · [Contest_MVP_2026.md](../Contest_MVP_2026.md)  
+근거: [capnet-plan.md](../../design/capnet-plan.md) v4.4 §4.3 · [schema.sql](../schema.sql) v4.4 · [Contest_MVP_2026.md](../../ops/Contest_MVP_2026.md)  
 작성일: 2026-07-31 · 패치: 2026-08-01 (Contest 정합)
 
-> **대회 데모:** N=30–50 ([Contest §9](../Contest_MVP_2026.md)).  
+> **대회 데모:** N=30–50 ([Contest §9](../../ops/Contest_MVP_2026.md)).  
 > **본편 통계 판정:** 본 문서 §5의 n=300/500. 숫자를 섞지 말 것.
 
 ---
@@ -140,7 +140,7 @@ EuroSAT 원본은 강한 모델이 **98%+** 를 낸다 → 통과율·편차 판
 편차 0.05 판정에는 SE≲0.025가 필요하다 → **본편 `golden_set_size = 300` 최소, 500 권장.**  
 클래스 균등(각 30 또는 50장). paired 동일 케이스로 A/B 비교.
 
-> **대회 데모는 N=30–50** ([Contest M7](../Contest_MVP_2026.md)).  
+> **대회 데모는 N=30–50** ([Contest M7](../../ops/Contest_MVP_2026.md)).  
 > 그 N으로는 대체가능성 **통계 판정 불가** — 보고서에 명시. 본 절 300/500은 본편용.
 
 ---
@@ -247,7 +247,7 @@ gate → gate_run → 채점 → PASSED면 gate_run_passed → agent_capability 
 
 - EuroSAT: https://github.com/phelber/EuroSAT · Zenodo `7711810`  
 - 논문: https://arxiv.org/pdf/1709.00029  
-- Contest MVP: [../Contest_MVP_2026.md](../Contest_MVP_2026.md)
+- Contest MVP: [../../ops/Contest_MVP_2026.md](../../ops/Contest_MVP_2026.md)
 
 ## 문서 이력
 

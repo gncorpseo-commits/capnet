@@ -26,7 +26,7 @@ AI 에이전트를 모아놓은 스토어는 이미 많다. CapNet이 다루는 
 - 할당이 살아 있는 동안 Node의 신뢰 등급을 **강등할 수 없다**
 - 가중치 해시가 일치하지 않으면 Node는 **READY가 될 수 없다**
 
-"하지 않는다"가 아니라 "할 수 없다"이다. `docs/schema.sql`의 복합 외래키·CHECK 제약·호환 행렬이 이를 강제하며, **위반 14종이 PostgreSQL 16에서 실제로 거부되는 것을 실측 확인했다.** 목록은 [`docs/context-handoff.md`](docs/context-handoff.md) §2에 있다.
+"하지 않는다"가 아니라 "할 수 없다"이다. [`docs/spec/schema.sql`](docs/spec/schema.sql)의 복합 외래키·CHECK 제약·호환 행렬이 이를 강제하며, **위반 14종이 PostgreSQL 16에서 실제로 거부되는 것을 실측 확인했다.** 목록은 [`docs/error/pg-violations.md`](docs/error/pg-violations.md).
 
 ---
 
@@ -40,19 +40,18 @@ AI 에이전트를 모아놓은 스토어는 이미 많다. CapNet이 다루는 
 
 ## 문서
 
-| 문서 | 내용 |
+지도·읽는 순서: **[`docs/INDEX.md`](docs/INDEX.md)**
+
+| 진입 | 내용 |
 |------|------|
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | 협업 초단 요약 |
-| [`docs/github-team-guide.md`](docs/github-team-guide.md) | **팀 GitHub 사용 표준 가이드** (Wiki와 동일) |
-| [`capnet-plan.md`](capnet-plan.md) | 기준 기획서 v4.4 — 전체 구상과 근거 |
-| [`docs/schema.sql`](docs/schema.sql) | DDL v4.4 — 불변식이 실제로 구현된 곳 |
-| [`docs/golden/image-classify-v1.md`](docs/golden/image-classify-v1.md) | 골든셋 정본 — `image.classify@1` 계약과 채점 규칙 |
-| [`docs/Contest_MVP_2026.md`](docs/Contest_MVP_2026.md) | 대회 MVP 범위와 일정 |
-| [`docs/contest-submission-checklist.md`](docs/contest-submission-checklist.md) | 출품 준비 목록 |
-| [`docs/user-guide-ko.md`](docs/user-guide-ko.md) | IT 비전문가용 사용 안내 |
-| [`docs/context-handoff.md`](docs/context-handoff.md) | 확정된 결정·검증된 사실·함정 |
-| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | 버전 이력 |
-| [Wiki](https://github.com/gncorpseo-commits/capnet/wiki) | 팀 온보딩·GitHub 가이드 |
+| [`STATE.md`](STATE.md) | 이번 주 상태 (자주 갱신) |
+| [`docs/context-handoff.md`](docs/context-handoff.md) | 확정 결정·미결 |
+| [`docs/spec/schema.sql`](docs/spec/schema.sql) | DDL 정본 v4.4 |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | 협업 초단 |
+| [`docs/guide/github-team-guide.md`](docs/guide/github-team-guide.md) | 팀 GitHub 가이드 (Wiki 동기) |
+| [Wiki](https://github.com/gncorpseo-commits/capnet/wiki) | 온보딩 허브 |
+
+카테고리: `guide` · `error` · `history` · `design` · `spec` · `ops` · `research` — 전부 INDEX에 링크.
 
 ## 현재 상태
 

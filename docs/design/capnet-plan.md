@@ -5,7 +5,7 @@
 **기반:** v4.3 + 최종 리뷰(게이트 사슬·trust_domain_min 미강제)  
 **제품명:** Capability Network (CapNet) · 약어 CN  
 **상위:** ai-agent-store (첫 제품 = CapNet)  
-**스키마:** [`docs/schema.sql`](./docs/schema.sql) (v4.4)  
+**스키마:** [`docs/spec/schema.sql`](../spec/schema.sql) (v4.4)  
 
 > v4.3: 호환 행렬 자체도 rank 규칙에 묶여, 정책 독성 INSERT가 불가.  
 > **v4.4: PASSED 게이트·task 도메인 하한까지 DB 사슬로 닫힘. Phase 1 스키마 동결 후보.**
@@ -414,7 +414,7 @@ Task 예:
 
 # 12. 데이터 모델 (v4.4)
 
-상세: [`docs/schema.sql`](./docs/schema.sql)
+상세: [`docs/spec/schema.sql`](../spec/schema.sql)
 
 | 구성 | 요지 |
 |------|------|
