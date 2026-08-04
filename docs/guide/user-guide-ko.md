@@ -1,11 +1,11 @@
 # CapNet 사용 안내 (쉬운 버전)
 
-**파일:** `docs/user-guide-ko.md` (영문 파일명 · zip 제출 대비)  
+**파일:** `docs/guide/user-guide-ko.md` (영문 파일명 · zip 제출 대비)  
 **누구를 위한 글인가요?**  
 프로그램을 만드는 방법이 아니라, CapNet이 **무엇을 위해 있고, 누가 무엇을 하면 되는지**만 말합니다.  
 IT 지식이 없어도 읽히도록 썼습니다.
 
-**관련:** [Contest MVP 계획](./Contest_MVP_2026.md) · [기획서](../capnet-plan.md) · [골든셋](./golden/image-classify-v1.md)
+**관련:** [Contest MVP 계획](../ops/Contest_MVP_2026.md) · [기획서](../design/capnet-plan.md) · [골든셋](../spec/golden/image-classify-v1.md)
 
 ---
 

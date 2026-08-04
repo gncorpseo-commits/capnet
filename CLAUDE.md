@@ -11,9 +11,9 @@
 
 이것을 어기면 프로젝트의 핵심 주장이 무너진다. 우회하지 말고, 막히면 멈추고 물어본다.
 
-1. **`docs/schema.sql`의 제약을 약화하지 않는다.** 끄거나, 삭제하거나, `NOT VALID`로 우회하지 않는다. 제약 **추가**는 허용된다. 기존 제약을 건드려야 한다면 먼저 근거와 함께 제안한다.
+1. **`docs/spec/schema.sql`의 제약을 약화하지 않는다.** 끄거나, 삭제하거나, `NOT VALID`로 우회하지 않는다. 제약 **추가**는 허용된다. 기존 제약을 건드려야 한다면 먼저 근거와 함께 제안한다.
 
-2. **`assignment`·`gate_run` INSERT는 `INSERT ... SELECT`만 쓴다.** 스냅샷 컬럼을 애플리케이션이 계산해 넣지 않는다. ORM으로 객체를 만들어 저장하는 방식도 금지. 앱은 후보를 고르기만 하고 판정은 DB가 한다. 패턴은 `@docs/context-handoff.md` §3.1.
+2. **`assignment`·`gate_run` INSERT는 `INSERT ... SELECT`만 쓴다.** 스냅샷 컬럼을 애플리케이션이 계산해 넣지 않는다. ORM으로 객체를 만들어 저장하는 방식도 금지. 앱은 후보를 고르기만 하고 판정은 DB가 한다. 패턴은 `@docs/error/pitfalls.md`.
 
 3. **`compute_tier`를 앱에서 직접 비교하지 않는다.** 텍스트 정렬은 `L < M < S`로 의도와 반대다. 반드시 `tier_compatible` 행렬과 복합 FK에 맡긴다.
 
@@ -39,8 +39,8 @@
 
 - 커밋 계정은 **gncorpseo-commits**. 공개 저장소이므로 GitHub noreply 이메일을 쓴다.
 - `git add -A` / `git add .` 는 전역 훅이 차단한다. **명시적 경로로만 스테이징한다.** 훅을 끄지 않는다.
-- 버전 이력은 `docs/CHANGELOG.md` 단독. README에 중복해 적지 않는다.
-- 세션 상태는 `STATE.md`, 결정과 근거는 `docs/context-handoff.md`. 역할을 섞지 않는다.
+- 버전 이력은 `docs/history/CHANGELOG.md` 단독. README에 중복해 적지 않는다.
+- 세션 상태는 `STATE.md`, 결정·미결은 `docs/context-handoff.md`, 문서 지도는 `docs/INDEX.md`. 역할을 섞지 않는다.
 - 의존성을 추가하는 커밋에서 `THIRD-PARTY-LICENSES.md`에 한 줄을 같이 넣는다. 예외 없음.
 
 ## 보안
@@ -54,4 +54,6 @@
 
 배경·결정 근거·함정은 자동으로 읽히지 않는다. 필요할 때 부른다.
 
+    @docs/INDEX.md
     @docs/context-handoff.md
+    @docs/error/pitfalls.md

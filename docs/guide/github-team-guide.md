@@ -4,8 +4,8 @@
 **버전:** 1.1 · 2026-08-03  
 **저장소:** https://github.com/gncorpseo-commits/capnet  
 **대상:** 팀 지엔 (`finn` / `toma` / `master`)  
-**관련:** [Contest MVP](https://github.com/gncorpseo-commits/capnet/blob/main/docs/Contest_MVP_2026.md) · [STATE.md](https://github.com/gncorpseo-commits/capnet/blob/main/STATE.md) · [context-handoff](https://github.com/gncorpseo-commits/capnet/blob/main/docs/context-handoff.md)  
-**저장소 사본:** 동일 내용 → 레포 `docs/github-team-guide.md` · `CONTRIBUTING.md`
+**관련:** [Contest MVP](https://github.com/gncorpseo-commits/capnet/blob/main/docs/ops/Contest_MVP_2026.md) · [STATE.md](https://github.com/gncorpseo-commits/capnet/blob/main/STATE.md) · [context-handoff](https://github.com/gncorpseo-commits/capnet/blob/main/docs/context-handoff.md) · [INDEX](https://github.com/gncorpseo-commits/capnet/blob/main/docs/INDEX.md)  
+**저장소 사본:** 동일 내용 → 레포 `docs/guide/github-team-guide.md` · `CONTRIBUTING.md`
 
 ---
 
@@ -125,7 +125,7 @@ gh issue create --repo gncorpseo-commits/capnet \
 - 스테이징: `git add -A` / `git add .` 는 훅에 막힐 수 있음 → **경로 명시**.
 
 ```bash
-git add apps/core/README.md docs/CHANGELOG.md
+git add apps/core/README.md docs/history/CHANGELOG.md
 git -c user.name=finn -c user.email=finn@users.noreply.github.com commit -m "W1: Core 골격 추가 — claim 패턴 문서를 먼저 고정하기 위함"
 git push -u origin HEAD
 ```
@@ -229,8 +229,8 @@ LGTM (finn) — claim SQL 패턴 OK.
 ### 7.6 Wiki (일상 · 팀 규칙)
 
 - **팀 프로세스·온보딩** 문서 (본 가이드).
-- 설계 정본은 레포 `docs/` · `capnet-plan.md` (Wiki와 이중 진실 금지).
-- 가이드를 고치면: Wiki **그리고** `docs/github-team-guide.md` 를 같이 맞춘다.
+- 설계 정본은 레포 `docs/design/` · `docs/spec/` (Wiki와 이중 진실 금지).
+- 가이드를 고치면: Wiki **그리고** `docs/guide/github-team-guide.md` 를 같이 맞춘다.
 
 #### Wiki 편집
 
@@ -338,7 +338,7 @@ LGTM (finn) — claim SQL 패턴 OK.
 | 전역 git user 덮어쓰기 | 서명 혼선 |
 | 시크릿·대용량 데이터 커밋 | 라이선스·보안 |
 | claim을 ORM 수기 스냅샷으로 | FK 붕괴·변별점 상실 |
-| Wiki만 고치고 `docs/github-team-guide.md` 방치 | 이중 진실 |
+| Wiki만 고치고 `docs/guide/github-team-guide.md` 방치 | 이중 진실 |
 
 ---
 

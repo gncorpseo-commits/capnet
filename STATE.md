@@ -1,7 +1,7 @@
 # STATE — 현재 작업 상태
 
-> 세션 인계용 단기 상태판. 결정과 근거는 `docs/context-handoff.md`, 버전 이력은 `docs/CHANGELOG.md`.
-> **갱신: 2026-08-02**
+> 세션 인계용 단기 상태판. 결정·미결은 `docs/context-handoff.md`, 이력은 `docs/history/CHANGELOG.md`, 지도는 `docs/INDEX.md`.
+> **갱신: 2026-08-03**
 
 ---
 
@@ -11,22 +11,23 @@
 자유과제 / 세부과제 **인공지능** · 사회문제해결 항목 공란
 출품작 제출 **8/27**, 1차 평가 9/3, 멘토링 9/18–10/9, 2차 평가 10/12–10/28, 시상식 12/4
 
-전체 일정은 `docs/contest-submission-checklist.md`.
+전체 일정은 `docs/ops/contest-submission-checklist.md`.
 
 ---
 
 ## 지금 어디인가
 
-**W1 (8/4–8/10) 착수 직전.** 설계와 스키마는 끝났고 실행 코드는 아직 없다.
+**W1 (8/4–8/10) 착수 직전.** 설계와 스키마는 끝났고 실행 코드는 아직 없다.  
+문서 트리는 `docs/{guide,error,history,design,spec,ops,research}` + `docs/INDEX.md`로 정리됨.
 
-`docs/schema.sql` v4.4는 PostgreSQL 16에서 위반 14종이 거부되는 것까지 실측 확인했다. 제약을 약화하지 않는 한 그대로 쓴다.
+`docs/spec/schema.sql` v4.4는 PostgreSQL 16에서 위반 14종이 거부되는 것을 실측 확인했다. 제약을 약화하지 않는 한 그대로 쓴다. 목록: `docs/error/pg-violations.md`.
 
 ## 이번 세션(W1) 목표
 
 순서를 지킨다. 3번이 가장 중요하다.
 
 1. **docker compose** — PostgreSQL 16 + Core(FastAPI) 골격
-2. **`docs/schema.sql` 적재** + `image.classify@1` seed + allowlist `datasetId`
+2. **`docs/spec/schema.sql` 적재** + `image.classify@1` seed + allowlist `datasetId`
 3. **claim 쿼리를 `INSERT ... SELECT` 패턴으로 고정** ← 이 패턴이 잡히기 전에 다른 엔드포인트를 늘리지 않는다
 
 이어서 W1 안에 들어갈 것:
@@ -66,7 +67,7 @@
 
 ## 함정 요약
 
-전문은 `@docs/context-handoff.md` §3. 자주 걸리는 것만 다시 적는다.
+전문은 `@docs/error/pitfalls.md`. 자주 걸리는 것만 다시 적는다.
 
 - `assignment`는 스냅샷 컬럼과 복합 FK 5개가 걸린다. **손으로 값을 채우면 반드시 틀린다.** `INSERT ... SELECT`만 쓴다
 - `compute_tier`는 텍스트 정렬이 의도와 반대다(`L < M < S`). 앱에서 직접 비교하지 말고 `tier_compatible` 행렬에 맡긴다
