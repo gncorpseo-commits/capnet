@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-capnet}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-capnet}
+      POSTGRES_DB: ${POSTGRES_DB:-capnet}
+    ports:
+      - "5432:5432"
+    volumes:
+      - capnet_pg:/var/lib/postgresql/data
+      - ./docs/spec/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./apps/core/sql/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-capnet} -d ${POSTGRES_DB:-capnet}"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  core:
+    build:
+      context: .
+      dockerfile: apps/core/Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://capnet:capnet@postgres:5432/capnet}
+    ports:
+      - "${CORE_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  capnet_pg:

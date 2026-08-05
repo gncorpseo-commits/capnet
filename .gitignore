@@ -5,3 +5,4 @@ __pycache__/
 data/eurosat/
 *.safetensors
 docs/_to_delete/
+.pytest_cache/
