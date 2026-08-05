@@ -1,0 +1,4 @@
+docs/spec/golden/manifest-image-classify-v1.json text eol=lf
+docs/spec/golden/pixel-scan.json text eol=lf
+docs/spec/golden/eurosat-rgb.json text eol=lf
+*.jpg binary

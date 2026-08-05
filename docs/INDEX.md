@@ -52,8 +52,10 @@
 
 ### spec
 - [schema.sql v4.4](./spec/schema.sql)
-- [골든셋 image.classify@1](./spec/golden/image-classify-v1.md) (v0.3)
+- [골든셋 image.classify@1](./spec/golden/image-classify-v1.md) (v0.4)
+- [데모 manifest N=40](./spec/golden/manifest-image-classify-v1.json)
 - [EuroSAT RGB archive 핀](./spec/golden/eurosat-rgb.json)
+- [결과보고서 초안](./ops/contest-report-draft.md)
 
 ### ops
 - [Contest MVP 2026](./ops/Contest_MVP_2026.md)

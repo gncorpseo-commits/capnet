@@ -1,0 +1,315 @@
+{
+  "archive": "EuroSAT_RGB.zip",
+  "archive_sha256": "b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90",
+  "capability": "image.classify@1",
+  "cases": [
+    {
+      "caseId": "ic1-0001",
+      "expected": "annual_crop",
+      "file": "cases/ic1-0001.jpg",
+      "sha256": "76085934b2b03ef083d8001b4c93c340a827b3891d99c37014759d7f9c1b546f",
+      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_1539.jpg"
+    },
+    {
+      "caseId": "ic1-0002",
+      "expected": "annual_crop",
+      "file": "cases/ic1-0002.jpg",
+      "sha256": "176d19e6cefcb33416c41b3db075e5dcfd17d459b3ded79402dc12da6b364b98",
+      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_2079.jpg"
+    },
+    {
+      "caseId": "ic1-0003",
+      "expected": "annual_crop",
+      "file": "cases/ic1-0003.jpg",
+      "sha256": "954d63692a78b921f74a334d39b46b19fbfc349be95d89d760db436864c57443",
+      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_2619.jpg"
+    },
+    {
+      "caseId": "ic1-0004",
+      "expected": "annual_crop",
+      "file": "cases/ic1-0004.jpg",
+      "sha256": "09237291407fd6d4ad675fa687b856545bdfe3f73eb477307d9b3d13562076a7",
+      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_459.jpg"
+    },
+    {
+      "caseId": "ic1-0005",
+      "expected": "forest",
+      "file": "cases/ic1-0005.jpg",
+      "sha256": "18b00647cb0e85bddef944a5034cb796ffb17d5fa83cdc749f9b1f0c94df8486",
+      "zip_path": "EuroSAT_RGB/Forest/Forest_1539.jpg"
+    },
+    {
+      "caseId": "ic1-0006",
+      "expected": "forest",
+      "file": "cases/ic1-0006.jpg",
+      "sha256": "ef40cdfe3aeb3cc33d437956a9b6859a5384dea84755278f948fd82ac6450f8a",
+      "zip_path": "EuroSAT_RGB/Forest/Forest_2079.jpg"
+    },
+    {
+      "caseId": "ic1-0007",
+      "expected": "forest",
+      "file": "cases/ic1-0007.jpg",
+      "sha256": "250bbaa68c4706028a18c1e44d7def547b9fdb79a6cdbfeb1c61acfe257a166d",
+      "zip_path": "EuroSAT_RGB/Forest/Forest_2619.jpg"
+    },
+    {
+      "caseId": "ic1-0008",
+      "expected": "forest",
+      "file": "cases/ic1-0008.jpg",
+      "sha256": "664c5642abb299de915d526d99eb422b9cd20e56a05c77709cd8f2e8bffd1d6b",
+      "zip_path": "EuroSAT_RGB/Forest/Forest_459.jpg"
+    },
+    {
+      "caseId": "ic1-0009",
+      "expected": "herbaceous_vegetation",
+      "file": "cases/ic1-0009.jpg",
+      "sha256": "76d73b84ef4ac089d98dadecf128985f0dd6626bba835cc9385a0e05a0220a3b",
+      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_1539.jpg"
+    },
+    {
+      "caseId": "ic1-0010",
+      "expected": "herbaceous_vegetation",
+      "file": "cases/ic1-0010.jpg",
+      "sha256": "5433d644135b9d401d1345f23fe72db38f7be6636d01ac75dbd1656c788d8b09",
+      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_2079.jpg"
+    },
+    {
+      "caseId": "ic1-0011",
+      "expected": "herbaceous_vegetation",
+      "file": "cases/ic1-0011.jpg",
+      "sha256": "d94a7d0c7488a21a69d5143865086f696b337528422fc91835515d3ef638af9a",
+      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_2619.jpg"
+    },
+    {
+      "caseId": "ic1-0012",
+      "expected": "herbaceous_vegetation",
+      "file": "cases/ic1-0012.jpg",
+      "sha256": "7c050c764d9947673e350f64d3ea3d66b793d2215a9257ee71d780df09eb5eaf",
+      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_459.jpg"
+    },
+    {
+      "caseId": "ic1-0013",
+      "expected": "highway",
+      "file": "cases/ic1-0013.jpg",
+      "sha256": "1d44d2e5defd13138d17e23dca5fb97ce52ff301eb5b0758f28798f1cc9b7810",
+      "zip_path": "EuroSAT_RGB/Highway/Highway_1449.jpg"
+    },
+    {
+      "caseId": "ic1-0014",
+      "expected": "highway",
+      "file": "cases/ic1-0014.jpg",
+      "sha256": "9737677e407f16602c6e822bd75ab633643a51f0b6e263da3c83a7696a6e9fa6",
+      "zip_path": "EuroSAT_RGB/Highway/Highway_19.jpg"
+    },
+    {
+      "caseId": "ic1-0015",
+      "expected": "highway",
+      "file": "cases/ic1-0015.jpg",
+      "sha256": "c744f3e3d7921d91fd842d00d8862430b663aab7bc01af4ddbd097c934bd5e76",
+      "zip_path": "EuroSAT_RGB/Highway/Highway_2349.jpg"
+    },
+    {
+      "caseId": "ic1-0016",
+      "expected": "highway",
+      "file": "cases/ic1-0016.jpg",
+      "sha256": "9a0d49977f8fbd16281af6cac0bc850f69dd16dd2e9ffb67b739104a8ead764e",
+      "zip_path": "EuroSAT_RGB/Highway/Highway_549.jpg"
+    },
+    {
+      "caseId": "ic1-0017",
+      "expected": "industrial",
+      "file": "cases/ic1-0017.jpg",
+      "sha256": "a18e8b41030949b2f6c656293c7752d6cb633ccbadfb8bf2fa85dc5841df02f4",
+      "zip_path": "EuroSAT_RGB/Industrial/Industrial_1449.jpg"
+    },
+    {
+      "caseId": "ic1-0018",
+      "expected": "industrial",
+      "file": "cases/ic1-0018.jpg",
+      "sha256": "8cf0771062d6c40d1f4b49933b11177446effbbf34add8346278dae73c210615",
+      "zip_path": "EuroSAT_RGB/Industrial/Industrial_19.jpg"
+    },
+    {
+      "caseId": "ic1-0019",
+      "expected": "industrial",
+      "file": "cases/ic1-0019.jpg",
+      "sha256": "497d62e01004c0c73f2c8d8d44c4c4d089b6b4102e1ddcdfca7b09e0ace626c5",
+      "zip_path": "EuroSAT_RGB/Industrial/Industrial_2349.jpg"
+    },
+    {
+      "caseId": "ic1-0020",
+      "expected": "industrial",
+      "file": "cases/ic1-0020.jpg",
+      "sha256": "9b2790a75782f916f38a973ccd1345993121a9fd75adf635044e12bc800d5933",
+      "zip_path": "EuroSAT_RGB/Industrial/Industrial_549.jpg"
+    },
+    {
+      "caseId": "ic1-0021",
+      "expected": "pasture",
+      "file": "cases/ic1-0021.jpg",
+      "sha256": "050c0f250fc46afa42af35884ced470676dbde9bdfa099ebd6abad34b60efcf8",
+      "zip_path": "EuroSAT_RGB/Pasture/Pasture_1359.jpg"
+    },
+    {
+      "caseId": "ic1-0022",
+      "expected": "pasture",
+      "file": "cases/ic1-0022.jpg",
+      "sha256": "fd50e714708a1b8295252ca5b7b4bd4efc23d461fda672dba2daf0bc0ac2586d",
+      "zip_path": "EuroSAT_RGB/Pasture/Pasture_1719.jpg"
+    },
+    {
+      "caseId": "ic1-0023",
+      "expected": "pasture",
+      "file": "cases/ic1-0023.jpg",
+      "sha256": "8faa1787a1c10b7b91a5a17e8a64100475c4370bf59bee3f05cdcec98d82a4bf",
+      "zip_path": "EuroSAT_RGB/Pasture/Pasture_279.jpg"
+    },
+    {
+      "caseId": "ic1-0024",
+      "expected": "pasture",
+      "file": "cases/ic1-0024.jpg",
+      "sha256": "eed9ffaf9a572addd30f5fa6156bf9974e5ef9cc1a372d3e470e8b4f4e843d1b",
+      "zip_path": "EuroSAT_RGB/Pasture/Pasture_639.jpg"
+    },
+    {
+      "caseId": "ic1-0025",
+      "expected": "permanent_crop",
+      "file": "cases/ic1-0025.jpg",
+      "sha256": "dd07be822a2a43e5e9d4801caad125d67f841067655faaca0f1633969c9e9a62",
+      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_1449.jpg"
+    },
+    {
+      "caseId": "ic1-0026",
+      "expected": "permanent_crop",
+      "file": "cases/ic1-0026.jpg",
+      "sha256": "a4531b7c4d865d2f9042d912d0e621032ca44c738506cae378216e3008fb7a63",
+      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_19.jpg"
+    },
+    {
+      "caseId": "ic1-0027",
+      "expected": "permanent_crop",
+      "file": "cases/ic1-0027.jpg",
+      "sha256": "dbae3773ce08e81f1373bf33247537622f868be5952ecdbdad96faac016f14ef",
+      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_2349.jpg"
+    },
+    {
+      "caseId": "ic1-0028",
+      "expected": "permanent_crop",
+      "file": "cases/ic1-0028.jpg",
+      "sha256": "bd352bce02d3ee387355e259ddf962987c2af72bc2584be7ff90b104623f23cc",
+      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_549.jpg"
+    },
+    {
+      "caseId": "ic1-0029",
+      "expected": "residential",
+      "file": "cases/ic1-0029.jpg",
+      "sha256": "9b7ab436930b57308633028aab4c0b6d96c237e9820cc1a5924e87b812432310",
+      "zip_path": "EuroSAT_RGB/Residential/Residential_1539.jpg"
+    },
+    {
+      "caseId": "ic1-0030",
+      "expected": "residential",
+      "file": "cases/ic1-0030.jpg",
+      "sha256": "b03b39bf67ebbe4c9c25b39c942c2119eb429a3e0076afa552b39e224bd54a6b",
+      "zip_path": "EuroSAT_RGB/Residential/Residential_2079.jpg"
+    },
+    {
+      "caseId": "ic1-0031",
+      "expected": "residential",
+      "file": "cases/ic1-0031.jpg",
+      "sha256": "f3057978efdb971712fe3d653df12710cd1426d9f5347739b2e9872ddd944b0c",
+      "zip_path": "EuroSAT_RGB/Residential/Residential_2619.jpg"
+    },
+    {
+      "caseId": "ic1-0032",
+      "expected": "residential",
+      "file": "cases/ic1-0032.jpg",
+      "sha256": "73577682e0baf9de6da9af96c86cb33ac6addd69f9971fbe90867fb17e0143fc",
+      "zip_path": "EuroSAT_RGB/Residential/Residential_459.jpg"
+    },
+    {
+      "caseId": "ic1-0033",
+      "expected": "river",
+      "file": "cases/ic1-0033.jpg",
+      "sha256": "5aa8732c75f8d04c01508c2353970465632f316b827cebb629d62e9017679860",
+      "zip_path": "EuroSAT_RGB/River/River_1449.jpg"
+    },
+    {
+      "caseId": "ic1-0034",
+      "expected": "river",
+      "file": "cases/ic1-0034.jpg",
+      "sha256": "3f87ea90461f48801a896a8958a0423d78506b593c033fc9b1db75e8efc7e040",
+      "zip_path": "EuroSAT_RGB/River/River_19.jpg"
+    },
+    {
+      "caseId": "ic1-0035",
+      "expected": "river",
+      "file": "cases/ic1-0035.jpg",
+      "sha256": "6909e2d81ff07f20d1b138eef61a6eb72b960e455f639879688070fd5646b82e",
+      "zip_path": "EuroSAT_RGB/River/River_2349.jpg"
+    },
+    {
+      "caseId": "ic1-0036",
+      "expected": "river",
+      "file": "cases/ic1-0036.jpg",
+      "sha256": "22d145c3ac62d1d5ff95318e655015aa93324786fe8557eef90c7eccdfbeeada",
+      "zip_path": "EuroSAT_RGB/River/River_549.jpg"
+    },
+    {
+      "caseId": "ic1-0037",
+      "expected": "sea_lake",
+      "file": "cases/ic1-0037.jpg",
+      "sha256": "833d769f9c19b5af640b21640bedbff5dae6aa5aa524a5a28ea21aa1d6c2f40b",
+      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_1539.jpg"
+    },
+    {
+      "caseId": "ic1-0038",
+      "expected": "sea_lake",
+      "file": "cases/ic1-0038.jpg",
+      "sha256": "ecbc79c3998c60261228a97977e2a58f290230314e4b2eb5186e1bbf0753af4d",
+      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_2079.jpg"
+    },
+    {
+      "caseId": "ic1-0039",
+      "expected": "sea_lake",
+      "file": "cases/ic1-0039.jpg",
+      "sha256": "533919a10992e2055c96139209714f664ff9a3c99345ea6b39bf7aef1919cdfc",
+      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_2619.jpg"
+    },
+    {
+      "caseId": "ic1-0040",
+      "expected": "sea_lake",
+      "file": "cases/ic1-0040.jpg",
+      "sha256": "bbd680168ebbad70ea6dd2405a1e7004ebc515a5008361936757200ade9bdc17",
+      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_459.jpg"
+    }
+  ],
+  "dataset": "eurosat-rgb",
+  "labels": [
+    "annual_crop",
+    "forest",
+    "herbaceous_vegetation",
+    "highway",
+    "industrial",
+    "pasture",
+    "permanent_crop",
+    "residential",
+    "river",
+    "sea_lake"
+  ],
+  "preprocessing": {
+    "bands": "RGB",
+    "resize": [
+      32,
+      32
+    ]
+  },
+  "scoring_version": 1,
+  "selection": {
+    "method": "per_class_even_stride_sorted_names",
+    "model_based": false,
+    "n": 40,
+    "per_class": 4
+  },
+  "zenodo_record": "7711810"
+}

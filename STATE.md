@@ -17,11 +17,11 @@
 
 ## 지금 어디인가
 
-**W1 (8/4–8/10) 진행 중.** EuroSAT RGB 아카이브 핀 확정. 문의 회신 무관으로 진행.
+**MVP 완성 목표로 진행 중 (문의 회신 무관).** 1단계(골든·위반·보고서초안·Node 제한) 작업. scratch·실게이트는 다음 단계.
 
 - 기획서 **문서 v4.5** (스키마는 **v4.4** 유지). §2.5 IIS · Provenance by Design · §14 문헌
 - dummy Node: placeholder safetensors · dummy 라벨 · complete API. **scratch 학습 아님**
-- 로컬: Docker Desktop 있음. **2026-08-06 smoke 통과** (CRUD + dummy 게이트 사슬 + claim/execute). 시드 해시가 바뀌면 `docker compose down -v` 후 스모크. **골든셋 채점은 아직 아님**
+- 로컬: Docker Desktop 있음. dummy smoke·**M25 6종 REJECTED 확인**(2026-08-06). 시드 `golden_set_sha256` 갱신 시 `down -v` 또는 새 볼륨. **scratch·실게이트 채점은 아직 아님**
 
 ## 이번 주 목표
 
@@ -33,7 +33,12 @@
 
 6. [x] **Agent / Node 등록·조회 + bind READY** (M9·M10). Capability POST는 없음(시드 `image.classify@1`만)
 7. [x] **게이트 사슬 API** (M11 배관). `dummy=true` PASSED만. **골든셋 채점·M18 아님**
-8. [x] **EuroSAT RGB 핀** — `archive_sha256` · 64×64 · 디렉터리명. 케이스 추출·scratch 아님
+8. [x] **EuroSAT RGB 핀** — `archive_sha256` · 64×64 · 디렉터리명
+9. [x] **골든 N=40 manifest** + 픽셀 전수. **실채점·scratch 아님**
+10. [x] **M25 demo_violations 스크립트** (실행은 compose 떠 있을 때)
+11. [x] **보고서 초안 0·1·2·5·8** · compose Node 3대 limits (`node_credential` 없음)
+
+열려 있는 판단: **A/B(S2) Must 여부 — 미결, 구현하지 않음.**
 
 아직 아닌 것 (과장 금지):
 

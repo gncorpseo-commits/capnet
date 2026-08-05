@@ -39,10 +39,17 @@
   "native_bands": "RGB",
   "contract_resize_hw": [32, 32],
   "pixel_check": {
-    "sampled": 50,
-    "all_match_native_hw": true,
-    "full_scan": false,
+    "jpeg_scanned": 27000,
+    "histogram": {"64x64c3": 27000},
+    "all_64x64c3": true,
+    "full_scan": true,
     "checked_at": "2026-08-06"
   },
-  "note": "원본 미동봉. golden_set_sha256(케이스 manifest)은 아직 비어 있음. scratch 학습 아님."
+  "golden_demo": {
+    "n": 40,
+    "manifest": "docs/spec/golden/manifest-image-classify-v1.json",
+    "manifest_sha256": "c8254bcb454d6ca362f61c0426e4a7c9c7de42cc81fa6ab3ed097b64c2862066",
+    "selection": "per_class_even_stride_sorted_names"
+  },
+  "note": "원본 zip 미동봉. 데모 골든 40장은 cases/에만 둔다. scratch 학습 아님."
 }
