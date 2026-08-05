@@ -70,10 +70,10 @@
 
 | # | 내용 | 기한 |
 |---|------|------|
-| 1 | `contest@oss.kr` 문의 (배점·소스 제출 형식) | W0. 답신에 며칠 걸림 |
-| 2 | EuroSAT RGB 핀 (`archive_sha256`·64×64·Pascal 폴더). **케이스 manifest / scratch는 미착수** | 완료(핀) / W2(학습) |
-| 3 | `min_accuracy` 실측 확정 (통과율 20–80%) | 베이스라인 2개 실측 후 |
-| 4 | 베이스라인 백본 2종 선정 (서로 다른 계열, 둘 다 scratch) | W2 |
+| 1 | `contest@oss.kr` 문의 (배점·소스 제출 형식) | 회신 무관 진행 |
+| 2 | EuroSAT 핀 + 데모 N=40 manifest. **scratch / 실게이트는 미착수** | 핀·manifest 완료 |
+| 3 | `min_accuracy` 실측 확정 (통과율 20–80%) | 베이스라인 실측 후 |
+| 4 | 베이스라인 백본 2종 선정 (서로 다른 계열, 둘 다 scratch) | W2 · A/B Must는 **미결(구현 안 함)** |
 | 5 | 전역 `~/.claude/CLAUDE.md`의 GitHub 계정 정정 | 급하지 않음 |
 
 ---

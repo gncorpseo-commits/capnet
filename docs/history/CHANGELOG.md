@@ -1,5 +1,14 @@
 # Changelog
 
+## MVP phase1 — 2026-08-06
+
+- 골든셋 데모 N=40 manifest + cases/ (균등 스트라이드, 모델 선택 없음)
+- 픽셀 전수: EuroSAT RGB 27,000장 전부 64×64×3
+- `scripts/demo_violations` M25 6종
+- 결과보고서 초안 0·1·2·5·8절
+- compose Node 3대 자원 제한 (S/team, S/public, M/team). `node_credential` 없음
+- **scratch 학습·실게이트 채점 아님**
+
 ## W1 — 2026-08-06 (EuroSAT RGB pin)
 
 - Zenodo `7711810` / `EuroSAT_RGB.zip` 실측: `archive_sha256`, 원본 64×64, Pascal 클래스 폴더

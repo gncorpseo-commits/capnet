@@ -29,15 +29,48 @@ services:
       postgres:
         condition: service_healthy
 
-  node:
+  node-m-team:
     build:
       context: .
       dockerfile: apps/node/Dockerfile
     environment:
       CORE_URL: http://core:8000
       WEIGHTS_PATH: /weights/placeholder.safetensors
+      NODE_ROLE: m-team
     ports:
       - "${NODE_PORT:-8001}:8001"
+    mem_limit: 1g
+    cpus: 1.0
+    depends_on:
+      - core
+
+  node-s-team:
+    build:
+      context: .
+      dockerfile: apps/node/Dockerfile
+    environment:
+      CORE_URL: http://core:8000
+      WEIGHTS_PATH: /weights/placeholder.safetensors
+      NODE_ROLE: s-team
+    ports:
+      - "8002:8001"
+    mem_limit: 256m
+    cpus: 0.50
+    depends_on:
+      - core
+
+  node-s-public:
+    build:
+      context: .
+      dockerfile: apps/node/Dockerfile
+    environment:
+      CORE_URL: http://core:8000
+      WEIGHTS_PATH: /weights/placeholder.safetensors
+      NODE_ROLE: s-public
+    ports:
+      - "8003:8001"
+    mem_limit: 256m
+    cpus: 0.50
     depends_on:
       - core
 

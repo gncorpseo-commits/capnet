@@ -1,6 +1,6 @@
 # CapNet 골든셋 정의서 — `image.classify@1`
 
-**문서 버전:** v0.3 · 2026-08-06  
+**문서 버전:** v0.4 · 2026-08-06  
 **파일:** `docs/spec/golden/image-classify-v1.md` (영문 파일명 · zip/리눅스 제출 대비)  
 **정본:** 이 파일 + 아카이브 핀 [`eurosat-rgb.json`](./eurosat-rgb.json). (구 v0.1 한글·중복 파일 폐기)
 
@@ -112,7 +112,10 @@ Gate · Product · Proof **모두** 동일 전처리:
 | 받기 | `scripts/download_eurosat.ps1` / `scripts/download_eurosat.sh` |
 
 기계 핀: [`eurosat-rgb.json`](./eurosat-rgb.json).  
-**아직 아닌 것:** 데모 N=40 케이스 manifest · `golden_set_sha256` · scratch 학습.
+**데모 골든셋:** [`manifest-image-classify-v1.json`](./manifest-image-classify-v1.json) · N=40 ·  
+`golden_set_sha256` = `c8254bcb454d6ca362f61c0426e4a7c9c7de42cc81fa6ab3ed097b64c2862066`  
+선택: 클래스당 정렬 파일명 균등 간격 4장. **모델 기반 선택 아님.** 원본 zip은 커밋하지 않고 `cases/` 40장만 둔다.  
+**아직 아닌 것:** scratch 학습 · 실게이트 채점.
 
 기획서 **§5.2** 데이터 정책(개인정보 미포함, allowlist만)을 데이터 성질로 만족한다.
 
@@ -268,3 +271,4 @@ gate → gate_run → 채점 → PASSED면 gate_run_passed → agent_capability 
 | v0.1 | 초안 (Downloads) |
 | v0.2 | Contest 정합: A만, scratch, 데모 N, Zenodo/RGB, 전처리 계약, AND, 라벨 매핑, §7.1, 단일 정본·영문 파일명 |
 | v0.3 | `EuroSAT_RGB.zip` 실측 핀: sha256·64×64·Pascal 폴더명. 케이스 manifest 없음 |
+| v0.4 | 데모 N=40 manifest + 픽셀 전수(27000=64×64). scratch 아님 |
