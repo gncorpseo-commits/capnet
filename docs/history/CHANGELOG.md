@@ -1,5 +1,12 @@
 # Changelog
 
+## W1 — 2026-08-06 (CRUD + gate chain API)
+
+- Agent / Node 등록·조회, 바인딩 → READY (`INSERT … SELECT`)
+- `gate_run` 시작·종료 사슬 API. **골든셋 추론 아님.** PASSED는 `dummy=true` 기록만
+- Node 등급은 Core 관리자 등록. Node 런타임 자기주장 경로 없음
+- smoke: .pth 거절 · non-runner 409 · dummy 게이트 후 claim/execute
+
 ## W1 — 2026-08-06 (plan v4.5 + dummy Node)
 
 - 기획서 **v4.5**: §2.5 Interface–Implementation Separation, Execution Provenance(개념), §14 문헌, §15 완료=최소 증서. 스키마는 v4.4 유지

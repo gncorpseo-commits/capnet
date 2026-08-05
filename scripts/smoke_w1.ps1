@@ -1,6 +1,13 @@
 $ErrorActionPreference = "Stop"
 $core = "http://127.0.0.1:8000"
 $node = "http://127.0.0.1:8001"
+$capId = "00000000-0000-4000-8000-000000000010"
+$runnerId = "00000000-0000-4000-8000-000000000030"
+
+function Get-StatusCode {
+    param($Err)
+    return [int]$Err.Exception.Response.StatusCode.value__
+}
 
 Write-Host "GET /health (core)"
 $h = Invoke-RestMethod "$core/health"
@@ -13,48 +20,132 @@ $nh = Invoke-RestMethod "$node/health"
 $nh | ConvertTo-Json -Compress
 if (-not $nh.ok) { throw "node placeholder weights missing" }
 
+Write-Host "GET /v1/agents + /v1/nodes"
+$agents = Invoke-RestMethod "$core/v1/agents"
+$nodes = Invoke-RestMethod "$core/v1/nodes"
+if ($agents.items.Count -lt 1) { throw "seed agent missing" }
+if ($nodes.items.Count -lt 1) { throw "seed node missing" }
+
+Write-Host "POST /v1/agents rejects .pth"
+try {
+    Invoke-RestMethod -Method Post "$core/v1/agents" -ContentType "application/json" -Body (@{
+        name = "bad-pt"
+        version = "0"
+        manifest_hash = "x"
+        weights_uri = "file:///tmp/model.pth"
+        weights_sha256 = $nh.weights_sha256
+        weights_format = "safetensors"
+    } | ConvertTo-Json)
+    throw "pth should reject"
+} catch {
+    if ((Get-StatusCode $_) -ne 400) { throw }
+}
+
+Write-Host "POST /v1/agents"
+$agent = Invoke-RestMethod -Method Post "$core/v1/agents" -ContentType "application/json" -Body (@{
+    name = "smoke-agent"
+    version = "0.0.1-smoke"
+    manifest_hash = "smoke-manifest"
+    weights_uri = "file:///weights/placeholder.safetensors"
+    weights_sha256 = $nh.weights_sha256
+} | ConvertTo-Json)
+$agentId = $agent.id
+
+Write-Host "POST /v1/nodes (public S, not runner)"
+$pub = Invoke-RestMethod -Method Post "$core/v1/nodes" -ContentType "application/json" -Body (@{
+    name = "smoke-public-s"
+    device_type = "PHONE"
+    trust_domain = "public"
+    compute_tier_max = "S"
+    is_gate_runner = $false
+} | ConvertTo-Json)
+$pubId = $pub.id
+
+Write-Host "POST gate-run on non-runner (expect 409)"
+try {
+    Invoke-RestMethod -Method Post "$core/v1/internal/gate-runs" -ContentType "application/json" -Body (@{
+        agent_id = $agentId
+        capability_id = $capId
+        runner_node_id = $pubId
+    } | ConvertTo-Json)
+    throw "non-runner gate should reject"
+} catch {
+    if ((Get-StatusCode $_) -ne 409) { throw }
+}
+
+Write-Host "POST bind wrong hash (ready false)"
+$badBind = Invoke-RestMethod -Method Post "$core/v1/agents/$agentId/bindings" -ContentType "application/json" -Body (@{
+    node_id = $runnerId
+    weights_sha256_seen = ("0" * 64)
+} | ConvertTo-Json)
+if ($badBind.ready) { throw "mismatch must not be READY" }
+
+Write-Host "POST bind matching hash"
+$okBind = Invoke-RestMethod -Method Post "$core/v1/agents/$agentId/bindings" -ContentType "application/json" -Body (@{
+    node_id = $runnerId
+    weights_sha256_seen = $nh.weights_sha256
+} | ConvertTo-Json)
+if (-not $okBind.ready) { throw "matching hash should be READY" }
+
+Write-Host "POST gate-run + dummy PASSED (not golden-set scoring)"
+$gr = Invoke-RestMethod -Method Post "$core/v1/internal/gate-runs" -ContentType "application/json" -Body (@{
+    agent_id = $agentId
+    capability_id = $capId
+    runner_node_id = $runnerId
+} | ConvertTo-Json)
+if ($gr.status -ne "RUNNING") { throw "gate start $($gr.status)" }
+
+$fin = Invoke-RestMethod -Method Post "$core/v1/internal/gate-runs/$($gr.id)/finish" -ContentType "application/json" -Body (@{
+    status = "PASSED"
+    dummy = $true
+    golden_score = 0.8
+    cases_total = 40
+    cases_passed = 32
+    note = "smoke plumbing only"
+} | ConvertTo-Json)
+if (-not $fin.chain_minted) { throw "PASSED chain not minted" }
+
+$gotAgent = Invoke-RestMethod "$core/v1/agents/$agentId"
+$passed = @($gotAgent.capabilities | Where-Object { $_.gate_status -eq "PASSED" })
+if ($passed.Count -lt 1) { throw "agent capability PASSED missing" }
+
 Write-Host "POST /v1/tasks bad datasetId (expect 400)"
 try {
     Invoke-RestMethod -Method Post "$core/v1/tasks" -ContentType "application/json" `
         -Body '{"datasetId":"not-allowed","caseId":"x"}'
     throw "allowlist should reject"
 } catch {
-    if ($_.Exception.Response.StatusCode.value__ -ne 400) { throw }
+    if ((Get-StatusCode $_) -ne 400) { throw }
 }
 
-Write-Host "POST /v1/tasks"
-$t = Invoke-RestMethod -Method Post "$core/v1/tasks" -ContentType "application/json" `
-    -Body '{"datasetId":"eurosat-rgb","caseId":"ic1-dummy-e2e"}'
-$t | ConvertTo-Json -Compress
+Write-Host "POST /v1/tasks + claim + dummy execute"
+$t = Invoke-RestMethod -Method Post "$core/v1/tasks" -ContentType "application/json" -Body (@{
+    datasetId = "eurosat-rgb"
+    caseId = "ic1-dummy-e2e"
+    requestedAgentId = $agentId
+} | ConvertTo-Json)
 $taskId = $t.id
 
-Write-Host "POST /v1/internal/claim"
-$claimBody = (@{ task_id = $taskId } | ConvertTo-Json)
-$c = Invoke-RestMethod -Method Post "$core/v1/internal/claim" -ContentType "application/json" -Body $claimBody
-$c | ConvertTo-Json -Compress
+$c = Invoke-RestMethod -Method Post "$core/v1/internal/claim" -ContentType "application/json" -Body (@{
+    task_id = $taskId
+} | ConvertTo-Json)
 if ($c.status -ne "LEASED") { throw "claim status $($c.status)" }
-if (-not $c.weights_sha256) { throw "claim missing weights_sha256" }
+if ($c.agent_id -ne $agentId) { throw "claim agent $($c.agent_id)" }
 if ($nh.weights_sha256 -ne $c.weights_sha256) {
     throw "DB agent hash != placeholder file. docker compose down -v 후 다시 up (옛 seed 볼륨)"
 }
 
-Write-Host "POST node /v1/execute (dummy, not scratch train)"
-$execBody = (@{
+$e = Invoke-RestMethod -Method Post "$node/v1/execute" -ContentType "application/json" -Body (@{
     id = $c.id
     weights_sha256 = $c.weights_sha256
     input_ref = $c.input_ref
 } | ConvertTo-Json)
-$e = Invoke-RestMethod -Method Post "$node/v1/execute" -ContentType "application/json" -Body $execBody
-$e | ConvertTo-Json -Compress -Depth 6
 if (-not $e.dummy) { throw "expected dummy=true" }
 if ($e.core.task_status -ne "COMPLETED") { throw "task_status $($e.core.task_status)" }
-if ($e.core.status -ne "SUCCEEDED") { throw "assignment $($e.core.status)" }
 
-Write-Host "GET /v1/tasks/$taskId"
 $got = Invoke-RestMethod "$core/v1/tasks/$taskId"
-$got | ConvertTo-Json -Compress -Depth 5
 if ($got.status -ne "COMPLETED") { throw "task $($got.status)" }
 if ($got.assignment.status -ne "SUCCEEDED") { throw "assignment $($got.assignment.status)" }
 if (-not $got.result_ref) { throw "missing result_ref (min certificate)" }
 
-Write-Host "W1 smoke OK (claim + dummy e2e)"
+Write-Host "W1 smoke OK (crud + dummy gate chain + e2e)"

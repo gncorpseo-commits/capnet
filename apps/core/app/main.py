@@ -9,7 +9,18 @@ from pydantic import BaseModel, Field
 from app.allowlist import assert_dataset_id
 from app.claim import claim_next
 from app.complete import complete_assignment, lease_detail, try_audit_succeeded
+from app.const import SEED_ADMIN_ID
 from app.db import get_conn
+from app.gate import finish_gate_run, get_gate_run, list_agent_capabilities, start_gate_run
+from app.registry import (
+    bind_agent_node,
+    create_agent,
+    create_node,
+    get_agent,
+    get_node,
+    list_agents,
+    list_nodes,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +32,48 @@ class TaskCreate(BaseModel):
     case_id: str = Field(alias="caseId")
     capability_code: str = "image.classify"
     capability_version: int = 1
+    requested_agent_id: uuid.UUID | None = Field(default=None, alias="requestedAgentId")
 
     model_config = {"populate_by_name": True}
+
+
+class AgentCreate(BaseModel):
+    name: str
+    version: str
+    manifest_hash: str
+    weights_uri: str
+    weights_sha256: str
+    weights_format: str = "safetensors"
+
+
+class NodeCreate(BaseModel):
+    name: str
+    device_type: str
+    trust_domain: str
+    compute_tier_max: str
+    is_gate_runner: bool = False
+    gpu: str | None = None
+    provision_source: str | None = None
+
+
+class BindBody(BaseModel):
+    node_id: uuid.UUID
+    weights_sha256_seen: str
+
+
+class GateStartBody(BaseModel):
+    agent_id: uuid.UUID
+    capability_id: uuid.UUID
+    runner_node_id: uuid.UUID
+
+
+class GateFinishBody(BaseModel):
+    status: str
+    golden_score: float | None = None
+    cases_total: int | None = None
+    cases_passed: int | None = None
+    dummy: bool = False
+    note: str | None = None
 
 
 class ClaimBody(BaseModel):
@@ -63,6 +114,152 @@ def list_capabilities() -> dict[str, Any]:
     return {"items": [dict(r) for r in rows]}
 
 
+@app.get("/v1/capabilities/{capability_id}")
+def get_capability(capability_id: uuid.UUID) -> dict[str, Any]:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id, code, version, name, compute_tier, trust_domain_min, mvp_eligible "
+            "FROM capability WHERE id = %s",
+            (str(capability_id),),
+        ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="capability not found")
+    return dict(row)
+
+
+@app.get("/v1/agents")
+def agents_list() -> dict[str, Any]:
+    with get_conn() as conn:
+        return {"items": list_agents(conn)}
+
+
+@app.post("/v1/agents")
+def agents_create(body: AgentCreate) -> dict[str, Any]:
+    try:
+        with get_conn() as conn:
+            return create_agent(
+                conn,
+                name=body.name,
+                version=body.version,
+                manifest_hash=body.manifest_hash,
+                weights_uri=body.weights_uri,
+                weights_sha256=body.weights_sha256,
+                weights_format=body.weights_format,
+            )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/v1/agents/{agent_id}")
+def agents_get(agent_id: uuid.UUID) -> dict[str, Any]:
+    with get_conn() as conn:
+        row = get_agent(conn, agent_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="agent not found")
+        row["capabilities"] = list_agent_capabilities(conn, agent_id)
+    return row
+
+
+@app.post("/v1/agents/{agent_id}/bindings")
+def agents_bind(agent_id: uuid.UUID, body: BindBody) -> dict[str, Any]:
+    try:
+        with get_conn() as conn:
+            return bind_agent_node(
+                conn,
+                agent_id=agent_id,
+                node_id=body.node_id,
+                weights_sha256_seen=body.weights_sha256_seen,
+            )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/v1/nodes")
+def nodes_list() -> dict[str, Any]:
+    with get_conn() as conn:
+        return {"items": list_nodes(conn)}
+
+
+@app.post("/v1/nodes")
+def nodes_create(body: NodeCreate) -> dict[str, Any]:
+    """관리자/Core 등록. Node 런타임이 trust_domain·tier를 주장하는 경로가 아니다."""
+    try:
+        with get_conn() as conn:
+            return create_node(
+                conn,
+                name=body.name,
+                device_type=body.device_type,
+                trust_domain=body.trust_domain,
+                compute_tier_max=body.compute_tier_max,
+                is_gate_runner=body.is_gate_runner,
+                gpu=body.gpu,
+                provision_source=body.provision_source,
+            )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/v1/nodes/{node_id}")
+def nodes_get(node_id: uuid.UUID) -> dict[str, Any]:
+    with get_conn() as conn:
+        row = get_node(conn, node_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="node not found")
+    return row
+
+
+@app.post("/v1/internal/gate-runs")
+def gate_start(body: GateStartBody) -> dict[str, Any]:
+    with get_conn() as conn:
+        row = start_gate_run(
+            conn,
+            agent_id=body.agent_id,
+            capability_id=body.capability_id,
+            runner_node_id=body.runner_node_id,
+        )
+    if row is None:
+        raise HTTPException(
+            status_code=409,
+            detail="gate-run start rejected (missing row or runner is not gate-runner)",
+        )
+    return row
+
+
+@app.post("/v1/internal/gate-runs/{gate_run_id}/finish")
+def gate_finish(gate_run_id: uuid.UUID, body: GateFinishBody) -> dict[str, Any]:
+    if body.status == "PASSED" and not body.dummy:
+        raise HTTPException(
+            status_code=409,
+            detail="golden-set scoring not implemented; dummy=true records plumbing-only PASSED",
+        )
+    try:
+        with get_conn() as conn:
+            row = finish_gate_run(
+                conn,
+                gate_run_id=gate_run_id,
+                status=body.status,
+                golden_score=body.golden_score,
+                cases_total=body.cases_total,
+                cases_passed=body.cases_passed,
+                dummy=body.dummy,
+                note=body.note,
+            )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if row is None:
+        raise HTTPException(status_code=409, detail="gate-run not RUNNING or not found")
+    return row
+
+
+@app.get("/v1/internal/gate-runs/{gate_run_id}")
+def gate_get(gate_run_id: uuid.UUID) -> dict[str, Any]:
+    with get_conn() as conn:
+        row = get_gate_run(conn, gate_run_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="gate-run not found")
+    return row
+
+
 @app.post("/v1/tasks")
 def create_task(body: TaskCreate) -> dict[str, Any]:
     try:
@@ -80,7 +277,7 @@ def create_task(body: TaskCreate) -> dict[str, Any]:
             raise HTTPException(status_code=404, detail="capability not found")
         user = conn.execute(
             "SELECT id FROM app_user WHERE id = %s",
-            ("00000000-0000-4000-8000-000000000001",),
+            (SEED_ADMIN_ID,),
         ).fetchone()
         if user is None:
             raise HTTPException(status_code=500, detail="seed admin missing")
@@ -89,18 +286,19 @@ def create_task(body: TaskCreate) -> dict[str, Any]:
             """
             INSERT INTO task (
                 user_id, capability_id, status, trust_domain,
-                capability_trust_domain_min, input_ref
+                capability_trust_domain_min, input_ref, requested_agent_id
             )
             SELECT %(user_id)s, c.id, 'QUEUED', 'team',
-                   c.trust_domain_min, %(input_ref)s
+                   c.trust_domain_min, %(input_ref)s, %(requested_agent_id)s::uuid
               FROM capability c
              WHERE c.id = %(capability_id)s
-            RETURNING id, status, input_ref, capability_id, trust_domain
+            RETURNING id, status, input_ref, capability_id, trust_domain, requested_agent_id
             """,
             {
                 "user_id": str(user["id"]),
                 "capability_id": str(cap["id"]),
                 "input_ref": input_ref,
+                "requested_agent_id": str(body.requested_agent_id) if body.requested_agent_id else None,
             },
         ).fetchone()
     return dict(created)
