@@ -1,5 +1,10 @@
 # Changelog
 
+## Docs — 2026-08-05
+
+- 문서 레이아웃 [PR #5](https://github.com/gncorpseo-commits/capnet/pull/5) `main` 머지
+- Wiki Home 링크를 `main` 카테고리 경로로 고정
+
 ## Docs — 2026-08-03 (layout)
 
 - 문서 트리 정리: `docs/{guide,error,history,design,spec,ops,research}` + [`docs/INDEX.md`](../INDEX.md)

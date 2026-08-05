@@ -1,7 +1,7 @@
 # STATE — 현재 작업 상태
 
 > 세션 인계용 단기 상태판. 결정·미결은 `docs/context-handoff.md`, 이력은 `docs/history/CHANGELOG.md`, 지도는 `docs/INDEX.md`.
-> **갱신: 2026-08-03**
+> **갱신: 2026-08-05**
 
 ---
 
@@ -17,8 +17,11 @@
 
 ## 지금 어디인가
 
-**W1 (8/4–8/10) 착수 직전.** 설계와 스키마는 끝났고 실행 코드는 아직 없다.  
-문서 트리는 `docs/{guide,error,history,design,spec,ops,research}` + `docs/INDEX.md`로 정리됨.
+**W1 (8/4–8/10) 착수.** 설계·스키마·문서 트리는 `main`에 있다. 실행 코드는 아직 없다.
+
+- 문서 레이아웃 [PR #5](https://github.com/gncorpseo-commits/capnet/pull/5) 머지됨 (`docs/INDEX.md` + `guide/error/history/design/spec/ops/research`)
+- Wiki Home 링크는 `main` 경로를 가리킨다
+- W1 Issues: [#2](https://github.com/gncorpseo-commits/capnet/issues/2) compose · [#3](https://github.com/gncorpseo-commits/capnet/issues/3) schema seed · [#4](https://github.com/gncorpseo-commits/capnet/issues/4) claim
 
 `docs/spec/schema.sql` v4.4는 PostgreSQL 16에서 위반 14종이 거부되는 것을 실측 확인했다. 제약을 약화하지 않는 한 그대로 쓴다. 목록: `docs/error/pg-violations.md`.
 
