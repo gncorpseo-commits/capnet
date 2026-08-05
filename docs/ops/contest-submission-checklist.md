@@ -97,7 +97,7 @@
 | L2 | `THIRD-PARTY-LICENSES.md` | 의존성 / 버전 / SPDX 식별자 / 원본 링크 |
 | L3 | `sbom.json` | CycloneDX. `pip install cyclonedx-bom` 후 생성 |
 | L4 | 가중치 출처 선언 (보고서 9절) | "사전학습 가중치 미사용, EuroSAT scratch 학습만" + 학습 스크립트 경로 |
-| L5 | 데이터 출처 | EuroSAT **RGB 배포판**, Zenodo `7711810`, MIT. **원본 미동봉**, 다운로드 스크립트 + `archive_sha256` |
+| L5 | 데이터 출처 | EuroSAT **RGB 배포판**, Zenodo `7711810`, MIT. **원본 미동봉**. `scripts/download_eurosat.*` + `docs/spec/golden/eurosat-rgb.json` (`archive_sha256` 확정 2026-08-06) |
 
 **운영 규칙**: 의존성을 추가하는 그 커밋에서 L2에 한 줄을 같이 넣는다 (M24). 예외 없음.
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## W1 — 2026-08-06 (EuroSAT RGB pin)
+
+- Zenodo `7711810` / `EuroSAT_RGB.zip` 실측: `archive_sha256`, 원본 64×64, Pascal 클래스 폴더
+- 핀 파일 `docs/spec/golden/eurosat-rgb.json` · 다운로드 스크립트. **원본 미동봉 · scratch 학습 아님 · 케이스 manifest 없음**
+- seed `golden_metrics.dataset`에 archive 핀. `golden_set_sha256`은 빈 placeholder 유지. 스키마 변경 없음
+
 ## W1 — 2026-08-06 (CRUD + gate chain API)
 
 - Agent / Node 등록·조회, 바인딩 → READY (`INSERT … SELECT`)

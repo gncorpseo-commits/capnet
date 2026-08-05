@@ -1,12 +1,12 @@
 # CapNet 골든셋 정의서 — `image.classify@1`
 
-**문서 버전:** v0.2 · 2026-08-01  
+**문서 버전:** v0.3 · 2026-08-06  
 **파일:** `docs/spec/golden/image-classify-v1.md` (영문 파일명 · zip/리눅스 제출 대비)  
-**정본:** 이 파일 하나만. (구 v0.1 한글·중복 파일 폐기)
+**정본:** 이 파일 + 아카이브 핀 [`eurosat-rgb.json`](./eurosat-rgb.json). (구 v0.1 한글·중복 파일 폐기)
 
 대상 계약: `image.classify@1` (`output_kind = closed_set_labels`, `compute_tier = M`)  
-근거: [capnet-plan.md](../../design/capnet-plan.md) v4.4 §4.3 · [schema.sql](../schema.sql) v4.4 · [Contest_MVP_2026.md](../../ops/Contest_MVP_2026.md)  
-작성일: 2026-07-31 · 패치: 2026-08-01 (Contest 정합)
+근거: [capnet-plan.md](../../design/capnet-plan.md) v4.5 §4.3 · [schema.sql](../schema.sql) v4.4 · [Contest_MVP_2026.md](../../ops/Contest_MVP_2026.md)  
+작성일: 2026-07-31 · 패치: 2026-08-06 (EuroSAT RGB `archive_sha256` 실측)
 
 > **대회 데모:** N=30–50 ([Contest §9](../../ops/Contest_MVP_2026.md)).  
 > **본편 통계 판정:** 본 문서 §5의 n=300/500. 숫자를 섞지 말 것.
@@ -86,8 +86,8 @@ EuroSAT 폴더명 → 계약 라벨 매핑:
 
 Gate · Product · Proof **모두** 동일 전처리:
 
-- 입력: EuroSAT **RGB** 배포판  
-- `resize` → **32×32**  
+- 입력: EuroSAT **RGB** 배포판 (원본 **64×64** JPEG)  
+- `resize` → **32×32** (계약 열화. 원본 64를 그대로 돌리면 계약 위반)  
 - 게이트만 열화하고 제품은 원본으로 돌리는 것 **금지**
 
 ---
@@ -97,10 +97,22 @@ Gate · Product · Proof **모두** 동일 전처리:
 | 항목 | 값 |
 |------|-----|
 | 출처 | EuroSAT RGB (Sentinel-2 토지 이용 분류) |
-| 배포 고정 | Zenodo record **`7711810`** + `archive_sha256` (다운로드 후 기입) |
+| 파일 | `EuroSAT_RGB.zip` (MS zip 아님) |
+| Zenodo | record **`7711810`** · DOI `10.5281/zenodo.7711810` |
+| `archive_sha256` | `b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90` |
+| `archive_md5` | `f46e308c4d50d4bf32fedad2d3d62f3b` (Zenodo 표기와 일치) |
+| 바이트 | 94,658,721 |
+| zip 루트 | `EuroSAT_RGB/` |
+| 클래스 디렉터리 | `AnnualCrop` `Forest` `HerbaceousVegetation` `Highway` `Industrial` `Pasture` `PermanentCrop` `Residential` `River` `SeaLake` |
+| 장수 | 27,000 (클래스별 3000/3000/3000/2500/2500/2000/2500/3000/2500/3000) |
+| 원본 픽셀 | **64×64** RGB JPEG (10클래스×3장 + 무작위 20장 = 50장 실측, 전부 일치. 전수 스캔은 아직 안 함) |
+| 계약 입력 | resize **32×32** RGB |
 | 라이선스 | **MIT** (원 저장소). Sentinel 원천은 Copernicus 공개 데이터 |
-| 규모 | 10 클래스 · 약 27,000장 |
-| PII | 위성 지표 — 얼굴·번호판 없음 (팀 도메인 데모에 적합) |
+| 로컬 경로 | `data/eurosat/` (**gitignore**, 원본 미동봉) |
+| 받기 | `scripts/download_eurosat.ps1` / `scripts/download_eurosat.sh` |
+
+기계 핀: [`eurosat-rgb.json`](./eurosat-rgb.json).  
+**아직 아닌 것:** 데모 N=40 케이스 manifest · `golden_set_sha256` · scratch 학습.
 
 기획서 **§5.2** 데이터 정책(개인정보 미포함, allowlist만)을 데이터 성질로 만족한다.
 
@@ -185,7 +197,7 @@ EuroSAT 원본은 강한 모델이 **98%+** 를 낸다 → 통과율·편차 판
   "capability": "image.classify@1",
   "dataset": "eurosat-rgb",
   "zenodo_record": "7711810",
-  "archive_sha256": "<기입>",
+  "archive_sha256": "b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90",
   "preprocessing": { "resize": [32, 32], "bands": "RGB" },
   "scoring_version": 1,
   "labels": [/* §2.1 */],
@@ -228,7 +240,7 @@ gate → gate_run → 채점 → PASSED면 gate_run_passed → agent_capability 
 
 | 시점 | 산출 |
 |------|------|
-| Contest W0–W1 | 본 문서 v0.2, Zenodo·sha256 고정, **데모 N=30–50** 추출, sanity 3종 |
+| Contest W0–W1 | 본 문서 v0.3, Zenodo·`archive_sha256` 고정. **데모 N 추출·sanity는 미완** |
 | 본편 주 3–4 | n=300 세트·임계 확정, 통과율 20–80% |
 | 본편 주 8–9 | A/B 편차 판정 |
 
@@ -255,3 +267,4 @@ gate → gate_run → 채점 → PASSED면 gate_run_passed → agent_capability 
 |------|------|
 | v0.1 | 초안 (Downloads) |
 | v0.2 | Contest 정합: A만, scratch, 데모 N, Zenodo/RGB, 전처리 계약, AND, 라벨 매핑, §7.1, 단일 정본·영문 파일명 |
+| v0.3 | `EuroSAT_RGB.zip` 실측 핀: sha256·64×64·Pascal 폴더명. 케이스 manifest 없음 |

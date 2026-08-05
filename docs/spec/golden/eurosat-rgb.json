@@ -1,0 +1,48 @@
+{
+  "dataset": "eurosat-rgb",
+  "zenodo_record": "7711810",
+  "doi": "10.5281/zenodo.7711810",
+  "license": "MIT",
+  "archive": "EuroSAT_RGB.zip",
+  "archive_bytes": 94658721,
+  "archive_md5": "f46e308c4d50d4bf32fedad2d3d62f3b",
+  "archive_sha256": "b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90",
+  "download_url": "https://zenodo.org/records/7711810/files/EuroSAT_RGB.zip?download=1",
+  "local_path": "data/eurosat/EuroSAT_RGB.zip",
+  "zip_root": "EuroSAT_RGB",
+  "jpeg_count": 27000,
+  "class_dirs": [
+    "AnnualCrop",
+    "Forest",
+    "HerbaceousVegetation",
+    "Highway",
+    "Industrial",
+    "Pasture",
+    "PermanentCrop",
+    "Residential",
+    "River",
+    "SeaLake"
+  ],
+  "class_counts": {
+    "AnnualCrop": 3000,
+    "Forest": 3000,
+    "HerbaceousVegetation": 3000,
+    "Highway": 2500,
+    "Industrial": 2500,
+    "Pasture": 2000,
+    "PermanentCrop": 2500,
+    "Residential": 3000,
+    "River": 2500,
+    "SeaLake": 3000
+  },
+  "native_hw": [64, 64],
+  "native_bands": "RGB",
+  "contract_resize_hw": [32, 32],
+  "pixel_check": {
+    "sampled": 50,
+    "all_match_native_hw": true,
+    "full_scan": false,
+    "checked_at": "2026-08-06"
+  },
+  "note": "원본 미동봉. golden_set_sha256(케이스 manifest)은 아직 비어 있음. scratch 학습 아님."
+}

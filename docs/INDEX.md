@@ -52,7 +52,8 @@
 
 ### spec
 - [schema.sql v4.4](./spec/schema.sql)
-- [골든셋 image.classify@1](./spec/golden/image-classify-v1.md)
+- [골든셋 image.classify@1](./spec/golden/image-classify-v1.md) (v0.3)
+- [EuroSAT RGB archive 핀](./spec/golden/eurosat-rgb.json)
 
 ### ops
 - [Contest MVP 2026](./ops/Contest_MVP_2026.md)

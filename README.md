@@ -70,4 +70,4 @@ smoke는 placeholder safetensors dummy 추론까지 간다. **학습된 EuroSAT 
 
 [Apache License 2.0](LICENSE). 고지 사항은 [`NOTICE`](NOTICE)를 참조한다.
 
-사전학습 가중치를 사용하거나 동봉하지 않는다. 모델은 EuroSAT 데이터로 처음부터 학습한 것만 쓴다. 데이터셋은 EuroSAT RGB 배포판(Zenodo `7711810`, MIT)이며 원본은 저장소에 포함하지 않고 내려받는다.
+사전학습 가중치를 사용하거나 동봉하지 않는다. 모델은 EuroSAT 데이터로 처음부터 학습한 것만 쓴다. 데이터셋은 EuroSAT RGB 배포판(Zenodo `7711810`, MIT)이며 원본은 저장소에 포함하지 않는다. `scripts/download_eurosat.ps1`(또는 `.sh`)로 받고 `archive_sha256`을 검증한다. 핀: [`docs/spec/golden/eurosat-rgb.json`](docs/spec/golden/eurosat-rgb.json).
