@@ -16,15 +16,16 @@ INSERT INTO capability (
     '00000000-0000-4000-8000-000000000010',
     'image.classify', 1,
     'EuroSAT land-cover classify',
-    'closed-set 10 labels · 32x32 RGB · contest demo N=40',
+    'closed-set 10 labels · native 64x64 RGB · contract resize 32x32 · contest demo N=40',
     '{"type":"object","required":["datasetId","caseId"],"properties":{"datasetId":{"type":"string"},"caseId":{"type":"string"}}}'::jsonb,
     '{"type":"object","required":["label"],"properties":{"label":{"type":"string","enum":["annual_crop","forest","herbaceous_vegetation","highway","industrial","pasture","permanent_crop","residential","river","sea_lake"]},"confidence":{"type":"number","minimum":0,"maximum":1}},"additionalProperties":false}'::jsonb,
     'closed_set_labels',
     'M', 'team', true,
     'docs/spec/golden/image-classify-v1.md',
+    -- 케이스 manifest 없음. 빈 해시 placeholder. archive 핀은 golden_metrics.dataset
     'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     40,
-    '{"primary_metric":"accuracy","min_accuracy":0.75,"min_macro_f1":0.72,"max_invalid_rate":0.02,"combine":"AND","equivalence":{"metric":"accuracy","max_deviation":0.05,"comparison":"paired_same_cases"},"scoring_version":1}'::jsonb
+    '{"primary_metric":"accuracy","min_accuracy":0.75,"min_macro_f1":0.72,"max_invalid_rate":0.02,"combine":"AND","equivalence":{"metric":"accuracy","max_deviation":0.05,"comparison":"paired_same_cases"},"scoring_version":1,"dataset":{"id":"eurosat-rgb","zenodo_record":"7711810","archive":"EuroSAT_RGB.zip","archive_sha256":"b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90","zip_root":"EuroSAT_RGB","native_hw":[64,64],"contract_resize_hw":[32,32]}}'::jsonb
 )
 ON CONFLICT (code, version) DO NOTHING;
 

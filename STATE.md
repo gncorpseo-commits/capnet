@@ -17,7 +17,7 @@
 
 ## 지금 어디인가
 
-**W1 (8/4–8/10) 진행 중.** CRUD + 게이트 사슬 API 이어서 진행.
+**W1 (8/4–8/10) 진행 중.** EuroSAT RGB 아카이브 핀 확정. 문의 회신 무관으로 진행.
 
 - 기획서 **문서 v4.5** (스키마는 **v4.4** 유지). §2.5 IIS · Provenance by Design · §14 문헌
 - dummy Node: placeholder safetensors · dummy 라벨 · complete API. **scratch 학습 아님**
@@ -33,6 +33,7 @@
 
 6. [x] **Agent / Node 등록·조회 + bind READY** (M9·M10). Capability POST는 없음(시드 `image.classify@1`만)
 7. [x] **게이트 사슬 API** (M11 배관). `dummy=true` PASSED만. **골든셋 채점·M18 아님**
+8. [x] **EuroSAT RGB 핀** — `archive_sha256` · 64×64 · 디렉터리명. 케이스 추출·scratch 아님
 
 아직 아닌 것 (과장 금지):
 
@@ -52,8 +53,8 @@
 
 | # | 내용 | 상태 |
 |---|------|------|
-| 1 | `contest@oss.kr` 문의 발송 (보고서 서식·소스 제출 형식·라이선스 산출물·사회문제해결 가점 여부) | 진행 |
-| 2 | EuroSAT RGB 내려받아 **디렉터리명 · 픽셀 크기 · `archive_sha256` 확정** | 미착수 |
+| 1 | `contest@oss.kr` 문의 발송 (보고서 서식·소스 제출 형식·라이선스 산출물·사회문제해결 가점 여부) | 회신 무관 진행 |
+| 2 | EuroSAT RGB 내려받아 **디렉터리명 · 픽셀 크기 · `archive_sha256` 확정** | 완료 (핀). 케이스 manifest 없음 |
 | 3 | 문서 개정 — D15 신설(v4.5). M26·M27은 미착수 | 진행 |
 
 ## 열려 있는 판단

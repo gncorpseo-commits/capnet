@@ -28,7 +28,10 @@ Dataset: EuroSAT (RGB distribution)
   Source:  Zenodo record 7711810 <https://doi.org/10.5281/zenodo.7711810>
   License: MIT
   Note:    The dataset itself is NOT redistributed in this repository.
-           It is downloaded at setup time and verified by SHA-256 checksum.
+           Download EuroSAT_RGB.zip and verify SHA-256
+           b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90
+           (scripts/download_eurosat.ps1 or .sh). Native images are 64x64 RGB;
+           the Capability contract resizes to 32x32.
 
   Citation:
     P. Helber, B. Bischke, A. Dengel, D. Borth,
