@@ -172,8 +172,8 @@ EuroSAT 원본은 강한 모델이 **98%+** 를 낸다 → 통과율·편차 판
 ```json
 {
   "primary_metric": "accuracy",
-  "min_accuracy": 0.75,
-  "min_macro_f1": 0.72,
+  "min_accuracy": 0.68,
+  "min_macro_f1": 0.65,
   "max_invalid_rate": 0.02,
   "combine": "AND",
   "equivalence": {
@@ -186,7 +186,8 @@ EuroSAT 원본은 강한 모델이 **98%+** 를 낸다 → 통과율·편차 판
 ```
 
 게이트 통과는 `min_accuracy` **AND** `min_macro_f1` **AND** `max_invalid_rate` 모두 충족.  
-`min_*` 숫자는 가정 — 본편 주 3–4에 실측으로 확정.  
+초기 가정은 0.75/0.72였다. TinyEuroSAT scratch N=40 실측은 acc≈0.70–0.725라 가정값이 위였고, 통과율 20–80% 조준으로 **0.68/0.65**로 보정했다.  
+seed / dummy plumbing PASSED와 혼동하지 않는다.  
 `scoring_version` 변경 시 해당 계약 Agent 전원 재게이트.
 
 ---

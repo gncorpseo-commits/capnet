@@ -2,13 +2,19 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+ARG INSTALL_TORCH=false
+
 COPY apps/node/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt \
+    && if [ "$INSTALL_TORCH" = "true" ]; then \
+         pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu ; \
+       fi
 
 COPY apps/node/app /app/app
 COPY apps/node/weights /weights
 
 ENV PYTHONUNBUFFERED=1
+ENV WEIGHTS_DIR=/weights
 ENV WEIGHTS_PATH=/weights/placeholder.safetensors
 EXPOSE 8001
 

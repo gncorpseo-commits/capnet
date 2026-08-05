@@ -30,20 +30,33 @@ AI 에이전트를 모아놓은 스토어는 이미 많다. CapNet이 다루는 
 
 ---
 
-## 빠른 시작
+## 빠른 시작 (약 5분)
+
+사전: Docker Desktop. 시드 해시를 바꾼 뒤에는 `docker compose down -v`가 필요하다.
 
 ```bash
-docker compose up --build
-curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8001/health
-curl -X POST http://127.0.0.1:8000/v1/internal/claim -H "content-type: application/json" -d "{}"
+docker compose up --build -d
 ```
 
-Windows: `powershell -ExecutionPolicy Bypass -File scripts/smoke_w1.ps1`
+Windows:
 
-시드에 `image.classify@1`·게이트 사슬·QUEUED task가 들어 있다. claim은 Core만 하며 `INSERT … SELECT`다.  
-smoke는 placeholder safetensors dummy 추론까지 간다. **학습된 EuroSAT 모델이 아니다.**  
-시드 해시를 바꾼 뒤에는 `docker compose down -v`가 필요하다. 전체 데모(scratch 완주·M25)는 이후 주에 README를 채운다.
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/smoke_w1.ps1
+powershell -ExecutionPolicy Bypass -File scripts/demo.ps1
+powershell -ExecutionPolicy Bypass -File scripts/sanity.ps1
+powershell -ExecutionPolicy Bypass -File scripts/demo_violations.ps1
+```
+
+Linux/macOS: `scripts/smoke_w1.ps1` 대신 health+claim을 확인하고 `scripts/demo.sh`, `scripts/sanity.sh`, `scripts/demo_violations.sh`.
+
+| 스크립트 | 하는 일 | 아닌 것 |
+|----------|---------|---------|
+| `smoke_w1.ps1` | dummy 게이트 배관 + placeholder 추론 | 실게이트·품질 |
+| `demo.ps1` / `.sh` | scratch Agent 실게이트 채점 → Task 완주 | dummy PASSED를 실게이트로 주장하지 않음 |
+| `sanity.ps1` / `.sh` | 상수·난수·스키마위반 floor → 전부 FAILED | A/B 동등성 (미결·미구현) |
+| `demo_violations` | M25 6종 DB REJECTED | 스키마 약화 없음 |
+
+scratch 가중치가 없으면 `scripts/train_scratch.ps1`(또는 `.sh`) 후 compose를 다시 올린다. EuroSAT zip은 `scripts/download_eurosat.ps1`로 받고 저장소에 동봉하지 않는다. claim은 Core만 하며 `INSERT … SELECT`다.
 
 ---
 

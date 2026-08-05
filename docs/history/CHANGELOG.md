@@ -1,5 +1,14 @@
 # Changelog
 
+## MVP phase2 — 2026-08-06
+
+- EuroSAT RGB **scratch** TinyEuroSAT → `eurosat_scratch.safetensors` (safetensors만, 사전학습 없음)
+- Node: scratch 추론 · Core: `dummy=false` 실게이트 검증(지표 AND) · `score_gate`
+- 실측 후 임계 보정: `min_accuracy` 0.68 · `min_macro_f1` 0.65 (가정 0.75/0.72는 실측 위)
+- `scripts/demo` 실게이트 PASSED + Task 완주 · `scripts/sanity` floor 3종 FAILED
+- torch/torchvision(CPU, node-m-team) · Pillow · THIRD-PARTY 갱신
+- **seed/smoke dummy PASSED ≠ 실게이트.** A/B Must 미결·미구현
+
 ## MVP phase1 — 2026-08-06
 
 - 골든셋 데모 N=40 manifest + cases/ (균등 스트라이드, 모델 선택 없음)

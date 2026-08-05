@@ -74,6 +74,8 @@ class GateFinishBody(BaseModel):
     cases_passed: int | None = None
     dummy: bool = False
     note: str | None = None
+    macro_f1: float | None = None
+    invalid_rate: float | None = None
 
 
 class ClaimBody(BaseModel):
@@ -227,11 +229,6 @@ def gate_start(body: GateStartBody) -> dict[str, Any]:
 
 @app.post("/v1/internal/gate-runs/{gate_run_id}/finish")
 def gate_finish(gate_run_id: uuid.UUID, body: GateFinishBody) -> dict[str, Any]:
-    if body.status == "PASSED" and not body.dummy:
-        raise HTTPException(
-            status_code=409,
-            detail="golden-set scoring not implemented; dummy=true records plumbing-only PASSED",
-        )
     try:
         with get_conn() as conn:
             row = finish_gate_run(
@@ -243,6 +240,8 @@ def gate_finish(gate_run_id: uuid.UUID, body: GateFinishBody) -> dict[str, Any]:
                 cases_passed=body.cases_passed,
                 dummy=body.dummy,
                 note=body.note,
+                macro_f1=body.macro_f1,
+                invalid_rate=body.invalid_rate,
             )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
