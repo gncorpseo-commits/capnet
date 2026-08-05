@@ -37,8 +37,8 @@ INSERT INTO agent (
     'seed-agent', '0.0.1-seed', 'ACTIVE',
     'seed-manifest',
     'safetensors',
-    'seed://placeholder.safetensors',
-    '9c56cc51b374c3ba189210d5b6d4bf57790d351c96c43902f23a56f362244c12'
+    'file:///weights/placeholder.safetensors',
+    '5cd21e43471e2d0a495ce5cee3aae102cbdbd98c7f0db770a74476268b3a3887'
 )
 ON CONFLICT (id) DO NOTHING;
 

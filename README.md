@@ -35,13 +35,15 @@ AI 에이전트를 모아놓은 스토어는 이미 많다. CapNet이 다루는 
 ```bash
 docker compose up --build
 curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8001/health
 curl -X POST http://127.0.0.1:8000/v1/internal/claim -H "content-type: application/json" -d "{}"
 ```
 
-Windows: `powershell -File scripts/smoke_w1.ps1`
+Windows: `powershell -ExecutionPolicy Bypass -File scripts/smoke_w1.ps1`
 
 시드에 `image.classify@1`·게이트 사슬·QUEUED task가 들어 있다. claim은 Core만 하며 `INSERT … SELECT`다.  
-전체 데모(완주·M25 위반)는 W3에 README를 채운다. 볼륨을 지우고 다시 올리려면 `docker compose down -v`.
+smoke는 placeholder safetensors dummy 추론까지 간다. **학습된 EuroSAT 모델이 아니다.**  
+시드 해시를 바꾼 뒤에는 `docker compose down -v`가 필요하다. 전체 데모(scratch 완주·M25)는 이후 주에 README를 채운다.
 
 ---
 

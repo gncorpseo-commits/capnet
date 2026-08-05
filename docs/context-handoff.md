@@ -4,7 +4,7 @@
 > 자동 로드되지 않는다. 필요할 때 `@docs/context-handoff.md`로 부른다.
 >
 > 문서 지도: [`INDEX.md`](./INDEX.md) · 주간 상태: [`../STATE.md`](../STATE.md)  
-> 최종 갱신: 2026-08-03
+> 최종 갱신: 2026-08-06
 
 ---
 
@@ -28,6 +28,7 @@
 | D12 | Changelog는 `docs/history/CHANGELOG.md` 단독 | README는 대회 심사용 5분 기동 안내 전용 |
 | D13 | 커밋 계정 = **gncorpseo-commits** | 전역 CLAUDE.md의 jangsejong 아님 |
 | D14 | 문서는 `docs/{guide,error,history,design,spec,ops,research}` + `docs/INDEX.md` | 전역 파일 순번 금지. 진입은 INDEX |
+| D15 | Provenance by Design. 사슬은 Capability → Agent → `weights_sha256`만 (Model Identifier 금지). 완료 = `assignment` + 해시 + `gate_run` 사슬. `audit_log` 실패 ≠ 무조건 FAILED | 기획서 v4.5. UI가 아니라 DB 증적 |
 
 ---
 

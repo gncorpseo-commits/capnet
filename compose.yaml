@@ -29,5 +29,17 @@ services:
       postgres:
         condition: service_healthy
 
+  node:
+    build:
+      context: .
+      dockerfile: apps/node/Dockerfile
+    environment:
+      CORE_URL: http://core:8000
+      WEIGHTS_PATH: /weights/placeholder.safetensors
+    ports:
+      - "${NODE_PORT:-8001}:8001"
+    depends_on:
+      - core
+
 volumes:
   capnet_pg:

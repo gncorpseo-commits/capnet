@@ -1,7 +1,7 @@
 # STATE — 현재 작업 상태
 
 > 세션 인계용 단기 상태판. 결정·미결은 `docs/context-handoff.md`, 이력은 `docs/history/CHANGELOG.md`, 지도는 `docs/INDEX.md`.
-> **갱신: 2026-08-05**
+> **갱신: 2026-08-06**
 
 ---
 
@@ -17,32 +17,34 @@
 
 ## 지금 어디인가
 
-**W1 (8/4–8/10) 진행 중.** compose + schema seed + claim `INSERT … SELECT` 를 `finn/w1-compose-schema-claim`에 구현.
+**W1 (8/4–8/10) 진행 중.** 기획서 v4.5 + dummy Node E2E 주 묶음.
 
-- Issues: [#2](https://github.com/gncorpseo-commits/capnet/issues/2) · [#3](https://github.com/gncorpseo-commits/capnet/issues/3) · [#4](https://github.com/gncorpseo-commits/capnet/issues/4)
-- 가이드 v1.2 fast-track (§6.4): docs/chore LGTM 생략, 주 단위 PR, `gh pr merge --squash`
-- `docker compose up --build` → `GET /health` → `POST /v1/internal/claim`
-- **로컬 에이전트 PC에 Docker가 없어 compose 스모크는 미실행.** Docker Desktop 설치 후 `scripts/smoke_w1.ps1`로 확인.
+- 기획서 **문서 v4.5** (스키마는 **v4.4** 유지). §2.5 IIS · Provenance by Design · §14 문헌
+- dummy Node: placeholder safetensors · dummy 라벨 · complete API. **scratch 학습 아님**
+- 로컬: Docker Desktop 있음. **2026-08-06 smoke 통과** (claim → dummy execute → COMPLETED). 시드 해시가 바뀌면 `docker compose down -v` 후 스모크
 
-## 이번 세션(W1) 목표
+## 이번 주 목표
 
 1. [x] **docker compose** — PostgreSQL 16 + Core(FastAPI)
 2. [x] **`docs/spec/schema.sql` 적재** + `image.classify@1` seed + allowlist `datasetId`
 3. [x] **claim `INSERT ... SELECT` + `FOR UPDATE SKIP LOCKED`**
+4. [x] **기획서 v4.5** (문서만)
+5. [x] **dummy Node E2E** — lease → placeholder 로드 → dummy 추론 → 결과 보고 (품질·게이트 실측 아님)
 
-이어서 W1 잔여:
+아직 아닌 것 (과장 금지):
 
-- Core CRUD — Agent / Node 등록 API (조회는 `/v1/capabilities`만 있음)
-- 시드 게이트 사슬은 seed.sql에 있음. 런타임 게이트 API는 아직
-- 의존성 추가 시 `THIRD-PARTY-LICENSES.md` 누적 (W1에 신설)
+- Core CRUD — Agent / Node 등록 API (조회는 `/v1/capabilities` · task GET 추가됨)
+- 런타임 게이트 API (시드 사슬만)
+- EuroSAT scratch Agent · 실제 분류 품질
+- 컨테이너 Node 3대 제한 · `node_credential`
 
 ## 다음 (W2, 8/11–8/17)
 
-- Node 런타임 1종 — lease → safetensors 로드 → 추론 → 결과
-- **컨테이너 Node 3대** (S/team, S/public, M/team). CPU·메모리 실제 제한을 건다 — M26
-- **Node 자격증명** — Core가 발급, Node는 자기 등급을 주장할 수 없다. `node_credential` 증서 테이블 추가(v4.5) — M27
+- **컨테이너 Node 3대** (S/team, S/public, M/team). CPU·메모리 실제 제한 — M26
+- **Node 자격증명** — Core가 발급, Node는 자기 등급을 주장할 수 없다. `node_credential` 증서 테이블은 **스키마 마이그레이션 이슈** (문서 v4.5와 별개)
 - Agent 1개 EuroSAT scratch 학습 → 게이트 PASSED → Task 1건 완주
 - 8/16–17 버퍼. 절반은 결과보고서 초안에 쓴다
+- **A/B Must vs D1** 판단 기한 8/11
 
 ## W0에서 넘어온 잔여
 
@@ -50,9 +52,7 @@
 |---|------|------|
 | 1 | `contest@oss.kr` 문의 발송 (보고서 서식·소스 제출 형식·라이선스 산출물·사회문제해결 가점 여부) | 진행 |
 | 2 | EuroSAT RGB 내려받아 **디렉터리명 · 픽셀 크기 · `archive_sha256` 확정** | 미착수 |
-| 3 | 문서 개정 — 정의문 수정, D7 개정, D14·D15 신설, M26·M27 추가 | 진행 |
-
-2번은 골든셋 작업의 선행 조건이다. compose와 claim은 이것 없이도 진행된다.
+| 3 | 문서 개정 — D15 신설(v4.5). M26·M27은 미착수 | 진행 |
 
 ## 열려 있는 판단
 
@@ -63,8 +63,6 @@
 | 3 | 베이스라인 백본 2종 선정 (서로 다른 계열, 둘 다 scratch) | W2 |
 | 4 | `NOTICE` 저작권자 표기를 개인명으로 바꿀지 | 언제든 |
 
-1번은 W1을 막지 않는다.
-
 ## 함정 요약
 
 전문은 `@docs/error/pitfalls.md`.
@@ -73,3 +71,4 @@
 - `compute_tier`는 텍스트 정렬이 의도와 반대다(`L < M < S`). 앱에서 직접 비교하지 말고 `tier_compatible` 행렬에 맡긴다
 - 게이트 사슬 순서를 건너뛰면 FK가 막는다. 우회하지 말고 순서를 맞춘다
 - `git add -A` / `git add .` 는 전역 훅이 차단한다. 명시적 경로로 스테이징한다
+- live READY가 있는 볼륨에서 `agent.weights_sha256`를 바꾸면 FK가 막는다. 시드 해시 변경 시 `down -v`
