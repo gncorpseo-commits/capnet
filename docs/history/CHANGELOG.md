@@ -1,5 +1,12 @@
 # Changelog
 
+## W1 — 2026-08-05
+
+- `compose.yaml`: PostgreSQL 16 + Core(FastAPI)
+- `docs/spec/schema.sql` 적재 + `image.classify@1` seed + datasetId allowlist (`eurosat-rgb`)
+- claim: `INSERT … SELECT` + `FOR UPDATE SKIP LOCKED` (`POST /v1/internal/claim`)
+- 팀 가이드 v1.2 fast-track (§6.4)
+
 ## Docs — 2026-08-05
 
 - 문서 레이아웃 [PR #5](https://github.com/gncorpseo-commits/capnet/pull/5) `main` 머지

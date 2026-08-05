@@ -1,7 +1,7 @@
 # CapNet 팀 GitHub 사용 표준 가이드
 
 **문서 ID:** GN_20260803_github_guide  
-**버전:** 1.1 · 2026-08-03  
+**버전:** 1.2 · 2026-08-05  
 **저장소:** https://github.com/gncorpseo-commits/capnet  
 **대상:** 팀 지엔 (`finn` / `toma` / `master`)  
 **관련:** [Contest MVP](https://github.com/gncorpseo-commits/capnet/blob/main/docs/ops/Contest_MVP_2026.md) · [STATE.md](https://github.com/gncorpseo-commits/capnet/blob/main/STATE.md) · [context-handoff](https://github.com/gncorpseo-commits/capnet/blob/main/docs/context-handoff.md) · [INDEX](https://github.com/gncorpseo-commits/capnet/blob/main/docs/INDEX.md)  
@@ -85,7 +85,7 @@ git pull origin main
 git checkout -b finn/w1-compose-schema
 ```
 
-- 이슈 1개 ≈ 브랜치 1개.
+- 기본: 이슈 1개 ≈ 브랜치 1개. **W1–W3.5 fast-track은 주 단위로 묶을 수 있다** (§6.4).
 - `main` force-push 금지.
 
 ---
@@ -190,6 +190,25 @@ LGTM (finn) — claim SQL 패턴 OK.
 - 권장: **Squash and merge**.
 - 머지 후 브랜치 삭제.
 - 긴급 hotfix 후 Issue로 사유 기록.
+
+### 6.4 Contest W1–W3.5 fast-track (승인 부담 줄이기)
+
+출품 전까지는 **기록을 남기되 클릭을 줄인다.** 계정 1개면 명목 LGTM 연극을 매번 하지 않는다.
+
+| 종류 | PR | LGTM | 머지 |
+|------|-----|------|------|
+| `docs:` / `chore:` / Wiki / STATE | 작은 PR OK | **생략** | master가 즉시 squash |
+| Contest Must (compose·스키마·claim·게이트·M25) | **주 단위로 묶음** (이슈는 #2 #3 #4처럼 쪼개 두고 브랜치는 하나) | 스키마/claim처럼 핵심만, 또는 master 위임 시 생략 | `gh pr merge --squash --delete-branch` |
+| 출품 후 / 계정 2개 | 기존 §6.2–6.3 | 실제 Approve | branch protection |
+
+```bash
+# 웹 버튼 대신 (master 위임·fast-track)
+gh pr merge <번호> --squash --delete-branch
+```
+
+**묶음 예 (W1):** 브랜치 `finn/w1-compose-schema-claim` 하나 → Issues #2+#3+#4 → PR 1개 → squash merge.
+
+금지하지 않는 것: Issue는 그대로 만든다. `main` 직접 push는 여전히 금지.
 
 ---
 
@@ -322,10 +341,10 @@ LGTM (finn) — claim SQL 패턴 OK.
 ## 11. 일일 루틴
 
 1. `main` pull.
-2. Issue에서 오늘 할 `#` 하나 선택.
+2. Issue에서 오늘 할 `#` 선택 (W1–W3.5는 주 묶음 브랜치에 이어서 커밋해도 됨).
 3. `finn/…` 또는 `toma/…` 브랜치에서 작업.
-4. PR + 상대에게 명목 리뷰 요청 (`LGTM` 대기).
-5. master 머지 후 필요 시 `STATE.md` 갱신(별 PR).
+4. PR. `docs:`/`chore:`는 LGTM 생략(§6.4). Must는 주 1회 PR.
+5. `gh pr merge --squash --delete-branch` (또는 웹 Squash and merge). STATE는 같은 PR에 넣는다.
 
 ---
 
@@ -372,3 +391,4 @@ LGTM (finn) — claim SQL 패턴 OK.
 |------|------|------|
 | 1.0 | 2026-08-03 | 초안 (Wiki 복붙, §2에서  Truncated) |
 | 1.1 | 2026-08-03 | 전문 복구 · GitHub 기능 사용법 · Wiki 함정 · MSA/환경 · 체크리스트 |
+| 1.2 | 2026-08-05 | §6.4 W1–W3.5 fast-track (docs/chore LGTM 생략 · 주 단위 PR · `gh pr merge --squash`) |

@@ -17,27 +17,24 @@
 
 ## 지금 어디인가
 
-**W1 (8/4–8/10) 착수.** 설계·스키마·문서 트리는 `main`에 있다. 실행 코드는 아직 없다.
+**W1 (8/4–8/10) 진행 중.** compose + schema seed + claim `INSERT … SELECT` 를 `finn/w1-compose-schema-claim`에 구현.
 
-- 문서 레이아웃 [PR #5](https://github.com/gncorpseo-commits/capnet/pull/5) 머지됨 (`docs/INDEX.md` + `guide/error/history/design/spec/ops/research`)
-- Wiki Home 링크는 `main` 경로를 가리킨다
-- W1 Issues: [#2](https://github.com/gncorpseo-commits/capnet/issues/2) compose · [#3](https://github.com/gncorpseo-commits/capnet/issues/3) schema seed · [#4](https://github.com/gncorpseo-commits/capnet/issues/4) claim
-
-`docs/spec/schema.sql` v4.4는 PostgreSQL 16에서 위반 14종이 거부되는 것을 실측 확인했다. 제약을 약화하지 않는 한 그대로 쓴다. 목록: `docs/error/pg-violations.md`.
+- Issues: [#2](https://github.com/gncorpseo-commits/capnet/issues/2) · [#3](https://github.com/gncorpseo-commits/capnet/issues/3) · [#4](https://github.com/gncorpseo-commits/capnet/issues/4)
+- 가이드 v1.2 fast-track (§6.4): docs/chore LGTM 생략, 주 단위 PR, `gh pr merge --squash`
+- `docker compose up --build` → `GET /health` → `POST /v1/internal/claim`
+- **로컬 에이전트 PC에 Docker가 없어 compose 스모크는 미실행.** Docker Desktop 설치 후 `scripts/smoke_w1.ps1`로 확인.
 
 ## 이번 세션(W1) 목표
 
-순서를 지킨다. 3번이 가장 중요하다.
+1. [x] **docker compose** — PostgreSQL 16 + Core(FastAPI)
+2. [x] **`docs/spec/schema.sql` 적재** + `image.classify@1` seed + allowlist `datasetId`
+3. [x] **claim `INSERT ... SELECT` + `FOR UPDATE SKIP LOCKED`**
 
-1. **docker compose** — PostgreSQL 16 + Core(FastAPI) 골격
-2. **`docs/spec/schema.sql` 적재** + `image.classify@1` seed + allowlist `datasetId`
-3. **claim 쿼리를 `INSERT ... SELECT` 패턴으로 고정** ← 이 패턴이 잡히기 전에 다른 엔드포인트를 늘리지 않는다
+이어서 W1 잔여:
 
-이어서 W1 안에 들어갈 것:
-
-- Core CRUD — Capability / Agent / Node 등록·조회
-- 게이트 사슬: `gate_run` → `gate_run_passed` → `agent_capability` → `agent_capability_passed`
-- 의존성을 추가할 때마다 `THIRD-PARTY-LICENSES.md`에 한 줄 누적
+- Core CRUD — Agent / Node 등록 API (조회는 `/v1/capabilities`만 있음)
+- 시드 게이트 사슬은 seed.sql에 있음. 런타임 게이트 API는 아직
+- 의존성 추가 시 `THIRD-PARTY-LICENSES.md` 누적 (W1에 신설)
 
 ## 다음 (W2, 8/11–8/17)
 
@@ -55,7 +52,7 @@
 | 2 | EuroSAT RGB 내려받아 **디렉터리명 · 픽셀 크기 · `archive_sha256` 확정** | 미착수 |
 | 3 | 문서 개정 — 정의문 수정, D7 개정, D14·D15 신설, M26·M27 추가 | 진행 |
 
-2번은 골든셋 작업의 선행 조건이다. compose와 Core CRUD는 이것 없이도 진행된다.
+2번은 골든셋 작업의 선행 조건이다. compose와 claim은 이것 없이도 진행된다.
 
 ## 열려 있는 판단
 
@@ -66,11 +63,11 @@
 | 3 | 베이스라인 백본 2종 선정 (서로 다른 계열, 둘 다 scratch) | W2 |
 | 4 | `NOTICE` 저작권자 표기를 개인명으로 바꿀지 | 언제든 |
 
-1번은 W1을 막지 않는다. W1은 그대로 진행한다.
+1번은 W1을 막지 않는다.
 
 ## 함정 요약
 
-전문은 `@docs/error/pitfalls.md`. 자주 걸리는 것만 다시 적는다.
+전문은 `@docs/error/pitfalls.md`.
 
 - `assignment`는 스냅샷 컬럼과 복합 FK 5개가 걸린다. **손으로 값을 채우면 반드시 틀린다.** `INSERT ... SELECT`만 쓴다
 - `compute_tier`는 텍스트 정렬이 의도와 반대다(`L < M < S`). 앱에서 직접 비교하지 말고 `tier_compatible` 행렬에 맡긴다

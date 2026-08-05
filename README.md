@@ -32,9 +32,16 @@ AI 에이전트를 모아놓은 스토어는 이미 많다. CapNet이 다루는 
 
 ## 빠른 시작
 
-> **작성 예정 (2026-08-18 ~ 08-24)** — `docker compose up` 한 번과 데모 스크립트 한 줄로
-> 「계약 등록 → 게이트 통과 → Task 완주 → 위반 거절」까지 재현되도록 이 절을 채운다.
-> 현재 저장소에는 설계 문서와 DDL이 들어 있으며, 실행 코드는 구현 중이다.
+```bash
+docker compose up --build
+curl http://127.0.0.1:8000/health
+curl -X POST http://127.0.0.1:8000/v1/internal/claim -H "content-type: application/json" -d "{}"
+```
+
+Windows: `powershell -File scripts/smoke_w1.ps1`
+
+시드에 `image.classify@1`·게이트 사슬·QUEUED task가 들어 있다. claim은 Core만 하며 `INSERT … SELECT`다.  
+전체 데모(완주·M25 위반)는 W3에 README를 채운다. 볼륨을 지우고 다시 올리려면 `docker compose down -v`.
 
 ---
 
