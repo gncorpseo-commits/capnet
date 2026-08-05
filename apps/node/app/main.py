@@ -1,8 +1,4 @@
-"""dummy Node — lease 페이로드를 받아 safetensors만 로드하고 고정 라벨을 보고한다.
-
-EuroSAT scratch 학습이 아니다. 품질 주장이 아니라 claim→로드→보고 E2E.
-Node는 큐를 claim하지 않는다. Core가 고른 lease만 실행한다.
-"""
+"""Node 실행 — Core가 준 lease만 처리. 큐 pull 금지."""
 
 from __future__ import annotations
 
@@ -19,12 +15,13 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from safetensors import safe_open
 
-app = FastAPI(title="CapNet dummy Node", version="0.1.0-dummy")
+app = FastAPI(title="CapNet Node", version="0.2.0")
 
 CORE_URL = os.environ.get("CORE_URL", "http://127.0.0.1:8000").rstrip("/")
-WEIGHTS_PATH = os.environ.get("WEIGHTS_PATH", "/weights/placeholder.safetensors")
+WEIGHTS_DIR = os.environ.get("WEIGHTS_DIR", "/weights")
+WEIGHTS_PATH = os.environ.get("WEIGHTS_PATH", os.path.join(WEIGHTS_DIR, "placeholder.safetensors"))
+CASES_DIR = os.environ.get("GOLDEN_CASES_DIR", "/golden/cases")
 
-# closed-set 계약 라벨. dummy는 caseId 해시로 고를 뿐 분류기가 아니다.
 _LABELS = (
     "annual_crop",
     "forest",
@@ -53,14 +50,28 @@ def _file_sha256(path: str) -> str:
     return h.hexdigest()
 
 
-def _load_safetensors(path: str) -> list[str]:
-    keys: list[str] = []
-    with safe_open(path, framework="np") as fh:
-        keys = list(fh.keys())
-        if not keys:
-            raise ValueError("empty safetensors")
-        _ = fh.get_tensor(keys[0])
-    return keys
+def _list_weight_files() -> list[str]:
+    if not os.path.isdir(WEIGHTS_DIR):
+        return []
+    return [
+        os.path.join(WEIGHTS_DIR, name)
+        for name in sorted(os.listdir(WEIGHTS_DIR))
+        if name.endswith(".safetensors")
+    ]
+
+
+def _resolve_weights(digest: str) -> str:
+    candidates = _list_weight_files()
+    if os.path.isfile(WEIGHTS_PATH):
+        candidates = [WEIGHTS_PATH] + [p for p in candidates if p != WEIGHTS_PATH]
+    for path in candidates:
+        if _file_sha256(path) == digest:
+            return path
+    raise HTTPException(status_code=409, detail="weights_sha256 not found on node")
+
+
+def _is_placeholder(path: str) -> bool:
+    return os.path.basename(path).startswith("placeholder")
 
 
 def _dummy_label(input_ref: str | None) -> str:
@@ -74,6 +85,15 @@ def _dummy_label(input_ref: str | None) -> str:
     return _LABELS[idx]
 
 
+def _case_id(input_ref: str | None) -> str | None:
+    if not input_ref:
+        return None
+    try:
+        return json.loads(input_ref).get("caseId")
+    except json.JSONDecodeError:
+        return None
+
+
 def _post_complete(assignment_id: uuid.UUID, body: dict[str, Any]) -> dict[str, Any]:
     url = f"{CORE_URL}/v1/internal/assignments/{assignment_id}/complete"
     req = urllib.request.Request(
@@ -83,7 +103,7 @@ def _post_complete(assignment_id: uuid.UUID, body: dict[str, Any]) -> dict[str, 
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             return json.loads(resp.read().decode())
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode()
@@ -92,47 +112,62 @@ def _post_complete(assignment_id: uuid.UUID, body: dict[str, Any]) -> dict[str, 
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    exists = os.path.isfile(WEIGHTS_PATH)
-    digest = _file_sha256(WEIGHTS_PATH) if exists else None
-    return {"ok": exists, "weights_path": WEIGHTS_PATH, "weights_sha256": digest}
+    files = []
+    for path in _list_weight_files():
+        files.append(
+            {
+                "path": path,
+                "sha256": _file_sha256(path),
+                "placeholder": _is_placeholder(path),
+            }
+        )
+    default_exists = os.path.isfile(WEIGHTS_PATH)
+    return {
+        "ok": default_exists or bool(files),
+        "weights_path": WEIGHTS_PATH,
+        "weights_sha256": _file_sha256(WEIGHTS_PATH) if default_exists else None,
+        "weights": files,
+    }
 
 
 @app.post("/v1/execute")
 def execute(body: ExecuteBody) -> dict[str, Any]:
-    if not os.path.isfile(WEIGHTS_PATH):
-        raise HTTPException(status_code=500, detail="placeholder weights missing")
-
-    digest = _file_sha256(WEIGHTS_PATH)
-    if digest != body.weights_sha256:
-        raise HTTPException(
-            status_code=409,
-            detail="weights_sha256 mismatch (file vs lease)",
-        )
-
+    path = _resolve_weights(body.weights_sha256)
+    dummy = _is_placeholder(path)
     started = time.perf_counter()
-    try:
-        keys = _load_safetensors(WEIGHTS_PATH)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"safetensors load failed: {exc}") from exc
+    if dummy:
+        with safe_open(path, framework="np") as fh:
+            keys = list(fh.keys())
+        label = _dummy_label(body.input_ref)
+        confidence = 0.0
+    else:
+        from app.infer import case_path, predict_image
 
-    label = _dummy_label(body.input_ref)
+        cid = _case_id(body.input_ref)
+        if not cid:
+            raise HTTPException(status_code=400, detail="caseId required for scratch infer")
+        image = case_path(CASES_DIR, cid)
+        if not image.is_file():
+            raise HTTPException(status_code=404, detail=f"case image missing: {image}")
+        label, confidence = predict_image(path, str(image))
+        keys = ["scratch"]
+
     duration_ms = int((time.perf_counter() - started) * 1000)
-
     reported = _post_complete(
         body.id,
         {
-            "weights_sha256": digest,
+            "weights_sha256": body.weights_sha256,
             "label": label,
-            "confidence": 0.0,
-            "dummy": True,
+            "confidence": confidence,
+            "dummy": dummy,
             "duration_ms": duration_ms,
         },
     )
     return {
         "assignment_id": str(body.id),
         "label": label,
-        "dummy": True,
+        "dummy": dummy,
         "tensor_keys": keys,
-        "weights_sha256": digest,
+        "weights_sha256": body.weights_sha256,
         "core": reported,
     }

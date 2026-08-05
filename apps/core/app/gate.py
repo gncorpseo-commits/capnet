@@ -1,4 +1,4 @@
-"""게이트 사슬 — INSERT … SELECT 만. 골든셋 추론은 여기서 하지 않는다."""
+"""게이트 사슬 — INSERT … SELECT 만. 추론은 Node/score_gate, 여기선 기록·검증만."""
 
 from __future__ import annotations
 
@@ -110,6 +110,62 @@ def start_gate_run(
     return dict(row) if row else None
 
 
+def _load_cap_metrics(conn: psycopg.Connection, gate_run_id: uuid.UUID) -> dict[str, Any]:
+    row = conn.execute(
+        """
+        SELECT c.golden_metrics, c.golden_set_size, c.golden_set_sha256
+          FROM gate_run gr
+          JOIN capability c ON c.id = gr.capability_id
+         WHERE gr.id = %s
+        """,
+        (str(gate_run_id),),
+    ).fetchone()
+    if row is None:
+        raise ValueError("gate-run not found")
+    return dict(row)
+
+
+def assert_real_finish(
+    *,
+    status: str,
+    dummy: bool,
+    golden_score: float | None,
+    cases_total: int | None,
+    cases_passed: int | None,
+    macro_f1: float | None,
+    invalid_rate: float | None,
+    cap: dict[str, Any],
+) -> None:
+    """dummy=false PASSED는 골든 지표를 충족해야 한다. dummy plumbing과 섞지 않는다."""
+    if dummy:
+        return
+    if cases_total is None or cases_passed is None or golden_score is None:
+        raise ValueError("real gate requires golden_score, cases_total, cases_passed")
+    if cases_total != cap["golden_set_size"]:
+        raise ValueError(
+            f"cases_total {cases_total} != golden_set_size {cap['golden_set_size']}"
+        )
+    expected_acc = cases_passed / cases_total if cases_total else 0.0
+    if abs(expected_acc - float(golden_score)) > 1e-6:
+        raise ValueError("golden_score must equal cases_passed / cases_total")
+    if status != "PASSED":
+        return
+    if macro_f1 is None or invalid_rate is None:
+        raise ValueError("real PASSED requires macro_f1 and invalid_rate")
+    metrics = cap["golden_metrics"]
+    if isinstance(metrics, str):
+        metrics = json.loads(metrics)
+    min_acc = float(metrics["min_accuracy"])
+    min_f1 = float(metrics["min_macro_f1"])
+    max_inv = float(metrics["max_invalid_rate"])
+    if golden_score < min_acc or macro_f1 < min_f1 or invalid_rate > max_inv:
+        raise ValueError(
+            "real PASSED rejected: "
+            f"acc={golden_score:.4f} f1={macro_f1:.4f} inv={invalid_rate:.4f} "
+            f"need acc>={min_acc} f1>={min_f1} inv<={max_inv}"
+        )
+
+
 def finish_gate_run(
     conn: psycopg.Connection,
     *,
@@ -120,11 +176,32 @@ def finish_gate_run(
     cases_passed: int | None,
     dummy: bool,
     note: str | None,
+    macro_f1: float | None = None,
+    invalid_rate: float | None = None,
 ) -> dict[str, Any] | None:
     if status not in ("PASSED", "FAILED", "ERROR"):
         raise ValueError("status must be PASSED, FAILED, or ERROR")
 
-    summary = {"dummy": dummy, "scored_by": "api-record-only"}
+    cap = _load_cap_metrics(conn, gate_run_id)
+    assert_real_finish(
+        status=status,
+        dummy=dummy,
+        golden_score=golden_score,
+        cases_total=cases_total,
+        cases_passed=cases_passed,
+        macro_f1=macro_f1,
+        invalid_rate=invalid_rate,
+        cap=cap,
+    )
+
+    summary: dict[str, Any] = {
+        "dummy": dummy,
+        "scored_by": "plumbing-only" if dummy else "golden-set-v1",
+    }
+    if macro_f1 is not None:
+        summary["macro_f1"] = macro_f1
+    if invalid_rate is not None:
+        summary["invalid_rate"] = invalid_rate
     if note:
         summary["note"] = note
 
