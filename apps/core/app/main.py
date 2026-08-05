@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from typing import Any
 
@@ -7,7 +8,10 @@ from pydantic import BaseModel, Field
 
 from app.allowlist import assert_dataset_id
 from app.claim import claim_next
+from app.complete import complete_assignment, lease_detail, try_audit_succeeded
 from app.db import get_conn
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="CapNet Core", version="0.1.0-w1")
 
@@ -24,6 +28,14 @@ class TaskCreate(BaseModel):
 class ClaimBody(BaseModel):
     task_id: uuid.UUID | None = None
     node_id: uuid.UUID | None = None
+
+
+class CompleteBody(BaseModel):
+    weights_sha256: str
+    label: str
+    confidence: float | None = None
+    dummy: bool = True
+    duration_ms: int | None = None
 
 
 @app.get("/health")
@@ -100,6 +112,59 @@ def claim(body: ClaimBody | None = None) -> dict[str, Any]:
     payload = body or ClaimBody()
     with get_conn() as conn:
         row = claim_next(conn, task_id=payload.task_id, node_id=payload.node_id)
+        if row is None:
+            raise HTTPException(status_code=409, detail="no claimable task or no compatible node")
+        detail = lease_detail(conn, row["id"])
+    if detail:
+        row = {**row, **detail}
+    return row
+
+
+@app.get("/v1/tasks/{task_id}")
+def get_task(task_id: uuid.UUID) -> dict[str, Any]:
+    with get_conn() as conn:
+        task = conn.execute(
+            "SELECT id, status, input_ref, result_ref, current_assignment_id, capability_id, trust_domain "
+            "FROM task WHERE id = %s",
+            (str(task_id),),
+        ).fetchone()
+        if task is None:
+            raise HTTPException(status_code=404, detail="task not found")
+        assignment = None
+        if task["current_assignment_id"]:
+            assignment = conn.execute(
+                "SELECT id, status, agent_id, node_id, finished_at FROM assignment WHERE id = %s",
+                (str(task["current_assignment_id"]),),
+            ).fetchone()
+    return {**dict(task), "assignment": dict(assignment) if assignment else None}
+
+
+@app.post("/v1/internal/assignments/{assignment_id}/complete")
+def complete(assignment_id: uuid.UUID, body: CompleteBody) -> dict[str, Any]:
+    with get_conn() as conn:
+        row = complete_assignment(
+            conn,
+            assignment_id=assignment_id,
+            weights_sha256=body.weights_sha256,
+            label=body.label,
+            confidence=body.confidence,
+            dummy=body.dummy,
+            duration_ms=body.duration_ms,
+        )
     if row is None:
-        raise HTTPException(status_code=409, detail="no claimable task or no compatible node")
+        raise HTTPException(
+            status_code=409,
+            detail="complete rejected (not live lease or weights_sha256 mismatch)",
+        )
+    try:
+        with get_conn() as conn:
+            try_audit_succeeded(
+                conn,
+                task_id=row["task_id"],
+                assignment_id=row["id"],
+                weights_sha256=row["weights_sha256"],
+                dummy=body.dummy,
+            )
+    except Exception:
+        logger.warning("audit_log insert failed; min certificate already committed", exc_info=True)
     return row

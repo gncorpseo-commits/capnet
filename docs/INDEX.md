@@ -48,7 +48,7 @@
 - [CHANGELOG](./history/CHANGELOG.md)
 
 ### design
-- [기획서 v4.4](./design/capnet-plan.md)
+- [기획서 v4.5](./design/capnet-plan.md) (스키마는 v4.4)
 
 ### spec
 - [schema.sql v4.4](./spec/schema.sql)

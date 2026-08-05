@@ -1,18 +1,31 @@
 # Capability Network (CapNet) — 통합 기획서
 
-**문서 버전:** v4.4 (게이트 사슬 무결성)  
-**작성일:** 2026-07-31  
-**기반:** v4.3 + 최종 리뷰(게이트 사슬·trust_domain_min 미강제)  
+**문서 버전:** v4.5 (Interface–Implementation Separation · Provenance by Design)  
+**작성일:** 2026-07-31 · **개정:** 2026-08-06  
+**기반:** v4.4 + §2.5·§14 문헌·§15 완료=최소 증서  
 **제품명:** Capability Network (CapNet) · 약어 CN  
 **상위:** ai-agent-store (첫 제품 = CapNet)  
-**스키마:** [`docs/spec/schema.sql`](../spec/schema.sql) (v4.4)  
+**스키마:** [`docs/spec/schema.sql`](../spec/schema.sql) (**v4.4** — 이번 개정은 DDL 변경 없음)  
 
 > v4.3: 호환 행렬 자체도 rank 규칙에 묶여, 정책 독성 INSERT가 불가.  
-> **v4.4: PASSED 게이트·task 도메인 하한까지 DB 사슬로 닫힘. Phase 1 스키마 동결 후보.**
+> v4.4: PASSED 게이트·task 도메인 하한까지 DB 사슬로 닫힘. Phase 1 스키마 동결 후보.  
+> **v4.5: 사슬은 Capability → Agent → `weights_sha256`만. 교체는 게이트+증적. 완료=최소 증서.**
 
 ------------------------------------------------------------------------
 
-# 0. v4.3 → v4.4 패치
+# 0. v4.4 → v4.5 패치 (문서만)
+
+| # | 결함 | 수정 |
+|----|------|------|
+| D-IIS | Capability를 이름·별칭으로 취급하면 구현 교체가 증적 없이 일어남 | §2.5. **Model Identifier / alias 계층을 사슬에 넣지 않음** |
+| D-PRV | “실행 기록”을 새 테이블·UI로 오해 | Execution Provenance = `assignment` / `gate_run` / Agent 해시 / Node 스냅샷의 **개념 이름** |
+| D-DONE | 텔레메트리 실패를 완료 실패와 동일시 | §15. 완료 = 최소 증서. `audit_log` 실패 ≠ 무조건 `FAILED` |
+
+스키마 v4.4 동결 후보는 유지. `node_credential` 등 DDL은 별도 마이그레이션 이슈.
+
+------------------------------------------------------------------------
+
+# 0a. v4.3 → v4.4 패치
 
 | # | 결함 | 수정 |
 |---|------|------|
@@ -134,10 +147,10 @@ task.trust_domain ≥ capability.trust_domain_min (domain_min_compatible)
 
 - 사내 GPU가 이미 있는데, 모델마다 잡 스크립트가 파편화됨  
 - 규정상 원본을 외부 API로 못 보냄 (합성·비식별 데이터로 MVP 증명 후, 테넌트 단계에서 확대)  
-- “어느 모델이든 `image.classify@1` 계약만 맞으면 교체”가 운영 비용보다 쌈  
+- 게이트를 통과한 Agent를 `image.classify@1`로 **교체**하는 비용이, 잡 스크립트 파편화보다 쌈. 교체는 금지되지 않는다. **몰래 바꾸지 못하고**, 게이트+증적이 남는다 (§2.5)  
 
 **가치 제안 한 줄:**  
-*모델 벤더가 바뀌어도 호출 계약과 게이트만 유지하면 된다.*
+*같은 계약을 통과한 Agent는 교체할 수 있다. 단, 게이트를 다시 통과하고 실행 증적이 남아야 한다.* (§2.1 품질 등가성 · §2.5)
 
 ## 2.4 비전과의 정합 (유휴 공유)
 
@@ -151,6 +164,43 @@ task.trust_domain ≥ capability.trust_domain_min (domain_min_compatible)
 ```
 
 “처음부터 전 세계 폰을 켠다”는 **경제·신뢰 모두에서 기각**이다 (등록 ≠ 가용).
+
+## 2.5 Interface–Implementation Separation
+
+Capability를 **이름·별칭**으로 취급하면, 같은 호출 뒤에 다른 구현이 끼어든다.  
+이는 특정 벤더를 겨냥한 공격 서사가 아니라, **별칭 · 라우터 · 시간 드리프트**가 있는 실행 구조에서 반복되는 플랫폼 문제다 (§14).
+
+**사슬 (이것만):**
+
+```text
+Capability (채점 가능한 계약)
+  → Agent (구현 단위)
+    → weights_sha256 (로드한 바이트)
+```
+
+**넣지 않는 것:** Model Identifier, 모델 별칭, “같은 이름 = 같은 모델” 계층.  
+별칭을 가운데 끼우면 사슬이 다시 이름으로 붕괴한다.
+
+**교체 규칙:** 교체 자체가 금지인 것은 아니다.  
+허용되는 교체는 다음을 동시에 만족한다.
+
+1. 새 Agent가 해당 Capability 게이트를 **통과** (`gate_run` → `gate_run_passed` → … → assignment FK)
+2. 실행마다 **Execution Provenance**가 남음
+
+**Execution Provenance**는 새 테이블이 아니다. 이미 있는 행·컬럼의 개념 이름이다.
+
+| 증적 | 어디에 있나 |
+|------|-------------|
+| 어느 Task를 누가 받아 끝났는가 | `assignment` (lease → SUCCEEDED/FAILED …) |
+| 그 Agent가 그 계약에 합격했는가 | `gate_run` + 게이트 사슬 |
+| 어떤 바이트를 로드했는가 | `agent.weights_sha256` (`agent_node_ready`와 일치) |
+| 어느 신뢰·티어 Node였는가 | assignment의 Node 스냅샷 + 복합 FK |
+
+**MVP 범위:** Provenance UI·대시보드가 아니다.  
+**DB 제약으로 위조할 수 없는 최소 증적**이 남는 것이다. 화면은 그 다음이다.
+
+§2.1의 “같은 이름 ≠ 같은 결과”와 §2.3 쐐기는 여기서 만난다.  
+진입 가치는 “아무 모델이나 갈아끼우기”가 아니라 **계약·게이트·증적이 붙은 교체**다.
 
 ------------------------------------------------------------------------
 
@@ -167,6 +217,7 @@ task.trust_domain ≥ capability.trust_domain_min (domain_min_compatible)
 | **Compute Tier** | S=1 / M=2 / L=3 (**숫자 rank**). Capability.rank ≤ Node.max_rank |
 | **Proof Track** | 관리자 키 + `proof_run_id` + A/B 강제 |
 | **Product Track** | 사용자·테넌트가 Capability만 호출 (`requested_agent_id` 금지) |
+| **Execution Provenance** | 새 테이블이 아님. `assignment` + `gate_run` + `weights_sha256` + Node 스냅샷 (§2.5) |
 
 ```text
 Capability(계약, tier)
@@ -457,6 +508,8 @@ liveness(heartbeat)만은 시계열이라 FK로 못 막으며 Core 스캐너 담
 
 # 14. 선행 사례와 포지션
 
+제품 포지션 (기존):
+
 | 비교 | 함의 |
 |------|------|
 | Petals | 샤딩 금지 → 우리는 스케줄링 분산 |
@@ -464,16 +517,37 @@ liveness(heartbeat)만은 시계열이라 FK로 못 막으며 Core 스캐너 담
 | 클라우드 비전 API | 가격·속도 비경쟁 → 거주지·계약 교체가 가치 |
 | “AI 에이전트 스토어” 마케팅 | 스토어 UI보다 **계약 런타임**이 본제품 |
 
+문헌 역할 (§2.5 · Provenance by Design의 외부 앵커). **구현 명세가 아니다.**
+
+| 문헌 | CapNet에서의 역할 |
+|------|-------------------|
+| Sculley et al., 2015. *Hidden Technical Debt in Machine Learning Systems* | ML 운영 부채·숨은 결합. Capability를 이름만으로 두면 부채가 **플랫폼 구조**가 된다 |
+| Chen, Zaharia, Zou, 2023. *How is ChatGPT’s behavior changing over time?* | 같은 API 이름 아래 **시간 드리프트**. 별칭 ≠ 동일 구현의 실측 사례 |
+| Gao, Liang, Guestrin, 2024. *Model Equality Testing* (ICLR 2025) | 출력 등가성 검정 프레임. 골든셋·편차 임계의 문헌 앵커 (채점 공식의 복제는 아님) |
+| Stanford CRFM, *Foundation Model Transparency Index* (FMTI) | 투명성 공시 기준. 우리는 공시 UI가 아니라 **실행 증적**으로 접근 |
+| NIST, *AI Risk Management Framework* (AI RMF) | 위험 관리·거버넌스 어휘. §15 완료=증서와 정합하는 외부 언어 |
+
+서지 (본문 인용용, 링크는 확인일 2026-08-06):
+
+- Sculley, D. et al. (2015). Hidden Technical Debt in Machine Learning Systems. *NIPS 2015*. https://papers.nips.cc/paper/5656-hidden-technical-debt-in-machine-learning-systems
+- Chen, L., Zaharia, M., & Zou, J. (2023). How is ChatGPT’s behavior changing over time? https://arxiv.org/abs/2307.09009
+- Gao, I., Liang, P., & Guestrin, C. (2024). Model Equality Testing: Which Model Is This API Serving? *ICLR 2025*. https://arxiv.org/abs/2410.20247
+- Stanford CRFM. Foundation Model Transparency Index. https://crfm.stanford.edu/fmti/
+- NIST (2023). Artificial Intelligence Risk Management Framework (AI RMF 1.0). https://www.nist.gov/itl/ai-risk-management-framework
+
 ------------------------------------------------------------------------
 
-# 15. 철학 (v4.0)
+# 15. 철학 (v4.0 · v4.5 추가)
 
 1. 계약이 채점되지 않으면 Capability가 아니다.  
 2. 추상화 증명은 스케줄러 기본 동작과 분리한다 (Proof Track).  
 3. 유휴 공유는 비전이고, **거주지 통제형 플릿**이 제품 입구다.  
 4. 티어로 하드웨어 다양성을 설계에 넣는다.  
 5. 경제는 관측 다음에 온다.  
-6. Kill 기준 없는 MVP는 프로젝트가 아니라 습관이다.
+6. Kill 기준 없는 MVP는 프로젝트가 아니라 습관이다.  
+7. **실행 기록이 없는 계산은 완료된 계산이 아니다.** (Provenance by Design)  
+   - **완료** = 최소 증서: 해당 Task의 `assignment`(종료 상태) + `weights_sha256` + 그 Agent를 할당 가능하게 만든 `gate_run`(게이트 사슬).  
+   - `audit_log`는 관측·텔레메트리다. 파티션 미생성·삽입 실패만으로 Task를 무조건 `FAILED`로 뒤집지 않는다. 최소 증서가 있으면 완료이고, 감사 로그 공백은 관측 공백으로 남긴다.
 
 ------------------------------------------------------------------------
 
@@ -488,8 +562,9 @@ liveness(heartbeat)만은 시계열이라 FK로 못 막으며 Core 스캐너 담
 | **v4.2** | task/capability 스냅샷 원본 FK·가중치 READY 이중 FK |
 | **v4.3** | 호환 행렬 rank FK + CHECK — 정책 독성 INSERT 차단 |
 | **v4.4** | 게이트 사슬(`gate_run_passed`)·`trust_domain_min` 강제 — Phase 1 동결 후보 |
+| **v4.5** | §2.5 IIS · Execution Provenance(개념) · §14 문헌 · §15 완료=최소 증서. **스키마 변경 없음** |
 
-**스키마 동결 제안:** v4.4를 Phase 1 DDL 기준으로 둔다. 이후 변경은 마이그레이션 이슈로만.
+**스키마 동결 제안:** v4.4를 Phase 1 DDL 기준으로 둔다. 이후 변경은 마이그레이션 이슈로만. 문서 v4.5 ≠ 스키마 v4.5.
 
 유실 방지: Windows `C:\Users\wjsto\pjt\ai-agent-store`를 정본으로 두고, 원격 Git에 즉시 push. WSL 사용 시 **ext4 홈**에 두고 `/mnt/c`에만 두지 않는다.
 

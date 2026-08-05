@@ -4,5 +4,6 @@ __pycache__/
 .env
 data/eurosat/
 *.safetensors
+!apps/node/weights/placeholder.safetensors
 docs/_to_delete/
 .pytest_cache/

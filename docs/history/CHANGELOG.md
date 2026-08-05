@@ -1,5 +1,11 @@
 # Changelog
 
+## W1 — 2026-08-06 (plan v4.5 + dummy Node)
+
+- 기획서 **v4.5**: §2.5 Interface–Implementation Separation, Execution Provenance(개념), §14 문헌, §15 완료=최소 증서. 스키마는 v4.4 유지
+- dummy Node: placeholder safetensors 로드 → dummy 추론 → `POST /v1/internal/assignments/{id}/complete`
+- smoke: 새 task claim 후 node `/v1/execute`까지. **EuroSAT scratch 학습 아님**
+
 ## W1 — 2026-08-05
 
 - `compose.yaml`: PostgreSQL 16 + Core(FastAPI)
