@@ -17,11 +17,11 @@
 
 ## 지금 어디인가
 
-**W1 (8/4–8/10) 진행 중.** 기획서 v4.5 + dummy Node E2E 주 묶음.
+**W1 (8/4–8/10) 진행 중.** CRUD + 게이트 사슬 API 이어서 진행.
 
 - 기획서 **문서 v4.5** (스키마는 **v4.4** 유지). §2.5 IIS · Provenance by Design · §14 문헌
 - dummy Node: placeholder safetensors · dummy 라벨 · complete API. **scratch 학습 아님**
-- 로컬: Docker Desktop 있음. **2026-08-06 smoke 통과** (claim → dummy execute → COMPLETED). 시드 해시가 바뀌면 `docker compose down -v` 후 스모크
+- 로컬: Docker Desktop 있음. **2026-08-06 smoke 통과** (CRUD + dummy 게이트 사슬 + claim/execute). 시드 해시가 바뀌면 `docker compose down -v` 후 스모크. **골든셋 채점은 아직 아님**
 
 ## 이번 주 목표
 
@@ -31,12 +31,14 @@
 4. [x] **기획서 v4.5** (문서만)
 5. [x] **dummy Node E2E** — lease → placeholder 로드 → dummy 추론 → 결과 보고 (품질·게이트 실측 아님)
 
+6. [x] **Agent / Node 등록·조회 + bind READY** (M9·M10). Capability POST는 없음(시드 `image.classify@1`만)
+7. [x] **게이트 사슬 API** (M11 배관). `dummy=true` PASSED만. **골든셋 채점·M18 아님**
+
 아직 아닌 것 (과장 금지):
 
-- Core CRUD — Agent / Node 등록 API (조회는 `/v1/capabilities` · task GET 추가됨)
-- 런타임 게이트 API (시드 사슬만)
-- EuroSAT scratch Agent · 실제 분류 품질
+- EuroSAT scratch Agent · 실제 분류 품질 · 골든셋 게이트 추론
 - 컨테이너 Node 3대 제한 · `node_credential`
+- Capability 런타임 등록 API
 
 ## 다음 (W2, 8/11–8/17)
 
