@@ -1,0 +1,299 @@
+openapi: 3.0.3
+info:
+  title: CapNet Core
+  version: 0.2.0
+  description: |
+    Contest MVP Core API 초안 (S4). 실행 중 스키마는 `GET /openapi.json` · Swagger `GET /docs`.
+    claim·gate_run·assignment는 INSERT…SELECT. Node는 큐를 pull하지 않는다.
+servers:
+  - url: http://127.0.0.1:8000
+paths:
+  /health:
+    get:
+      summary: Core·Postgres·시드 Capability 상태
+      responses:
+        "200":
+          description: OK
+  /v1/agents:
+    get:
+      summary: Agent 목록
+      responses:
+        "200":
+          description: items[]
+    post:
+      summary: Agent 등록 (safetensors만, .pt/.pth 거부)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentCreate"
+      responses:
+        "200":
+          description: 생성된 Agent
+        "400":
+          description: 형식·해시 거부
+  /v1/agents/{agent_id}:
+    get:
+      summary: Agent 단건 + capabilities
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+      responses:
+        "200":
+          description: Agent
+        "404":
+          description: 없음
+  /v1/agents/{agent_id}/bindings:
+    post:
+      summary: Node 바인딩 → READY(해시 일치 시)
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BindBody"
+      responses:
+        "200":
+          description: binding + ready
+  /v1/nodes:
+    get:
+      summary: Node 목록
+      responses:
+        "200":
+          description: items[]
+    post:
+      summary: Node 등록 (등급은 Core가 부여, 자기주장 경로 없음)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NodeCreate"
+      responses:
+        "200":
+          description: 생성된 Node
+  /v1/nodes/{node_id}:
+    get:
+      summary: Node 단건
+      parameters:
+        - $ref: "#/components/parameters/NodeId"
+      responses:
+        "200":
+          description: Node
+        "404":
+          description: 없음
+  /v1/tasks:
+    post:
+      summary: Task 생성 (allowlist datasetId만)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskCreate"
+      responses:
+        "200":
+          description: Task
+        "400":
+          description: datasetId 거부
+  /v1/tasks/{task_id}:
+    get:
+      summary: Task·현재 assignment·result_ref
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      responses:
+        "200":
+          description: Task
+        "404":
+          description: 없음
+  /v1/internal/claim:
+    post:
+      summary: Core 전용 claim (FOR UPDATE SKIP LOCKED)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimBody"
+      responses:
+        "200":
+          description: LEASED assignment 또는 빈 큐
+  /v1/internal/assignments/{assignment_id}/complete:
+    post:
+      summary: Node 결과 보고 → SUCCEEDED/COMPLETED
+      parameters:
+        - $ref: "#/components/parameters/AssignmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteBody"
+      responses:
+        "200":
+          description: 완료
+        "409":
+          description: lease·해시 불일치
+  /v1/internal/gate-runs:
+    post:
+      summary: gate_run 시작 (team gate-runner만)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GateStartBody"
+      responses:
+        "200":
+          description: RUNNING
+        "409":
+          description: runner 아님·거부
+  /v1/internal/gate-runs/{gate_run_id}:
+    get:
+      summary: gate_run 조회
+      parameters:
+        - $ref: "#/components/parameters/GateRunId"
+      responses:
+        "200":
+          description: gate_run
+        "404":
+          description: 없음
+  /v1/internal/gate-runs/{gate_run_id}/finish:
+    post:
+      summary: |
+        게이트 종료. dummy=false는 실채점.
+        S3 — golden_set_sha256가 gate_run 스냅샷과 불일치하면 거부.
+        실게이트는 golden_set_sha256 필수.
+      parameters:
+        - $ref: "#/components/parameters/GateRunId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GateFinishBody"
+      responses:
+        "200":
+          description: 종료·사슬 mint 여부
+        "400":
+          description: 지표·sha256 검증 실패
+        "409":
+          description: RUNNING 아님
+  /openapi.yaml:
+    get:
+      summary: 이 YAML 정적 초안
+      responses:
+        "200":
+          description: application/yaml
+components:
+  parameters:
+    AgentId:
+      name: agent_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    NodeId:
+      name: node_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TaskId:
+      name: task_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AssignmentId:
+      name: assignment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    GateRunId:
+      name: gate_run_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    AgentCreate:
+      type: object
+      required: [name, version, manifest_hash, weights_uri, weights_sha256]
+      properties:
+        name: { type: string }
+        version: { type: string }
+        manifest_hash: { type: string }
+        weights_uri: { type: string }
+        weights_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+        weights_format: { type: string, enum: [safetensors], default: safetensors }
+    NodeCreate:
+      type: object
+      required: [name, device_type, trust_domain, compute_tier_max]
+      properties:
+        name: { type: string }
+        device_type: { type: string, enum: [PC_GPU, PHONE, SERVER] }
+        trust_domain: { type: string, enum: [team, public] }
+        compute_tier_max: { type: string, enum: [L, M, S] }
+        is_gate_runner: { type: boolean, default: false }
+        gpu: { type: string, nullable: true }
+        provision_source: { type: string, nullable: true }
+    BindBody:
+      type: object
+      required: [node_id, weights_sha256_seen]
+      properties:
+        node_id: { type: string, format: uuid }
+        weights_sha256_seen: { type: string }
+    TaskCreate:
+      type: object
+      required: [datasetId, caseId]
+      properties:
+        datasetId: { type: string, example: eurosat-rgb }
+        caseId: { type: string }
+        capability_code: { type: string, default: image.classify }
+        capability_version: { type: integer, default: 1 }
+        requestedAgentId: { type: string, format: uuid, nullable: true }
+    ClaimBody:
+      type: object
+      properties:
+        task_id: { type: string, format: uuid, nullable: true }
+        node_id: { type: string, format: uuid, nullable: true }
+    CompleteBody:
+      type: object
+      required: [weights_sha256, label]
+      properties:
+        weights_sha256: { type: string }
+        label: { type: string }
+        confidence: { type: number, nullable: true }
+        dummy: { type: boolean, default: true }
+        duration_ms: { type: integer, nullable: true }
+    GateStartBody:
+      type: object
+      required: [agent_id, capability_id, runner_node_id]
+      properties:
+        agent_id: { type: string, format: uuid }
+        capability_id: { type: string, format: uuid }
+        runner_node_id: { type: string, format: uuid }
+    GateFinishBody:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [PASSED, FAILED, ERROR] }
+        golden_score: { type: number, nullable: true }
+        cases_total: { type: integer, nullable: true }
+        cases_passed: { type: integer, nullable: true }
+        dummy: { type: boolean, default: false }
+        note: { type: string, nullable: true }
+        macro_f1: { type: number, nullable: true }
+        invalid_rate: { type: number, nullable: true }
+        golden_set_sha256:
+          type: string
+          description: 실게이트 필수. gate_run 스냅샷과 불일치 시 거부 (S3).
+          nullable: true

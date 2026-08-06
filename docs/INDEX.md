@@ -52,6 +52,7 @@
 
 ### spec
 - [schema.sql v4.4](./spec/schema.sql)
+- [OpenAPI YAML 초안 (S4)](./spec/openapi.yaml) — 런타임 `GET /openapi.yaml` · `/openapi.json`
 - [골든셋 image.classify@1](./spec/golden/image-classify-v1.md) (v0.4)
 - [데모 manifest N=40](./spec/golden/manifest-image-classify-v1.json)
 - [EuroSAT RGB archive 핀](./spec/golden/eurosat-rgb.json)

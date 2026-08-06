@@ -36,12 +36,14 @@ grId="$(printf '%s' "$gr" | python -c 'import json,sys; print(json.load(sys.stdi
 
 finish="$(printf '%s' "$raw" | python -c 'import json,sys
 s=json.load(sys.stdin)
+gr=json.loads(sys.argv[1])
 print(json.dumps({
   "status": s["status"], "dummy": False,
   "golden_score": s["golden_score"], "cases_total": s["cases_total"],
   "cases_passed": s["cases_passed"], "macro_f1": s["macro_f1"],
   "invalid_rate": s["invalid_rate"], "note": "golden-set-v1 scratch TinyEuroSAT",
-}))')"
+  "golden_set_sha256": gr["golden_set_sha256"],
+}))' "$gr")"
 fin="$(curl -sf -X POST "$core/v1/internal/gate-runs/$grId/finish" -H 'content-type: application/json' -d "$finish")"
 printf '%s' "$fin" | python -c 'import json,sys
 fin=json.load(sys.stdin)

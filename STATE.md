@@ -17,10 +17,10 @@
 
 ## 지금 어디인가
 
-**MVP 핵심 경로 실측 완료 (문의 회신 무관).** 스키마 변경·`node_credential` 없음.
+**MVP 핵심 경로 실측 완료.** S3/S4를 `finn/s3-openapi`에서 진행·검증.
 
-- 1단계 **main** (PR #12)
-- 2–3단계 **main** ([PR #13](https://github.com/gncorpseo-commits/capnet/pull/13) squash): scratch 실게이트 + Task + demo/sanity/README
+- 1–3단계 **main** (PR #12 · #13)
+- S3: 잘못된 `golden_set_sha256` → finish 400. S4: `GET /openapi.yaml` + `docs/spec/openapi.yaml`
 
 실측 (과장 금지):
 
@@ -41,7 +41,8 @@
 6. [x] scratch Agent · 실게이트 · Task 완주
 7. [x] `scripts/demo` · `sanity` · README 5분 안내
 8. [x] phase2(+3) PR squash merge (#13)
-9. [ ] 시연 영상 · 보고서 나머지 절
+9. [x] S3 golden_set_sha256 불일치 거부 + S4 OpenAPI (`finn/s3-openapi`)
+10. [ ] 시연 영상 · 보고서 나머지 절
 
 ## 아직 아닌 것
 

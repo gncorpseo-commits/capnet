@@ -95,6 +95,22 @@ $gr = Invoke-RestMethod -Method Post "$core/v1/internal/gate-runs" -ContentType 
 } | ConvertTo-Json)
 if ($gr.status -ne "RUNNING") { throw "gate start $($gr.status)" }
 
+Write-Host "POST gate finish wrong golden_set_sha256 (expect 400, S3)"
+try {
+    Invoke-RestMethod -Method Post "$core/v1/internal/gate-runs/$($gr.id)/finish" -ContentType "application/json" -Body (@{
+        status = "PASSED"
+        dummy = $true
+        golden_score = 0.8
+        cases_total = 40
+        cases_passed = 32
+        golden_set_sha256 = ("0" * 64)
+        note = "s3 mismatch"
+    } | ConvertTo-Json)
+    throw "sha256 mismatch should reject"
+} catch {
+    if ((Get-StatusCode $_) -ne 400) { throw }
+}
+
 $fin = Invoke-RestMethod -Method Post "$core/v1/internal/gate-runs/$($gr.id)/finish" -ContentType "application/json" -Body (@{
     status = "PASSED"
     dummy = $true
@@ -104,6 +120,12 @@ $fin = Invoke-RestMethod -Method Post "$core/v1/internal/gate-runs/$($gr.id)/fin
     note = "smoke plumbing only"
 } | ConvertTo-Json)
 if (-not $fin.chain_minted) { throw "PASSED chain not minted" }
+
+Write-Host "GET /openapi.yaml"
+$code = curl.exe -s -o "$env:TEMP\capnet-openapi.yaml" -w "%{http_code}" "$core/openapi.yaml"
+if ($code -ne "200") { throw "openapi.yaml HTTP $code" }
+$head = Get-Content "$env:TEMP\capnet-openapi.yaml" -TotalCount 1
+if ($head -notmatch "^openapi:") { throw "openapi.yaml not yaml" }
 
 $gotAgent = Invoke-RestMethod "$core/v1/agents/$agentId"
 $passed = @($gotAgent.capabilities | Where-Object { $_.gate_status -eq "PASSED" })
