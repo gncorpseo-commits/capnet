@@ -1,5 +1,11 @@
 # Changelog
 
+## Contest deliverables draft — 2026-08-06
+
+- `docs/ops/contest-report-draft.md` — §3 아키텍처(게이트 사슬) · §4 DB 제약 · §6 골든 · §7 재현 · §9 라이선스
+- `docs/ops/demo-video-storyboard.md` — 3분 영상 촬영 체크리스트
+- `sbom.json` — CycloneDX 1.5 (THIRD-PARTY-LICENSES와 정합)
+
 ## node_credential 설계 초안 — 2026-08-06
 
 - `docs/design/node-credential-draft.md` — 발급·검증 원칙. **스키마 DDL 없음**

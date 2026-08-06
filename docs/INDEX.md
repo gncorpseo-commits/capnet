@@ -58,7 +58,8 @@
 - [데모 manifest N=40](./spec/golden/manifest-image-classify-v1.json)
 - [골든 산출물 안내 · n=300](./spec/golden/README.md)
 - [EuroSAT RGB archive 핀](./spec/golden/eurosat-rgb.json)
-- [결과보고서 초안](./ops/contest-report-draft.md)
+- [결과보고서 초안](./ops/contest-report-draft.md) — §0–9 초안 완료
+- [시연 영상 스토리보드](./ops/demo-video-storyboard.md)
 
 ### ops
 - [Contest MVP 2026](./ops/Contest_MVP_2026.md)

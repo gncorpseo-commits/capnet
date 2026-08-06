@@ -1,0 +1,33 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:capnet-contest-2026-08-06",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-08-06T12:00:00Z",
+    "component": {
+      "type": "application",
+      "name": "CapNet",
+      "version": "0.1.0-contest",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "purl": "pkg:github/gncorpseo-commits/capnet"
+    },
+    "tools": [{ "name": "manual", "version": "1.0" }]
+  },
+  "components": [
+    { "type": "library", "name": "fastapi", "version": "0.116.1", "purl": "pkg:pypi/fastapi@0.116.1", "licenses": [{ "license": { "id": "MIT" } }] },
+    { "type": "library", "name": "uvicorn", "version": "0.35.0", "purl": "pkg:pypi/uvicorn@0.35.0", "licenses": [{ "license": { "id": "BSD-3-Clause" } }] },
+    { "type": "library", "name": "psycopg", "version": "3.2.9", "purl": "pkg:pypi/psycopg@3.2.9", "licenses": [{ "license": { "id": "LGPL-3.0-only" } }] },
+    { "type": "library", "name": "pydantic-settings", "version": "2.10.1", "purl": "pkg:pypi/pydantic-settings@2.10.1", "licenses": [{ "license": { "id": "MIT" } }] },
+    { "type": "library", "name": "safetensors", "version": "0.8.0", "purl": "pkg:pypi/safetensors@0.8.0", "licenses": [{ "license": { "id": "Apache-2.0" } }] },
+    { "type": "library", "name": "numpy", "version": "2.4.6", "purl": "pkg:pypi/numpy@2.4.6", "licenses": [{ "license": { "id": "BSD-3-Clause" } }] },
+    { "type": "library", "name": "pillow", "version": "12.3.0", "purl": "pkg:pypi/pillow@12.3.0", "licenses": [{ "license": { "name": "MIT-CMU" } }] },
+    { "type": "library", "name": "torch", "version": "2.x", "purl": "pkg:pypi/torch", "licenses": [{ "license": { "id": "BSD-3-Clause" } }], "description": "node-m-team only; CPU wheel" },
+    { "type": "library", "name": "torchvision", "version": "0.x", "purl": "pkg:pypi/torchvision", "licenses": [{ "license": { "id": "BSD-3-Clause" } }] },
+    { "type": "library", "name": "postgresql", "version": "16", "purl": "pkg:docker/postgres@16", "licenses": [{ "license": { "name": "PostgreSQL License" } }] }
+  ],
+  "externalReferences": [
+    { "type": "website", "url": "https://github.com/gncorpseo-commits/capnet" },
+    { "type": "distribution", "url": "https://github.com/gncorpseo-commits/capnet/blob/main/THIRD-PARTY-LICENSES.md" }
+  ]
+}
