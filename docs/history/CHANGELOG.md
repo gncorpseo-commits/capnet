@@ -1,5 +1,9 @@
 # Changelog
 
+## node_credential 설계 초안 — 2026-08-06
+
+- `docs/design/node-credential-draft.md` — 발급·검증 원칙. **스키마 DDL 없음**
+
 ## Capability API + golden n=300 pipeline — 2026-08-06
 
 - `POST /v1/capabilities` 런타임 등록 (UNIQUE·mvp CHECK는 DB). 스키마 DDL 변경 없음
