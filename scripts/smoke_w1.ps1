@@ -26,6 +26,53 @@ $nodes = Invoke-RestMethod "$core/v1/nodes"
 if ($agents.items.Count -lt 1) { throw "seed agent missing" }
 if ($nodes.items.Count -lt 1) { throw "seed node missing" }
 
+Write-Host "POST /v1/capabilities (+ duplicate 409, mvp check 400)"
+$capBody = @{
+    code = "image.classify.smoke"
+    version = 1
+    name = "smoke-cap"
+    description = "runtime register smoke"
+    input_schema = @{ type = "object" }
+    output_schema = @{ type = "object" }
+    output_kind = "closed_set_labels"
+    compute_tier = "M"
+    trust_domain_min = "team"
+    mvp_eligible = $true
+    golden_set_ref = "smoke://manifest"
+    golden_set_sha256 = ("a" * 64)
+    golden_set_size = 10
+    golden_metrics = @{ min_accuracy = 0.5; min_macro_f1 = 0.4; max_invalid_rate = 0.1 }
+} | ConvertTo-Json -Depth 6
+$capNew = Invoke-RestMethod -Method Post "$core/v1/capabilities" -ContentType "application/json" -Body $capBody
+if (-not $capNew.id) { throw "capability create missing id" }
+try {
+    Invoke-RestMethod -Method Post "$core/v1/capabilities" -ContentType "application/json" -Body $capBody
+    throw "duplicate capability should 409"
+} catch {
+    if ((Get-StatusCode $_) -ne 409) { throw }
+}
+try {
+    $badBody = @{
+        code = "image.classify.smoke-bad"
+        version = 1
+        name = "smoke-bad"
+        input_schema = @{ type = "object" }
+        output_schema = @{ type = "object" }
+        output_kind = "freeform"
+        compute_tier = "M"
+        trust_domain_min = "team"
+        mvp_eligible = $true
+        golden_set_ref = "smoke://bad"
+        golden_set_sha256 = ("b" * 64)
+        golden_set_size = 10
+        golden_metrics = @{ min_accuracy = 0.5 }
+    } | ConvertTo-Json -Depth 6
+    Invoke-RestMethod -Method Post "$core/v1/capabilities" -ContentType "application/json" -Body $badBody
+    throw "mvp+freeform should 400"
+} catch {
+    if ((Get-StatusCode $_) -ne 400) { throw }
+}
+
 Write-Host "POST /v1/agents rejects .pth"
 try {
     Invoke-RestMethod -Method Post "$core/v1/agents" -ContentType "application/json" -Body (@{

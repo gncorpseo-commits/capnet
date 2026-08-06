@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .env
 data/eurosat/
+data/golden-n300/
 *.safetensors
 !apps/node/weights/placeholder.safetensors
 !apps/node/weights/eurosat_scratch.safetensors

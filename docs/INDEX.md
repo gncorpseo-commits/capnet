@@ -55,6 +55,7 @@
 - [OpenAPI YAML 초안 (S4)](./spec/openapi.yaml) — 런타임 `GET /openapi.yaml` · `/openapi.json`
 - [골든셋 image.classify@1](./spec/golden/image-classify-v1.md) (v0.4)
 - [데모 manifest N=40](./spec/golden/manifest-image-classify-v1.json)
+- [골든 산출물 안내 · n=300](./spec/golden/README.md)
 - [EuroSAT RGB archive 핀](./spec/golden/eurosat-rgb.json)
 - [결과보고서 초안](./ops/contest-report-draft.md)
 

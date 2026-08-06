@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from app.allowlist import assert_dataset_id
+from app.capability import create_capability, get_capability, list_capabilities
 from app.claim import claim_next
 from app.complete import complete_assignment, lease_detail, try_audit_succeeded
 from app.const import SEED_ADMIN_ID
@@ -88,6 +89,23 @@ class GateFinishBody(BaseModel):
     golden_set_sha256: str | None = None
 
 
+class CapabilityCreate(BaseModel):
+    code: str
+    version: int = 1
+    name: str
+    description: str | None = None
+    input_schema: dict[str, Any]
+    output_schema: dict[str, Any]
+    output_kind: str = "closed_set_labels"
+    compute_tier: str = "M"
+    trust_domain_min: str = "team"
+    mvp_eligible: bool = False
+    golden_set_ref: str
+    golden_set_sha256: str
+    golden_set_size: int
+    golden_metrics: dict[str, Any]
+
+
 class ClaimBody(BaseModel):
     task_id: uuid.UUID | None = None
     node_id: uuid.UUID | None = None
@@ -124,26 +142,46 @@ def openapi_yaml() -> FileResponse:
 
 
 @app.get("/v1/capabilities")
-def list_capabilities() -> dict[str, Any]:
+def capabilities_list() -> dict[str, Any]:
     with get_conn() as conn:
-        rows = conn.execute(
-            "SELECT id, code, version, name, compute_tier, trust_domain_min, mvp_eligible "
-            "FROM capability ORDER BY code, version"
-        ).fetchall()
-    return {"items": [dict(r) for r in rows]}
+        return {"items": list_capabilities(conn)}
+
+
+@app.post("/v1/capabilities")
+def capabilities_create(body: CapabilityCreate) -> dict[str, Any]:
+    """런타임 Capability 등록. UNIQUE(code,version)·CHECK는 DB가 강제한다."""
+    try:
+        with get_conn() as conn:
+            return create_capability(
+                conn,
+                code=body.code,
+                version=body.version,
+                name=body.name,
+                description=body.description,
+                input_schema=body.input_schema,
+                output_schema=body.output_schema,
+                output_kind=body.output_kind,
+                compute_tier=body.compute_tier,
+                trust_domain_min=body.trust_domain_min,
+                mvp_eligible=body.mvp_eligible,
+                golden_set_ref=body.golden_set_ref,
+                golden_set_sha256=body.golden_set_sha256,
+                golden_set_size=body.golden_set_size,
+                golden_metrics=body.golden_metrics,
+            )
+    except ValueError as exc:
+        detail = str(exc)
+        code = 409 if "already exists" in detail else 400
+        raise HTTPException(status_code=code, detail=detail) from exc
 
 
 @app.get("/v1/capabilities/{capability_id}")
-def get_capability(capability_id: uuid.UUID) -> dict[str, Any]:
+def capabilities_get(capability_id: uuid.UUID) -> dict[str, Any]:
     with get_conn() as conn:
-        row = conn.execute(
-            "SELECT id, code, version, name, compute_tier, trust_domain_min, mvp_eligible "
-            "FROM capability WHERE id = %s",
-            (str(capability_id),),
-        ).fetchone()
+        row = get_capability(conn, capability_id)
     if row is None:
         raise HTTPException(status_code=404, detail="capability not found")
-    return dict(row)
+    return row
 
 
 @app.get("/v1/agents")

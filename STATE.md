@@ -17,38 +17,36 @@
 
 ## 지금 어디인가
 
-**MVP 핵심 경로 실측 완료.** S3/S4를 `finn/s3-openapi`에서 진행·검증.
+**MVP + S3/S4 main.** Capability POST + n=300 추출 파이프라인 검증됨 (머지 대기).
 
-- 1–3단계 **main** (PR #12 · #13)
-- S3: 잘못된 `golden_set_sha256` → finish 400. S4: `GET /openapi.yaml` + `docs/spec/openapi.yaml`
+- Capability: `POST /v1/capabilities` (중복 409 · mvp CHECK 400)
+- n=300: `data/golden-n300/` 300 cases 생성 확인 · gitignore · A/B 미결
+
 
 실측 (과장 금지):
 
 | 항목 | 결과 |
 |------|------|
-| scratch N=40 | acc=0.70 · f1≈0.688 · invalid=0 · **PASSED** (`dummy=false`) |
+| scratch N=40 | acc=0.70 · f1≈0.688 · **PASSED** (`dummy=false`) |
 | sanity 3종 | 전부 **FAILED** |
-| smoke_w1 | dummy 배관 OK (실게이트 아님) |
-| 임계 | 가정 0.75/0.72 → 실측 보정 **0.68/0.65** |
+| 임계 | **0.68/0.65** (실측 보정) |
 
 ## 체크리스트
 
-1. [x] compose PG16 + Core + Node 3대 limits
-2. [x] schema + seed + allowlist
-3. [x] claim `INSERT ... SELECT`
-4. [x] dummy E2E · CRUD · dummy 게이트 배관
-5. [x] EuroSAT 핀 · 골든 N=40 · 픽셀 전수 · M25
-6. [x] scratch Agent · 실게이트 · Task 완주
-7. [x] `scripts/demo` · `sanity` · README 5분 안내
-8. [x] phase2(+3) PR squash merge (#13)
-9. [x] S3 golden_set_sha256 불일치 거부 + S4 OpenAPI (`finn/s3-openapi`)
-10. [ ] 시연 영상 · 보고서 나머지 절
+1. [x] compose · claim · dummy E2E · CRUD · 게이트 배관
+2. [x] EuroSAT 핀 · 골든 N=40 · M25 · Node 3대 limits
+3. [x] scratch 실게이트 · Task · demo/sanity/README (#13)
+4. [x] S3 sha256 거부 · S4 OpenAPI (#14)
+5. [x] Capability 런타임 POST + golden n=300 파이프라인 (`finn/cap-api-n300`)
+6. [ ] 시연 영상 · 보고서 나머지 절
+7. [ ] `node_credential` 설계 (DDL 전 문서만)
 
 ## 아직 아닌 것
 
-- A/B Must · `node_credential` · Capability 런타임 등록
-- seed Agent의 시드 `gate_run` PASSED는 **배관**
-- 사전학습 가중치 / `.pt` 경로 없음
+- A/B Must · `node_credential` DDL · WS/만료 스캐너
+- seed `gate_run` PASSED는 **배관**
+- n=300 통계 판정·A/B 확정 (추출·gitignore만; 케이스 미커밋)
+
 
 ## 열려 있는 판단
 
