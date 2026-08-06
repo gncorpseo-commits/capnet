@@ -1,5 +1,7 @@
 # Third-party licenses
 
+사람용 SPDX 표. 기계 가독 SBOM은 루트 [`sbom.json`](sbom.json) (`scripts/generate_sbom.ps1` / `.sh` + cyclonedx-py).
+
 | 패키지 | 라이선스 | 용도 |
 |--------|----------|------|
 | FastAPI | MIT | Core HTTP |

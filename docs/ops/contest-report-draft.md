@@ -237,7 +237,7 @@ Linux/macOS: `.ps1` → 동명 `.sh`. `smoke_w1.ps1` 대신 health + claim 확�
 | 출품명 | **CapNet** (Capability Network) |
 | 프로젝트 라이선스 | [Apache-2.0](../../LICENSE) |
 | 고지 파일 | [NOTICE](../../NOTICE) |
-| SBOM | [sbom.json](../../sbom.json) (CycloneDX 1.5) |
+| SBOM | [sbom.json](../../sbom.json) (CycloneDX · `scripts/generate_sbom.ps1`) |
 | 서드파티 표 | [THIRD-PARTY-LICENSES.md](../../THIRD-PARTY-LICENSES.md) |
 
 ### 9.2 모델 가중치 (2차 검증 대비)

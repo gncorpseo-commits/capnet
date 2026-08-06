@@ -28,6 +28,7 @@
 | **design/** | 시스템 “무엇/왜” | 기획서 |
 | **spec/** | 기계가 읽을 계약 | schema.sql, golden/ |
 | **ops/** | 기동·배포·제출 | Contest MVP, 제출 체크리스트 |
+| **retrospective/** | 과정 결정·빚·범위·적응 | register · lessons |
 | **research/** | MVP 밖 아이디어 | (비어 있어도 OK) |
 
 루트 진입: `README` · `STATE` · `CONTRIBUTING` · `CLAUDE.md` · 이 `INDEX`.
@@ -64,6 +65,11 @@
 ### ops
 - [Contest MVP 2026](./ops/Contest_MVP_2026.md)
 - [출품 체크리스트](./ops/contest-submission-checklist.md)
+
+### retrospective
+- [README · 분류 정의](./retrospective/README.md)
+- [register](./retrospective/register.md) — TD / SD / EA
+- [lessons-learned](./retrospective/lessons-learned.md)
 
 ### research
 - [README](./research/README.md)
