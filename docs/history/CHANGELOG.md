@@ -1,5 +1,11 @@
 # Changelog
 
+## Contest compliance drafts — 2026-08-07
+
+- `docs/ops/regulation-compliance.md` — 운영규정 조항별 준수 근거
+- `docs/ops/contest-report-form-draft.md` — 공식 양식용 5P·붙임1·2 초안 문장
+- 가중치 raw URL HTTP 200 실측 (제9조 유형3 공개)
+
 ## SBOM cyclonedx + retrospective — 2026-08-07
 
 - 호스트 Python 3.12 · `scripts/generate_sbom.ps1` / `.sh` · `enrich_sbom.py` → `sbom.json` (수동본 대체)
