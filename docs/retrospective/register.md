@@ -53,9 +53,23 @@
 - **예정:** 요청 시에만
 - **상태:** closed (결정 확정 · 학습↑는 별도 이슈)
 
+### SD-005 · 출품 패키지(양식·영상·포털) 미완
+- **무엇:** 기술 MVP는 있음 · 공식 보고서 파일·YouTube·포털 zip은 남음
+- **왜:** 공지 39·양식 확정 후 이식 단계
+- **대안:** `contest-report-form-draft.md` 문장 → docx/hwp
+- **예정:** 8/27 18:00 전
+- **상태:** open
+
 ---
 
 ## Environment Adaptation
+
+### EA-003 · 가중치 GitHub raw 공개 (제9조)
+- **무엇:** `eurosat_scratch.safetensors`를 main에 두고 raw URL로 승인 없이 다운로드
+- **왜:** 유형3 가중치 전체 공개 의무
+- **대안:** Hugging Face / Release asset
+- **실측:** 2026-08-07 HTTP 200 · 378784 bytes
+- **상태:** closed
 
 ### EA-001 · Docker pip 인덱스 분리
 - **무엇:** `requirements.txt` 후 torch는 pytorch CPU index로 별도 설치

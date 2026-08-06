@@ -59,12 +59,14 @@
 - [데모 manifest N=40](./spec/golden/manifest-image-classify-v1.json)
 - [골든 산출물 안내 · n=300](./spec/golden/README.md)
 - [EuroSAT RGB archive 핀](./spec/golden/eurosat-rgb.json)
-- [결과보고서 초안](./ops/contest-report-draft.md) — §0–9 초안 완료
-- [시연 영상 스토리보드](./ops/demo-video-storyboard.md)
 
 ### ops
 - [Contest MVP 2026](./ops/Contest_MVP_2026.md)
 - [출품 체크리스트](./ops/contest-submission-checklist.md)
+- [운영규정 준수 근거](./ops/regulation-compliance.md)
+- [결과보고서·붙임 초안 문장](./ops/contest-report-form-draft.md) — 공식 양식 이식용
+- [결과보고서 md 초안](./ops/contest-report-draft.md) — §0–9
+- [시연 영상 스토리보드](./ops/demo-video-storyboard.md)
 
 ### retrospective
 - [README · 분류 정의](./retrospective/README.md)
