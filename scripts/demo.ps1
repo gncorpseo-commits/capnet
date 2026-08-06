@@ -50,6 +50,7 @@ $finishBody = @{
     cases_passed = $score.cases_passed
     macro_f1 = $score.macro_f1
     invalid_rate = $score.invalid_rate
+    golden_set_sha256 = $gr.golden_set_sha256
     note = "golden-set-v1 scratch TinyEuroSAT"
 } | ConvertTo-Json
 try {

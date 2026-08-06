@@ -1,9 +1,11 @@
 import json
 import logging
 import uuid
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from app.allowlist import assert_dataset_id
@@ -24,7 +26,13 @@ from app.registry import (
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="CapNet Core", version="0.1.0-w1")
+app = FastAPI(
+    title="CapNet Core",
+    version="0.2.0",
+    description="Capability 게이트·claim Core. 정적 YAML 초안은 GET /openapi.yaml (S4).",
+)
+
+_OPENAPI_YAML = Path(__file__).resolve().parents[1] / "openapi.yaml"
 
 
 class TaskCreate(BaseModel):
@@ -76,6 +84,8 @@ class GateFinishBody(BaseModel):
     note: str | None = None
     macro_f1: float | None = None
     invalid_rate: float | None = None
+    # S3: 실게이트는 필수. dummy plumbing은 생략 가능(넣으면 스냅샷과 일치해야 함).
+    golden_set_sha256: str | None = None
 
 
 class ClaimBody(BaseModel):
@@ -104,6 +114,13 @@ def health() -> dict[str, Any]:
         "postgres": "up",
         "capability": dict(cap) if cap else None,
     }
+
+
+@app.get("/openapi.yaml", include_in_schema=False)
+def openapi_yaml() -> FileResponse:
+    if not _OPENAPI_YAML.is_file():
+        raise HTTPException(status_code=404, detail="openapi.yaml missing")
+    return FileResponse(_OPENAPI_YAML, media_type="application/yaml", filename="openapi.yaml")
 
 
 @app.get("/v1/capabilities")
@@ -242,6 +259,7 @@ def gate_finish(gate_run_id: uuid.UUID, body: GateFinishBody) -> dict[str, Any]:
                 note=body.note,
                 macro_f1=body.macro_f1,
                 invalid_rate=body.invalid_rate,
+                golden_set_sha256=body.golden_set_sha256,
             )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

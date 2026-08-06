@@ -1,5 +1,10 @@
 # Changelog
 
+## S3 + OpenAPI — 2026-08-06
+
+- S3: `gate finish`에서 `golden_set_sha256`가 `gate_run` 스냅샷과 불일치하면 거부. 실게이트(`dummy=false`)는 필드 필수
+- S4: `docs/spec/openapi.yaml` 초안 + Core `GET /openapi.yaml`. 스키마 DDL 변경 없음
+
 ## MVP phase2 — 2026-08-06
 
 - EuroSAT RGB **scratch** TinyEuroSAT → `eurosat_scratch.safetensors` (safetensors만, 사전학습 없음)

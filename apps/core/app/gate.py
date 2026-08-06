@@ -113,7 +113,8 @@ def start_gate_run(
 def _load_cap_metrics(conn: psycopg.Connection, gate_run_id: uuid.UUID) -> dict[str, Any]:
     row = conn.execute(
         """
-        SELECT c.golden_metrics, c.golden_set_size, c.golden_set_sha256
+        SELECT c.golden_metrics, c.golden_set_size, c.golden_set_sha256 AS capability_sha256,
+               gr.golden_set_sha256 AS gate_run_sha256
           FROM gate_run gr
           JOIN capability c ON c.id = gr.capability_id
          WHERE gr.id = %s
@@ -123,6 +124,25 @@ def _load_cap_metrics(conn: psycopg.Connection, gate_run_id: uuid.UUID) -> dict[
     if row is None:
         raise ValueError("gate-run not found")
     return dict(row)
+
+
+def assert_golden_set_sha256(
+    *,
+    dummy: bool,
+    provided: str | None,
+    expected: str,
+) -> None:
+    """S3: 채점에 쓴 골든셋 해시가 gate_run 스냅샷과 다르면 거부."""
+    if provided is None:
+        if not dummy:
+            raise ValueError(
+                "real gate requires golden_set_sha256 matching the gate_run snapshot"
+            )
+        return
+    if provided != expected:
+        raise ValueError(
+            f"golden_set_sha256 mismatch: provided={provided} expected={expected}"
+        )
 
 
 def assert_real_finish(
@@ -178,11 +198,14 @@ def finish_gate_run(
     note: str | None,
     macro_f1: float | None = None,
     invalid_rate: float | None = None,
+    golden_set_sha256: str | None = None,
 ) -> dict[str, Any] | None:
     if status not in ("PASSED", "FAILED", "ERROR"):
         raise ValueError("status must be PASSED, FAILED, or ERROR")
 
     cap = _load_cap_metrics(conn, gate_run_id)
+    expected_sha = str(cap["gate_run_sha256"])
+    assert_golden_set_sha256(dummy=dummy, provided=golden_set_sha256, expected=expected_sha)
     assert_real_finish(
         status=status,
         dummy=dummy,
@@ -197,7 +220,10 @@ def finish_gate_run(
     summary: dict[str, Any] = {
         "dummy": dummy,
         "scored_by": "plumbing-only" if dummy else "golden-set-v1",
+        "golden_set_sha256": expected_sha,
     }
+    if golden_set_sha256 is not None:
+        summary["golden_set_sha256_provided"] = golden_set_sha256
     if macro_f1 is not None:
         summary["macro_f1"] = macro_f1
     if invalid_rate is not None:
