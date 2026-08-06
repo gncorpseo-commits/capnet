@@ -1,5 +1,11 @@
 # Changelog
 
+## Capability API + golden n=300 pipeline — 2026-08-06
+
+- `POST /v1/capabilities` 런타임 등록 (UNIQUE·mvp CHECK는 DB). 스키마 DDL 변경 없음
+- `scripts/extract_golden.py --n 300` + `extract_golden_n300` → `data/golden-n300/` (gitignore)
+- 데모 N=40과 본편 N=300 분리. A/B Must 미결·미구현
+
 ## S3 + OpenAPI — 2026-08-06
 
 - S3: `gate finish`에서 `golden_set_sha256`가 `gate_run` 스냅샷과 불일치하면 거부. 실게이트(`dummy=false`)는 필드 필수

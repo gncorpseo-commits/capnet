@@ -1,10 +1,11 @@
 openapi: 3.0.3
 info:
   title: CapNet Core
-  version: 0.2.0
+  version: 0.3.0
   description: |
-    Contest MVP Core API 초안 (S4). 실행 중 스키마는 `GET /openapi.json` · Swagger `GET /docs`.
+    CapNet Core API 초안. 실행 중 스키마는 `GET /openapi.json` · Swagger `GET /docs`.
     claim·gate_run·assignment는 INSERT…SELECT. Node는 큐를 pull하지 않는다.
+    Capability 런타임 등록: POST /v1/capabilities.
 servers:
   - url: http://127.0.0.1:8000
 paths:
@@ -14,6 +15,42 @@ paths:
       responses:
         "200":
           description: OK
+  /v1/capabilities:
+    get:
+      summary: Capability 목록
+      responses:
+        "200":
+          description: items[]
+    post:
+      summary: Capability 런타임 등록 (UNIQUE code+version, mvp CHECK)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CapabilityCreate"
+      responses:
+        "200":
+          description: 생성된 Capability
+        "400":
+          description: 검증·CHECK 거부
+        "409":
+          description: (code, version) 중복
+  /v1/capabilities/{capability_id}:
+    get:
+      summary: Capability 단건
+      parameters:
+        - name: capability_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Capability
+        "404":
+          description: 없음
   /v1/agents:
     get:
       summary: Agent 목록
@@ -297,3 +334,32 @@ components:
           type: string
           description: 실게이트 필수. gate_run 스냅샷과 불일치 시 거부 (S3).
           nullable: true
+    CapabilityCreate:
+      type: object
+      required:
+        - code
+        - name
+        - input_schema
+        - output_schema
+        - golden_set_ref
+        - golden_set_sha256
+        - golden_set_size
+        - golden_metrics
+      properties:
+        code: { type: string }
+        version: { type: integer, minimum: 1, default: 1 }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        input_schema: { type: object }
+        output_schema: { type: object }
+        output_kind:
+          type: string
+          enum: [closed_set_labels, structured, freeform]
+          default: closed_set_labels
+        compute_tier: { type: string, enum: [L, M, S], default: M }
+        trust_domain_min: { type: string, enum: [team, tenant, public], default: team }
+        mvp_eligible: { type: boolean, default: false }
+        golden_set_ref: { type: string }
+        golden_set_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+        golden_set_size: { type: integer, minimum: 1 }
+        golden_metrics: { type: object }
