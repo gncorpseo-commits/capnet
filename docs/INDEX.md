@@ -49,6 +49,7 @@
 
 ### design
 - [기획서 v4.5](./design/capnet-plan.md) (스키마는 v4.4)
+- [node_credential 설계 초안](./design/node-credential-draft.md) (**DDL 미적용**)
 
 ### spec
 - [schema.sql v4.4](./spec/schema.sql)
