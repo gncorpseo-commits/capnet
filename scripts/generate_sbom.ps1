@@ -1,0 +1,41 @@
+# CapNet CycloneDX SBOM 생성기
+# 호스트 Python 3.12+ 필요 (WindowsApps Store stub 금지)
+
+$ErrorActionPreference = "Stop"
+$root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$out = Join-Path $root "sbom.json"
+
+$candidates = @(
+    "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
+    "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
+    "$env:LOCALAPPDATA\Programs\Python\Python311\python.exe"
+)
+$py = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $py) {
+    $cmd = Get-Command python -ErrorAction SilentlyContinue
+    if ($cmd -and $cmd.Source -notmatch "WindowsApps") { $py = $cmd.Source }
+}
+if (-not $py) {
+    throw "Python 3.11+ not found. Install: winget install Python.Python.3.12"
+}
+
+Write-Host "python=$py"
+& $py --version
+& $py -m pip install -q cyclonedx-bom
+
+$req = Join-Path $env:TEMP "capnet-sbom-reqs.txt"
+$core = Get-Content (Join-Path $root "apps\core\requirements.txt")
+$node = Get-Content (Join-Path $root "apps\node\requirements.txt")
+@($core + $node + @("torch", "torchvision")) |
+    Where-Object { $_ -and $_ -notmatch "^\s*#" } |
+    Select-Object -Unique |
+    Set-Content -Path $req -Encoding utf8
+
+$raw = Join-Path $env:TEMP "capnet-sbom-raw.json"
+$env:PYTHONIOENCODING = "utf-8"
+& $py -m cyclonedx_py requirements $req -o $raw --of JSON
+if ($LASTEXITCODE -ne 0) { throw "cyclonedx_py failed" }
+
+& $py (Join-Path $PSScriptRoot "enrich_sbom.py") $raw $out
+if ($LASTEXITCODE -ne 0) { throw "enrich_sbom.py failed" }
+Write-Host "OK $out"

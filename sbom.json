@@ -1,33 +1,335 @@
 {
-  "bomFormat": "CycloneDX",
-  "specVersion": "1.5",
-  "serialNumber": "urn:uuid:capnet-contest-2026-08-06",
-  "version": 1,
+  "components": [
+    {
+      "bom-ref": "requirements-L1",
+      "description": "requirements line 1: fastapi==0.116.1",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/fastapi/"
+        }
+      ],
+      "name": "fastapi",
+      "purl": "pkg:pypi/fastapi@0.116.1",
+      "type": "library",
+      "version": "0.116.1"
+    },
+    {
+      "bom-ref": "requirements-L6",
+      "description": "requirements line 6: numpy==2.4.6",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/numpy/"
+        }
+      ],
+      "name": "numpy",
+      "purl": "pkg:pypi/numpy@2.4.6",
+      "type": "library",
+      "version": "2.4.6"
+    },
+    {
+      "bom-ref": "requirements-L7",
+      "description": "requirements line 7: pillow==12.3.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/pillow/"
+        }
+      ],
+      "name": "pillow",
+      "purl": "pkg:pypi/pillow@12.3.0",
+      "type": "library",
+      "version": "12.3.0"
+    },
+    {
+      "bom-ref": "requirements-L3",
+      "description": "requirements line 3: psycopg[binary]==3.2.9",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/psycopg/"
+        }
+      ],
+      "name": "psycopg",
+      "properties": [
+        {
+          "name": "cdx:python:package:required-extra",
+          "value": "binary"
+        }
+      ],
+      "purl": "pkg:pypi/psycopg@3.2.9",
+      "type": "library",
+      "version": "3.2.9"
+    },
+    {
+      "bom-ref": "requirements-L4",
+      "description": "requirements line 4: pydantic-settings==2.10.1",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/pydantic-settings/"
+        }
+      ],
+      "name": "pydantic-settings",
+      "purl": "pkg:pypi/pydantic-settings@2.10.1",
+      "type": "library",
+      "version": "2.10.1"
+    },
+    {
+      "bom-ref": "requirements-L5",
+      "description": "requirements line 5: safetensors==0.8.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/safetensors/"
+        }
+      ],
+      "name": "safetensors",
+      "purl": "pkg:pypi/safetensors@0.8.0",
+      "type": "library",
+      "version": "0.8.0"
+    },
+    {
+      "bom-ref": "requirements-L8",
+      "description": "requirements line 8: torch",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/torch/"
+        }
+      ],
+      "name": "torch",
+      "purl": "pkg:pypi/torch",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L9",
+      "description": "requirements line 9: torchvision",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/torchvision/"
+        }
+      ],
+      "name": "torchvision",
+      "purl": "pkg:pypi/torchvision",
+      "type": "library"
+    },
+    {
+      "bom-ref": "requirements-L2",
+      "description": "requirements line 2: uvicorn[standard]==0.35.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/uvicorn/"
+        }
+      ],
+      "name": "uvicorn",
+      "properties": [
+        {
+          "name": "cdx:python:package:required-extra",
+          "value": "standard"
+        }
+      ],
+      "purl": "pkg:pypi/uvicorn@0.35.0",
+      "type": "library",
+      "version": "0.35.0"
+    },
+    {
+      "type": "container",
+      "name": "postgresql",
+      "version": "16",
+      "purl": "pkg:docker/library/postgres@16",
+      "licenses": [
+        {
+          "license": {
+            "name": "PostgreSQL License"
+          }
+        }
+      ],
+      "description": "compose service postgres:16"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "requirements-L1"
+    },
+    {
+      "ref": "requirements-L2"
+    },
+    {
+      "ref": "requirements-L3"
+    },
+    {
+      "ref": "requirements-L4"
+    },
+    {
+      "ref": "requirements-L5"
+    },
+    {
+      "ref": "requirements-L6"
+    },
+    {
+      "ref": "requirements-L7"
+    },
+    {
+      "ref": "requirements-L8"
+    },
+    {
+      "ref": "requirements-L9"
+    }
+  ],
   "metadata": {
-    "timestamp": "2026-08-06T12:00:00Z",
+    "timestamp": "2026-08-06T23:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "description": "CycloneDX Software Bill of Materials (SBOM) generator for Python projects and environments",
+          "externalReferences": [
+            {
+              "type": "build-system",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/actions"
+            },
+            {
+              "type": "distribution",
+              "url": "https://pypi.org/project/cyclonedx-bom/"
+            },
+            {
+              "type": "documentation",
+              "url": "https://cyclonedx-bom-tool.readthedocs.io/"
+            },
+            {
+              "type": "issue-tracker",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/issues"
+            },
+            {
+              "type": "license",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/blob/main/LICENSE"
+            },
+            {
+              "type": "release-notes",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/blob/main/CHANGELOG.md"
+            },
+            {
+              "type": "vcs",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/"
+            },
+            {
+              "type": "website",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/#readme"
+            }
+          ],
+          "group": "CycloneDX",
+          "licenses": [
+            {
+              "license": {
+                "acknowledgement": "declared",
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "name": "cyclonedx-py",
+          "type": "application",
+          "version": "7.3.1"
+        },
+        {
+          "description": "Python library for CycloneDX",
+          "externalReferences": [
+            {
+              "type": "build-system",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/actions"
+            },
+            {
+              "type": "distribution",
+              "url": "https://pypi.org/project/cyclonedx-python-lib/"
+            },
+            {
+              "type": "documentation",
+              "url": "https://cyclonedx-python-library.readthedocs.io/"
+            },
+            {
+              "type": "issue-tracker",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/issues"
+            },
+            {
+              "type": "license",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/blob/main/LICENSE"
+            },
+            {
+              "type": "release-notes",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/blob/main/CHANGELOG.md"
+            },
+            {
+              "type": "vcs",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib"
+            },
+            {
+              "type": "website",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/#readme"
+            }
+          ],
+          "group": "CycloneDX",
+          "licenses": [
+            {
+              "license": {
+                "acknowledgement": "declared",
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "name": "cyclonedx-python-lib",
+          "type": "library",
+          "version": "11.11.0"
+        }
+      ]
+    },
     "component": {
       "type": "application",
       "name": "CapNet",
       "version": "0.1.0-contest",
-      "licenses": [{ "license": { "id": "Apache-2.0" } }],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
       "purl": "pkg:github/gncorpseo-commits/capnet"
     },
-    "tools": [{ "name": "manual", "version": "1.0" }]
+    "properties": [
+      {
+        "name": "capnet:sbom:source",
+        "value": "scripts/generate_sbom + cyclonedx-py"
+      },
+      {
+        "name": "capnet:sbom:note",
+        "value": "torch/torchvision unpinned: node-m-team Dockerfile pytorch CPU index"
+      }
+    ]
   },
-  "components": [
-    { "type": "library", "name": "fastapi", "version": "0.116.1", "purl": "pkg:pypi/fastapi@0.116.1", "licenses": [{ "license": { "id": "MIT" } }] },
-    { "type": "library", "name": "uvicorn", "version": "0.35.0", "purl": "pkg:pypi/uvicorn@0.35.0", "licenses": [{ "license": { "id": "BSD-3-Clause" } }] },
-    { "type": "library", "name": "psycopg", "version": "3.2.9", "purl": "pkg:pypi/psycopg@3.2.9", "licenses": [{ "license": { "id": "LGPL-3.0-only" } }] },
-    { "type": "library", "name": "pydantic-settings", "version": "2.10.1", "purl": "pkg:pypi/pydantic-settings@2.10.1", "licenses": [{ "license": { "id": "MIT" } }] },
-    { "type": "library", "name": "safetensors", "version": "0.8.0", "purl": "pkg:pypi/safetensors@0.8.0", "licenses": [{ "license": { "id": "Apache-2.0" } }] },
-    { "type": "library", "name": "numpy", "version": "2.4.6", "purl": "pkg:pypi/numpy@2.4.6", "licenses": [{ "license": { "id": "BSD-3-Clause" } }] },
-    { "type": "library", "name": "pillow", "version": "12.3.0", "purl": "pkg:pypi/pillow@12.3.0", "licenses": [{ "license": { "name": "MIT-CMU" } }] },
-    { "type": "library", "name": "torch", "version": "2.x", "purl": "pkg:pypi/torch", "licenses": [{ "license": { "id": "BSD-3-Clause" } }], "description": "node-m-team only; CPU wheel" },
-    { "type": "library", "name": "torchvision", "version": "0.x", "purl": "pkg:pypi/torchvision", "licenses": [{ "license": { "id": "BSD-3-Clause" } }] },
-    { "type": "library", "name": "postgresql", "version": "16", "purl": "pkg:docker/postgres@16", "licenses": [{ "license": { "name": "PostgreSQL License" } }] }
-  ],
+  "serialNumber": "urn:uuid:3a3143d2-7f59-4100-9350-516052c7b6b1",
+  "version": 1,
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
   "externalReferences": [
-    { "type": "website", "url": "https://github.com/gncorpseo-commits/capnet" },
-    { "type": "distribution", "url": "https://github.com/gncorpseo-commits/capnet/blob/main/THIRD-PARTY-LICENSES.md" }
+    {
+      "type": "website",
+      "url": "https://github.com/gncorpseo-commits/capnet"
+    },
+    {
+      "type": "distribution",
+      "url": "https://github.com/gncorpseo-commits/capnet/blob/main/THIRD-PARTY-LICENSES.md"
+    }
   ]
 }

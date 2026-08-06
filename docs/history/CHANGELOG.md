@@ -1,5 +1,11 @@
 # Changelog
 
+## SBOM cyclonedx + retrospective — 2026-08-07
+
+- 호스트 Python 3.12 · `scripts/generate_sbom.ps1` / `.sh` · `enrich_sbom.py` → `sbom.json` (수동본 대체)
+- `docs/retrospective/` — TD / Scope Decision / Environment Adaptation 레지스터
+- TD-001(수동 SBOM) closed
+
 ## Contest deliverables draft — 2026-08-06
 
 - `docs/ops/contest-report-draft.md` — §3 아키텍처(게이트 사슬) · §4 DB 제약 · §6 골든 · §7 재현 · §9 라이선스
