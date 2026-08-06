@@ -17,11 +17,11 @@
 
 ## 지금 어디인가
 
-**MVP + S3/S4 + Capability/n300 main (#15).** `node_credential` 설계 초안만 추가 (DDL 없음).
+**MVP + S3/S4 + Capability/n300 + credential 설계 (#16).** 보고서 §3–9·SBOM·영상 스토리보드 추가.
 
 - Capability: `POST /v1/capabilities`
 - n=300: `data/golden-n300/` gitignore 추출 파이프라인
-- 다음 출품: 시연 영상 · 보고서 / 다음 본편: credential DDL은 **승인 후**
+- 다음 출품: **시연 영상 촬영** · pdf/docx 변환 · Release 태그
 
 
 실측 (과장 금지):
@@ -39,8 +39,9 @@
 3. [x] scratch 실게이트 · Task · demo/sanity/README (#13)
 4. [x] S3 sha256 거부 · S4 OpenAPI (#14)
 5. [x] Capability 런타임 POST + golden n=300 파이프라인 (#15)
-6. [ ] 시연 영상 · 보고서 나머지 절
+6. [ ] 시연 영상 촬영 · pdf/docx · Release 태그
 7. [x] `node_credential` 설계 초안 (DDL 없음 · `docs/design/node-credential-draft.md`)
+8. [x] 보고서 §3–9 · `sbom.json` · 영상 스토리보드
 
 ## 아직 아닌 것
 
@@ -55,7 +56,7 @@
 |---|------|------|
 | 1 | **A/B(S2) Must 여부 — 미결, 구현 안 함** | 8/11 |
 | 2 | 베이스라인 백본 2종 (A/B를 Must로 올릴 때만) | — |
-| 3 | `NOTICE` 저작권자 표기 | 언제든 |
+| 3 | `NOTICE` 저작권자 표기 | ✅ NOTICE·sbom.json |
 
 ## 함정
 
