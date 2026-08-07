@@ -1,5 +1,9 @@
 # Changelog
 
+## Team role pl (peer of finn/toma) — 2026-08-08
+
+- `docs/guide/github-team-guide.md` v1.3 · `CONTRIBUTING.md` — 작업 역할 **pl** (`pl/<topic>`, `LGTM (pl)`, finn/toma와 동급). master는 merge 전용
+
 ## README stable-only + schedule canon — 2026-08-08
 
 - README: 심사 빠른 시작 상단 · 상태/결정/일정 본문 제거 → STATE·handoff·checklist 링크만

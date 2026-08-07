@@ -21,6 +21,7 @@
 | **Must** | n300 \|diff\|≈0.0467 ≤ 0.05 · **WITHIN** · epoch A80 / B40 명시 필수 |
 | **출품** | 양식 이식 · 영상에 UC-7 가능 · YouTube · 포털 |
 | **문서 위생** | README stable-only · 일정 정본 = checklist |
+| **역할** | finn · toma · **pl**(동급) · master(merge) — [`github-team-guide`](docs/guide/github-team-guide.md) v1.3 |
 
 실측:
 
