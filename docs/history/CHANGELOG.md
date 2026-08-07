@@ -1,5 +1,11 @@
 # Changelog
 
+## A/B Must Within (n=300) — 2026-08-08
+
+- Agent A 80ep · B 40ep · n300 abs_diff≈0.0467 → **WITHIN_THRESHOLD** (SD-001 closed)
+- 공개 가중치: `eurosat_scratch.safetensors` 갱신 · `eurosat_scratch_b.safetensors` 추가 (gitignore 예외)
+- 한계: epoch A≠B · SE≈임계 — 보고서/영상에 명시. 출품 양식·UC-7 반영 가능
+
 ## Agent B n300 + A/B measure — 2026-08-08
 
 - `TinyEuroSATB` 20ep → `eurosat_scratch_b.safetensors` (local · gitignore)

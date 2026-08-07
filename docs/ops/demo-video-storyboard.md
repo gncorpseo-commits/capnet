@@ -35,9 +35,11 @@
 - [ ] `demo_violations.ps1` → 6종 REJECTED
 - [ ] 터미널 배경 어두운 테마 · 스크롤 속도 느리게
 
-## A/B 미구현 시
+## A/B Must (실측 Within)
 
-150–170초는 UC-7 A/B 대신 **게이트 사슬 다이어그램**을 쓴다 (Contest v0.3 §7 확정).  
-E1(`compare_ab` 골격)이 있어도 **시연 영상·양식 Must에는 넣지 않는다** (SD-001).
+150–170초: **UC-7** — Agent A→B 교체 후에도 같은 Capability로 Task 가능 (또는 n300 `|diff|≤0.05` 한 줄).  
+자막에 **한계** 병기: “n=300 · |Δacc|≈0.047 · train epoch A80/B40 · SE 주의”.
 
-촬영 명령 순서: [`shoot-day-runbook.md`](./shoot-day-runbook.md).
+명령·사슬: [`shoot-day-runbook.md`](./shoot-day-runbook.md) · [`gate-chain-slide.md`](./gate-chain-slide.md).
+
+A/B를 넣지 않을 때만 게이트 사슬만 사용.

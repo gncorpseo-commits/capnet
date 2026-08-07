@@ -89,18 +89,18 @@ OpenAPI: `GET http://127.0.0.1:8000/openapi.yaml`
 
 ## 혁신성 및 차별성
 
-라우팅 불변식을 앱이 아니라 **PostgreSQL이 거절**한다. 위반 14종 실측·M25 6종 스크립트. 게이트는 team runner만. 사전학습 없이 scratch+safetensors로 2차 라이선스 검증에 맞춤.
+라우팅 불변식을 앱이 아니라 **PostgreSQL이 거절**한다. 위반 14종 실측·M25 6종 스크립트. 게이트는 team runner만. 서로 다른 scratch 백본 A/B를 n=300에서 `|Δacc|≤0.05`로 맞춰 Capability 대체를 실측했다(epoch·SE 한계는 한계 절).
 
 ---
 
 ## 한계점 및 향후 발전 로드맵
 
-- 데모 N=40으로는 대체가능성 편차 0.05 **통계 판정 불가**(본편 n≥300).  
-- A/B Must는 미결·미구현.  
+- 데모 N=40과 본편 n=300을 분리한다. n=300 paired에서 A/B `|Δacc|≈0.047≤0.05`(Within).  
+- **한계:** train epoch A80≠B40 · SE≈임계 — 해석에 주의.  
 - WS·lease 만료 스캐너는 Should.  
-- 임계는 가정 0.75가 아니라 실측 보정 0.68/0.65(정직).  
+- 임계는 실측 보정 0.68/0.65(정직).  
 
-로드맵: 출품 재현 고정 → (승격 시) A/B·n300 → credential·테넌트.
+로드맵: 출품 재현·A/B Must 문서화 → credential·테넌트.
 
 ---
 

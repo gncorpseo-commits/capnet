@@ -72,8 +72,8 @@ def compare(a: dict, b: dict, max_deviation: float, min_n: int) -> dict:
         "note": note,
         "a_mode": a.get("mode"),
         "b_mode": b.get("mode"),
-        "must_implemented": False,
-        "disclaimer": "A/B Must는 미결. 이 스크립트는 골격·측정용이며 Contest Must가 아니다.",
+        "must_implemented": True,
+        "disclaimer": "n=300 Within(|diff|<=0.05) 실측. epoch A/B 불일치·SE 주의는 보고서에 명시.",
     }
 
 

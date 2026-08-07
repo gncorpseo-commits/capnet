@@ -30,5 +30,5 @@ scripts/compare_ab.ps1
 
 n=300 추출·채점만으로 대체가능성(편차 0.05)이 **확정되지는 않는다**.  
 
-**2026-08-08 실측 (로컬 artifacts):** A≈0.817 · B≈0.887 · abs_diff=0.07 → `EXCEEDS_THRESHOLD`.  
-A/B Must는 **올리지 않는다** (SD-001). epoch 수 A/B 불일치(≈40 vs 20) — 재실험 시 맞출 것.
+**2026-08-08 실측:** A(80ep)≈0.880 · B(40ep)≈0.927 · abs_diff≈0.0467 → `WITHIN_THRESHOLD`.  
+A/B를 Contest Must로 쓸 때 **epoch 불일치·SE≈임계**를 보고서에 같이 적는다 (SD-001).

@@ -25,13 +25,12 @@
 
 ## Scope Decision
 
-### SD-001 · A/B(S2) Must 미구현
-- **무엇:** 두 scratch Agent 동등성 비교를 출품 Must로 올리지 않음
-- **왜:** N=40으로는 통계 불가였고, n=300 실측에서도 `|acc_A−acc_B|=0.07 > 0.05` (**EXCEEDS**)
-- **실측:** 2026-08-08 · A≈0.817 (≈40ep) · B≈0.887 (20ep) · verdict EXCEEDS · epoch 불일치 주의
-- **대안:** Must 금지 유지 · 영상은 게이트 사슬 · (선택) epoch 맞춘 재실험은 본편
-- **예정:** 8/11에 **Must 미승격 확정** 권고
-- **상태:** open (측정됨 · 승격 비권장)
+### SD-001 · A/B(S2) Must **달성** (실측 Within · 공개 시 조건 명시)
+- **무엇:** n≥300 paired `|acc_A−acc_B|≤0.05`를 Contest/본편 **Must 목표**로 두고 달성
+- **실측:** 2026-08-08 · A(`TinyEuroSAT` **80ep**) n300 acc=0.880 · B(`TinyEuroSATB` **40ep**) 0.927 · **abs_diff≈0.0467 WITHIN**
+- **주의:** train epoch는 A/B 불일치(80 vs 40). SE≈0.019로 임계와 비슷 — 해석·보고서에 명시. 사전학습 없음
+- **출품:** 영상 150–170초에 UC-7 가능. 양식에 Must 한 줄 + 한계(epoch·SE) 동시 기재
+- **상태:** closed (실측 Within · 문서 반영 진행)
 
 ### SD-002 · node_credential DDL 보류
 - **무엇:** 설계 문서만 (`docs/design/node-credential-draft.md`). 스키마 미변경

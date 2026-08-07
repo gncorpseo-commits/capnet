@@ -8,5 +8,6 @@ artifacts/
 *.safetensors
 !apps/node/weights/placeholder.safetensors
 !apps/node/weights/eurosat_scratch.safetensors
+!apps/node/weights/eurosat_scratch_b.safetensors
 docs/_to_delete/
 .pytest_cache/

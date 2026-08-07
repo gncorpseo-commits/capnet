@@ -73,7 +73,7 @@
 | 1 | `contest@oss.kr` 문의 (배점·소스 제출 형식) | 회신 무관 진행 |
 | 2 | EuroSAT 핀 + N=40 + scratch 실게이트 실측(acc≈0.70). 임계 0.68/0.65 보정 | 실측 완료 |
 | 3 | `min_accuracy` — **0.68** (가정 0.75는 실측 위였음) | 보정됨 |
-| 4 | A/B n300 실측 EXCEEDS(0.07) · **Must 미승격 권고** (SD-001) | 8/11 |
+| 4 | A/B Must **실측 Within**(diff≈0.047) · 문서·영상에 epoch/SE 한계 명시 (SD-001 closed) | 반영 중 |
 | 5 | 전역 `~/.claude/CLAUDE.md`의 GitHub 계정 정정 | 급하지 않음 |
 
 ---
