@@ -1,5 +1,11 @@
 # Changelog
 
+## Agent B n300 + A/B measure — 2026-08-08
+
+- `TinyEuroSATB` 20ep → `eurosat_scratch_b.safetensors` (local · gitignore)
+- n300: A≈0.817 · B≈0.887 · `|diff|=0.07` → **EXCEEDS_THRESHOLD** · Contest Must 아님 (SD-001)
+- 출품 우선: 양식·영상·포털. A/B Must 승격 비권장
+
 ## Dual-track contest runbook + Agent B train — 2026-08-07
 
 - `docs/ops/shoot-day-runbook.md` · `gate-chain-slide.md` · 출품 체크리스트 갭/이중 트랙 갱신

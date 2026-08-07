@@ -27,10 +27,11 @@
 
 ### SD-001 · A/B(S2) Must 미구현
 - **무엇:** 두 scratch Agent 동등성 비교를 출품 Must로 올리지 않음
-- **왜:** N=40으로는 편차 0.05 통계 판정 불가 · Contest “밀리면 버림” 1순위
-- **대안:** Must 승격 시 백본 2종 + n≥300 실측 · 골격은 E1 (`compare_ab` · `TinyEuroSATB`)
-- **예정:** 미결 기한 8/11 · **Must 주장·보고서 Must 표기 금지** (측정 스크립트는 허용)
-- **상태:** open (골격만)
+- **왜:** N=40으로는 통계 불가였고, n=300 실측에서도 `|acc_A−acc_B|=0.07 > 0.05` (**EXCEEDS**)
+- **실측:** 2026-08-08 · A≈0.817 (≈40ep) · B≈0.887 (20ep) · verdict EXCEEDS · epoch 불일치 주의
+- **대안:** Must 금지 유지 · 영상은 게이트 사슬 · (선택) epoch 맞춘 재실험은 본편
+- **예정:** 8/11에 **Must 미승격 확정** 권고
+- **상태:** open (측정됨 · 승격 비권장)
 
 ### SD-002 · node_credential DDL 보류
 - **무엇:** 설계 문서만 (`docs/design/node-credential-draft.md`). 스키마 미변경
