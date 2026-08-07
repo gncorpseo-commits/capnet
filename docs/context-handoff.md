@@ -4,7 +4,7 @@
 > 자동 로드되지 않는다. 필요할 때 `@docs/context-handoff.md`로 부른다.
 >
 > 문서 지도: [`INDEX.md`](./INDEX.md) · 주간 상태: [`../STATE.md`](../STATE.md)  
-> 최종 갱신: 2026-08-06
+> 최종 갱신: 2026-08-08 · 일정 정본은 checklist (이 파일에 날짜 표 두지 않음)
 
 ---
 
@@ -56,13 +56,9 @@
 
 ## 4. 대회 범위 (Contest v0.3)
 
-전문: [`ops/Contest_MVP_2026.md`](./ops/Contest_MVP_2026.md) · 체크리스트: [`ops/contest-submission-checklist.md`](./ops/contest-submission-checklist.md)
-
-- 출품 ~**8/27**. 2차에 **라이선스 검증**
-- Must: M1–M13, M15–M21, **M25**
-- Non-goal: UI · tenant/public · 자동 재할당 · **사전학습 가중치**
-- 밀리면 버려도 됨: A/B → WS→폴링 → heartbeat → sanity 축소
-- **절대 안 버림: M25 · M4(단일 demo) · M11(게이트 사슬)**
+- **일정·제출 정본:** [`ops/contest-submission-checklist.md`](./ops/contest-submission-checklist.md) (공지 39 인용 포함)
+- **시나리오·UC 정본:** [`ops/Contest_MVP_2026.md`](./ops/Contest_MVP_2026.md)
+- Must / Non-goal / 버릴 순서: Contest_MVP §4 · §3.2 (날짜는 checklist만)
 
 ---
 

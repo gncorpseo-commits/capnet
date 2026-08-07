@@ -1,5 +1,10 @@
 # Changelog
 
+## README stable-only + schedule canon — 2026-08-08
+
+- README: 심사 빠른 시작 상단 · 상태/결정/일정 본문 제거 → STATE·handoff·checklist 링크만
+- `contest-submission-checklist.md` = 일정·제출 정본 (notice/39 인용). Contest_MVP §1·handoff §4는 링크
+
 ## A/B Must Within (n=300) — 2026-08-08
 
 - Agent A 80ep · B 40ep · n300 abs_diff≈0.0467 → **WITHIN_THRESHOLD** (SD-001 closed)

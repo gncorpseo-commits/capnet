@@ -8,9 +8,13 @@
 
 ## AI / 신규 — 이 순서만
 
-1. [`../README.md`](../README.md) — 제품 한 줄·심사용
+**심사·재현:** [`../README.md`](../README.md) 상단 → 결과보고서 초안 → (선택) 위반 데모. 상태는 README에 없고 [`../STATE.md`](../STATE.md).
+
+**개발·에이전트:**
+
+1. [`../CLAUDE.md`](../CLAUDE.md) — 절대 규칙
 2. [`../STATE.md`](../STATE.md) — 지금 어디인지
-3. [`context-handoff.md`](./context-handoff.md) — 확정 결정·미결 (상세 error는 링크로)
+3. [`context-handoff.md`](./context-handoff.md) — 확정 결정·미결
 4. [`spec/schema.sql`](./spec/schema.sql) — DDL 정본
 5. 필요할 때만 [`design/capnet-plan.md`](./design/capnet-plan.md)
 
@@ -61,8 +65,8 @@
 - [EuroSAT RGB archive 핀](./spec/golden/eurosat-rgb.json)
 
 ### ops
-- [Contest MVP 2026](./ops/Contest_MVP_2026.md)
-- [출품 체크리스트](./ops/contest-submission-checklist.md)
+- [Contest MVP 2026](./ops/Contest_MVP_2026.md) — 시나리오·UC (**일정은 checklist**)
+- [출품 체크리스트](./ops/contest-submission-checklist.md) — **일정·제출 정본**
 - [운영규정 준수 근거](./ops/regulation-compliance.md)
 - [결과보고서·붙임 초안 문장](./ops/contest-report-form-draft.md) — 공식 양식 이식용
 - [결과보고서 md 초안](./ops/contest-report-draft.md) — §0–9

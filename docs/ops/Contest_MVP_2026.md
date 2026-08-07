@@ -1,19 +1,21 @@
 # CapNet — 2026 오픈소스 개발자대회 Contest MVP 계획·시나리오
 
+> **시나리오·UC 정본.** 대회 **일정·제출 마감은** [`contest-submission-checklist.md`](./contest-submission-checklist.md) **만** 본다.  
+> 갱신: 시나리오가 바뀔 때만 · 2026-08-08 (일정 절 → 링크로 축소)
+
 **출품명:** CapNet (Capability Network)  
 **상위 레포/공간:** ai-agent-store  
 **근거:** [capnet-plan.md](../design/capnet-plan.md) v4.4 · [docs/spec/schema.sql](../spec/schema.sql) v4.4  
 **쉬운 안내:** [docs/guide/user-guide-ko.md](../guide/user-guide-ko.md)  
 **골든셋 정본:** [docs/spec/golden/image-classify-v1.md](../spec/golden/image-classify-v1.md) v0.2  
-**대회:** [2026 오픈소스 개발자대회](https://www.oss.kr/pages/2) (접수 완료)  
-**문서 버전:** v0.3 · 2026-08-01  
-**리뷰 반영:** Contest_MVP_2026_리뷰 + Contest_v0.2_문서세트_리뷰  
+**대회:** [2026 오픈소스 개발자대회](https://www.oss.kr/pages/2) (접수 완료) · 제출 안내 [notice/39](https://osscontest.kr/notice/39)  
+**문서 버전:** v0.3 · 시나리오 본문 2026-08-01  
 
 ---
 
 ## 0. 한 줄 목표
 
-> **8.27 출품일까지**, 심사관이 clone → 기동 → 데모 한 번에  
+> **출품일까지**, 심사관이 clone → 기동 → 데모 한 번에  
 > 「Capability 계약 → 게이트 합격 → Task 완주 → **규칙 위반 거절**」을  
 > **오픈소스로 재현**할 수 있게 한다.
 
@@ -22,7 +24,7 @@ Contest MVP는 Phase 1의 **시연 가능한 최소 슬라이스**이다.
 
 ```text
 본편:     Phase 1 (10주) → Phase 2–3 테넌트 → … → 공공 유휴
-대회:     Contest MVP (∼8.27) ⊂ Phase 1 슬라이스
+대회:     Contest MVP ⊂ Phase 1 슬라이스
           정식 Kill 판정(기획서 §7.2)·테넌트는 출품 이후
 ```
 
@@ -30,20 +32,10 @@ Contest MVP는 Phase 1의 **시연 가능한 최소 슬라이스**이다.
 
 ---
 
-## 1. 대회 일정과 CapNet 대응
+## 1. 대회 일정
 
-| 대회 구간 | 날짜(2026) | CapNet 산출 |
-|-----------|------------|-------------|
-| 접수 | 6.15–7.17 | ✅ 완료 |
-| OT·교육 | 7.23– | 평가 기준 숙지 · 주최 문의(배점·제출 형식) |
-| **출품 제출** | **∼8.27** | 보고서 + 3분 영상 + 소스 |
-| 1차 서면 | 9.3 | 문서·영상·README 품질 |
-| 멘토링 | 9.18–10.9 | 기능·라이선스 보완 |
-| 기능·라이선스 검증 | 10.12–10.28 | compose 재현·SPDX·**가중치 출처** |
-| 발표 | 11.4 | 스토리 + 라이브/영상 |
-| 시상 | 12.4 | — |
-
-일정은 주최 측 공지에 따라 변동될 수 있다.
+**정본:** [`contest-submission-checklist.md`](./contest-submission-checklist.md) §1 (F1–F5) · §6 일정 표.  
+날짜·마감·제출물 종류를 이 파일에 다시 쓰지 않는다.
 
 ---
 

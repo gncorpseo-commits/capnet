@@ -1,23 +1,26 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-08-08** · A/B Must 실측 Within
+> **갱신: 2026-08-08** · A/B Must Within · README는 상태 비보유(링크만)
 
 ---
 
 ## 대회 정보
 
-팀명 **지엔** · 접수번호 **915** · 출품 **8/27 18:00**
+팀명 **지엔** · 접수번호 **915**  
+일정·제출 정본: [`docs/ops/contest-submission-checklist.md`](docs/ops/contest-submission-checklist.md)
 
 ---
 
 ## 지금 어디인가
 
-**A/B Must 실측 달성** (SD-001 closed). 출품 패키지(양식·영상·포털)가 다음 병목.
+**A/B Must 실측 달성** (SD-001 closed). 출품 패키지(양식·영상·포털)가 다음 병목.  
+문서: README에서 상태/일정 본문 제거 → STATE · checklist · handoff로만 갱신.
 
 | 트랙 | 상태 |
 |------|------|
 | **Must** | n300 \|diff\|≈0.0467 ≤ 0.05 · **WITHIN** · epoch A80 / B40 명시 필수 |
 | **출품** | 양식 이식 · 영상에 UC-7 가능 · YouTube · 포털 |
+| **문서 위생** | README stable-only · 일정 정본 = checklist |
 
 실측:
 
