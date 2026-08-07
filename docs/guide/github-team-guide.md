@@ -1,9 +1,9 @@
 # CapNet 팀 GitHub 사용 표준 가이드
 
 **문서 ID:** GN_20260803_github_guide  
-**버전:** 1.2 · 2026-08-05  
+**버전:** 1.3 · 2026-08-08  
 **저장소:** https://github.com/gncorpseo-commits/capnet  
-**대상:** 팀 지엔 (`finn` / `toma` / `master`)  
+**대상:** 팀 지엔 (`finn` / `toma` / `pl` / `master`)  
 **관련:** [Contest MVP](https://github.com/gncorpseo-commits/capnet/blob/main/docs/ops/Contest_MVP_2026.md) · [STATE.md](https://github.com/gncorpseo-commits/capnet/blob/main/STATE.md) · [context-handoff](https://github.com/gncorpseo-commits/capnet/blob/main/docs/context-handoff.md) · [INDEX](https://github.com/gncorpseo-commits/capnet/blob/main/docs/INDEX.md)  
 **저장소 사본:** 동일 내용 → 레포 `docs/guide/github-team-guide.md` · `CONTRIBUTING.md`
 
@@ -11,7 +11,7 @@
 
 ## 0. 한 줄 규칙
 
-> **이슈 없이 코딩하지 않는다 → `finn/*` 또는 `toma/*` 브랜치에서 작업 → PR → 명목상 상호 승인 → `master`가 `main` 머지 최종 책임.**
+> **이슈 없이 코딩하지 않는다 → `finn/*` · `toma/*` · `pl/*` 브랜치에서 작업 → PR → 명목상 상호 승인 → `master`가 `main` 머지 최종 책임.**
 
 ---
 
@@ -20,16 +20,18 @@
 | 역할 | GitHub / git | 책임 |
 |------|--------------|------|
 | **master** | 사람 역할 (브랜치 이름 아님) | 우선순위, PR 최종 머지, 출품 판단, 규칙 예외 승인 |
-| **finn** | 커밋 `user.name=finn` | 맡은 이슈·PR, toma PR 명목 리뷰 |
-| **toma** | 커밋 `user.name=toma` | 맡은 이슈·PR, finn PR 명목 리뷰 |
+| **finn** | 커밋 `user.name=finn` | 맡은 이슈·PR, 다른 작업자 PR 명목 리뷰 |
+| **toma** | 커밋 `user.name=toma` | 맡은 이슈·PR, 다른 작업자 PR 명목 리뷰 |
+| **pl** | 커밋 `user.name=pl` | 맡은 이슈·PR, 다른 작업자 PR 명목 리뷰 (**finn/toma와 동급**) |
 
+- 작업 author 풀: **finn · toma · pl** (셋 동급). **master**는 merge·최종 판단만.
 - 기본 브랜치 이름은 **`main`** (`master` 역할과 혼동 금지).
 - GitHub **로그인 계정이 하나**여도 된다. Approve는 계정 단위이므로 **명목 승인(코멘트)** 으로 상호 리뷰를 기록한다.
 - 계정이 둘이 되면 그때부터 실제 Approve + branch protection을 켠다.
 
 ---
 
-## 2. 커밋 서명 (finn / toma 스위칭)
+## 2. 커밋 서명 (finn / toma / pl 스위칭)
 
 전역 `git config --global` 은 **바꾸지 않는다** (서로 덮어씀).
 
@@ -38,6 +40,7 @@
 ```bash
 git -c user.name=finn -c user.email=finn@users.noreply.github.com commit -m "메시지"
 git -c user.name=toma -c user.email=toma@users.noreply.github.com commit -m "메시지"
+git -c user.name=pl -c user.email=pl@users.noreply.github.com commit -m "메시지"
 ```
 
 ### 방법 B — 이 저장소에만 local config
@@ -50,6 +53,10 @@ git config user.email finn@users.noreply.github.com
 # toma 세션
 git config user.name toma
 git config user.email toma@users.noreply.github.com
+
+# pl 세션
+git config user.name pl
+git config user.email pl@users.noreply.github.com
 ```
 
 email은 GitHub가 인식하는 주소(또는 `...@users.noreply.github.com`)를 쓴다.
@@ -59,12 +66,13 @@ email은 GitHub가 인식하는 주소(또는 `...@users.noreply.github.com`)를
 ```text
 Co-authored-by: toma <toma@users.noreply.github.com>
 Co-authored-by: finn <finn@users.noreply.github.com>
+Co-authored-by: pl <pl@users.noreply.github.com>
 ```
 
 ### 승인(Approve)은 name으로 안 바뀜
 
 - `user.name=toma` ≠ GitHub 리뷰어 전환.
-- 동일 계정이면 PR에 `LGTM (toma)` / `LGTM (finn)` 코멘트로 **명목 승인**.
+- 동일 계정이면 PR에 `LGTM (toma)` / `LGTM (finn)` / `LGTM (pl)` 코멘트로 **명목 승인**.
 - 계정 2개일 때만 `gh auth switch` 후 실제 Approve.
 
 ---
@@ -75,7 +83,8 @@ Co-authored-by: finn <finn@users.noreply.github.com>
 main                 # 출품·데모 정본. 직접 push 금지(긴급은 master만)
 finn/<topic>         # 예: finn/w1-compose-schema
 toma/<topic>         # 예: toma/w1-node-runtime
-docs/<topic>         # 문서만
+pl/<topic>           # 예: pl/docs-readme-hygiene
+docs/<topic>         # 문서만 (또는 pl/docs-… 권장)
 hotfix/<topic>       # D-day 긴급 (사후 Issue 필수)
 ```
 
@@ -95,7 +104,7 @@ git checkout -b finn/w1-compose-schema
 1. 작업 전에 Issue 생성.
 2. 제목 접두: `W1:` / `W2:` / `W3:` / `docs:` / `chore:`.
 3. 본문에 목표·완료 정의·관련 문서 링크.
-4. 담당: 본문에 `Assignee 명목: finn|toma`.
+4. 담당: 본문에 `Assignee 명목: finn|toma|pl`.
 5. PR에 `Closes #N` 또는 `Refs #N`.
 
 ### 웹에서 만들기
@@ -182,6 +191,10 @@ LGTM (toma) — 체크리스트 확인함. master 머지 요청.
 LGTM (finn) — claim SQL 패턴 OK.
 ```
 
+```text
+LGTM (pl) — 문서·일정 체크 OK.
+```
+
 자기 PR을 자기 이름으로 승인하는 코멘트는 무효. **상대 역할 이름**으로 쓴다.
 
 ### 6.3 머지
@@ -231,7 +244,7 @@ gh pr merge <번호> --squash --delete-branch
 ### 7.3 Pull requests (일상)
 
 - 코드 유입의 **유일한** 정상 경로 (`main` 직접 push 금지).
-- Files changed에서 리뷰 → Conversation에 `LGTM (finn|toma)`.
+- Files changed에서 리뷰 → Conversation에 `LGTM (finn|toma|pl)`.
 - master가 Squash merge.
 
 ### 7.4 Actions (나중 · W3/Phase B)
@@ -283,7 +296,7 @@ gh pr merge <번호> --squash --delete-branch
 
 ### 7.8 Insights (참고)
 
-- 커밋·PR 통계. 동일 계정이면 finn/toma 기여가 한 계정으로 묶일 수 있음.
+- 커밋·PR 통계. 동일 계정이면 finn/toma/pl 기여가 한 계정으로 묶일 수 있음.
 - author name으로 로컬 로그 구분: `git log --format='%an %s'`
 
 ### 7.9 Settings (master 위주)
@@ -312,6 +325,7 @@ gh pr merge <번호> --squash --delete-branch
 | 요청 모듈 | 능력 요청·결과 조회 | `toma/w3-request-cli` |
 | 코어 모듈 | 중계·제어·보안·게이트·claim | `finn/w1-core` |
 | 노드 에이전트 | lease → 추론 → 결과 | `toma/w2-node` |
+| 문서·출품 패키징 | README·checklist·양식 | `pl/docs-…` (동급 작업) |
 
 통신은 API. 데모 기간 Node→Core **폴링 허용**, WebSocket은 이후.
 
@@ -342,7 +356,7 @@ gh pr merge <번호> --squash --delete-branch
 
 1. `main` pull.
 2. Issue에서 오늘 할 `#` 선택 (W1–W3.5는 주 묶음 브랜치에 이어서 커밋해도 됨).
-3. `finn/…` 또는 `toma/…` 브랜치에서 작업.
+3. `finn/…` · `toma/…` · `pl/…` 브랜치에서 작업.
 4. PR. `docs:`/`chore:`는 LGTM 생략(§6.4). Must는 주 1회 PR.
 5. `gh pr merge --squash --delete-branch` (또는 웹 Squash and merge). STATE는 같은 PR에 넣는다.
 
@@ -367,8 +381,8 @@ gh pr merge <번호> --squash --delete-branch
 - [ ] `gh auth status` (CLI 쓸 경우)
 - [ ] Wiki Home 링크 → 이 가이드 열리는지
 - [ ] Issues에서 내 W1 이슈 확인
-- [ ] 첫 브랜치 `finn/…` 또는 `toma/…` 생성
-- [ ] 커밋 시 author가 finn/toma인지 `git log -1` 확인
+- [ ] 첫 브랜치 `finn/…` · `toma/…` · `pl/…` 생성
+- [ ] 커밋 시 author가 finn/toma/pl인지 `git log -1` 확인
 
 ---
 
@@ -392,3 +406,4 @@ gh pr merge <번호> --squash --delete-branch
 | 1.0 | 2026-08-03 | 초안 (Wiki 복붙, §2에서  Truncated) |
 | 1.1 | 2026-08-03 | 전문 복구 · GitHub 기능 사용법 · Wiki 함정 · MSA/환경 · 체크리스트 |
 | 1.2 | 2026-08-05 | §6.4 W1–W3.5 fast-track (docs/chore LGTM 생략 · 주 단위 PR · `gh pr merge --squash`) |
+| 1.3 | 2026-08-08 | 작업 역할 **pl** 추가 (finn/toma와 동급 · `pl/<topic>` · `LGTM (pl)`) |

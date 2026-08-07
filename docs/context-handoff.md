@@ -4,7 +4,7 @@
 > 자동 로드되지 않는다. 필요할 때 `@docs/context-handoff.md`로 부른다.
 >
 > 문서 지도: [`INDEX.md`](./INDEX.md) · 주간 상태: [`../STATE.md`](../STATE.md)  
-> 최종 갱신: 2026-08-06
+> 최종 갱신: 2026-08-08 · 일정 정본은 checklist (이 파일에 날짜 표 두지 않음)
 
 ---
 
@@ -56,13 +56,9 @@
 
 ## 4. 대회 범위 (Contest v0.3)
 
-전문: [`ops/Contest_MVP_2026.md`](./ops/Contest_MVP_2026.md) · 체크리스트: [`ops/contest-submission-checklist.md`](./ops/contest-submission-checklist.md)
-
-- 출품 ~**8/27**. 2차에 **라이선스 검증**
-- Must: M1–M13, M15–M21, **M25**
-- Non-goal: UI · tenant/public · 자동 재할당 · **사전학습 가중치**
-- 밀리면 버려도 됨: A/B → WS→폴링 → heartbeat → sanity 축소
-- **절대 안 버림: M25 · M4(단일 demo) · M11(게이트 사슬)**
+- **일정·제출 정본:** [`ops/contest-submission-checklist.md`](./ops/contest-submission-checklist.md) (공지 39 인용 포함)
+- **시나리오·UC 정본:** [`ops/Contest_MVP_2026.md`](./ops/Contest_MVP_2026.md)
+- Must / Non-goal / 버릴 순서: Contest_MVP §4 · §3.2 (날짜는 checklist만)
 
 ---
 
@@ -73,7 +69,7 @@
 | 1 | `contest@oss.kr` 문의 (배점·소스 제출 형식) | 회신 무관 진행 |
 | 2 | EuroSAT 핀 + N=40 + scratch 실게이트 실측(acc≈0.70). 임계 0.68/0.65 보정 | 실측 완료 |
 | 3 | `min_accuracy` — **0.68** (가정 0.75는 실측 위였음) | 보정됨 |
-| 4 | 베이스라인 백본 2종 · **A/B Must 여부는 미결(구현 안 함)** | 8/11 |
+| 4 | A/B Must **실측 Within**(diff≈0.047) · 문서·영상에 epoch/SE 한계 명시 (SD-001 closed) | 반영 중 |
 | 5 | 전역 `~/.claude/CLAUDE.md`의 GitHub 계정 정정 | 급하지 않음 |
 
 ---

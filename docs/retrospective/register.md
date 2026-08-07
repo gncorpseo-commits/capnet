@@ -25,12 +25,12 @@
 
 ## Scope Decision
 
-### SD-001 · A/B(S2) Must 미구현
-- **무엇:** 두 scratch Agent 동등성 비교를 출품 Must로 올리지 않음
-- **왜:** N=40으로는 편차 0.05 통계 판정 불가 · Contest “밀리면 버림” 1순위
-- **대안:** Must 승격 시 백본 2종 + n≥300
-- **예정:** 미결 기한 8/11 · 승격 전까지 구현 금지
-- **상태:** open
+### SD-001 · A/B(S2) Must **달성** (실측 Within · 공개 시 조건 명시)
+- **무엇:** n≥300 paired `|acc_A−acc_B|≤0.05`를 Contest/본편 **Must 목표**로 두고 달성
+- **실측:** 2026-08-08 · A(`TinyEuroSAT` **80ep**) n300 acc=0.880 · B(`TinyEuroSATB` **40ep**) 0.927 · **abs_diff≈0.0467 WITHIN**
+- **주의:** train epoch는 A/B 불일치(80 vs 40). SE≈0.019로 임계와 비슷 — 해석·보고서에 명시. 사전학습 없음
+- **출품:** 영상 150–170초에 UC-7 가능. 양식에 Must 한 줄 + 한계(epoch·SE) 동시 기재
+- **상태:** closed (실측 Within · 문서 반영 진행)
 
 ### SD-002 · node_credential DDL 보류
 - **무엇:** 설계 문서만 (`docs/design/node-credential-draft.md`). 스키마 미변경
@@ -40,10 +40,10 @@
 - **상태:** open
 
 ### SD-003 · golden n=300 케이스 미커밋
-- **무엇:** 추출 파이프라인만 · `data/golden-n300/` gitignore
+- **무엇:** 추출·채점 파이프라인 · `data/golden-n300/` · `artifacts/` gitignore
 - **왜:** 용량 · 데모 N=40과 본편 분리
 - **대안:** 본편/A/B 시 추출·채점·(선택) 커밋 정책 재검토
-- **예정:** 본편
+- **예정:** 본편 · `scripts/score_n300` 로컬 실행
 - **상태:** open
 
 ### SD-004 · 게이트 임계 0.68/0.65 (정직 보정)

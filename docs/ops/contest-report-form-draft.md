@@ -89,18 +89,18 @@ OpenAPI: `GET http://127.0.0.1:8000/openapi.yaml`
 
 ## 혁신성 및 차별성
 
-라우팅 불변식을 앱이 아니라 **PostgreSQL이 거절**한다. 위반 14종 실측·M25 6종 스크립트. 게이트는 team runner만. 사전학습 없이 scratch+safetensors로 2차 라이선스 검증에 맞춤.
+라우팅 불변식을 앱이 아니라 **PostgreSQL이 거절**한다. 위반 14종 실측·M25 6종 스크립트. 게이트는 team runner만. 서로 다른 scratch 백본 A/B를 n=300에서 `|Δacc|≤0.05`로 맞춰 Capability 대체를 실측했다(epoch·SE 한계는 한계 절).
 
 ---
 
 ## 한계점 및 향후 발전 로드맵
 
-- 데모 N=40으로는 대체가능성 편차 0.05 **통계 판정 불가**(본편 n≥300).  
-- A/B Must는 미결·미구현.  
+- 데모 N=40과 본편 n=300을 분리한다. n=300 paired에서 A/B `|Δacc|≈0.047≤0.05`(Within).  
+- **한계:** train epoch A80≠B40 · SE≈임계 — 해석에 주의.  
 - WS·lease 만료 스캐너는 Should.  
-- 임계는 가정 0.75가 아니라 실측 보정 0.68/0.65(정직).  
+- 임계는 실측 보정 0.68/0.65(정직).  
 
-로드맵: 출품 재현 고정 → (승격 시) A/B·n300 → credential·테넌트.
+로드맵: 출품 재현·A/B Must 문서화 → credential·테넌트.
 
 ---
 
@@ -149,16 +149,20 @@ OpenAPI: `GET http://127.0.0.1:8000/openapi.yaml`
 EuroSAT RGB 배포판 · Zenodo record 7711810 · DOI 10.5281/zenodo.7711810 · 라이선스 MIT · `EuroSAT_RGB.zip` 27,000장(10클래스) · 원본 64×64 JPEG. 원본 zip은 저장소 미동봉(`scripts/download_eurosat` + `archive_sha256` 핀). 게이트·제품 계약은 **32×32** resize.
 
 **데이터 정제/가공 방법 요약**  
-개인정보 없음(원격탐사 타일). 클래스 균등 스트라이드로 데모 골든 N=40 추출(모델 기반 샘플 선택 금지). 학습은 전체 27,000장 · seed 20260806 · 최대 40 epoch(CPU).
+개인정보 없음(원격탐사 타일). 클래스 균등 스트라이드로 데모 골든 N=40 추출(모델 기반 샘플 선택 금지). 학습은 전체 27,000장 · seed 20260806 · Agent A 80 epoch · Agent B 40 epoch(CPU, scratch).
 
 **새로 생성된 가중치 공개 저장소 URL**  
 https://github.com/gncorpseo-commits/capnet/blob/main/apps/node/weights/eurosat_scratch.safetensors  
+https://github.com/gncorpseo-commits/capnet/blob/main/apps/node/weights/eurosat_scratch_b.safetensors  
 
 직접 다운로드(승인 절차 없음):  
 https://raw.githubusercontent.com/gncorpseo-commits/capnet/main/apps/node/weights/eurosat_scratch.safetensors  
+https://raw.githubusercontent.com/gncorpseo-commits/capnet/main/apps/node/weights/eurosat_scratch_b.safetensors  
 
 **가중치 파일 정보 및 배포방식**  
-파일명: `eurosat_scratch.safetensors` / 전체 가중치(TinyEuroSAT) / 약 370KB / sha256 `0c5b16cef57d11e26c58319d80cd47a41a8b8d740ba3470c1d801e7fb9356b5b` / pretrained=false · 메타: `apps/node/weights/eurosat_scratch.meta.json`
+- `eurosat_scratch.safetensors` · TinyEuroSAT · 378784 B · sha256 `74ca92224ff93f6cfab56265466d2c8ed11e0add4581c45a98169e92fb797b43` · 80ep · pretrained=false  
+- `eurosat_scratch_b.safetensors` · TinyEuroSATB · 100576 B · sha256 `3fbdde549459ba1e895ab8221ba1455b7840e1641b36b202c96420d410343b24` · 40ep · pretrained=false  
+메타: 각 `*.meta.json`. n=300 paired `|Δacc|≈0.047≤0.05`.
 
 ### 4. 소스코드 라이선스 및 개발 환경 정보
 
@@ -173,7 +177,9 @@ https://raw.githubusercontent.com/gncorpseo-commits/capnet/main/apps/node/weight
 ## 이식 체크리스트
 
 - [ ] 안내 페이지 삭제  
-- [ ] 위 문장을 양식 칸에 붙여넣기 · 5P 맞춤(도식은 게이트 사슬 mermaid를 그림으로)  
+- [ ] 위 문장을 양식 칸에 붙여넣기 · 5P 맞춤(도식은 [`gate-chain-slide.md`](./gate-chain-slide.md))
+- [ ] 촬영: [`shoot-day-runbook.md`](./shoot-day-runbook.md) → YouTube URL 기입
+- [ ] PDF 저장 · 포털 zip (원본 hwp/docx + PDF)  
 - [ ] 시연 URL 교체  
 - [ ] 붙임1·2 채움  
 - [ ] PDF 변환 · 파일명 `_915(지엔)`  

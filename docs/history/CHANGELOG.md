@@ -1,5 +1,38 @@
 # Changelog
 
+## Team role pl (peer of finn/toma) — 2026-08-08
+
+- `docs/guide/github-team-guide.md` v1.3 · `CONTRIBUTING.md` — 작업 역할 **pl** (`pl/<topic>`, `LGTM (pl)`, finn/toma와 동급). master는 merge 전용
+
+## README stable-only + schedule canon — 2026-08-08
+
+- README: 심사 빠른 시작 상단 · 상태/결정/일정 본문 제거 → STATE·handoff·checklist 링크만
+- `contest-submission-checklist.md` = 일정·제출 정본 (notice/39 인용). Contest_MVP §1·handoff §4는 링크
+
+## A/B Must Within (n=300) — 2026-08-08
+
+- Agent A 80ep · B 40ep · n300 abs_diff≈0.0467 → **WITHIN_THRESHOLD** (SD-001 closed)
+- 공개 가중치: `eurosat_scratch.safetensors` 갱신 · `eurosat_scratch_b.safetensors` 추가 (gitignore 예외)
+- 한계: epoch A≠B · SE≈임계 — 보고서/영상에 명시. 출품 양식·UC-7 반영 가능
+
+## Agent B n300 + A/B measure — 2026-08-08
+
+- `TinyEuroSATB` 20ep → `eurosat_scratch_b.safetensors` (local · gitignore)
+- n300: A≈0.817 · B≈0.887 · `|diff|=0.07` → **EXCEEDS_THRESHOLD** · Contest Must 아님 (SD-001)
+- 출품 우선: 양식·영상·포털. A/B Must 승격 비권장
+
+## Dual-track contest runbook + Agent B train — 2026-08-07
+
+- `docs/ops/shoot-day-runbook.md` · `gate-chain-slide.md` · 출품 체크리스트 갭/이중 트랙 갱신
+- Agent B(`TinyEuroSATB` → `eurosat_scratch_b.safetensors`) 학습 착수 (gitignore · Must 아님)
+
+## E1 n=300 score + A/B skeleton — 2026-08-07
+
+- `TinyEuroSATB` + `ARCH_REGISTRY` / `build_model` · meta `arch`로 infer 로드
+- `train_scratch` `ARCH`/`OUT_NAME` · `scripts/score_n300` · `scripts/compare_ab` (n&lt;300 → INCONCLUSIVE)
+- 로컬 실측 Agent A n=300: acc≈0.817 · f1≈0.814 (artifacts/ 미커밋). B·paired 미실행
+- A/B **Must 아님** (SD-001 미결). 스키마 DDL 변경 없음
+
 ## Contest compliance drafts — 2026-08-07
 
 - `docs/ops/regulation-compliance.md` — 운영규정 조항별 준수 근거

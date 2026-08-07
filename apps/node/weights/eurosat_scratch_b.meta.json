@@ -1,0 +1,15 @@
+{
+  "weights": "eurosat_scratch_b.safetensors",
+  "weights_sha256": "3fbdde549459ba1e895ab8221ba1455b7840e1641b36b202c96420d410343b24",
+  "arch": "TinyEuroSATB",
+  "pretrained": false,
+  "dataset": "eurosat-rgb",
+  "input_hw": [
+    32,
+    32
+  ],
+  "train_images": 27000,
+  "epochs": 40,
+  "seed": 20260806,
+  "final_train_loss": 0.1959998625251982
+}
