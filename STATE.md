@@ -17,11 +17,10 @@
 
 ## 지금 어디인가
 
-**운영규정 준수 근거 + 양식 이식 초안.** 가중치 raw URL HTTP 200 확인(제9조③).
+**E1: n=300 채점 + A/B 골격** (Must 승격 아님 · SD-001 미결). 출품 패키지(양식·영상·포털)가 여전히 최우선.
 
-- [`docs/ops/regulation-compliance.md`](docs/ops/regulation-compliance.md)
-- [`docs/ops/contest-report-form-draft.md`](docs/ops/contest-report-form-draft.md) — 5P·붙임1·2 문장
-- 다음: 공식 docx/hwp 이식 · 영상 YouTube · PDF·포털 제출
+- `TinyEuroSATB` · `score_n300` · `compare_ab` (n&lt;300 → INCONCLUSIVE)
+- 출품: [`docs/ops/contest-report-form-draft.md`](docs/ops/contest-report-form-draft.md) → 공식 docx/hwp · YouTube · PDF
 
 실측 (과장 금지):
 
@@ -31,6 +30,7 @@
 | sanity 3종 | 전부 **FAILED** |
 | 임계 | **0.68/0.65** (실측 보정 · SD-004) |
 | 가중치 공개 | raw.githubusercontent.com …/eurosat_scratch.safetensors **200 OK** · 378784 B |
+| n=300 / A/B | Agent A n300: acc≈0.817 · f1≈0.814 · PASSED · B·paired 미실행 |
 
 ## 체크리스트
 
@@ -43,12 +43,13 @@
 7. [x] `node_credential` 설계 초안 (DDL 없음)
 8. [x] 보고서 md §3–9 · 영상 스토리보드 · cyclonedx SBOM
 9. [x] 운영규정 준수 근거 · 양식 초안 문장 · 가중치 URL 실측
+10. [x] E1 n=300 채점·A/B 골격 (Must 아님)
 
 ## 아직 아닌 것
 
-- A/B Must · `node_credential` DDL · WS/만료 스캐너
+- A/B **Must 승격** · `node_credential` DDL · WS/만료 스캐너
 - 공식 양식 파일 기입·PDF·유튜브·포털 zip
-- n=300 통계 판정·A/B 확정
+- Agent B 학습·n=300 paired 실측·통계 확정
 
 상세: [`docs/retrospective/register.md`](docs/retrospective/register.md) · [`docs/ops/regulation-compliance.md`](docs/ops/regulation-compliance.md)
 
@@ -56,8 +57,8 @@
 
 | # | 내용 | 기한 |
 |---|------|------|
-| 1 | **A/B(S2) Must 여부 — 미결, 구현 안 함** (SD-001) | 8/11 |
-| 2 | 베이스라인 백본 2종 (A/B를 Must로 올릴 때만) | — |
+| 1 | **A/B(S2) Must 여부 — 미결** (SD-001). 골격만 있음 | 8/11 |
+| 2 | Agent B 학습·n300 실측을 Must 전에 돌릴지 | — |
 | 3 | 정부지원 중복수혜 해당 여부 (팀 확인) | 제출 전 |
 
 ## 함정

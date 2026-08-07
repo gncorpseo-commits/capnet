@@ -1,5 +1,12 @@
 # Changelog
 
+## E1 n=300 score + A/B skeleton — 2026-08-07
+
+- `TinyEuroSATB` + `ARCH_REGISTRY` / `build_model` · meta `arch`로 infer 로드
+- `train_scratch` `ARCH`/`OUT_NAME` · `scripts/score_n300` · `scripts/compare_ab` (n&lt;300 → INCONCLUSIVE)
+- 로컬 실측 Agent A n=300: acc≈0.817 · f1≈0.814 (artifacts/ 미커밋). B·paired 미실행
+- A/B **Must 아님** (SD-001 미결). 스키마 DDL 변경 없음
+
 ## Contest compliance drafts — 2026-08-07
 
 - `docs/ops/regulation-compliance.md` — 운영규정 조항별 준수 근거

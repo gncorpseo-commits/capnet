@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 import random
 import sys
 import zipfile
@@ -18,11 +19,14 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms.functional import to_tensor
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "node"))
-from app.tiny_cnn import LABELS, TinyEuroSAT  # noqa: E402
+from app.tiny_cnn import LABELS, build_model  # noqa: E402
 
 ZIP_PATH = Path("/data/EuroSAT_RGB.zip")
-OUT_PATH = Path("/out/eurosat_scratch.safetensors")
-META_PATH = Path("/out/eurosat_scratch.meta.json")
+# ARCH=TinyEuroSAT | TinyEuroSATB · OUT_NAME으로 출력 파일 구분
+ARCH = os.environ.get("ARCH", "TinyEuroSAT")
+OUT_NAME = os.environ.get("OUT_NAME", "eurosat_scratch.safetensors")
+OUT_PATH = Path("/out") / OUT_NAME
+META_PATH = Path("/out") / (Path(OUT_NAME).stem + ".meta.json")
 
 FOLDER_TO_LABEL = {
     "AnnualCrop": "annual_crop",
@@ -72,15 +76,16 @@ def list_images(zf: zipfile.ZipFile) -> list[str]:
 
 
 def main() -> None:
-    torch.manual_seed(20260806)
-    random.seed(20260806)
+    seed = int(os.environ.get("SEED", "20260806"))
+    torch.manual_seed(seed)
+    random.seed(seed)
     with zipfile.ZipFile(ZIP_PATH) as zf:
         names = list_images(zf)
     random.shuffle(names)
     # scratch 전수. 사전학습 없음. 게이트 미달이면 FAILED가 정답.
     ds = ZipEuroSAT(ZIP_PATH, names, augment=True)
     loader = DataLoader(ds, batch_size=64, shuffle=True, num_workers=0)
-    model = TinyEuroSAT()
+    model = build_model(ARCH)
     start_epoch = 0
     if OUT_PATH.is_file():
         from safetensors.torch import load_file
@@ -88,15 +93,15 @@ def main() -> None:
         model.load_state_dict(load_file(str(OUT_PATH)))
         if META_PATH.is_file():
             start_epoch = int(json.loads(META_PATH.read_text(encoding="utf-8")).get("epochs", 0))
-        print(f"resume from existing safetensors epoch={start_epoch}", flush=True)
-    opt = torch.optim.Adam(model.parameters(), lr=5e-4)
+        print(f"resume arch={ARCH} from existing safetensors epoch={start_epoch}", flush=True)
     loss_fn = nn.CrossEntropyLoss()
     model.train()
-    extra = 20
+    extra = int(os.environ.get("EXTRA_EPOCHS", "20"))
     total_epochs = start_epoch + extra
     last_loss = 0.0
     lr = 3e-4 if start_epoch else 1e-3
     opt = torch.optim.Adam(model.parameters(), lr=lr)
+    print(f"train arch={ARCH} out={OUT_PATH.name} epochs={extra}", flush=True)
     for epoch in range(extra):
         total = 0.0
         correct = 0
@@ -123,13 +128,13 @@ def main() -> None:
     meta = {
         "weights": OUT_PATH.name,
         "weights_sha256": digest,
-        "arch": "TinyEuroSAT",
+        "arch": ARCH,
         "pretrained": False,
         "dataset": "eurosat-rgb",
         "input_hw": [32, 32],
         "train_images": len(names),
         "epochs": total_epochs,
-        "seed": 20260806,
+        "seed": seed,
         "final_train_loss": last_loss,
     }
     META_PATH.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")

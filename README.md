@@ -53,10 +53,11 @@ Linux/macOS: `scripts/smoke_w1.ps1` 대신 health+claim을 확인하고 `scripts
 |----------|---------|---------|
 | `smoke_w1.ps1` | dummy 게이트 배관 + placeholder 추론 | 실게이트·품질 |
 | `demo.ps1` / `.sh` | scratch Agent 실게이트 채점 → Task 완주 | dummy PASSED를 실게이트로 주장하지 않음 |
-| `sanity.ps1` / `.sh` | 상수·난수·스키마위반 floor → 전부 FAILED | A/B 동등성 (미결·미구현) |
+| `sanity.ps1` / `.sh` | 상수·난수·스키마위반 floor → 전부 FAILED | A/B 동등성 (미결) |
+| `score_n300` / `compare_ab` | n=300 채점 · paired 편차 골격 | Contest A/B **Must** (SD-001) |
 | `demo_violations` | M25 6종 DB REJECTED | 스키마 약화 없음 |
 
-scratch 가중치가 없으면 `scripts/train_scratch.ps1`(또는 `.sh`) 후 compose를 다시 올린다. EuroSAT zip은 `scripts/download_eurosat.ps1`로 받고 저장소에 동봉하지 않는다. claim은 Core만 하며 `INSERT … SELECT`다.
+scratch 가중치가 없으면 `scripts/train_scratch.ps1`(또는 `.sh`) 후 compose를 다시 올린다. Agent B: `-Arch TinyEuroSATB -OutName eurosat_scratch_b.safetensors`. EuroSAT zip은 `scripts/download_eurosat.ps1`로 받고 저장소에 동봉하지 않는다. claim은 Core만 하며 `INSERT … SELECT`다.
 
 ---
 
