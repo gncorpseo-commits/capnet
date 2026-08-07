@@ -67,6 +67,8 @@
 - [결과보고서·붙임 초안 문장](./ops/contest-report-form-draft.md) — 공식 양식 이식용
 - [결과보고서 md 초안](./ops/contest-report-draft.md) — §0–9
 - [시연 영상 스토리보드](./ops/demo-video-storyboard.md)
+- [촬영일 런북](./ops/shoot-day-runbook.md) — 명령·자막 복붙
+- [게이트 사슬 1장](./ops/gate-chain-slide.md) — 영상 150–170초용
 
 ### retrospective
 - [README · 분류 정의](./retrospective/README.md)

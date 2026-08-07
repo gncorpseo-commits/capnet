@@ -173,7 +173,9 @@ https://raw.githubusercontent.com/gncorpseo-commits/capnet/main/apps/node/weight
 ## 이식 체크리스트
 
 - [ ] 안내 페이지 삭제  
-- [ ] 위 문장을 양식 칸에 붙여넣기 · 5P 맞춤(도식은 게이트 사슬 mermaid를 그림으로)  
+- [ ] 위 문장을 양식 칸에 붙여넣기 · 5P 맞춤(도식은 [`gate-chain-slide.md`](./gate-chain-slide.md))
+- [ ] 촬영: [`shoot-day-runbook.md`](./shoot-day-runbook.md) → YouTube URL 기입
+- [ ] PDF 저장 · 포털 zip (원본 hwp/docx + PDF)  
 - [ ] 시연 URL 교체  
 - [ ] 붙임1·2 채움  
 - [ ] PDF 변환 · 파일명 `_915(지엔)`  

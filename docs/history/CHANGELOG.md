@@ -1,5 +1,10 @@
 # Changelog
 
+## Dual-track contest runbook + Agent B train — 2026-08-07
+
+- `docs/ops/shoot-day-runbook.md` · `gate-chain-slide.md` · 출품 체크리스트 갭/이중 트랙 갱신
+- Agent B(`TinyEuroSATB` → `eurosat_scratch_b.safetensors`) 학습 착수 (gitignore · Must 아님)
+
 ## E1 n=300 score + A/B skeleton — 2026-08-07
 
 - `TinyEuroSATB` + `ARCH_REGISTRY` / `build_model` · meta `arch`로 infer 로드

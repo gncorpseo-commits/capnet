@@ -103,18 +103,30 @@
 
 ---
 
-## 5. 지금 저장소에 빠져 있는 것
+## 5. 저장소 갭 (2026-08-07 재점검)
 
-| # | 항목 | 상태 | 마감 |
+| # | 항목 | 상태 | 비고 |
 |---|------|------|------|
-| G1 | README 첫 줄이 아직 `# ai-agent-store 개요` | ❌ | W0 |
-| G2 | README가 개요 문서 — **심사용 5분 기동 안내**로 교체 필요 (M2) | ❌ | W3 |
-| G3 | `NOTICE` 없음 (M1) | ❌ | W0 |
-| G4 | `THIRD-PARTY-LICENSES.md` · `sbom.json` 없음 | ❌ | W1부터 누적 |
-| G5 | `CLAUDE.md` · `STATE.md` 미커밋 | ❌ | W0 |
-| G6 | 코드 일체 없음 | 정상 (W1 착수 전) | — |
+| G1–G2 | README CapNet 5분 기동 | ✅ | 심사용 안내 반영됨 |
+| G3 | `NOTICE` | ✅ | Apache 고지 + 데이터/가중치 |
+| G4 | THIRD-PARTY · sbom.json | ✅ | cyclonedx 재생성 스크립트 |
+| G5 | CLAUDE · STATE | ✅ | |
+| G6 | 코드 MVP | ✅ | Contest 기술 슬라이스 |
+| G7 | 공식 양식 파일·PDF | ❌ | `contest-report-form-draft.md` → 이식 |
+| G8 | YouTube ≤3분 | ❌ | [`shoot-day-runbook.md`](./shoot-day-runbook.md) |
+| G9 | 포털 zip · Release `v0.1.0-contest` | ❌ | 내부마감 8/26 12:00 |
+| G10 | A/B Must | 보류 | E1 골격만 · SD-001 · **제출 Must 아님** |
 
-이미 반영된 것: 저장소 description·topics, `docs/design/capnet-plan.md` 파일명 영문화, LICENSE(Apache-2.0), `docs/context-handoff.md`.
+---
+
+## 5.1 이중 트랙 (8/7–8/27)
+
+| 트랙 | 하는 일 | 중단 조건 |
+|------|---------|-----------|
+| **출품 1순위** | 양식 이식 · 촬영 · YouTube · PDF · 포털 | 미완이면 본편 중단 |
+| **본편 여유** | Agent B 학습 · n300 paired · compare_ab 기록 | Must 승격·DDL·UI 금지 |
+
+본편 숫자는 STATE에만 남기고 보고서 Must로 올리지 않는다 (SD-001).
 
 ---
 
@@ -122,14 +134,13 @@
 
 | 주차 | 날짜 | 산출물 (변경분 굵게) |
 |------|------|----------------------|
-| W0 | 8/1–3 | 문의 발송(회신 무관) · **G1 README 제목** · **G3 NOTICE** · **G5 CLAUDE.md/STATE.md** · EuroSAT 다운로드 후 디렉터리명·픽셀·sha256 확정 |
-| W1 | 8/4–10 | PG v4.4 · Core CRUD + 게이트 · claim/gate `INSERT … SELECT` 고정 · **의존성 추가 시 L2 즉시 갱신** |
-| W2 | 8/11–17 | 8/11–15 Node 1·Agent 1·Task 1 완주 / 8/16–17 버퍼 → **버퍼 절반을 보고서 초안(0·1·2·8절)에 배정** |
-| W3 | 8/18–24 | demo · violations · compose · **README 교체(G2)** · 영상 · **보고서 본문 8/22까지** |
-| W3.5 | 8/25–26 | 라이선스 스캔 · SBOM · 태그/Release · zip · pdf/docx 변환 · 링크 클릭 검증 |
-| — | **8/26 12:00** | **내부 마감.** 8/27은 예비일로만 사용 |
+| W0–W2 | 8/1–17 | ✅ 기술 MVP · 골든 · 실게이트 · 문서 초안 |
+| **지금** | **8/7–17** | **양식 이식 시작** · **촬영 런북** · (백그라운드) Agent B |
+| W3 | 8/18–24 | **영상 촬영·업로드** · 보고서 PDF · demo 재현 1회 |
+| W3.5 | 8/25–26 | Release 태그 · zip · 링크 검증 · 포털 패킹 |
+| — | **8/26 12:00** | **내부 마감.** 8/27은 예비일 |
 
-W2 버퍼를 코드 다듬기에 쓰지 않는다. F2에 따라 1차는 글로만 갈리므로, 버퍼의 값은 보고서 쪽이 높다.
+W2 버퍼를 코드 다듬기에 쓰지 않는다. F2에 따라 1차는 글로만 갈리므로, 버퍼의 값은 보고서·영상 쪽이 높다.
 
 ---
 

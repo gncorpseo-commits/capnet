@@ -1,7 +1,7 @@
 # STATE — 현재 작업 상태
 
 > 세션 인계용 단기 상태판. 결정·미결은 `docs/context-handoff.md`, 이력은 `docs/history/CHANGELOG.md`, 지도는 `docs/INDEX.md`.
-> **갱신: 2026-08-07**
+> **갱신: 2026-08-07 (이중 트랙)**
 
 ---
 
@@ -17,10 +17,18 @@
 
 ## 지금 어디인가
 
-**E1: n=300 채점 + A/B 골격** (Must 승격 아님 · SD-001 미결). 출품 패키지(양식·영상·포털)가 여전히 최우선.
+**이중 트랙:** 출품 1순위 · 본편은 여유 슬롯만 (Must 승격 금지).
 
-- `TinyEuroSATB` · `score_n300` · `compare_ab` (n&lt;300 → INCONCLUSIVE)
-- 출품: [`docs/ops/contest-report-form-draft.md`](docs/ops/contest-report-form-draft.md) → 공식 docx/hwp · YouTube · PDF
+| 트랙 | 진행 |
+|------|------|
+| **출품** | 촬영 런북 · 게이트 사슬 1장 · 체크리스트 갭 재점검. **양식 파일 이식·촬영·YouTube·포털** 남음 |
+| **본편** | Agent B(`TinyEuroSATB`) **20 epoch 학습 중** → 끝나면 n300 + `compare_ab` |
+
+출품 문서:
+
+- [`docs/ops/shoot-day-runbook.md`](docs/ops/shoot-day-runbook.md)
+- [`docs/ops/contest-report-form-draft.md`](docs/ops/contest-report-form-draft.md)
+- [`docs/ops/gate-chain-slide.md`](docs/ops/gate-chain-slide.md)
 
 실측 (과장 금지):
 
@@ -29,8 +37,9 @@
 | scratch N=40 | acc=0.70 · f1≈0.688 · **PASSED** (`dummy=false`) |
 | sanity 3종 | 전부 **FAILED** |
 | 임계 | **0.68/0.65** (실측 보정 · SD-004) |
-| 가중치 공개 | raw.githubusercontent.com …/eurosat_scratch.safetensors **200 OK** · 378784 B |
-| n=300 / A/B | Agent A n300: acc≈0.817 · f1≈0.814 · PASSED · B·paired 미실행 |
+| 가중치 공개 | raw …/eurosat_scratch.safetensors **200 OK** · 378784 B |
+| n=300 A | acc≈0.817 · f1≈0.814 · PASSED |
+| n=300 B / paired | **학습 중 · 미채점** |
 
 ## 체크리스트
 
@@ -43,23 +52,22 @@
 7. [x] `node_credential` 설계 초안 (DDL 없음)
 8. [x] 보고서 md §3–9 · 영상 스토리보드 · cyclonedx SBOM
 9. [x] 운영규정 준수 근거 · 양식 초안 문장 · 가중치 URL 실측
-10. [x] E1 n=300 채점·A/B 골격 (Must 아님)
+10. [x] E1 n=300 채점·A/B 골격 (Must 아님) (#20)
+11. [x] 촬영 런북 · 체크리스트 이중 트랙 표
+12. [ ] Agent B 학습 완료 · n300 paired 기록 (본편 · Must 아님)
 
 ## 아직 아닌 것
 
 - A/B **Must 승격** · `node_credential` DDL · WS/만료 스캐너
 - 공식 양식 파일 기입·PDF·유튜브·포털 zip
-- Agent B 학습·n=300 paired 실측·통계 확정
-
-상세: [`docs/retrospective/register.md`](docs/retrospective/register.md) · [`docs/ops/regulation-compliance.md`](docs/ops/regulation-compliance.md)
+- Agent B 채점·paired 확정 (학습 후)
 
 ## 열려 있는 판단
 
 | # | 내용 | 기한 |
 |---|------|------|
-| 1 | **A/B(S2) Must 여부 — 미결** (SD-001). 골격만 있음 | 8/11 |
-| 2 | Agent B 학습·n300 실측을 Must 전에 돌릴지 | — |
-| 3 | 정부지원 중복수혜 해당 여부 (팀 확인) | 제출 전 |
+| 1 | **A/B(S2) Must 여부 — 미결** (SD-001). 골격+학습 중 | 8/11 |
+| 2 | 중복수혜 해당 여부 (팀 확인) | 제출 전 |
 
 ## 함정
 

@@ -37,4 +37,7 @@
 
 ## A/B 미구현 시
 
-150–170초는 UC-7 A/B 대신 **게이트 사슬 다이agram**을 쓴다 (Contest v0.3 §7 확정).
+150–170초는 UC-7 A/B 대신 **게이트 사슬 다이어그램**을 쓴다 (Contest v0.3 §7 확정).  
+E1(`compare_ab` 골격)이 있어도 **시연 영상·양식 Must에는 넣지 않는다** (SD-001).
+
+촬영 명령 순서: [`shoot-day-runbook.md`](./shoot-day-runbook.md).
