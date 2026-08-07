@@ -325,6 +325,7 @@ gh pr merge <번호> --squash --delete-branch
 | 요청 모듈 | 능력 요청·결과 조회 | `toma/w3-request-cli` |
 | 코어 모듈 | 중계·제어·보안·게이트·claim | `finn/w1-core` |
 | 노드 에이전트 | lease → 추론 → 결과 | `toma/w2-node` |
+| 문서·출품 패키징 | README·checklist·양식 | `pl/docs-…` (동급 작업) |
 
 통신은 API. 데모 기간 Node→Core **폴링 허용**, WebSocket은 이후.
 
