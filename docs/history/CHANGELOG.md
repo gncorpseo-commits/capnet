@@ -6,7 +6,8 @@
 - `docs/design/roadmap.md` 신설 — Phase 1 완주 → 2 → 3 → 4–6 진입조건·산출물·판정 게이트
 - **정정**: A/B n300 Within은 **게이트 사슬 밖 측정**. §7.1 증명 대상 2·3번(Agent B 실게이트 PASSED, 증명 모드 교체 할당) 미달 · 통과율 20–80% 미실측 — STATE·SD-001 반영
 - **SD-007**: 마이그레이션 체계 부재 (Phase 2 `node_credential` DDL 선결과제)
-- 촬영 런북: UC-7 불가(M14 미구현) 명시. 스키마·코드 변경 없음
+- **지정 실행(M14) 배관은 이미 존재** — `task.requested_agent_id` + `claim.py` 조인(`agent_capability_passed` 경유). §7.1-3은 미구현이 아니라 **미실행**이며 막는 것은 Agent B 하나. 실제 공백은 `proof_run_id` 기록·UC-7 절차
+- 촬영 런북: UC-7 불가 명시(B 미통과). 스키마·코드 변경 없음
 
 ## Team role pl (peer of finn/toma) — 2026-08-08
 

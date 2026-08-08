@@ -28,11 +28,27 @@
 |---|-----------|------|------|
 | 1 | `image.classify@1` + 골든셋 G | ✅ | `sql/seed.sql` · `spec/golden/manifest-image-classify-v1.json` (N=40) · `data/golden-n300/` |
 | 2 | Agent **A, B**가 해당 능력에 PASSED | ⚠️ **A만** | `seed.sql`에 agent 행 1개(`seed-agent`). B는 `eurosat_scratch_b.safetensors` + 오프라인 점수만 · `gate_run`/`agent_capability_passed` 없음 |
-| 3 | **증명 모드로 A/B 교체 할당** | ❌ | `apps/` 전체에 proof/M14 코드 0건. Core 라우트에 증명 모드 없음 |
-| 4 | 점수 편차 < 0.05 | ✅ 0.0467 | `compare_ab` — **단 §1.1 한정** |
+| 3 | **증명 모드로 A/B 교체 할당** | ⚠️ **미실행** | 배관은 있음(§1.1). 실행된 적이 없는 이유는 2번 — Agent B가 없어서 |
+| 4 | 점수 편차 < 0.05 | ✅ 0.0467 | `compare_ab` — **단 §1.2 한정** |
 | 5 | Product Track에 Agent 선택 UI/필드 없음 | ✅ | UC-6 · `claim.py` |
 
-### 1.1 4번 측정의 한정 (중요)
+### 1.1 3번은 "미구현"이 아니라 "미실행"
+
+지정 실행(M14) 배관은 **이미 있다.** 없는 것은 실행 이력이다.
+
+| 조각 | 상태 | 위치 |
+|------|------|------|
+| `task.requested_agent_id` (FK → `agent`) | ✅ | `spec/schema.sql:355` |
+| claim이 지정 Agent만 고르는 조인 | ✅ | `claim.py` `CLAIM_SQL` — `AND (t.requested_agent_id IS NULL OR acp.agent_id = t.requested_agent_id)` |
+| 지정 Agent도 **게이트 통과 강제** | ✅ | 같은 조인이 `agent_capability_passed`를 거친다 — 미통과 Agent는 지정해도 할당 안 됨 |
+| `POST /v1/tasks` `requestedAgentId` | ✅ | `main.py` · `openapi.yaml` · **`demo.sh`가 A로 이미 사용 중** |
+| `task.proof_run_id` 채우는 코드 | ❌ | 컬럼만 존재. A/B 쌍을 한 증명 run으로 묶을 식별자 |
+| A/B 교차 실행·비교 절차 (UC-7) | ❌ | 스크립트 없음 |
+
+즉 3번을 막는 것은 **2번 하나**다. Agent B가 게이트를 통과하면 교체 할당은 기존 배관으로 실행된다.
+남는 실제 구현 공백은 `proof_run_id` 기록과 UC-7 절차 두 가지뿐이다.
+
+### 1.2 4번 측정의 한정 (중요)
 
 `scripts/score_n300.*`는 `docker compose run --rm --no-deps`로 `app.score_gate`를 **직접** 실행하고,
 `scripts/compare_ab.py`는 그 결과 **점수 JSON 두 개**를 읽어 비교한다. DB를 열지 않는다.
@@ -45,7 +61,7 @@
 
 > 이 구분은 보고서·영상에서도 유지한다. 사슬 밖 측정을 사슬 안 증명으로 말하면 D1(증명 대상 = Capability 추상화 성립)이 무너진다.
 
-### 1.2 통과율 밴드
+### 1.3 통과율 밴드
 
 §7.2 Kill 판정은 편차와 **통과율 20–80%**를 함께 본다. 통과율은 현재 **미실측**이다 —
 게이트를 통과시킨 Agent 모집단이 A 하나뿐이라 비율을 정의할 수 없다.
@@ -61,8 +77,8 @@
 | ID | 작업 | 왜 필요한가 | 산출물 |
 |----|------|-------------|--------|
 | **P1-1** | Agent B를 **DB에 등록 → 실게이트 → PASSED** | §7.1-2. 오프라인 점수는 증서가 아니다 | `agent` 행 · `gate_run(dummy=false)` · `agent_capability_passed` |
-| **P1-2** | **증명 모드 지정 실행**(M14/UC-7) | §7.1-3. Task를 A/B에 교차 할당하고 결과를 사슬에 남긴다 | Core 증명 엔드포인트 · `assignment` 2건 · 결과 비교 |
-| **P1-3** | **통과율 20–80% 실측** | §7.2 판정의 두 번째 축(§1.2) | 후보 Agent 모집단 ≥5 · 게이트 결과 표 |
+| **P1-2** | **증명 모드 교차 실행**(UC-7) | §7.1-3. 배관은 있으므로(§1.1) 새 엔드포인트가 아니라 **절차**가 필요하다 | UC-7 스크립트 · 동일 case를 A/B에 `requestedAgentId`로 교차 할당 · `assignment` 2건 · `proof_run_id` 기록 |
+| **P1-3** | **통과율 20–80% 실측** | §7.2 판정의 두 번째 축(§1.3) | 후보 Agent 모집단 ≥5 · 게이트 결과 표 |
 | **P1-4** | **Phase 1 판정 리포트** | §13 주 9. *판정 없이 Phase 2 코드 금지* | `docs/ops/phase1-verdict.md` |
 
 ### 2.2 P1-3 모집단을 어디서 얻는가
@@ -164,7 +180,7 @@ Phase가 올라가도 약해지지 않는 것들이다. 근거는 `CLAUDE.md` �
 4. safetensors만 (절대규칙 5 · D5)
 5. 게이트는 team gate-runner에서만 (절대규칙 8 · D4)
 6. 사전학습 가중치 금지는 **대회 제약**(D6)이다 — Phase 2+에서 재검토 대상이나, 되돌리려면 D6을 반박하고 라이선스 근거를 새로 세워야 한다
-7. 측정하지 않은 것을 달성으로 적지 않는다 (§1.1)
+7. 측정하지 않은 것을 달성으로 적지 않는다 (§1.2)
 
 ---
 
