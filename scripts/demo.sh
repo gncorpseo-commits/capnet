@@ -8,7 +8,7 @@ runnerId="00000000-0000-4000-8000-000000000030"
 
 curl -sf "$core/health" >/dev/null
 nh="$(curl -sf "$node/health")"
-sha="$(printf '%s' "$nh" | python -c 'import json,sys
+sha="$(printf '%s' "$nh" | python3 -c 'import json,sys
 h=json.load(sys.stdin)
 hits=[w for w in h.get("weights",[]) if "eurosat_scratch" in w["path"] and not w["placeholder"]]
 assert hits, "scratch weights missing"
@@ -17,7 +17,7 @@ print(hits[0]["sha256"])')"
 ver="0.1.0-scratch-$(date +%Y%m%d%H%M%S)"
 agent="$(curl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
   -d "{\"name\":\"eurosat-scratch\",\"version\":\"$ver\",\"manifest_hash\":\"eurosat-scratch-tiny\",\"weights_uri\":\"file:///weights/eurosat_scratch.safetensors\",\"weights_sha256\":\"$sha\"}")"
-agentId="$(printf '%s' "$agent" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
+agentId="$(printf '%s' "$agent" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
 set +e
 raw="$(docker compose --project-directory "$root" exec -T node-m-team python -m app.score_gate --mode scratch --weights /weights/eurosat_scratch.safetensors --min-accuracy 0.68 --min-macro-f1 0.65 --max-invalid-rate 0.02)"
@@ -27,14 +27,14 @@ if [[ "$rc" -ne 0 && "$rc" -ne 2 ]]; then
   echo "score_gate failed rc=$rc" >&2
   exit 1
 fi
-printf '%s\n' "$raw" | python -c 'import json,sys; s=json.load(sys.stdin); print(f"score status={s[\"status\"]} acc={s[\"golden_score\"]:.4f} f1={s[\"macro_f1\"]:.4f}")'
-status="$(printf '%s' "$raw" | python -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
+printf '%s\n' "$raw" | python3 -c 'import json,sys; s=json.load(sys.stdin); print("score status=%s acc=%.4f f1=%.4f" % (s["status"], s["golden_score"], s["macro_f1"]))'
+status="$(printf '%s' "$raw" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
 
 gr="$(curl -sf -X POST "$core/v1/internal/gate-runs" -H 'content-type: application/json' \
   -d "{\"agent_id\":\"$agentId\",\"capability_id\":\"$capId\",\"runner_node_id\":\"$runnerId\"}")"
-grId="$(printf '%s' "$gr" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
+grId="$(printf '%s' "$gr" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
-finish="$(printf '%s' "$raw" | python -c 'import json,sys
+finish="$(printf '%s' "$raw" | python3 -c 'import json,sys
 s=json.load(sys.stdin)
 gr=json.loads(sys.argv[1])
 print(json.dumps({
@@ -45,7 +45,7 @@ print(json.dumps({
   "golden_set_sha256": gr["golden_set_sha256"],
 }))' "$gr")"
 fin="$(curl -sf -X POST "$core/v1/internal/gate-runs/$grId/finish" -H 'content-type: application/json' -d "$finish")"
-printf '%s' "$fin" | python -c 'import json,sys
+printf '%s' "$fin" | python3 -c 'import json,sys
 fin=json.load(sys.stdin)
 summary=fin.get("result_summary") or {}
 if isinstance(summary,str):
@@ -63,14 +63,14 @@ curl -sf -X POST "$core/v1/agents/$agentId/bindings" -H 'content-type: applicati
 
 task="$(curl -sf -X POST "$core/v1/tasks" -H 'content-type: application/json' \
   -d "{\"datasetId\":\"eurosat-rgb\",\"caseId\":\"ic1-0001\",\"requestedAgentId\":\"$agentId\"}")"
-taskId="$(printf '%s' "$task" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
+taskId="$(printf '%s' "$task" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 claim="$(curl -sf -X POST "$core/v1/internal/claim" -H 'content-type: application/json' \
   -d "{\"task_id\":\"$taskId\"}")"
-execBody="$(printf '%s' "$claim" | python -c 'import json,sys
+execBody="$(printf '%s' "$claim" | python3 -c 'import json,sys
 c=json.load(sys.stdin)
 print(json.dumps({"id":c["id"],"weights_sha256":c["weights_sha256"],"input_ref":c["input_ref"]}))')"
 out="$(curl -sf -X POST "$node/v1/execute" -H 'content-type: application/json' -d "$execBody")"
-printf '%s' "$out" | python -c 'import json,sys
+printf '%s' "$out" | python3 -c 'import json,sys
 e=json.load(sys.stdin)
 if e.get("dummy"):
     raise SystemExit("execute was dummy")
