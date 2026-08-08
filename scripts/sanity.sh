@@ -18,4 +18,4 @@ for mode in constant random invalid; do
     exit 1
   fi
 done
-echo "sanity OK (floors FAILED). A/B Must는 미결·미구현."
+echo "sanity OK (floors FAILED). 사슬 위 A/B 교체는 scripts/proof_ab.sh."

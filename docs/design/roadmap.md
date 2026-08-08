@@ -27,14 +27,14 @@
 | # | 증명 대상 | 상태 | 근거 |
 |---|-----------|------|------|
 | 1 | `image.classify@1` + 골든셋 G | ✅ | `sql/seed.sql` · `spec/golden/manifest-image-classify-v1.json` (N=40) · `data/golden-n300/` |
-| 2 | Agent **A, B**가 해당 능력에 PASSED | ⚠️ **A만** | `seed.sql`에 agent 행 1개(`seed-agent`). B는 `eurosat_scratch_b.safetensors` + 오프라인 점수만 · `gate_run`/`agent_capability_passed` 없음 |
-| 3 | **증명 모드로 A/B 교체 할당** | ⚠️ **미실행** | 배관은 있음(§1.1). 실행된 적이 없는 이유는 2번 — Agent B가 없어서 |
+| 2 | Agent **A, B**가 해당 능력에 PASSED | ✅ **2026-08-08 달성** | `scripts/proof_ab.sh` — A acc 0.7000 · B acc 0.8250, 둘 다 `dummy=false` PASSED + `agent_capability_passed`. 판정 근거: [`../ops/phase1-verdict.md`](../ops/phase1-verdict.md) §2 |
+| 3 | **증명 모드로 A/B 교체 할당** | ✅ **2026-08-08 달성** | 동일 case를 `requestedAgentId`로 교차 할당 · `honored=true` · assignment 2건 SUCCEEDED. 배관 설명은 §1.1 |
 | 4 | 점수 편차 < 0.05 | ✅ 0.0467 | `compare_ab` — **단 §1.2 한정** |
 | 5 | Product Track에 Agent 선택 UI/필드 없음 | ✅ | UC-6 · `claim.py` |
 
 ### 1.1 3번은 "미구현"이 아니라 "미실행"
 
-지정 실행(M14) 배관은 **이미 있다.** 없는 것은 실행 이력이다.
+지정 실행(M14) 배관은 처음부터 **있었다.** 없던 것은 실행 이력이고, 2026-08-08에 채워졌다.
 
 | 조각 | 상태 | 위치 |
 |------|------|------|
@@ -42,11 +42,11 @@
 | claim이 지정 Agent만 고르는 조인 | ✅ | `claim.py` `CLAIM_SQL` — `AND (t.requested_agent_id IS NULL OR acp.agent_id = t.requested_agent_id)` |
 | 지정 Agent도 **게이트 통과 강제** | ✅ | 같은 조인이 `agent_capability_passed`를 거친다 — 미통과 Agent는 지정해도 할당 안 됨 |
 | `POST /v1/tasks` `requestedAgentId` | ✅ | `main.py` · `openapi.yaml` · **`demo.sh`가 A로 이미 사용 중** |
-| `task.proof_run_id` 채우는 코드 | ❌ | 컬럼만 존재. A/B 쌍을 한 증명 run으로 묶을 식별자 |
-| A/B 교차 실행·비교 절차 (UC-7) | ❌ | 스크립트 없음 |
+| A/B 교차 실행·비교 절차 (UC-7) | ✅ **신설** | `scripts/proof_ab.sh` — 실게이트 2건 + 교차 할당 + 라벨 비교 |
+| `task.proof_run_id` 채우는 코드 | ❌ | 컬럼만 존재. A/B 쌍을 한 증명 run으로 묶을 식별자 — **남은 유일한 구현 공백** |
 
-즉 3번을 막는 것은 **2번 하나**다. Agent B가 게이트를 통과하면 교체 할당은 기존 배관으로 실행된다.
-남는 실제 구현 공백은 `proof_run_id` 기록과 UC-7 절차 두 가지뿐이다.
+3번을 막던 것은 **2번 하나**였고, Agent B가 게이트를 통과하자 교체 할당은 기존 배관으로 그대로 실행됐다.
+남는 구현 공백은 `proof_run_id` 기록 하나뿐이다 — A/B 쌍을 하나의 증명 run으로 묶는 식별자가 아직 비어 있다.
 
 ### 1.2 4번 측정의 한정 (중요)
 
@@ -76,8 +76,8 @@
 
 | ID | 작업 | 왜 필요한가 | 산출물 |
 |----|------|-------------|--------|
-| **P1-1** | Agent B를 **DB에 등록 → 실게이트 → PASSED** | §7.1-2. 오프라인 점수는 증서가 아니다 | `agent` 행 · `gate_run(dummy=false)` · `agent_capability_passed` |
-| **P1-2** | **증명 모드 교차 실행**(UC-7) | §7.1-3. 배관은 있으므로(§1.1) 새 엔드포인트가 아니라 **절차**가 필요하다 | UC-7 스크립트 · 동일 case를 A/B에 `requestedAgentId`로 교차 할당 · `assignment` 2건 · `proof_run_id` 기록 |
+| ~~P1-1~~ | Agent B **실게이트 PASSED** | §7.1-2 | ✅ **완료 2026-08-08** — acc 0.8250 · `dummy=false` |
+| ~~P1-2~~ | **증명 모드 교차 실행**(UC-7) | §7.1-3 | ✅ **완료 2026-08-08** — `scripts/proof_ab.sh` · assignment 2건. `proof_run_id` 기록만 미완 |
 | **P1-3** | **통과율 20–80% 실측** | §7.2 판정의 두 번째 축(§1.3) | 후보 Agent 모집단 ≥5 · 게이트 결과 표 |
 | **P1-4** | **Phase 1 판정 리포트** | §13 주 9. *판정 없이 Phase 2 코드 금지* | `docs/ops/phase1-verdict.md` |
 
