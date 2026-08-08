@@ -163,9 +163,9 @@
 
 ## Contest — 2026-08-01
 
-- [`Contest_MVP_2026.md`](./Contest_MVP_2026.md) **v0.3** — 문서세트 정합 (골든셋 v0.2, 영문 파일명, M25 6종 고정)
-- [`user-guide-ko.md`](./user-guide-ko.md) — IT 비전문가용
-- [`golden/image-classify-v1.md`](./golden/image-classify-v1.md) — 골든셋 정본
+- [`Contest_MVP_2026.md`](../ops/Contest_MVP_2026.md) **v0.3** — 문서세트 정합 (골든셋 v0.2, 영문 파일명, M25 6종 고정)
+- [`user-guide-ko.md`](../guide/user-guide-ko.md) — IT 비전문가용
+- [`golden/image-classify-v1.md`](../spec/golden/image-classify-v1.md) — 골든셋 정본
 
 ## v4.3 — 2026-07-31
 
