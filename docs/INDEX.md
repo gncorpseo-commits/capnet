@@ -54,6 +54,7 @@
 
 ### design
 - [기획서 v4.5](./design/capnet-plan.md) (스키마는 v4.4)
+- [실행 로드맵 Phase 1→3+](./design/roadmap.md) — 진입조건·판정 게이트 (**일정 정본 아님**)
 - [node_credential 설계 초안](./design/node-credential-draft.md) (**DDL 미적용**)
 
 ### spec
