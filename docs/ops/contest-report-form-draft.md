@@ -36,6 +36,84 @@
 
 ---
 
+## 본문 붙여넣기용 압축본 (2쪽 표에 그대로)
+
+**이 절을 먼저 쓴다.** 아래 절들(표지·개요 이후)은 칸이 남을 때 보충하는 상세 원고다.
+숫자는 2026-08-08 실측이며 과장하지 않는다.
+
+### 프로젝트 소개 (1~2줄)
+
+> 같은 이름의 AI Agent라도 구현이 다르면 사용자는 알 수 없다. CapNet은 능력을 채점 가능한 계약으로 정의하고, 게이트 통과·라우팅 규칙을 애플리케이션이 아니라 PostgreSQL 제약으로 강제해 잘못된 조합을 DB가 거절하게 만든 오픈소스 실행 계층이다.
+
+### 개발 배경 및 목적
+
+> 능력 이름은 보장이 아니다. 같은 `image.classify`를 표방해도 구현·시점이 다르면 결과가 달라지며, 호출자는 그 사실을 알 수 없다. CapNet은 Capability를 이름이 아니라 **계약**(입출력 스키마 + 골든셋 + 통과 기준)으로 두고, 그 계약을 통과한 Agent만 Task에 배정되게 한다. 핵심은 이 규칙을 앱의 `if`가 아니라 **DB 제약**에 두어 "불가능한 상태를 표현할 수 없게" 만드는 것이다. 규칙이 코드에 있으면 우회되지만, 제약에 있으면 거절된다.
+
+### 개발 환경 (개조식)
+
+> - HW: 팀 노트북 CPU 전용 (GPU 불요) · Docker Desktop / WSL2
+> - 언어·런타임: Python 3.11 (컨테이너)
+> - 서버: FastAPI + uvicorn · PostgreSQL 16
+> - 학습·추론: PyTorch 2.13.0+cpu · torchvision 0.28.0+cpu · safetensors (CPU 전용)
+> - 실행: Docker Compose (postgres 1 + Core 1 + Node 3)
+> - 데이터: EuroSAT RGB (Zenodo 7711810, MIT) — **원본 미동봉**, 다운로드 스크립트 제공
+> - 모델: 사전학습 가중치 미사용. EuroSAT scratch 학습만
+> - 외부 상용 AI API 호출 **없음** (추론 전량 로컬 컨테이너)
+
+### 시스템 구성 및 아키텍처 (개조식)
+
+> - **postgres**: 스키마 v4.4 — 복합 FK · 호환 행렬 · 게이트 사슬 증서 테이블
+> - **core** (:8000): Capability/Agent/Node/Task API · 큐 claim · 게이트 오케스트레이션
+> - **node-m-team** (:8001): team gate-runner. 골든셋 채점과 실제 추론 담당
+> - **node-s-team / node-s-public**: 티어·신뢰도메인 위반 데모용 Node
+> - 데이터 흐름: Capability 계약 등록 → gate_run(PASSED) → 증서 → Agent 할당 자격 → Task claim → assignment → 추론 → 완료
+> - 판정 위치: 위 흐름의 **각 단계 전이를 DB 제약이 검사**한다. 앱은 후보만 고르고 판정은 하지 않는다
+> - Node는 자신의 신뢰도메인·연산등급을 **주장할 수 없다**. Core가 부여한다
+
+### 프로젝트 주요 기능 — 프로젝트 상세 내용
+
+> **1) Capability = 계약.** `image.classify@1`은 closed-set 10라벨, 입력 32×32 RGB, 통과 기준 AND(정확도 0.68 ∧ macro-F1 0.65 ∧ 무효율 0.02)로 정의된다. 전처리도 계약의 일부라 게이트와 제품이 동일 조건을 쓴다.
+>
+> **2) 실게이트.** EuroSAT scratch 학습 모델을 team gate-runner에서 채점한다. 실측 **정확도 0.7000 · macro-F1 0.6982 · PASSED**(모의 아님). 임계는 실측 후 하향 보정했다 — 통과시키려 조작하지 않았다.
+>
+> **3) Sanity floor.** 상수 출력·난수 출력·스키마 위반 Agent는 각각 0.100 / 0.025 / 0.000으로 **전부 FAILED**. 정직하게 풀지 않는 Agent가 떨어져야 골든 점수를 신뢰할 수 있다.
+>
+> **4) 규칙 위반 거절 (핵심 차별점).** 아래 6종을 시도하면 애플리케이션이 아니라 **PostgreSQL이 제약 이름과 함께 거절**한다.
+> ① 게이트 미통과 Agent 할당 ② team 작업 → public Node ③ 상위 등급 요구 → 하위 등급 Node ④ 작업 점유 중 Node 등급 강등 ⑤ 준비 상태에서 가중치 교체 ⑥ 통과 근거 기록의 사후 무효화
+>
+> **5) Agent 교체 가능성.** 같은 계약을 통과한 두 Agent(A·B)에 동일 입력을 지정 배정해 둘 다 완료됨을 확인했다. 지정 배정도 게이트 통과 증서를 거치므로, 미통과 Agent는 지정해도 배정되지 않는다.
+
+### 프로젝트 주요 기능 — 구동 및 시연
+
+> ```
+> git clone https://github.com/gncorpseo-commits/capnet.git
+> cd capnet && docker compose up --build -d      # 1~3분
+> bash scripts/demo.sh              # 실게이트 PASSED + Task 완료
+> bash scripts/sanity.sh            # floor 3종 FAILED
+> bash scripts/demo_violations.sh   # 위반 6종 REJECTED
+> ```
+> Windows는 동명 `.ps1`. 기대 출력: `score status=PASSED acc=0.7000` · `3 runs FAILED` · `NOTICE REJECTED` 6건.
+> 가중치가 없으면 `scripts/download_eurosat` → `scripts/train_scratch` 후 재기동(CPU 20~40분).
+> API 명세: `GET http://127.0.0.1:8000/openapi.yaml`
+
+### 기대효과 및 활용 분야
+
+> 값은 "AI 스토어 UI"가 아니라 **계약 런타임과 실행 증적**에 있다. 데이터를 외부로 보낼 수 없는 조직이 자체 보유 장비에서 AI 작업을 처리하되, 어떤 Agent가 어떤 근거로 그 작업을 수행했는지 DB 증적으로 남기는 구조에 적용된다. 능력을 계약으로 다루므로 공급자가 바뀌어도 호출 방식은 바뀌지 않는다. 확장 경로는 조직 단위 플릿(테넌트) → 초청 Node → 개방형 순이며, 각 단계 진입 조건을 로드맵 문서에 판정 기준과 함께 고정해 두었다.
+
+### 기타 — 프로젝트의 혁신성 및 차별성
+
+> 오케스트레이션 데모가 아니다. **라우팅·게이트 불변식을 애플리케이션이 아니라 PostgreSQL이 강제**한다는 점이 차별점이다. 위반 14종을 실측하고 그중 6종을 재현 스크립트로 고정했으며, 각 거절은 제약 이름과 함께 출력된다. 게이트 통과는 team gate-runner에서 나온 실측 기록이어야만 증서로 인정되고, 그 증서 없이는 배정 자체가 FK 위반으로 실패한다. 제약을 끄거나 우회하지 않는 것을 프로젝트 규칙으로 고정했다.
+
+### 기타 — 한계점 및 향후 발전 로드맵
+
+> **골든셋이 학습셋 안에 있다.** 데모 40건·본편 300건 모두 학습에 사용된 이미지이며(검증 스크립트 포함), 따라서 본 보고서의 게이트 점수는 **일반화 성능이 아니라 학습 데이터 재현 점수**다. 게이트 사슬·위반 거절·sanity floor는 모델 품질과 무관한 DB 불변식이므로 이 한계의 영향을 받지 않는다. 데모 40건은 표준오차가 약 0.072로 임계와의 간격보다 커서 개별 합격 판정이 통계적으로 견고하지 않다. Agent A·B는 정확도 차이가 0.0467로 기준 이내지만 300건 중 32건에서 서로 다른 라벨을 내므로, "교체해도 계약 품질 수준이 유지된다"고는 말할 수 있어도 "같은 답이 나온다"고는 말할 수 없다. 다음 단계는 학습·평가 데이터 분리 후 재학습·재측정이며, 이를 통과해야 다음 단계 코드 착수를 허용하도록 규칙을 정해 두었다.
+
+### 기타 — 소감 및 후기
+
+> 제약을 끄지 않는다는 규칙을 끝까지 지킨 것이 가장 큰 학습이었다. FK가 막을 때마다 우회 대신 설계를 고쳤고, 그 과정에서 앱이 판정하던 것을 DB로 옮기게 됐다. 게이트 임계도 통과에 맞춰 올리지 않고 실측에 맞춰 내렸다. 무엇보다, 파이프라인이 동작한다는 것과 측정이 유효하다는 것이 다른 명제라는 사실을 골든셋 누출을 발견하며 배웠다. 숫자가 좋게 나온 뒤에 그 숫자가 무엇을 재고 있는지 다시 물은 것이 이 프로젝트에서 가장 값진 순간이었다.
+
+---
+
 ## 표지·개요 (양식 상단)
 
 | 칸 | 기재 |
@@ -154,8 +232,8 @@ OpenAPI: `GET http://127.0.0.1:8000/openapi.yaml`
 | 5 | safetensors | 0.8.0 | Apache-2.0 | https://github.com/huggingface/safetensors | 가중치 로드(pickle 거부) / 라이브러리로 불러 씀 |
 | 6 | numpy | 2.4.6 | BSD-3-Clause | https://github.com/numpy/numpy | 텐서·배열 백엔드 / 라이브러리로 불러 씀 |
 | 7 | Pillow | 12.3.0 | HPND-derived (MIT-CMU) | https://github.com/python-pillow/Pillow | 골든셋 JPEG 로드 / 라이브러리로 불러 씀 |
-| 8 | torch | (CPU wheel, Dockerfile) | BSD-3-Clause | https://github.com/pytorch/pytorch | scratch 학습·추론(node-m-team) / 라이브러리로 불러 씀 |
-| 9 | torchvision | (CPU wheel, Dockerfile) | BSD-3-Clause | https://github.com/pytorch/vision | 32×32 변환 / 라이브러리로 불러 씀 |
+| 8 | torch | 2.13.0+cpu | BSD-3-Clause | https://github.com/pytorch/pytorch | scratch 학습·추론(node-m-team) / 라이브러리로 불러 씀 |
+| 9 | torchvision | 0.28.0+cpu | BSD-3-Clause | https://github.com/pytorch/vision | 32×32 변환 / 라이브러리로 불러 씀 |
 | 10 | PostgreSQL | 16 | PostgreSQL License | https://github.com/postgres/postgres | DB·제약 강제(compose 이미지) / 실행 환경 |
 
 기계 가독 전체: 저장소 루트 `sbom.json` (`scripts/generate_sbom.ps1`). 사람용 표: `THIRD-PARTY-LICENSES.md`.
