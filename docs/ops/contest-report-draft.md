@@ -217,6 +217,12 @@ Linux/macOS: `.ps1` → 동명 `.sh`. `smoke_w1.ps1` 대신 health + claim 확�
 
 ## 8. 한계와 다음 단계
 
+- **골든셋이 학습셋 안에 있다 (홀드아웃 없음).** 데모 N=40 **40/40**, 본편 n=300 **300/300** 케이스가
+  학습에 쓰인 이미지다 — `train_scratch.py`가 EuroSAT 27,000장 전수를 학습하고 `extract_golden.py`가
+  같은 zip에서 케이스를 뽑기 때문이다 (검증: `python3 scripts/check_golden_leakage.py`).
+  따라서 본 보고서의 게이트 점수는 **학습 데이터 재현 점수**이며 일반화 성능이 아니다.
+  게이트 사슬·M25·sanity floor는 이 결함의 영향을 받지 않는다 (모델 품질과 무관한 DB 불변식).
+  해소 절차는 `docs/ops/phase1-verdict.md` §6.3.
 - 데모 N=40이면 대체가능성 통계 판정(편차 0.05)은 **불가** (SE가 임계와 비슷). 본편 n≥300.
 - seed Agent의 시드 `gate_run` PASSED는 **배관용**이다. dummy 추론·dummy 게이트를 품질 증명으로 쓰지 않는다.
 - A/B(S2)는 **사슬 위에서 실행됐다** (`scripts/proof_ab.sh`, 2026-08-08): Agent A·B가 각각 실게이트 PASSED (acc 0.700 / 0.825, `dummy=false`) 후 동일 case를 `requestedAgentId`로 교차 할당해 둘 다 완료됐다. 다만 **case 1건은 등가성의 통계 근거가 아니다.** n=300 편차 0.0467은 게이트 사슬 밖 오프라인 측정이며 epoch 불일치(A80/B40)·SE≈0.019 한계를 갖는다. **보고서 Must로 올릴지는 master 판단** (SD-001).

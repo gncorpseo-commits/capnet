@@ -29,7 +29,7 @@
 | 1 | `image.classify@1` + 골든셋 G | ✅ | `sql/seed.sql` · `spec/golden/manifest-image-classify-v1.json` (N=40) · `data/golden-n300/` |
 | 2 | Agent **A, B**가 해당 능력에 PASSED | ✅ **2026-08-08 달성** | `scripts/proof_ab.sh` — A acc 0.7000 · B acc 0.8250, 둘 다 `dummy=false` PASSED + `agent_capability_passed`. 판정 근거: [`../ops/phase1-verdict.md`](../ops/phase1-verdict.md) §2 |
 | 3 | **증명 모드로 A/B 교체 할당** | ✅ **2026-08-08 달성** | 동일 case를 `requestedAgentId`로 교차 할당 · `honored=true` · assignment 2건 SUCCEEDED. 배관 설명은 §1.1 |
-| 4 | 점수 편차 < 0.05 | ✅ 0.0467 | `compare_ab` — **단 §1.2 한정** |
+| 4 | 점수 편차 < 0.05 | ❌ **미판정** | 0.046667 재현됨. 그러나 골든셋이 학습셋 안이라 측정 대상이 무효 — [`../ops/phase1-verdict.md`](../ops/phase1-verdict.md) §4.4 |
 | 5 | Product Track에 Agent 선택 UI/필드 없음 | ✅ | UC-6 · `claim.py` |
 
 ### 1.1 3번은 "미구현"이 아니라 "미실행"
@@ -78,8 +78,9 @@
 |----|------|-------------|--------|
 | ~~P1-1~~ | Agent B **실게이트 PASSED** | §7.1-2 | ✅ **완료 2026-08-08** — acc 0.8250 · `dummy=false` |
 | ~~P1-2~~ | **증명 모드 교차 실행**(UC-7) | §7.1-3 | ✅ **완료 2026-08-08** — `scripts/proof_ab.sh` · assignment 2건. `proof_run_id` 기록만 미완 |
-| **P1-3** | **통과율 20–80% 실측** | §7.2 판정의 두 번째 축(§1.3) | 후보 Agent 모집단 ≥5 · 게이트 결과 표 |
-| **P1-4** | **Phase 1 판정 리포트** | §13 주 9. *판정 없이 Phase 2 코드 금지* | `docs/ops/phase1-verdict.md` |
+| ~~P1-3~~ | **통과율 20–80% 실측** | §7.2 두 번째 축 | ✅ **완료 2026-08-08** — 8후보 사다리 75.0%. 단 §4.4로 조건부 무효 |
+| ~~P1-4~~ | **Phase 1 판정 리포트** | §13 주 9 | ✅ **완료 2026-08-08** — 판정 = **보류(HOLD)** |
+| **P1-5** | **홀드아웃 도입 후 재측정** (H1–H4) | 골든셋 40/40·300/300이 학습셋 안 — 게이트가 능력이 아니라 암기를 잰다 | 분할·재추출·재학습(CPU 3–4h)·재측정 → §7.2 판정 |
 
 ### 2.2 P1-3 모집단을 어디서 얻는가
 
@@ -102,6 +103,12 @@
 | 팀이 증명에 미도달 | 실행 역량 부족 | 범위 재축소 |
 
 **Go가 아니면 Phase 2 코드는 쓰지 않는다.** 이 규칙이 로드맵 전체의 하중을 받는다.
+
+> **2026-08-08 판정: 보류(HOLD).** 두 축 모두 형식상 Go 조건을 만족했으나
+> (편차 0.046667 · 통과율 75.0%), 골든셋 40/40 · 300/300 케이스가 학습셋 안에 있어
+> 측정 대상이 무효다. **Phase 2 착수 불가.**
+> 근거·해소 조건: [`../ops/phase1-verdict.md`](../ops/phase1-verdict.md) §4.4 · §6 · SD-008
+> 검증: `python3 scripts/check_golden_leakage.py` (exit 2)
 
 ---
 

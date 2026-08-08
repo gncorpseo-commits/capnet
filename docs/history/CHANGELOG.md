@@ -1,5 +1,16 @@
 # Changelog
 
+## Phase 1 판정 = 보류 · 골든셋 누출 발견 — 2026-08-08
+
+- **P1-1·P1-2 달성**: `scripts/proof_ab.sh` — A/B 실게이트 PASSED(`dummy=false`) + 동일 case 교차 할당(`honored=true`, assignment 2건 SUCCEEDED). §7.1-2·3 사슬 위 달성
+- **P1-3**: `scripts/pass_rate.sh` · 8후보 사다리(TE{5,20,40,80}·TEB{5,10,20,40}) → **75.0%**. 모집단 설계는 결과 확인 전 커밋(`7100c9f`)
+- **P1-4**: `docs/ops/phase1-verdict.md` — **판정 보류(HOLD)**
+- **SD-008 골든셋 ⊂ 학습셋**: 데모 40/40 · n300 300/300이 학습에 쓰인 이미지. 홀드아웃 없음 → 게이트가 능력이 아니라 학습 데이터 재현을 잰다. `scripts/check_golden_leakage.py` (exit 2). **Phase 2 착수 차단**
+- 영향 없음: 게이트 사슬 · M25 6종 · sanity floor 3종 · Product Track 구조
+- n=300 재현: A 0.8800 · B 0.9267 · abs_diff 0.046667 · **label_agreement 0.8933**(300건 중 32건 라벨 상이)
+- 재현성 수정: `demo.sh`·`sanity.sh` 호스트 `python`→`python3`, `demo.sh` f-string 백슬래시 → % 포맷. **.sh 경로는 Linux에서 한 번도 성공한 적이 없었다** (Contest Must M4 직결)
+- 보고서 초안 §8에 누출 명시 · §0·§8의 낡은 A/B 서술 정정
+
 ## 종착점 Phase 3+ 확장 · Phase 1 좌표 정정 — 2026-08-08
 
 - **D16**: 프로젝트 종착점 = 기획서 §9 Phase 3+ 전체. Contest MVP는 Phase 1 슬라이스 (SD-006)
