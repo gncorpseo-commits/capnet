@@ -13,7 +13,7 @@
 **문제:** 같은 능력 이름으로 다른 구현이 끼어들어도, 호출자는 알기 어렵다.  
 **해법:** Capability를 채점 가능한 계약으로 두고, 게이트·할당 규칙을 PostgreSQL 제약으로 강제한다.  
 **증명한 것 (초안 시점):** 스키마 불변식 실측, dummy E2E 배관, 골든셋 데모 N=40 핀, 위반 6종 스크립트, scratch 실게이트 PASSED(acc=0.70, `dummy=false`) + Task 완주, sanity floor FAILED.  
-**아직 아닌 것:** 시연 영상(스토리보드만), A/B 동등성(미결), `node_credential` DDL.  
+**아직 아닌 것:** 시연 영상(스토리보드만), A/B **통계** 등가 판정(§8), `node_credential` DDL.  
 **재현:** `docker compose up --build` → `scripts/smoke_w1.ps1`(dummy) → `scripts/demo.ps1`(실게이트) → `scripts/sanity.ps1` → `scripts/demo_violations.ps1`.  
 **임계:** 가정 0.75/0.72 → 실측 보정 0.68/0.65. dummy PASSED를 실게이트로 쓰지 않는다.
 
@@ -217,9 +217,15 @@ Linux/macOS: `.ps1` → 동명 `.sh`. `smoke_w1.ps1` 대신 health + claim 확�
 
 ## 8. 한계와 다음 단계
 
+- **골든셋이 학습셋 안에 있다 (홀드아웃 없음).** 데모 N=40 **40/40**, 본편 n=300 **300/300** 케이스가
+  학습에 쓰인 이미지다 — `train_scratch.py`가 EuroSAT 27,000장 전수를 학습하고 `extract_golden.py`가
+  같은 zip에서 케이스를 뽑기 때문이다 (검증: `python3 scripts/check_golden_leakage.py`).
+  따라서 본 보고서의 게이트 점수는 **학습 데이터 재현 점수**이며 일반화 성능이 아니다.
+  게이트 사슬·M25·sanity floor는 이 결함의 영향을 받지 않는다 (모델 품질과 무관한 DB 불변식).
+  해소 절차는 `docs/ops/phase1-verdict.md` §6.3.
 - 데모 N=40이면 대체가능성 통계 판정(편차 0.05)은 **불가** (SE가 임계와 비슷). 본편 n≥300.
 - seed Agent의 시드 `gate_run` PASSED는 **배관용**이다. dummy 추론·dummy 게이트를 품질 증명으로 쓰지 않는다.
-- A/B 비교(S2)를 Must로 올릴지는 **미결** (기한 8/11). 구현하지 않은 채 문서로만 남긴다.
+- A/B(S2)는 **사슬 위에서 실행됐다** (`scripts/proof_ab.sh`, 2026-08-08): Agent A·B가 각각 실게이트 PASSED (acc 0.700 / 0.825, `dummy=false`) 후 동일 case를 `requestedAgentId`로 교차 할당해 둘 다 완료됐다. 다만 **case 1건은 등가성의 통계 근거가 아니다.** n=300 편차 0.0467은 게이트 사슬 밖 오프라인 측정이며 epoch 불일치(A80/B40)·SE≈0.019 한계를 갖는다. **보고서 Must로 올릴지는 master 판단** (SD-001).
 - `min_accuracy`/`min_macro_f1`는 TinyEuroSAT scratch N=40 실측 후 **0.68/0.65**로 보정했다 (가정 0.75/0.72는 위였음).
 - 공공 유휴·테넌트 제품화는 출품 범위 밖이다.
 - `node_credential`은 설계 초안만 (`docs/design/node-credential-draft.md`). DDL·발급 API는 승인 후.

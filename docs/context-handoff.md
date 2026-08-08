@@ -29,6 +29,7 @@
 | D13 | 커밋 계정 = **gncorpseo-commits** | 전역 CLAUDE.md의 jangsejong 아님 |
 | D14 | 문서는 `docs/{guide,error,history,design,spec,ops,research}` + `docs/INDEX.md` | 전역 파일 순번 금지. 진입은 INDEX |
 | D15 | Provenance by Design. 사슬은 Capability → Agent → `weights_sha256`만 (Model Identifier 금지). 완료 = `assignment` + 해시 + `gate_run` 사슬. `audit_log` 실패 ≠ 무조건 FAILED | 기획서 v4.5. UI가 아니라 DB 증적 |
+| D16 | **프로젝트 종착점 = Phase 3+ 로드맵 전체** (기획서 §9). Contest MVP는 Phase 1의 슬라이스이며 **종료 지점이 아니다**. 8/27은 그 슬라이스의 외부 마감일 | 2026-08-08 결정. 실행 계단·진입조건은 [`design/roadmap.md`](./design/roadmap.md). 단 §7.2 Go 없이 Phase 2 코드 금지(§13)는 그대로 |
 
 ---
 
@@ -71,6 +72,8 @@
 | 3 | `min_accuracy` — **0.68** (가정 0.75는 실측 위였음) | 보정됨 |
 | 4 | A/B Must **실측 Within**(diff≈0.047) · 문서·영상에 epoch/SE 한계 명시 (SD-001 closed) | 반영 중 |
 | 5 | 전역 `~/.claude/CLAUDE.md`의 GitHub 계정 정정 | 급하지 않음 |
+| 6 | **Phase 1 완주 잔여 3건** — Agent B 실게이트 PASSED · 증명 모드 교체 할당(M14/UC-7) · 통과율 20–80% 실측 → §7.2 판정 리포트 | 대회 제출 후 ([`design/roadmap.md`](./design/roadmap.md) §2) |
+| 7 | **마이그레이션 체계 부재** — `init.sql` 일괄 적용뿐. Phase 2 `node_credential` DDL(SD-002)의 선결과제 | Phase 2 착수 전 |
 
 ---
 

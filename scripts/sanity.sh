@@ -11,11 +11,11 @@ for mode in constant random invalid; do
     echo "score_gate $mode failed rc=$rc" >&2
     exit 1
   fi
-  status="$(python -c 'import json,sys; print(json.load(sys.stdin)["status"])' <<<"$raw")"
-  printf '%s' "$raw" | python -c 'import json,sys; s=json.load(sys.stdin); print("  %s: status=%s acc=%.4f" % (s["mode"], s["status"], s["golden_score"]))'
+  status="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])' <<<"$raw")"
+  printf '%s' "$raw" | python3 -c 'import json,sys; s=json.load(sys.stdin); print("  %s: status=%s acc=%.4f" % (s["mode"], s["status"], s["golden_score"]))'
   if [[ "$status" != "FAILED" ]]; then
     echo "sanity $mode must FAILED" >&2
     exit 1
   fi
 done
-echo "sanity OK (floors FAILED). A/B Must는 미결·미구현."
+echo "sanity OK (floors FAILED). 사슬 위 A/B 교체는 scripts/proof_ab.sh."

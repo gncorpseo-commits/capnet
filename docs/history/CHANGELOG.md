@@ -1,5 +1,25 @@
 # Changelog
 
+## Phase 1 판정 = 보류 · 골든셋 누출 발견 — 2026-08-08
+
+- **P1-1·P1-2 달성**: `scripts/proof_ab.sh` — A/B 실게이트 PASSED(`dummy=false`) + 동일 case 교차 할당(`honored=true`, assignment 2건 SUCCEEDED). §7.1-2·3 사슬 위 달성
+- **P1-3**: `scripts/pass_rate.sh` · 8후보 사다리(TE{5,20,40,80}·TEB{5,10,20,40}) → **75.0%**. 모집단 설계는 결과 확인 전 커밋(`7100c9f`)
+- **P1-4**: `docs/ops/phase1-verdict.md` — **판정 보류(HOLD)**
+- **SD-008 골든셋 ⊂ 학습셋**: 데모 40/40 · n300 300/300이 학습에 쓰인 이미지. 홀드아웃 없음 → 게이트가 능력이 아니라 학습 데이터 재현을 잰다. `scripts/check_golden_leakage.py` (exit 2). **Phase 2 착수 차단**
+- 영향 없음: 게이트 사슬 · M25 6종 · sanity floor 3종 · Product Track 구조
+- n=300 재현: A 0.8800 · B 0.9267 · abs_diff 0.046667 · **label_agreement 0.8933**(300건 중 32건 라벨 상이)
+- 재현성 수정: `demo.sh`·`sanity.sh` 호스트 `python`→`python3`, `demo.sh` f-string 백슬래시 → % 포맷. **.sh 경로는 Linux에서 한 번도 성공한 적이 없었다** (Contest Must M4 직결)
+- 보고서 초안 §8에 누출 명시 · §0·§8의 낡은 A/B 서술 정정
+
+## 종착점 Phase 3+ 확장 · Phase 1 좌표 정정 — 2026-08-08
+
+- **D16**: 프로젝트 종착점 = 기획서 §9 Phase 3+ 전체. Contest MVP는 Phase 1 슬라이스 (SD-006)
+- `docs/design/roadmap.md` 신설 — Phase 1 완주 → 2 → 3 → 4–6 진입조건·산출물·판정 게이트
+- **정정**: A/B n300 Within은 **게이트 사슬 밖 측정**. §7.1 증명 대상 2·3번(Agent B 실게이트 PASSED, 증명 모드 교체 할당) 미달 · 통과율 20–80% 미실측 — STATE·SD-001 반영
+- **SD-007**: 마이그레이션 체계 부재 (Phase 2 `node_credential` DDL 선결과제)
+- **지정 실행(M14) 배관은 이미 존재** — `task.requested_agent_id` + `claim.py` 조인(`agent_capability_passed` 경유). §7.1-3은 미구현이 아니라 **미실행**이며 막는 것은 Agent B 하나. 실제 공백은 `proof_run_id` 기록·UC-7 절차
+- 촬영 런북: UC-7 불가 명시(B 미통과). 스키마·코드 변경 없음
+
 ## Team role pl (peer of finn/toma) — 2026-08-08
 
 - `docs/guide/github-team-guide.md` v1.3 · `CONTRIBUTING.md` — 작업 역할 **pl** (`pl/<topic>`, `LGTM (pl)`, finn/toma와 동급). master는 merge 전용
@@ -143,9 +163,9 @@
 
 ## Contest — 2026-08-01
 
-- [`Contest_MVP_2026.md`](./Contest_MVP_2026.md) **v0.3** — 문서세트 정합 (골든셋 v0.2, 영문 파일명, M25 6종 고정)
-- [`user-guide-ko.md`](./user-guide-ko.md) — IT 비전문가용
-- [`golden/image-classify-v1.md`](./golden/image-classify-v1.md) — 골든셋 정본
+- [`Contest_MVP_2026.md`](../ops/Contest_MVP_2026.md) **v0.3** — 문서세트 정합 (골든셋 v0.2, 영문 파일명, M25 6종 고정)
+- [`user-guide-ko.md`](../guide/user-guide-ko.md) — IT 비전문가용
+- [`golden/image-classify-v1.md`](../spec/golden/image-classify-v1.md) — 골든셋 정본
 
 ## v4.3 — 2026-07-31
 

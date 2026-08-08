@@ -54,6 +54,7 @@
 
 ### design
 - [기획서 v4.5](./design/capnet-plan.md) (스키마는 v4.4)
+- [실행 로드맵 Phase 1→3+](./design/roadmap.md) — 진입조건·판정 게이트 (**일정 정본 아님**)
 - [node_credential 설계 초안](./design/node-credential-draft.md) (**DDL 미적용**)
 
 ### spec
@@ -70,6 +71,7 @@
 - [운영규정 준수 근거](./ops/regulation-compliance.md)
 - [결과보고서·붙임 초안 문장](./ops/contest-report-form-draft.md) — 공식 양식 이식용
 - [결과보고서 md 초안](./ops/contest-report-draft.md) — §0–9
+- [Phase 1 판정 리포트](./ops/phase1-verdict.md) — 기획서 §7.2 의무 판정 (**Phase 2 착수 관문**)
 - [시연 영상 스토리보드](./ops/demo-video-storyboard.md)
 - [촬영일 런북](./ops/shoot-day-runbook.md) — 명령·자막 복붙
 - [게이트 사슬 1장](./ops/gate-chain-slide.md) — 영상 150–170초용
