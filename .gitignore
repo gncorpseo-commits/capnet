@@ -9,5 +9,13 @@ artifacts/
 !apps/node/weights/placeholder.safetensors
 !apps/node/weights/eurosat_scratch.safetensors
 !apps/node/weights/eurosat_scratch_b.safetensors
+# 실험 가중치의 meta 는 본체가 없으므로 커밋하지 않는다 (공개 2종만 예외)
+apps/node/weights/*.meta.json
+!apps/node/weights/eurosat_scratch.meta.json
+!apps/node/weights/eurosat_scratch_b.meta.json
+data/golden-n300-*/
+data/golden-G2/
+data/golden-V/
+data/golden-n600-*/
 docs/_to_delete/
 .pytest_cache/

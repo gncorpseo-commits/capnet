@@ -95,6 +95,8 @@ class GateFinishBody(BaseModel):
     note: str | None = None
     macro_f1: float | None = None
     invalid_rate: float | None = None
+    # 라벨 공간 붕괴 차단. 계약이 min_per_class_recall 을 선언하면 실게이트 PASSED 에 필수.
+    min_per_class_recall: float | None = None
     # S3: 실게이트는 필수. dummy plumbing은 생략 가능(넣으면 스냅샷과 일치해야 함).
     golden_set_sha256: str | None = None
 
@@ -307,6 +309,7 @@ def gate_finish(gate_run_id: uuid.UUID, body: GateFinishBody) -> dict[str, Any]:
                 note=body.note,
                 macro_f1=body.macro_f1,
                 invalid_rate=body.invalid_rate,
+                min_per_class_recall=body.min_per_class_recall,
                 golden_set_sha256=body.golden_set_sha256,
             )
     except ValueError as exc:

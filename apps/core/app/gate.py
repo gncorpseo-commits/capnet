@@ -154,6 +154,7 @@ def assert_real_finish(
     cases_passed: int | None,
     macro_f1: float | None,
     invalid_rate: float | None,
+    min_per_class_recall: float | None,
     cap: dict[str, Any],
 ) -> None:
     """dummy=false PASSED는 골든 지표를 충족해야 한다. dummy plumbing과 섞지 않는다."""
@@ -184,6 +185,21 @@ def assert_real_finish(
             f"acc={golden_score:.4f} f1={macro_f1:.4f} inv={invalid_rate:.4f} "
             f"need acc>={min_acc} f1>={min_f1} inv<={max_inv}"
         )
+    # 계약이 선언했으면 증명 없이 PASSED 를 받지 않는다.
+    # 이게 없으면 클래스를 통째로 버린 모델도 통과한다 (m=8 -> acc 0.80 / f1 0.711).
+    min_recall_req = metrics.get("min_per_class_recall")
+    if min_recall_req is not None:
+        if min_per_class_recall is None:
+            raise ValueError(
+                "real PASSED requires min_per_class_recall "
+                f"(capability declares >= {min_recall_req})"
+            )
+        if float(min_per_class_recall) < float(min_recall_req):
+            raise ValueError(
+                "real PASSED rejected: "
+                f"min_per_class_recall={float(min_per_class_recall):.4f} "
+                f"< {float(min_recall_req)}"
+            )
 
 
 def finish_gate_run(
@@ -198,6 +214,7 @@ def finish_gate_run(
     note: str | None,
     macro_f1: float | None = None,
     invalid_rate: float | None = None,
+    min_per_class_recall: float | None = None,
     golden_set_sha256: str | None = None,
 ) -> dict[str, Any] | None:
     if status not in ("PASSED", "FAILED", "ERROR"):
@@ -214,6 +231,7 @@ def finish_gate_run(
         cases_passed=cases_passed,
         macro_f1=macro_f1,
         invalid_rate=invalid_rate,
+        min_per_class_recall=min_per_class_recall,
         cap=cap,
     )
 

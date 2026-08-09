@@ -145,6 +145,52 @@ paths:
           description: Task
         "404":
           description: 없음
+  /v1/nodes-liveness:
+    get:
+      summary: 기기 생존·가용 상태 (배정 근거)
+      description: >
+        heartbeat 신선도 · availability · 진행 중 배정 수.
+        Core 워커는 살아 있고 덜 바쁜 기기에만 배정한다.
+      responses:
+        "200":
+          description: 기기별 생존 상태 목록
+  /v1/internal/nodes/{node_id}/heartbeat:
+    post:
+      summary: 기기 생존·가용 신고
+      description: >
+        AVAILABLE / BUSY / DRAINING / OFFLINE.
+        신고가 끊기면(heartbeat_timeout_s 초과) 배정 후보에서 빠진다.
+      parameters:
+        - $ref: "#/components/parameters/NodeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                availability:
+                  type: string
+                  enum: [AVAILABLE, BUSY, DRAINING, OFFLINE]
+                metrics:
+                  type: object
+                  nullable: true
+      responses:
+        "200":
+          description: 세션 갱신됨
+        "400":
+          description: 알 수 없는 availability
+  /v1/internal/nodes/{node_id}/assignments:
+    get:
+      summary: 기기가 **자기에게 배정된** 살아 있는 lease를 가져간다
+      description: >
+        큐 pull이 아니다. 배치는 Core 워커가 이미 끝냈고 여기서는 결과만 전달한다.
+        이 경로 덕분에 Core가 기기로 들어갈 필요가 없다 (NAT).
+      parameters:
+        - $ref: "#/components/parameters/NodeId"
+      responses:
+        "200":
+          description: LEASED 배정 목록 (weights_sha256 · input_ref 포함)
   /v1/internal/claim:
     post:
       summary: Core 전용 claim (FOR UPDATE SKIP LOCKED)
@@ -330,6 +376,12 @@ components:
         note: { type: string, nullable: true }
         macro_f1: { type: number, nullable: true }
         invalid_rate: { type: number, nullable: true }
+        min_per_class_recall:
+          type: number
+          nullable: true
+          description: >
+            계약이 min_per_class_recall 을 선언하면 실게이트 PASSED 에 필수.
+            없거나 미달이면 거절된다 (라벨 공간 붕괴 차단).
         golden_set_sha256:
           type: string
           description: 실게이트 필수. gate_run 스냅샷과 불일치 시 거부 (S3).
