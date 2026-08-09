@@ -63,6 +63,16 @@ class ZipEuroSAT(Dataset):
         return to_tensor(img), label
 
 
+# 홀드아웃 분할 (H1) — 골든셋이 학습셋 안에 있으면 게이트는 능력이 아니라 암기를 잰다.
+# scripts/extract_golden.py 의 동일 함수와 **규칙이 같아야 한다.** 한쪽만 고치면 누출이 되살아난다.
+HOLDOUT_MOD = 5  # 1/5 ≈ 20%
+
+
+def is_holdout(name: str) -> bool:
+    """zip 엔트리명 해시로 결정적 분할. 시드·순서와 무관하게 항상 같은 결과."""
+    return int(hashlib.sha1(name.encode("utf-8")).hexdigest()[:8], 16) % HOLDOUT_MOD == 0
+
+
 def list_images(zf: zipfile.ZipFile) -> list[str]:
     names = []
     for name in zf.namelist():
@@ -80,9 +90,23 @@ def main() -> None:
     torch.manual_seed(seed)
     random.seed(seed)
     with zipfile.ZipFile(ZIP_PATH) as zf:
-        names = list_images(zf)
+        all_names = list_images(zf)
+    # HOLDOUT=0 이면 구버전 동작(전수 학습). 기본은 홀드아웃 제외.
+    use_holdout = os.environ.get("HOLDOUT", "1") != "0"
+    if use_holdout:
+        names = [n for n in all_names if not is_holdout(n)]
+    else:
+        names = list(all_names)
+    held = len(all_names) - len(names)
+    print(
+        f"split holdout={'on' if use_holdout else 'OFF'} "
+        f"train={len(names)} held_out={held} total={len(all_names)}",
+        flush=True,
+    )
+    if use_holdout and held == 0:
+        raise SystemExit("홀드아웃이 0건이다. 분할 규칙을 확인하라.")
     random.shuffle(names)
-    # scratch 전수. 사전학습 없음. 게이트 미달이면 FAILED가 정답.
+    # 사전학습 없음. 게이트 미달이면 FAILED가 정답.
     ds = ZipEuroSAT(ZIP_PATH, names, augment=True)
     loader = DataLoader(ds, batch_size=64, shuffle=True, num_workers=0)
     model = build_model(ARCH)
@@ -131,6 +155,12 @@ def main() -> None:
         "arch": ARCH,
         "pretrained": False,
         "dataset": "eurosat-rgb",
+        "split": {
+            "holdout": use_holdout,
+            "rule": f"sha1(zip_entry_name)[:8] % {HOLDOUT_MOD} == 0 -> holdout",
+            "train_count": len(names),
+            "held_out_count": held,
+        },
         "input_hw": [32, 32],
         "train_images": len(names),
         "epochs": total_epochs,

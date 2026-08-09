@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import zipfile
@@ -40,11 +41,24 @@ FOLDERS = {
 DEFAULT_MANIFESTS = [
     "docs/spec/golden/manifest-image-classify-v1.json",
     "data/golden-n300/manifest-image-classify-n300.json",
+    "data/golden-n300-holdout/manifest-image-classify-n300.json",
+    "data/golden-n300-train/manifest-image-classify-n300.json",
 ]
 
+# apps/train/train_scratch.py · scripts/extract_golden.py 와 규칙이 같아야 한다.
+HOLDOUT_MOD = 5
 
-def training_names(zip_path: Path) -> set[str]:
-    """train_scratch.list_images() 와 동일한 규칙."""
+
+def is_holdout(name: str) -> bool:
+    return int(hashlib.sha1(name.encode("utf-8")).hexdigest()[:8], 16) % HOLDOUT_MOD == 0
+
+
+def training_names(zip_path: Path, holdout: bool = True) -> set[str]:
+    """train_scratch.py 가 실제로 학습에 쓰는 집합.
+
+    holdout=True  → 홀드아웃 제외 (현재 기본 동작, HOLDOUT=1)
+    holdout=False → 전수 (구버전 동작, HOLDOUT=0). SD-008 최초 발견 재현용
+    """
     with zipfile.ZipFile(zip_path) as zf:
         names = set()
         for name in zf.namelist():
@@ -52,6 +66,8 @@ def training_names(zip_path: Path) -> set[str]:
                 continue
             parts = name.replace("\\", "/").split("/")
             if len(parts) >= 3 and parts[1] in FOLDERS:
+                if holdout and is_holdout(name):
+                    continue
                 names.add(name)
     return names
 
@@ -74,7 +90,12 @@ def check(manifest_path: Path, train: set[str]) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--zip", default="data/eurosat/EuroSAT_RGB.zip")
-    ap.add_argument("--manifest", action="append", help="반복 지정 가능. 없으면 기본 2종")
+    ap.add_argument("--manifest", action="append", help="반복 지정 가능. 없으면 기본 4종")
+    ap.add_argument(
+        "--no-split",
+        action="store_true",
+        help="홀드아웃 분할 이전 동작으로 검사 (전수 학습 가정). SD-008 재현용",
+    )
     args = ap.parse_args()
 
     zip_path = Path(args.zip)
@@ -82,8 +103,9 @@ def main() -> int:
         print(f"EuroSAT zip 없음: {zip_path} — scripts/download_eurosat.sh 먼저", file=sys.stderr)
         return 1
 
-    train = training_names(zip_path)
-    print(f"학습셋 이미지 수 (train_scratch.list_images 규칙): {len(train)}")
+    train = training_names(zip_path, holdout=not args.no_split)
+    mode = "전수(구버전)" if args.no_split else "홀드아웃 제외(현재)"
+    print(f"학습셋 이미지 수 [{mode}]: {len(train)}")
 
     manifests = [Path(m) for m in (args.manifest or DEFAULT_MANIFESTS)]
     leaked = False

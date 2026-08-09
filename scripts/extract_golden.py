@@ -27,6 +27,16 @@ CLASSES = list(LABEL.keys())
 ARCHIVE_SHA256 = "b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90"
 
 
+# 홀드아웃 분할 (H1) — apps/train/train_scratch.py 의 동일 함수와 **규칙이 같아야 한다.**
+# 한쪽만 고치면 골든셋이 다시 학습셋 안으로 들어간다 (SD-008).
+HOLDOUT_MOD = 5  # 1/5 ≈ 20%
+
+
+def is_holdout(name: str) -> bool:
+    """zip 엔트리명 해시로 결정적 분할."""
+    return int(hashlib.sha1(name.encode("utf-8")).hexdigest()[:8], 16) % HOLDOUT_MOD == 0
+
+
 def jpeg_hw(data: bytes) -> tuple[int, int, int] | None:
     i = 2
     n = len(data)
@@ -70,6 +80,12 @@ def main() -> None:
         default="ic1",
         help="caseId 접두 (데모 ic1, 본편 ic1f 등)",
     )
+    parser.add_argument(
+        "--split",
+        choices=("holdout", "train", "all"),
+        default="holdout",
+        help="케이스를 뽑을 구간. 기본 holdout — 학습에 쓰이지 않은 이미지만 (SD-008)",
+    )
     args = parser.parse_args()
 
     if args.n % len(CLASSES) != 0:
@@ -103,10 +119,16 @@ def main() -> None:
                     pixel_hist["unparsed"] += 1
                 else:
                     pixel_hist[f"{hw[0]}x{hw[1]}c{hw[2]}"] += 1
+            if args.split == "holdout" and not is_holdout(name):
+                continue
+            if args.split == "train" and is_holdout(name):
+                continue
             by_class[cls].append(name)
 
         for cls in CLASSES:
             by_class[cls].sort()
+        pool = sum(len(v) for v in by_class.values())
+        print(f"split={args.split} pool={pool} per_class_min={min(len(v) for v in by_class.values())}")
 
         cases = []
         idx = 1
@@ -138,6 +160,9 @@ def main() -> None:
         "preprocessing": {"resize": [32, 32], "bands": "RGB"},
         "selection": {
             "method": "per_class_even_stride_sorted_names",
+            "split": args.split,
+            "split_rule": "sha1(zip_entry_name)[:8] % 5 == 0 -> holdout",
+
             "n": args.n,
             "per_class": per_class,
             "model_based": False,
