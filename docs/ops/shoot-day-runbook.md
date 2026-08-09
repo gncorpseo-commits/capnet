@@ -30,7 +30,7 @@ Invoke-RestMethod http://127.0.0.1:8001/health
 |----|-----------|-------------|
 | 0–10 | 로고·한 줄 | 슬라이드 (녹화 시작) |
 | 10–20 | 문제 한 장 | 슬라이드 |
-| 20–45 | compose 기동 | 위 `compose up` 로그 또는 이미 Up인 health JSON |
+| 20–45 | compose 기동 + **생존 상태** | `compose up` 후 `curl :8000/v1/nodes-liveness` — 어느 기기가 살아 있고 얼마나 바쁜지 |
 | 45–75 | 실게이트 + **사이클** | `bash scripts/demo.sh` — **PASSED · dummy=false** 정지. **사용자는 Core만 호출한다** — 노드 주소가 명령 어디에도 없다는 점을 짚는다 |
 | (컷) | sanity | `scripts/sanity.ps1` — 3종 FAILED (짧게 잘라 넣기 가능) |
 | 75–105 | Task 완주 | `demo.ps1` 후반 Task 성공 출력 |

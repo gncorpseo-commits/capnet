@@ -27,6 +27,8 @@ from app.registry import (
     bind_agent_node,
     create_agent,
     create_node,
+    heartbeat,
+    liveness,
     get_agent,
     get_node,
     list_agents,
@@ -379,6 +381,30 @@ def claim(body: ClaimBody | None = None) -> dict[str, Any]:
     if detail:
         row = {**row, **detail}
     return row
+
+
+class HeartbeatBody(BaseModel):
+    availability: str = "AVAILABLE"
+    metrics: dict[str, Any] | None = None
+
+
+@app.post("/v1/internal/nodes/{node_id}/heartbeat")
+def node_heartbeat(node_id: uuid.UUID, body: HeartbeatBody) -> dict[str, Any]:
+    """Node 생존·가용 신고. 이게 없으면 죽은 기기에도 배정이 간다."""
+    try:
+        with get_conn() as conn:
+            return heartbeat(
+                conn, node_id=node_id, availability=body.availability, metrics=body.metrics
+            )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/v1/nodes-liveness")
+def nodes_liveness() -> dict[str, Any]:
+    """어느 기기가 살아 있고 얼마나 바쁜지. 배정 근거를 사람이 볼 수 있게 한다."""
+    with get_conn() as conn:
+        return {"nodes": liveness(conn)}
 
 
 @app.get("/v1/internal/nodes/{node_id}/assignments")

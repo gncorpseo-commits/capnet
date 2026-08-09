@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import json
 import uuid
 from typing import Any
 
@@ -211,3 +212,68 @@ def _is_ready(conn: psycopg.Connection, agent_id: uuid.UUID, node_id: uuid.UUID)
         (str(agent_id), str(node_id)),
     ).fetchone()
     return row is not None
+
+
+# ---------------------------------------------------------------------------
+# Node 생존·가용 상태 (node_session / node_liveness)
+#
+# 스키마에는 처음부터 있었으나 코드가 쓰지 않고 있었다.
+# 배정이 UUID 순서로만 골라서, 죽은 기기나 이미 바쁜 기기에도 일이 갔다.
+# ---------------------------------------------------------------------------
+
+UPSERT_SESSION_SQL = """
+WITH live AS (
+    SELECT id FROM node_session
+     WHERE node_id = %(node_id)s AND closed_at IS NULL
+     ORDER BY last_heartbeat DESC
+     LIMIT 1
+), updated AS (
+    UPDATE node_session s
+       SET last_heartbeat = now(), availability = %(availability)s, metrics = %(metrics)s::jsonb
+      FROM live
+     WHERE s.id = live.id
+    RETURNING s.id
+), inserted AS (
+    INSERT INTO node_session (node_id, availability, metrics)
+    SELECT %(node_id)s, %(availability)s, %(metrics)s::jsonb
+     WHERE NOT EXISTS (SELECT 1 FROM live)
+    RETURNING id
+)
+SELECT id FROM updated UNION ALL SELECT id FROM inserted
+"""
+
+
+def heartbeat(
+    conn: psycopg.Connection,
+    *,
+    node_id: uuid.UUID,
+    availability: str,
+    metrics: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Node가 살아 있음을 알린다. 세션이 없으면 열고, 있으면 갱신한다."""
+    if availability not in ("AVAILABLE", "BUSY", "DRAINING", "OFFLINE"):
+        raise ValueError(f"bad availability: {availability}")
+    row = conn.execute(
+        UPSERT_SESSION_SQL,
+        {
+            "node_id": str(node_id),
+            "availability": availability,
+            "metrics": json.dumps(metrics or {}),
+        },
+    ).fetchone()
+    return {"session_id": str(row["id"]), "availability": availability}
+
+
+def liveness(conn: psycopg.Connection) -> list[dict[str, Any]]:
+    """node_liveness 뷰 + 진행 중 배정 수."""
+    rows = conn.execute(
+        """
+        SELECT l.node_id, n.name, l.availability, l.last_heartbeat, l.is_fresh,
+               (SELECT count(*) FROM assignment a
+                 WHERE a.node_id = l.node_id AND a.status = 'LEASED'
+                   AND a.lease_expires_at > now()) AS active
+          FROM node_liveness l JOIN node n ON n.id = l.node_id
+         ORDER BY n.name
+        """
+    ).fetchall()
+    return [dict(r) for r in rows]

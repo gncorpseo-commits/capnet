@@ -118,7 +118,7 @@ task.trust_domain ≥ capability.trust_domain_min (domain_min_compatible)
 
 ```text
 사용자 → Core        능력 요구 (Agent·Node를 지정하지 않는다)
-        Core 워커     신뢰 도메인·티어가 맞는 Node로 배정
+        Core 워커     신뢰 도메인·티어가 맞고 **살아 있으며 덜 바쁜** Node로 배정
 Node  → Core         자기 배정을 가져가 실행 (outbound. NAT 뒤에서도 동작)
 Node  → Core         결과 반환
 사용자 → Core        결과·증적 조회

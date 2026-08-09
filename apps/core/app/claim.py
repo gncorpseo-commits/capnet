@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import os
 import uuid
 from typing import Any
 
@@ -37,9 +38,21 @@ SELECT t.id, acp.agent_id, c.id, n.id,
   JOIN agent_node_ready anr        ON anr.agent_id = acp.agent_id
   JOIN node n                      ON n.id = anr.node_id
                                   AND (%(node_id)s::uuid IS NULL OR n.id = %(node_id)s::uuid)
+  -- 유휴 판정: 살아 있고(heartbeat 신선) 일을 받을 수 있는 기기만 후보다.
+  -- 세션 기록이 아직 없는 기기는 %(require_live)s = false 일 때만 허용한다(초기 기동·데모).
+  LEFT JOIN node_liveness nl       ON nl.node_id = n.id
  WHERE t.id = %(task_id)s
- -- 후보가 여럿일 때 선택이 흔들리면 재현이 깨진다. 정렬로 고정한다.
- ORDER BY acp.agent_id, n.id
+   AND (
+        NOT %(require_live)s
+        OR (nl.is_fresh AND nl.availability IN ('AVAILABLE', 'BUSY'))
+       )
+   AND (nl.availability IS DISTINCT FROM 'DRAINING')
+   AND (nl.availability IS DISTINCT FROM 'OFFLINE')
+ -- 덜 바쁜 기기 먼저. 동률이면 UUID 순으로 고정해 재현성을 지킨다.
+ ORDER BY (SELECT count(*) FROM assignment a2
+            WHERE a2.node_id = n.id AND a2.status = 'LEASED'
+              AND a2.lease_expires_at > now()),
+          acp.agent_id, n.id
  LIMIT 1
 RETURNING id, task_id, agent_id, capability_id, node_id,
           task_trust_domain, node_trust_domain, capability_tier, node_tier_max,
@@ -66,6 +79,7 @@ def claim_next(
         "task_id": str(task_id) if task_id else None,
         "node_id": str(node_id) if node_id else None,
     }
+    require_live = os.environ.get("REQUIRE_LIVE_NODE", "1") != "0"
     locked = conn.execute(LOCK_SQL, params).fetchone()
     if locked is None:
         return None
@@ -73,7 +87,11 @@ def claim_next(
     locked_id = locked["id"]
     row = conn.execute(
         CLAIM_SQL,
-        {"task_id": str(locked_id), "node_id": params["node_id"]},
+        {
+            "task_id": str(locked_id),
+            "node_id": params["node_id"],
+            "require_live": require_live,
+        },
     ).fetchone()
     if row is None:
         return None

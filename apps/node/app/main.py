@@ -136,6 +136,23 @@ def health() -> dict[str, Any]:
     }
 
 
+def _send_heartbeat(availability: str, metrics: dict[str, Any] | None = None) -> None:
+    """살아 있음을 Core에 알린다. 실패해도 조용히 넘어간다 — 다음 주기에 다시 보낸다."""
+    if not NODE_ID:
+        return
+    url = f"{CORE_URL}/v1/internal/nodes/{NODE_ID}/heartbeat"
+    req = urllib.request.Request(
+        url,
+        data=json.dumps({"availability": availability, "metrics": metrics or {}}).encode(),
+        headers={"content-type": "application/json"},
+        method="POST",
+    )
+    try:
+        urllib.request.urlopen(req, timeout=5).close()
+    except Exception:
+        pass
+
+
 def _fetch_my_assignments() -> list[dict[str, Any]]:
     """Core에서 내게 배정된 살아 있는 lease만 가져온다. 큐를 뒤지지 않는다."""
     if not NODE_ID:
@@ -213,7 +230,10 @@ def execute(body: ExecuteBody) -> dict[str, Any]:
 def _poll_loop() -> None:
     while True:
         try:
-            for a in _fetch_my_assignments():
+            mine = _fetch_my_assignments()
+            # 일이 있으면 BUSY, 없으면 AVAILABLE. Core 는 이걸 보고 배정한다.
+            _send_heartbeat("BUSY" if mine else "AVAILABLE", {"active": len(mine)})
+            for a in mine:
                 try:
                     out = _run(uuid.UUID(str(a["id"])), a["weights_sha256"], a.get("input_ref"))
                     print(f"node: ran assignment={a['id']} label={out.get('label')}", flush=True)
