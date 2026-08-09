@@ -3,11 +3,11 @@
 # WEIGHTS=eurosat_scratch_b.safetensors OUT_NAME=score-n300-b.json ./score_n300.sh
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-golden="$root/data/golden-n300"
+golden="${GOLDEN:-$root/data/golden-n300}"   # 예: GOLDEN=$PWD/data/golden-n300-holdout
 manifest="$golden/manifest-image-classify-n300.json"
 WEIGHTS="${WEIGHTS:-eurosat_scratch.safetensors}"
 stem="${WEIGHTS%.safetensors}"
-OUT_NAME="${OUT_NAME:-score-n300-${stem}.json}"
+OUT_NAME="${OUT_NAME:-score-n300-${stem}-$(basename "$golden").json}"
 weights_host="$root/apps/node/weights/$WEIGHTS"
 
 if [[ ! -f "$manifest" ]]; then
