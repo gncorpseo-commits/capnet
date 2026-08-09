@@ -59,6 +59,27 @@
   TinyEuroSATB는 40ep에서 0.9267 → 0.4467로 무너졌다. **A/B 등가 주장이 이 차이 위에 서 있었다** (SD-001)
 - **상태:** closed
 
+### SD-010 · 절대규칙 4는 **코드가 아니라 배치 전제**로만 지켜진다
+- **무엇:** `POST /v1/nodes` 가 요청 본문의 `trust_domain` · `compute_tier_max` · `is_gate_runner` 를 그대로 받는다.
+  Core API 에 인증이 **없다**. 실측: `trust_domain=team, compute_tier_max=L, is_gate_runner=true` 로 노드 등록 성공
+- **문서와의 차이:** CHANGELOG W1 은 "Node 등급은 Core 관리자 등록. **Node 런타임 자기주장 경로 없음**"이라고 적었다.
+  정확히는 **Node 런타임 코드가 그 경로를 호출하지 않을 뿐, 경로는 열려 있고 아무나 부를 수 있다**
+- **왜 지금 안 고치나:** 인증 도입은 범위가 크고, Contest §4.2 가 "외부 개발자 셀프서브 온보딩"을 Non-goal 로,
+  D7 이 "MVP Node = 팀 자체 조달만"으로 두었다. **팀 내부망 전제**가 실질 방어다
+- **정직한 서술:** "Node 가 자기 등급을 주장할 수 없다"가 아니라
+  **"Node 등급은 Core 가 부여하며, MVP 는 그 API 를 신뢰 경계 안에 둔다"**
+- **해소 경로:** `node_credential` (SD-002) + 인증. Phase 2
+- **상태:** open — 문서 표현 정정 필요
+
+### SD-011 · 만료 lease 회수 부재 → **해소 (2026-08-10)**
+- **무엇:** 배정 후 기기가 죽으면 task 가 ASSIGNED/LEASED 에 영구히 갇혔다.
+  Node 는 만료 배정을 안 가져가고 워커는 QUEUED 만 봐서 회수 주체가 없었다
+- **실측:** 기기 75초 정지 → 복구 후에도 `LEASED · expired=t` 그대로
+- **해소:** `claim.reclaim_expired()` — 워커가 claim 전에 만료분을 EXPIRED 로 정리하고 task 를 QUEUED 로 되돌린다.
+  갇혀 있던 task 가 재배정되어 SUCCEEDED 확인
+- **관련:** Contest M17 이 "만료 스캐너는 후순위"로 두었던 항목. heartbeat 가 생기면서 함께 닫혔다
+- **상태:** closed
+
 ### SD-002 · node_credential DDL 보류
 - **무엇:** 설계 문서만 (`docs/design/node-credential-draft.md`). 스키마 미변경
 - **왜:** 프로젝트 규칙 — DDL/마이그레이션은 승인 전 금지
