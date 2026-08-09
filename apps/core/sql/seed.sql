@@ -24,13 +24,13 @@ INSERT INTO capability (
     'docs/spec/golden/manifest-image-classify-v1.json',
     'c8254bcb454d6ca362f61c0426e4a7c9c7de42cc81fa6ab3ed097b64c2862066',
     40,
-    '{"primary_metric":"accuracy","min_accuracy":0.68,"min_macro_f1":0.65,"max_invalid_rate":0.02,"combine":"AND","equivalence":{"metric":"accuracy","max_deviation":0.05,"comparison":"paired_same_cases"},"scoring_version":1,"threshold_basis":{"agent":"TinyEuroSAT","n":40,"measured_accuracy_range":[0.70,0.725],"note":"assumed 0.75/0.72 was above scratch baseline; calibrated for 20-80% pass band"},"dataset":{"id":"eurosat-rgb","zenodo_record":"7711810","archive":"EuroSAT_RGB.zip","archive_sha256":"b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90","zip_root":"EuroSAT_RGB","native_hw":[64,64],"contract_resize_hw":[32,32]}}'::jsonb
+    '{"primary_metric":"accuracy","min_accuracy":0.68,"min_macro_f1":0.65,"max_invalid_rate":0.02,"combine":"AND","guarantee":"floor_only","equivalence_observed":{"metric":"accuracy","comparison":"paired_same_cases","note":"observation only; not a pass condition (SD-009, plan v4.6)"},"scoring_version":1,"threshold_basis":{"agent":"TinyEuroSAT","n":40,"measured_accuracy_range":[0.70,0.725],"note":"assumed 0.75/0.72 was above scratch baseline; calibrated for 20-80% pass band"},"dataset":{"id":"eurosat-rgb","zenodo_record":"7711810","archive":"EuroSAT_RGB.zip","archive_sha256":"b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90","zip_root":"EuroSAT_RGB","native_hw":[64,64],"contract_resize_hw":[32,32]}}'::jsonb
 )
 ON CONFLICT (code, version) DO NOTHING;
 
 -- 기존 볼륨에서도 임계 실측 보정이 반영되게 한다 (스키마 변경 없음).
 UPDATE capability
-   SET golden_metrics = '{"primary_metric":"accuracy","min_accuracy":0.68,"min_macro_f1":0.65,"max_invalid_rate":0.02,"combine":"AND","equivalence":{"metric":"accuracy","max_deviation":0.05,"comparison":"paired_same_cases"},"scoring_version":1,"threshold_basis":{"agent":"TinyEuroSAT","n":40,"measured_accuracy_range":[0.70,0.725],"note":"assumed 0.75/0.72 was above scratch baseline; calibrated for 20-80% pass band"},"dataset":{"id":"eurosat-rgb","zenodo_record":"7711810","archive":"EuroSAT_RGB.zip","archive_sha256":"b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90","zip_root":"EuroSAT_RGB","native_hw":[64,64],"contract_resize_hw":[32,32]}}'::jsonb
+   SET golden_metrics = '{"primary_metric":"accuracy","min_accuracy":0.68,"min_macro_f1":0.65,"max_invalid_rate":0.02,"combine":"AND","guarantee":"floor_only","equivalence_observed":{"metric":"accuracy","comparison":"paired_same_cases","note":"observation only; not a pass condition (SD-009, plan v4.6)"},"scoring_version":1,"threshold_basis":{"agent":"TinyEuroSAT","n":40,"measured_accuracy_range":[0.70,0.725],"note":"assumed 0.75/0.72 was above scratch baseline; calibrated for 20-80% pass band"},"dataset":{"id":"eurosat-rgb","zenodo_record":"7711810","archive":"EuroSAT_RGB.zip","archive_sha256":"b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90","zip_root":"EuroSAT_RGB","native_hw":[64,64],"contract_resize_hw":[32,32]}}'::jsonb
  WHERE code = 'image.classify' AND version = 1;
 
 INSERT INTO agent (
