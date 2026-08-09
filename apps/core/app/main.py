@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from app.allowlist import assert_dataset_id
 from app.capability import create_capability, get_capability, list_capabilities
-from app.claim import claim_next
+from app.claim import claim_next, reclaim_expired
 from app.complete import (
     complete_assignment,
     lease_detail,
@@ -486,6 +486,9 @@ WORKER_INTERVAL_S = float(os.environ.get("CORE_WORKER_INTERVAL_S", "1.0"))
 
 def _worker_once() -> dict[str, Any] | None:
     with get_conn() as conn:
+        # 만료 lease 를 먼저 회수한다. 안 그러면 기기가 죽은 작업이 영구히 갇힌다.
+        for r in reclaim_expired(conn):
+            logger.info("worker: reclaimed expired lease task=%s", r["task_id"])
         return claim_next(conn)
 
 

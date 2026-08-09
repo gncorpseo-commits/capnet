@@ -59,6 +59,25 @@ RETURNING id, task_id, agent_id, capability_id, node_id,
           lease_expires_at, status
 """
 
+RECLAIM_SQL = """
+-- 만료된 lease 회수. 이게 없으면 배정 후 기기가 죽은 작업이 영구히 갇힌다
+-- (Node 는 만료 배정을 가져가지 않고, 워커는 QUEUED 만 본다).
+WITH dead AS (
+    UPDATE assignment a
+       SET status = 'EXPIRED', finished_at = now()
+      FROM task t
+     WHERE a.task_id = t.id
+       AND a.status = 'LEASED'
+       AND a.lease_expires_at <= now()
+    RETURNING a.id, a.task_id
+)
+UPDATE task t
+   SET status = 'QUEUED', current_assignment_id = NULL, updated_at = now()
+  FROM dead
+ WHERE t.id = dead.task_id AND t.status = 'ASSIGNED'
+RETURNING t.id AS task_id, dead.id AS assignment_id
+"""
+
 MARK_SQL = """
 UPDATE task
    SET status = 'ASSIGNED',
@@ -67,6 +86,12 @@ UPDATE task
  WHERE id = %(task_id)s
    AND status = 'QUEUED'
 """
+
+
+def reclaim_expired(conn: psycopg.Connection) -> list[dict[str, Any]]:
+    """만료된 lease 를 회수해 task 를 다시 QUEUED 로 되돌린다."""
+    rows = conn.execute(RECLAIM_SQL).fetchall()
+    return [dict(r) for r in rows]
 
 
 def claim_next(

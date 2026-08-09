@@ -218,8 +218,17 @@ def _run(assignment_id: uuid.UUID, weights_sha256: str, input_ref: str | None) -
 
 @app.post("/v1/execute")
 def execute(body: ExecuteBody) -> dict[str, Any]:
-    """수동 실행 경로. Core가 이 Node에 배정한 lease만 허용한다."""
-    if NODE_ID and not _is_mine(body.id):
+    """수동 실행 경로. Core가 이 Node에 배정한 lease만 허용한다.
+
+    **닫힌 실패.** NODE_ID 가 없으면 배정 여부를 확인할 수단이 없으므로 실행하지 않는다.
+    이전에는 `if NODE_ID and ...` 여서 NODE_ID 미설정 노드가 무방비였다.
+    """
+    if not NODE_ID:
+        raise HTTPException(
+            status_code=503,
+            detail="NODE_ID 미설정 — 배정 확인 불가. 실행을 거부한다 (fail closed)",
+        )
+    if not _is_mine(body.id):
         raise HTTPException(
             status_code=403,
             detail="assignment not leased to this node (Core가 배정하지 않았다)",
