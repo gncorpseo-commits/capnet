@@ -96,20 +96,31 @@ def main() -> int:
     parser.add_argument("--min-accuracy", type=float, default=0.68)
     parser.add_argument("--min-macro-f1", type=float, default=0.65)
     parser.add_argument("--max-invalid-rate", type=float, default=0.02)
+    # 라벨 공간 붕괴 차단. 균등 C클래스에서 무작위의 클래스별 재현율은 1/C 이다.
+    # 이 하한이 없으면 클래스 2개를 통째로 버린 모델도 통과한다 (m=8 -> acc 0.80 / f1 0.711).
+    parser.add_argument("--min-per-class-recall", type=float, default=0.10)
     args = parser.parse_args()
 
     cases = load_cases(Path(args.manifest), Path(args.cases))
     result = score(args.mode, args.weights, cases)
+    per_class_recall = {
+        k: (v["ok"] / v["n"] if v["n"] else 0.0) for k, v in result["per_label"].items()
+    }
+    min_recall = min(per_class_recall.values()) if per_class_recall else 0.0
+    result["min_per_class_recall"] = min_recall
+    result["per_class_recall"] = per_class_recall
     passed = (
         result["golden_score"] >= args.min_accuracy
         and result["macro_f1"] >= args.min_macro_f1
         and result["invalid_rate"] <= args.max_invalid_rate
+        and min_recall >= args.min_per_class_recall
     )
     result["status"] = "PASSED" if passed else "FAILED"
     result["thresholds"] = {
         "min_accuracy": args.min_accuracy,
         "min_macro_f1": args.min_macro_f1,
         "max_invalid_rate": args.max_invalid_rate,
+        "min_per_class_recall": args.min_per_class_recall,
     }
     json.dump(result, sys.stdout, ensure_ascii=False, indent=2)
     sys.stdout.write("\n")
