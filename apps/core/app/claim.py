@@ -38,6 +38,8 @@ SELECT t.id, acp.agent_id, c.id, n.id,
   JOIN node n                      ON n.id = anr.node_id
                                   AND (%(node_id)s::uuid IS NULL OR n.id = %(node_id)s::uuid)
  WHERE t.id = %(task_id)s
+ -- 후보가 여럿일 때 선택이 흔들리면 재현이 깨진다. 정렬로 고정한다.
+ ORDER BY acp.agent_id, n.id
  LIMIT 1
 RETURNING id, task_id, agent_id, capability_id, node_id,
           task_trust_domain, node_trust_domain, capability_tier, node_tier_max,

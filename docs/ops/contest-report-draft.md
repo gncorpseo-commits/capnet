@@ -14,6 +14,7 @@
 **해법:** Capability를 채점 가능한 계약으로 두고, 게이트·할당 규칙을 PostgreSQL 제약으로 강제한다.  
 **증명한 것 (초안 시점):** 스키마 불변식 실측, dummy E2E 배관, 골든셋 데모 N=40 핀, 위반 6종 스크립트, scratch 실게이트 PASSED(acc=0.70, `dummy=false`) + Task 완주, sanity floor FAILED.  
 **아직 아닌 것:** 시연 영상(스토리보드만), A/B **통계** 등가 판정(§8), `node_credential` DDL.  
+**가장 큰 한정:** **골든셋이 학습셋 안에 있다**(40/40 · 300/300). 아래 게이트 점수는 일반화 성능이 아니라 **학습 데이터 재현 점수**다 (§8 · `scripts/check_golden_leakage.py`).  
 **재현:** `docker compose up --build` → `scripts/smoke_w1.ps1`(dummy) → `scripts/demo.ps1`(실게이트) → `scripts/sanity.ps1` → `scripts/demo_violations.ps1`.  
 **임계:** 가정 0.75/0.72 → 실측 보정 0.68/0.65. dummy PASSED를 실게이트로 쓰지 않는다.
 
@@ -161,10 +162,13 @@ Task claim은 **Core 워커만** 한다. Node는 큐를 pull하지 않는다. `F
 
 | 실행 | accuracy | macro_f1 | invalid | 결과 |
 |------|----------|----------|---------|------|
-| scratch TinyEuroSAT, N=40, `dummy=false` | 0.70 | ≈0.688 | ≤0.02 | **PASSED** |
+| scratch TinyEuroSAT, N=40, `dummy=false` | 0.7000 | 0.6982 | 0.0000 | **PASSED** |
 | sanity 상수·난수·스키마 | — | — | — | **전부 FAILED** |
 
 seed Agent의 dummy `gate_run` PASSED는 **배관용**이며 품질 증명이 아니다.
+
+> **이 표에 붙는 두 한정.** ① 골든셋이 학습셋 안이라 위 점수는 학습 데이터 재현 점수다(§8).
+> ② N=40의 표준오차는 약 **0.072**인데 임계(0.68)와의 마진은 **0.020**이다. 마진이 표준오차의 1/3도 안 되므로, 이 합격은 통계적으로 견고하지 않다.
 
 ---
 

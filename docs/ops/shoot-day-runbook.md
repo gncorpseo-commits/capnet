@@ -2,7 +2,8 @@
 
 **목적:** 스토리보드([`demo-video-storyboard.md`](./demo-video-storyboard.md))를 **명령 순서**로 고정.  
 **갱신:** 2026-08-07  
-**A/B:** **UC-7 촬영 불가** — 지정 실행 배관(`requestedAgentId`)은 있으나 Agent B가 게이트를 통과한 적이 없어 화면에 띄울 교체 할당이 없다. n300 `|Δacc|≈0.047`은 **사슬 밖 오프라인 측정**이므로 자막·슬라이드로만 언급하고(epoch A80/B40 한계 병기), 150–170초는 **게이트 사슬 다이어그램**으로 간다.
+**촬영일: 2026-08-23 (확정).** 8/24 편집·업로드 → URL 확보. 밀 수 없다 — 영상이 보고서를 막는다.  
+**A/B: UC-7 촬영 가능해졌다** (2026-08-08 `scripts/proof_ab.sh`). Agent A·B가 각각 실게이트를 통과했고, 동일 case를 `requestedAgentId`로 교차 배정해 둘 다 완결됐다. 150–170초를 A/B 교체 화면으로 쓴다. **자막에 "학습 데이터 기준" 병기 필수** — 골든셋이 학습셋 안이다(SD-008).
 
 ---
 
@@ -35,7 +36,7 @@ Invoke-RestMethod http://127.0.0.1:8001/health
 | 75–105 | Task 완주 | `demo.ps1` 후반 Task 성공 출력 |
 | 105–135 | 위반 1–3 | `scripts/demo_violations.ps1` — `NOTICE REJECTED` / 제약명 **천천히** |
 | 135–150 | 위반 4–6 | 같은 스크립트 나머지 · 표 슬라이드 병치 |
-| 150–170 | 게이트 사슬 | 보고서 다이어그램 PNG/슬라이드 (A/B 화면 없음) |
+| 150–170 | **A/B 교체 (UC-7)** | `bash scripts/proof_ab.sh` — 같은 case, Agent 두 개, 둘 다 완결. `honored=true` 강조 |
 | 170–180 | GitHub | https://github.com/gncorpseo-commits/capnet · README 5분 기동 |
 
 ---
