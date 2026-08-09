@@ -96,6 +96,8 @@ git checkout -b finn/w1-compose-schema
 
 - 기본: 이슈 1개 ≈ 브랜치 1개. **W1–W3.5 fast-track은 주 단위로 묶을 수 있다** (§6.4).
 - `main` force-push 금지.
+- **직접 push 는 훅이 막는다.** 클론 후 1회 `git config core.hooksPath .githooks`.
+  긴급 시 `ALLOW_MAIN_PUSH=1` 로 우회하고 사후 Issue 를 남긴다 (issue #23 · SD-012).
 
 ---
 

@@ -6,6 +6,18 @@
 - **레포 사본:** [docs/guide/github-team-guide.md](docs/guide/github-team-guide.md)
 - **문서 지도:** [docs/INDEX.md](docs/INDEX.md)
 
+## 클론 후 1회: 훅 설치
+
+```bash
+git config core.hooksPath .githooks
+```
+
+`main`·`master` 직접 push 를 막는다. 팀 가이드 §3 이 문서로만 적어 두던 규칙을
+강제 지점으로 옮긴 것이다 (issue #23 · SD-012 — 커밋 18건이 그대로 들어갔다).
+
+긴급 시에만 `ALLOW_MAIN_PUSH=1 git push ...` 로 우회하고 **사후 Issue 를 남긴다.**
+
+
 ## 초단 요약
 
 1. Issue 먼저 (`W1:` …).

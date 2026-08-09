@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# main/master 직접 push 차단.
+#
+# 왜 있나: github-team-guide §3 "main — 출품·데모 정본. 직접 push 금지"가
+# 문서에만 있었고 아무것도 막지 않았다. 2026-08-09~10 에 커밋 18건이
+# 그대로 main 에 들어갔다 (issue #23 · SD-012).
+#
+# 규칙을 문서가 아니라 강제 지점에 둔다 — 이 저장소가 주장하는 바로 그것이다.
+#
+# 설치: git config core.hooksPath .githooks   (클론마다 1회)
+# 우회: ALLOW_MAIN_PUSH=1 git push ...        (긴급 hotfix. 사후 Issue 필수)
+set -euo pipefail
+
+PROTECTED="main master"
+[ "${ALLOW_MAIN_PUSH:-0}" = "1" ] && exit 0
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  [ -z "${remote_ref:-}" ] && continue
+  branch="${remote_ref#refs/heads/}"
+  for p in $PROTECTED; do
+    if [ "$branch" = "$p" ]; then
+      cat >&2 <<MSG
+
+  거부: '$p' 에 직접 push 할 수 없습니다.
+
+  팀 규칙(github-team-guide §3): main 은 출품·데모 정본이며 직접 push 금지.
+  작업은 finn/* · toma/* · pl/* 브랜치에서 하고 PR 로 올립니다.
+
+      git checkout -b pl/<topic>
+      git push -u origin HEAD
+      gh pr create --base main
+
+  긴급한 경우에만: ALLOW_MAIN_PUSH=1 git push ...   (사후 Issue 필수)
+
+MSG
+      exit 1
+    fi
+  done
+done
+exit 0
