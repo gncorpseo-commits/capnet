@@ -47,7 +47,7 @@ if not hits:
 print(hits[0]["sha256"])' "$1"
 }
 
-echo "== P1-3 통과율 실측 (team gate-runner · 데모 골든 N=40) =="
+echo "== 통과율 실측 (team gate-runner · 골든=${GOLDEN:-데모 N=40}) =="
 printf '%-34s %-8s %-8s %-8s %s\n' "candidate" "acc" "macro_f1" "invalid" "gate"
 printf -- '---------------------------------------------------------------------------\n'
 
@@ -60,9 +60,24 @@ for wfile in "${candidates[@]}"; do
   label="cand-${wfile%.safetensors}-$stamp"
 
   set +e
-  raw="$(docker compose --project-directory "$root" exec -T node-m-team \
-    python -m app.score_gate --mode scratch --weights "/weights/$wfile" \
-    --min-accuracy 0.68 --min-macro-f1 0.65 --max-invalid-rate 0.02)"
+  if [[ -n "${GOLDEN:-}" ]]; then
+    # 지정 골든셋(예: 홀드아웃 n=300)으로 채점. 일회성 컨테이너에 마운트한다.
+    #
+    # 주의: GOLDEN 을 쓰면 뒤의 gate-run finish 는 API가 거부한다 —
+    #   "cases_total 300 != golden_set_size 40"
+    # capability 가 선언한 골든셋과 다른 셋의 점수를 게이트 기록으로 남길 수 없다.
+    # 이건 버그가 아니라 계약이 작동하는 것이다. 사슬 밖 측정이 필요하면
+    # scripts/score_n300.sh 를 GOLDEN 과 함께 쓰고 결과 JSON을 집계하라.
+    raw="$(docker compose --project-directory "$root" run --rm --no-deps \
+      -v "$GOLDEN:/golden-x:ro" -v "$root/apps/node/weights:/weights:ro" \
+      node-m-team python -m app.score_gate --mode scratch --weights "/weights/$wfile" \
+      --manifest /golden-x/manifest-image-classify-n300.json --cases /golden-x/cases \
+      --min-accuracy 0.68 --min-macro-f1 0.65 --max-invalid-rate 0.02)"
+  else
+    raw="$(docker compose --project-directory "$root" exec -T node-m-team \
+      python -m app.score_gate --mode scratch --weights "/weights/$wfile" \
+      --min-accuracy 0.68 --min-macro-f1 0.65 --max-invalid-rate 0.02)"
+  fi
   rc=$?
   set -e
   if [[ "$rc" -ne 0 && "$rc" -ne 2 ]]; then
