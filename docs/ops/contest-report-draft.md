@@ -1,8 +1,10 @@
 # CapNet 결과보고서 초안 (문의 회신 무관)
 
-**상태:** 초안. 서식 미확정 → 절 단위 블록. 제출본은 이후 pdf/docx.  
-**갱신:** 2026-08-06 (§3·§4·§6·§7·§9 추가)  
-**쉬운 안내 요지:** [user-guide-ko.md](../guide/user-guide-ko.md)
+**역할:** 공식 양식에 들어가지 않는 **상세·기술 보조 문서**.  
+**제출 본문의 정본은** [`contest-report-form-draft.md`](./contest-report-form-draft.md) **「본문 붙여넣기용 압축본」이다.**  
+이 문서는 그 뒤를 받치는 근거(아키텍처 도식·불변식·위반 표·재현 절차·라이선스)를 담는다.  
+**갱신:** 2026-08-09 (기획서 v4.7 서사 반영)  
+**쉬운 안내:** [user-guide-ko.md](../guide/user-guide-ko.md)
 
 과장이 섞이면 1차 서면이 무너진다. **된 것과 안 된 것을 분리한다.**
 
@@ -10,13 +12,23 @@
 
 ## 0. 한 쪽 요약
 
-**문제:** 같은 능력 이름으로 다른 구현이 끼어들어도, 호출자는 알기 어렵다.  
-**해법:** Capability를 채점 가능한 계약으로 두고, 게이트·할당 규칙을 PostgreSQL 제약으로 강제한다.  
-**증명한 것 (초안 시점):** 스키마 불변식 실측, dummy E2E 배관, 골든셋 데모 N=40 핀, 위반 6종 스크립트, scratch 실게이트 PASSED(acc=0.70, `dummy=false`) + Task 완주, sanity floor FAILED.  
-**아직 아닌 것:** 시연 영상(스토리보드만), A/B **통계** 등가 판정(§8), `node_credential` DDL.  
-**가장 큰 한정:** **골든셋이 학습셋 안에 있다**(40/40 · 300/300). 아래 게이트 점수는 일반화 성능이 아니라 **학습 데이터 재현 점수**다 (§8 · `scripts/check_golden_leakage.py`).  
-**재현:** `docker compose up --build` → `scripts/smoke_w1.ps1`(dummy) → `scripts/demo.ps1`(실게이트) → `scripts/sanity.ps1` → `scripts/demo_violations.ps1`.  
-**임계:** 가정 0.75/0.72 → 실측 보정 0.68/0.65. dummy PASSED를 실게이트로 쓰지 않는다.
+**문제:** AI 능력을 호출할 때 세 가지를 알 수 없다 — 무엇이 답했는지, 자격이 있었는지, **내 데이터가 어디까지 갔는지.**
+
+**해법:** 사용자는 능력만 요구한다. Core가 승인된 신뢰 도메인 안의 기기로만 배정하고, 실행 증적을 DB에 남긴다. 라우팅 규칙은 애플리케이션 조건문이 아니라 **PostgreSQL 제약**이다.
+
+**보장한다**
+- 승인하지 않은 신뢰 도메인으로 **라우팅되지 않는다** (외래키 강제)
+- **사용자는 기기 주소를 모른다.** 기기는 Core가 배정하지 않은 실행을 거부한다 (HTTP 403 실측)
+- 누가·무엇으로·언제 실행했는지 **증적이 남고 조회된다**
+
+**보장하지 않는다**
+- 기기가 데이터를 남기지 않는다 — 추론은 평문을 요구한다. TEE 없이는 원리적으로 불가
+- 두 에이전트가 **같은 답**을 낸다 — 등가는 선택 프로파일의 **관측값**이다 (§8)
+
+**실측:** 위반 6종 DB 거절 · sanity 3종 탈락 · 품질 프로파일 실게이트 acc 0.7000 / f1 0.6982 (`dummy=false`) · 무단 노드 호출 403
+
+**재현:** `docker compose up --build -d` → `scripts/demo.sh` → `sanity.sh` → `demo_violations.sh`.
+**`demo.sh` 어디에도 기기 주소가 없다.**
 
 ---
 
@@ -24,28 +36,59 @@
 
 스토어에 에이전트를 모아 두는 것은 이미 많다. CapNet이 묻는 것은 그 앞이다.
 
-> 같은 계약을 표방하는 두 Agent를, 사용자가 모르는 채로 바꿔 끼울 수 있는가?
+> 내 데이터를 남의 기계에 보내면서, **어디로 갔는지 나중에 답할 수 있는가?**
 
-이름만으로는 보장되지 않는다. 별칭·라우터·시간 드리프트는 특정 벤더 공격이 아니라 플랫폼 구조 문제다 (기획서 v4.5 §2.5 · §14).
+대부분은 답하지 못한다. 로그에 모델 이름만 남고 그 이름 뒤의 구현은 언제든 바뀔 수 있다 (기획서 §2.5 · §14). 그리고 규정상 원본을 외부로 보낼 수 없는 조직에게는 이게 기능 문제가 아니라 **도입 가능 여부**의 문제다.
+
+정책을 문서에 적어 두는 것으로는 부족하다. 문서는 우회되고 코드의 `if`는 빠뜨려진다. **제약은 거절한다.**
 
 ---
 
-## 2. Capability = 계약
+## 2. Capability = 인터페이스 계약 (+ 선택 프로파일)
 
-`image.classify@1`은 코드 문자열이 아니라 다음이 묶인 계약이다.
+**필수 — 모든 능력의 공통**
 
-- 입출력 스키마 (closed-set 10라벨)
-- 전처리: EuroSAT RGB 원본 64×64 → **32×32** (게이트=제품)
-- 골든셋 데모 N=40 + `golden_set_sha256`
-- 통과 기준 AND (`min_accuracy` · `min_macro_f1` · `max_invalid_rate`) — **0.68 / 0.65 / 0.02** (실측 보정)
+| 항목 | 내용 |
+|------|------|
+| 입출력 스키마 | 무엇을 받고 무엇을 돌려주는가 |
+| 전처리 계약 | 게이트와 제품이 동일 (D3) |
+| 실행 조건 | `compute_tier` · `trust_domain_min` · 입력 allowlist |
 
-사슬은 **Capability → Agent → weights_sha256** 만. Model Identifier를 두지 않는다.
+채점 가능성을 요구하지 않는다. 분류·요약·임베딩 어디에도 붙는다.
+
+**선택 — 품질 프로파일**
+
+채점 가능한 능력에는 골든셋 게이트를 덧붙일 수 있다. `image.classify@1`이 첫 사례다.
+
+- closed-set 10라벨 · 64×64 → **32×32** (게이트=제품)
+- 통과 = AND: `min_accuracy 0.68` ∧ `min_macro_f1 0.65` ∧ `max_invalid_rate 0.02` ∧ **`min_per_class_recall 0.10`**
+- 마지막 항목은 **유도된 값**이다. 균등 10클래스에서 무작위의 클래스별 재현율은 `1/10`이므로, 선언한 모든 라벨에서 무작위보다 나아야 한다. 이 항목이 없으면 **클래스 2개를 통째로 버린 모델이 통과한다** (실측: acc 0.80 · f1 0.711)
+- `min_accuracy` 0.68은 **선언된 서비스 수준**이며 측정에서 유도되지 않는다. 허용 구간 (0.447, 0.910]은 실측
+
+사슬은 **Capability → Agent → `weights_sha256`** 만. Model Identifier를 두지 않는다.
 
 ---
 
 ## 3. 아키텍처
 
-200자 요약: Core가 정책·큐·게이트를, Node가 추론·채점을 맡고, **판정은 PostgreSQL 제약**이 한다.
+200자 요약: 사용자는 Core하고만 통신한다. Core가 배정하고, Node가 자기 몫을 가져가 실행하고, 결과가 Core를 통해 돌아온다. **판정은 PostgreSQL 제약**이 한다.
+
+### 3.0 실행 사이클
+
+```text
+사용자 → Core        능력 요구 (에이전트·기기를 지정하지 않는다)
+        Core 워커     신뢰 도메인·등급이 맞는 기기로 배정
+Node  → Core         자기 배정을 가져가 실행 (outbound. NAT 뒤에서도 동작)
+Node  → Core         결과 반환
+사용자 → Core        결과·증적 조회
+```
+
+두 가지가 이 사이클을 닫는다.
+
+- **당기는 방식.** Core가 Node로 들어가지 않는다. Node가 `GET /v1/internal/nodes/{id}/assignments`로 **자기에게 배정된 것만** 가져간다. 큐를 pull하지 않으므로 "claim은 Core 워커만" 규칙이 유지되고, NAT 뒤 기기도 동작한다.
+- **기기 측 검증.** Node는 Core가 배정하지 않은 실행을 **403으로 거부**한다. 이게 없으면 기기에 네트워크로 닿는 누구나 추론을 시킬 수 있다 — 도메인 FK는 `assignment` 기록을 막지만 기기 직접 호출은 막지 못한다.
+
+> **개발 중 이 부분이 지켜지지 않고 있었다.** 클라이언트가 `claim`을 호출하고 기기를 직접 불렀다. 즉 "Core가 중개한다"는 설명과 실제 동작이 달랐다. 발견해서 고쳤고, 그 경위를 여기 남긴다.
 
 ### 3.1 구성요소
 
@@ -182,32 +225,39 @@ seed Agent의 dummy `gate_run` PASSED는 **배관용**이며 품질 증명이 �
 - 디스크 ~2GB (이미지 + EuroSAT zip은 **별도** ~90MB, 저장소 미동봉)
 - Windows: PowerShell 5.1+ · Linux/macOS: bash
 
-### 7.2 명령 (Windows 기준)
+### 7.2 명령
 
-```powershell
+```bash
 git clone https://github.com/gncorpseo-commits/capnet.git
 cd capnet
-docker compose up --build -d          # 1–3분: Postgres init + Core + Node 3대
+docker compose up --build -d          # 1–3분: Postgres + Core + Node 3대
 
 # (최초 1회) EuroSAT + scratch 학습 — zip·가중치는 repo에 없음
-powershell -ExecutionPolicy Bypass -File scripts/download_eurosat.ps1
-powershell -ExecutionPolicy Bypass -File scripts/train_scratch.ps1   # CPU 20–40분
+bash scripts/download_eurosat.sh
+bash scripts/train_scratch.sh         # CPU 20–40분
 docker compose up --build -d
 
-powershell -ExecutionPolicy Bypass -File scripts/smoke_w1.ps1        # dummy 배관 (~30s)
-powershell -ExecutionPolicy Bypass -File scripts/demo.ps1            # 실게이트 + Task (~1–2min)
-powershell -ExecutionPolicy Bypass -File scripts/sanity.ps1        # floor FAILED (~30s)
-powershell -ExecutionPolicy Bypass -File scripts/demo_violations.ps1 # M25 6종 REJECTED (~20s)
+bash scripts/demo.sh                  # 능력 요구 → 자동 배정 → 실행 → 결과·증적
+bash scripts/sanity.sh                # floor 3종 FAILED
+bash scripts/demo_violations.sh       # 위반 6종 REJECTED
 ```
 
-Linux/macOS: `.ps1` → 동명 `.sh`. `smoke_w1.ps1` 대신 health + claim 확인.
+Windows는 동명 `.ps1`.
+
+**`demo.sh` 어디에도 기기 주소가 없다.** 사용자는 `POST /v1/tasks`로 능력을 요구하고 `GET /v1/tasks/{id}`로 결과를 받는다. 배정과 실행은 그 사이에서 자동으로 일어난다.
+
+기기 직접 호출을 시도하면 거부된다.
+
+```bash
+curl -X POST http://127.0.0.1:8001/v1/execute -d '{"id":"<남의 배정>",...}'
+# {"detail":"assignment not leased to this node (Core가 배정하지 않았다)"}  -> HTTP 403
+```
 
 ### 7.3 기대 출력
 
 | 스크립트 | 성공 신호 |
 |----------|-----------|
-| `smoke_w1` | dummy gate finish OK · placeholder infer |
-| `demo` | `score status=PASSED` · `acc≈0.70` · Task `COMPLETED` |
+| `demo` | `score status=PASSED acc=0.7000` · Task `COMPLETED` · **증적 한 줄**(assignment·node·agent·status) |
 | `sanity` | 3 runs **FAILED** |
 | `demo_violations` | `NOTICE REJECTED:` ×6 |
 
@@ -221,18 +271,23 @@ Linux/macOS: `.ps1` → 동명 `.sh`. `smoke_w1.ps1` 대신 health + claim 확�
 
 ## 8. 한계와 다음 단계
 
-- **골든셋이 학습셋 안에 있다 (홀드아웃 없음).** 데모 N=40 **40/40**, 본편 n=300 **300/300** 케이스가
-  학습에 쓰인 이미지다 — `train_scratch.py`가 EuroSAT 27,000장 전수를 학습하고 `extract_golden.py`가
-  같은 zip에서 케이스를 뽑기 때문이다 (검증: `python3 scripts/check_golden_leakage.py`).
-  따라서 본 보고서의 게이트 점수는 **학습 데이터 재현 점수**이며 일반화 성능이 아니다.
-  게이트 사슬·M25·sanity floor는 이 결함의 영향을 받지 않는다 (모델 품질과 무관한 DB 불변식).
-  해소 절차는 `docs/ops/phase1-verdict.md` §6.3.
-- 데모 N=40이면 대체가능성 통계 판정(편차 0.05)은 **불가** (SE가 임계와 비슷). 본편 n≥300.
-- seed Agent의 시드 `gate_run` PASSED는 **배관용**이다. dummy 추론·dummy 게이트를 품질 증명으로 쓰지 않는다.
-- A/B(S2)는 **사슬 위에서 실행됐다** (`scripts/proof_ab.sh`, 2026-08-08): Agent A·B가 각각 실게이트 PASSED (acc 0.700 / 0.825, `dummy=false`) 후 동일 case를 `requestedAgentId`로 교차 할당해 둘 다 완료됐다. 다만 **case 1건은 등가성의 통계 근거가 아니다.** n=300 편차 0.0467은 게이트 사슬 밖 오프라인 측정이며 epoch 불일치(A80/B40)·SE≈0.019 한계를 갖는다. **보고서 Must로 올릴지는 master 판단** (SD-001).
-- `min_accuracy`/`min_macro_f1`는 TinyEuroSAT scratch N=40 실측 후 **0.68/0.65**로 보정했다 (가정 0.75/0.72는 위였음).
-- 공공 유휴·테넌트 제품화는 출품 범위 밖이다.
-- `node_credential`은 설계 초안만 (`docs/design/node-credential-draft.md`). DDL·발급 API는 승인 후.
+**보장하지 않는 것을 먼저 적는다.**
+
+- **기기가 데이터를 남기지 않는다는 보장은 없다.** 추론은 평문을 요구하므로 TEE·동형암호 없이는 원리적으로 불가능하다. 보장하는 것은 **라우팅**(승인 도메인 밖으로 안 나감)과 **증적**(어디로 갔는지 남음)이다. §5.2도 "다운로드 이후 통제 불가 · 토큰 ≠ 면책"으로 인정해 두었다.
+- **두 에이전트가 같은 답을 낸다고 말하지 않는다.** 통과 기준이 하한(`acc ≥ t`)이라 통과자 사이의 점수 폭을 구조적으로 제한할 수 없다 — 강제 가능한 상한은 `1 − t`로 항등식이다. 실측 통과자 폭 **0.1767**. 이 사실을 발견한 뒤 등가 보장을 계약에서 내리고 관측값으로 강등했다.
+
+**품질 프로파일(선택 기능)의 알려진 한계**
+
+- **정적·공개 골든셋이라 의도적 과적합을 막을 수 없다.** manifest에 원본 경로가 다 적혀 있다. 해법은 **회전하는 은닉 프로브**이며 다음 단계로 설계해 두었다.
+- **선언한 데이터셋 밖의 분포에서는 보장이 성립하지 않는다.** 이 조건부성을 `golden_metrics.guarantee`에 기계가 읽는 형태로 넣었다 — 문서 각주가 아니라 계약의 일부다.
+- 개발 중 **골든셋이 학습셋과 겹친 것**을 스스로 발견해 홀드아웃 분할로 고쳤다 (겹침 0/300, `scripts/check_golden_leakage.py`로 검증). 다만 위 두 한계는 정적 골든셋을 쓰는 한 남는다.
+- n=300에서 SE≈0.026. 임계 부근 합격은 통계적으로 견고하지 않다.
+
+**다음 단계**
+
+- **유휴 기기 판정** (부하·상태 기반 배정) — 스키마 변경이 필요해 이번 범위 밖이다. 그리고 순서상 사이클이 먼저다: 신뢰할 수 없는 기기를 안전하게 받아들이는 방법을 세우기 전에 공유부터 열면 그것은 공유가 아니라 유출이다
+- 회전 은닉 프로브 (기기·에이전트 양쪽에 같은 메커니즘)
+- 조직 단위 플릿 → 초청 기기 → 개방형. 각 단계 진입 조건을 판정 기준과 함께 고정해 두었다
 
 ---
 
