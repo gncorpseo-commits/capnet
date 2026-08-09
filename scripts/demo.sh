@@ -64,15 +64,25 @@ curl -sf -X POST "$core/v1/agents/$agentId/bindings" -H 'content-type: applicati
 task="$(curl -sf -X POST "$core/v1/tasks" -H 'content-type: application/json' \
   -d "{\"datasetId\":\"eurosat-rgb\",\"caseId\":\"ic1-0001\",\"requestedAgentId\":\"$agentId\"}")"
 taskId="$(printf '%s' "$task" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
-claim="$(curl -sf -X POST "$core/v1/internal/claim" -H 'content-type: application/json' \
-  -d "{\"task_id\":\"$taskId\"}")"
-execBody="$(printf '%s' "$claim" | python3 -c 'import json,sys
-c=json.load(sys.stdin)
-print(json.dumps({"id":c["id"],"weights_sha256":c["weights_sha256"],"input_ref":c["input_ref"]}))')"
-out="$(curl -sf -X POST "$node/v1/execute" -H 'content-type: application/json' -d "$execBody")"
-printf '%s' "$out" | python3 -c 'import json,sys
-e=json.load(sys.stdin)
-if e.get("dummy"):
+
+# 여기서부터는 Core 하고만 말한다.
+# Core 워커가 배정하고, Node가 자기 몫을 가져가 실행하고, 결과가 Core로 돌아온다.
+# 클라이언트는 Node 주소를 알 필요가 없다.
+for _ in $(seq 1 60); do
+  tr="$(curl -sf "$core/v1/tasks/$taskId")"
+  st="$(printf '%s' "$tr" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
+  [[ "$st" == "COMPLETED" || "$st" == "FAILED" ]] && break
+  sleep 1
+done
+
+printf '%s' "$tr" | python3 -c 'import json,sys
+d=json.load(sys.stdin)
+if d["status"] != "COMPLETED":
+    raise SystemExit("task not completed: %s" % d["status"])
+res=json.loads(d["result_ref"]) if isinstance(d["result_ref"],str) else (d["result_ref"] or {})
+if res.get("dummy"):
     raise SystemExit("execute was dummy")
-print("demo OK — real gate PASSED + scratch task COMPLETED")
-print("label=", e.get("label"))'
+a=d["assignment"]
+print("demo OK - real gate PASSED + scratch task COMPLETED (Core 중개)")
+print("label=", res.get("label"))
+print("증적: assignment=%s node=%s agent=%s status=%s" % (a["id"], a["node_id"], a["agent_id"], a["status"]))'

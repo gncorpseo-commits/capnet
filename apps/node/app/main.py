@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -21,6 +22,11 @@ CORE_URL = os.environ.get("CORE_URL", "http://127.0.0.1:8000").rstrip("/")
 WEIGHTS_DIR = os.environ.get("WEIGHTS_DIR", "/weights")
 WEIGHTS_PATH = os.environ.get("WEIGHTS_PATH", os.path.join(WEIGHTS_DIR, "placeholder.safetensors"))
 CASES_DIR = os.environ.get("GOLDEN_CASES_DIR", "/golden/cases")
+
+# 이 Node의 신원. Core가 배정한 lease만 가져오고 실행한다.
+NODE_ID = os.environ.get("NODE_ID") or None
+POLL_ENABLED = os.environ.get("NODE_POLL", "1") != "0"
+POLL_INTERVAL_S = float(os.environ.get("NODE_POLL_INTERVAL_S", "1.0"))
 
 _LABELS = (
     "annual_crop",
@@ -130,20 +136,40 @@ def health() -> dict[str, Any]:
     }
 
 
-@app.post("/v1/execute")
-def execute(body: ExecuteBody) -> dict[str, Any]:
-    path = _resolve_weights(body.weights_sha256)
+def _fetch_my_assignments() -> list[dict[str, Any]]:
+    """Core에서 내게 배정된 살아 있는 lease만 가져온다. 큐를 뒤지지 않는다."""
+    if not NODE_ID:
+        return []
+    url = f"{CORE_URL}/v1/internal/nodes/{NODE_ID}/assignments"
+    try:
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            return json.loads(resp.read().decode()).get("assignments", [])
+    except Exception:
+        return []
+
+
+def _is_mine(assignment_id: uuid.UUID) -> bool:
+    """Core가 이 Node에 배정한 lease인지 확인한다.
+
+    이게 없으면 Node에 네트워크로 닿는 누구나 추론을 시킬 수 있다.
+    Core의 도메인·티어 FK는 assignment 기록을 막지만 Node 직접 호출은 막지 못한다.
+    """
+    return any(str(a.get("id")) == str(assignment_id) for a in _fetch_my_assignments())
+
+
+def _run(assignment_id: uuid.UUID, weights_sha256: str, input_ref: str | None) -> dict[str, Any]:
+    path = _resolve_weights(weights_sha256)
     dummy = _is_placeholder(path)
     started = time.perf_counter()
     if dummy:
         with safe_open(path, framework="np") as fh:
             keys = list(fh.keys())
-        label = _dummy_label(body.input_ref)
+        label = _dummy_label(input_ref)
         confidence = 0.0
     else:
         from app.infer import case_path, predict_image
 
-        cid = _case_id(body.input_ref)
+        cid = _case_id(input_ref)
         if not cid:
             raise HTTPException(status_code=400, detail="caseId required for scratch infer")
         image = case_path(CASES_DIR, cid)
@@ -154,9 +180,9 @@ def execute(body: ExecuteBody) -> dict[str, Any]:
 
     duration_ms = int((time.perf_counter() - started) * 1000)
     reported = _post_complete(
-        body.id,
+        assignment_id,
         {
-            "weights_sha256": body.weights_sha256,
+            "weights_sha256": weights_sha256,
             "label": label,
             "confidence": confidence,
             "dummy": dummy,
@@ -164,10 +190,44 @@ def execute(body: ExecuteBody) -> dict[str, Any]:
         },
     )
     return {
-        "assignment_id": str(body.id),
+        "assignment_id": str(assignment_id),
         "label": label,
         "dummy": dummy,
         "tensor_keys": keys,
-        "weights_sha256": body.weights_sha256,
+        "weights_sha256": weights_sha256,
         "core": reported,
     }
+
+
+@app.post("/v1/execute")
+def execute(body: ExecuteBody) -> dict[str, Any]:
+    """수동 실행 경로. Core가 이 Node에 배정한 lease만 허용한다."""
+    if NODE_ID and not _is_mine(body.id):
+        raise HTTPException(
+            status_code=403,
+            detail="assignment not leased to this node (Core가 배정하지 않았다)",
+        )
+    return _run(body.id, body.weights_sha256, body.input_ref)
+
+
+def _poll_loop() -> None:
+    while True:
+        try:
+            for a in _fetch_my_assignments():
+                try:
+                    out = _run(uuid.UUID(str(a["id"])), a["weights_sha256"], a.get("input_ref"))
+                    print(f"node: ran assignment={a['id']} label={out.get('label')}", flush=True)
+                except Exception as exc:  # 한 건 실패가 루프를 죽이지 않는다
+                    print(f"node: assignment {a.get('id')} failed: {exc}", flush=True)
+        except Exception as exc:
+            print(f"node: poll error: {exc}", flush=True)
+        time.sleep(POLL_INTERVAL_S)
+
+
+@app.on_event("startup")
+def _start_poll() -> None:
+    if not (POLL_ENABLED and NODE_ID):
+        print(f"node: poll disabled (NODE_ID={NODE_ID} POLL={POLL_ENABLED})", flush=True)
+        return
+    print(f"node: poll started node_id={NODE_ID} interval={POLL_INTERVAL_S}s", flush=True)
+    threading.Thread(target=_poll_loop, name="node-poll", daemon=True).start()

@@ -78,6 +78,31 @@ def try_audit_succeeded(
     )
 
 
+NODE_ASSIGNMENTS_SQL = """
+SELECT a.id, a.task_id, a.agent_id, a.capability_id, a.node_id, a.status,
+       a.lease_expires_at,
+       ag.weights_uri, ag.weights_sha256, ag.weights_format,
+       t.input_ref, t.status AS task_status
+  FROM assignment a
+  JOIN agent ag ON ag.id = a.agent_id
+  JOIN task t ON t.id = a.task_id
+ WHERE a.node_id = %(node_id)s
+   AND a.status = 'LEASED'
+   AND a.lease_expires_at > now()
+ ORDER BY a.lease_expires_at, a.id
+"""
+
+
+def node_assignments(conn: psycopg.Connection, node_id: uuid.UUID) -> list[dict[str, Any]]:
+    """해당 Node에 **이미 배정된** 살아 있는 lease만 돌려준다.
+
+    Node가 큐를 pull하는 것이 아니다 — 배치는 Core 워커가 결정하고,
+    Node는 자기 몫만 가져간다. NAT 뒤 Node도 outbound로 동작할 수 있게 하는 경로다.
+    """
+    rows = conn.execute(NODE_ASSIGNMENTS_SQL, {"node_id": str(node_id)}).fetchall()
+    return [dict(r) for r in rows]
+
+
 def lease_detail(conn: psycopg.Connection, assignment_id: uuid.UUID) -> dict[str, Any] | None:
     row = conn.execute(
         LEASE_DETAIL_SQL, {"assignment_id": str(assignment_id)}

@@ -86,30 +86,32 @@ print(json.dumps({
 }
 
 # 지정 Agent로 동일 case를 실행하고 label을 돌려준다.
+# Core 하고만 말한다 — 배정은 Core 워커가, 실행은 Node가 자기 몫을 가져가서 한다.
 run_case() {
-  local agentId="$1" task taskId claim assignedAgent execBody out
+  local agentId="$1" task taskId tr st
   task="$(curl -sf -X POST "$core/v1/tasks" -H 'content-type: application/json' \
     -d "{\"datasetId\":\"eurosat-rgb\",\"caseId\":\"$caseId\",\"requestedAgentId\":\"$agentId\"}")"
   taskId="$(printf '%s' "$task" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
-  claim="$(curl -sf -X POST "$core/v1/internal/claim" -H 'content-type: application/json' \
-    -d "{\"task_id\":\"$taskId\"}")"
 
-  # 지정한 Agent가 실제로 할당됐는지 확인 — claim 조인이 지켜졌다는 증거
-  assignedAgent="$(printf '%s' "$claim" | python3 -c 'import json,sys; print(json.load(sys.stdin)["agent_id"])')"
-  if [[ "$assignedAgent" != "$agentId" ]]; then
-    echo "requestedAgentId 무시됨: 요청=$agentId 할당=$assignedAgent" >&2
-    return 1
-  fi
+  for _ in $(seq 1 60); do
+    tr="$(curl -sf "$core/v1/tasks/$taskId")"
+    st="$(printf '%s' "$tr" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
+    [[ "$st" == "COMPLETED" || "$st" == "FAILED" ]] && break
+    sleep 1
+  done
 
-  execBody="$(printf '%s' "$claim" | python3 -c 'import json,sys
-c=json.load(sys.stdin)
-print(json.dumps({"id":c["id"],"weights_sha256":c["weights_sha256"],"input_ref":c["input_ref"]}))')"
-  out="$(curl -sf -X POST "$node/v1/execute" -H 'content-type: application/json' -d "$execBody")"
-  printf '%s' "$out" | python3 -c 'import json,sys
-e=json.load(sys.stdin)
-if e.get("dummy"):
+  printf '%s' "$tr" | python3 -c '
+import json,sys
+d=json.load(sys.stdin)
+if d["status"] != "COMPLETED":
+    raise SystemExit("task not completed: %s" % d["status"])
+a=d["assignment"]
+if str(a["agent_id"]) != sys.argv[1]:
+    raise SystemExit("requestedAgentId 무시됨: 요청=%s 할당=%s" % (sys.argv[1], a["agent_id"]))
+res=json.loads(d["result_ref"]) if isinstance(d["result_ref"],str) else (d["result_ref"] or {})
+if res.get("dummy"):
     raise SystemExit("execute was dummy")
-print(e.get("label"))'
+print(res.get("label"))' "$agentId"
 }
 
 shaA="$(sha_of eurosat_scratch.safetensors)"

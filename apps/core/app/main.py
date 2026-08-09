@@ -1,5 +1,8 @@
 import json
 import logging
+import os
+import threading
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -11,7 +14,12 @@ from pydantic import BaseModel, Field
 from app.allowlist import assert_dataset_id
 from app.capability import create_capability, get_capability, list_capabilities
 from app.claim import claim_next
-from app.complete import complete_assignment, lease_detail, try_audit_succeeded
+from app.complete import (
+    complete_assignment,
+    lease_detail,
+    node_assignments,
+    try_audit_succeeded,
+)
 from app.const import SEED_ADMIN_ID
 from app.db import get_conn
 from app.gate import finish_gate_run, get_gate_run, list_agent_capabilities, start_gate_run
@@ -373,6 +381,18 @@ def claim(body: ClaimBody | None = None) -> dict[str, Any]:
     return row
 
 
+@app.get("/v1/internal/nodes/{node_id}/assignments")
+def node_open_assignments(node_id: uuid.UUID) -> dict[str, Any]:
+    """Node가 자기에게 배정된 살아 있는 lease를 가져간다.
+
+    큐 pull이 아니다. 배치는 Core 워커가 이미 끝냈고, 여기서는 결과만 전달한다.
+    이 경로 덕분에 Core가 Node로 들어갈 필요가 없다 (NAT).
+    """
+    with get_conn() as conn:
+        rows = node_assignments(conn, node_id)
+    return {"node_id": str(node_id), "count": len(rows), "assignments": rows}
+
+
 @app.get("/v1/tasks/{task_id}")
 def get_task(task_id: uuid.UUID) -> dict[str, Any]:
     with get_conn() as conn:
@@ -421,3 +441,45 @@ def complete(assignment_id: uuid.UUID, body: CompleteBody) -> dict[str, Any]:
     except Exception:
         logger.warning("audit_log insert failed; min certificate already committed", exc_info=True)
     return row
+
+
+# ---------------------------------------------------------------------------
+# Core 디스패치 워커
+#
+# 사용자 → Core → (Node가 자기 몫을 가져감) → Core → 사용자 의 사이클을 닫는다.
+# 이전에는 클라이언트가 claim 을 직접 호출하고 Node 에도 직접 접속했다.
+# 큐 claim 은 여전히 Core 만 한다 (CLAUDE.md 규칙 유지).
+# ---------------------------------------------------------------------------
+
+WORKER_ENABLED = os.environ.get("CORE_WORKER", "1") != "0"
+WORKER_INTERVAL_S = float(os.environ.get("CORE_WORKER_INTERVAL_S", "1.0"))
+
+
+def _worker_once() -> dict[str, Any] | None:
+    with get_conn() as conn:
+        return claim_next(conn)
+
+
+def _worker_loop() -> None:
+    logger.info("core worker started (interval=%.1fs)", WORKER_INTERVAL_S)
+    while True:
+        try:
+            row = _worker_once()
+        except Exception:  # 워커는 죽지 않는다. 실패는 남기고 계속 돈다
+            logger.exception("worker: claim failed")
+            row = None
+        if row is None:
+            time.sleep(WORKER_INTERVAL_S)
+            continue
+        logger.info(
+            "worker: dispatched task=%s assignment=%s node=%s agent=%s",
+            row.get("task_id"), row.get("id"), row.get("node_id"), row.get("agent_id"),
+        )
+
+
+@app.on_event("startup")
+def _start_worker() -> None:
+    if not WORKER_ENABLED:
+        logger.info("core worker disabled (CORE_WORKER=0)")
+        return
+    threading.Thread(target=_worker_loop, name="core-worker", daemon=True).start()

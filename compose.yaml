@@ -41,6 +41,8 @@ services:
       WEIGHTS_PATH: /weights/placeholder.safetensors
       GOLDEN_CASES_DIR: /golden/cases
       NODE_ROLE: m-team
+      # seed 의 team gate-runner. Core가 배정한 lease만 가져간다.
+      NODE_ID: "00000000-0000-4000-8000-000000000030"
     volumes:
       - ./apps/node/weights:/weights:ro
       - ./docs/spec/golden/cases:/golden/cases:ro
