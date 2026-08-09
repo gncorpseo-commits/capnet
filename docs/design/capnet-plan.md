@@ -676,7 +676,7 @@ liveness(heartbeat)만은 시계열이라 FK로 못 막으며 Core 스캐너 담
 
 # 최종 정의
 
-> **Capability Network (CapNet)**는 채점 가능한 Capability 계약을 게이트로 묶고,  
+> **Capability Network (CapNet)**는 사용자가 능력만 요구하면 승인된 신뢰 도메인 안에서,  
 > 신뢰 도메인 안의 Node에서 Task를 단일 완결하는 실행 계층이다.  
 > MVP는 세상을 유휴 공유로 바꾸지 않는다.  
 > **같은 계약을 통과한 Agent를 바꿔도 결과가 등가인지**를 팀 플릿에서 증명하고,  

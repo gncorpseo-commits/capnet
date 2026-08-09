@@ -3,7 +3,9 @@
 > README에는 **잘 안 바뀌는 것**만 둔다 (정의·실행·링크).  
 > 상태·결정·일정·진척 → [`STATE.md`](STATE.md) · [`docs/context-handoff.md`](docs/context-handoff.md) · [`docs/ops/contest-submission-checklist.md`](docs/ops/contest-submission-checklist.md)
 
-**채점 가능한 Capability 계약을 게이트로 묶고, 신뢰 도메인 안의 Node에서 Task를 완결하는 오픈소스 실행 계층.**
+**사용자는 능력만 요구한다. 승인한 신뢰 도메인 안의 기기로만 작업이 가고, 누가 무엇으로 실행했는지 증적이 남는다. 잘못된 조합은 앱이 아니라 DB가 거절한다.**
+
+오픈소스 실행 계층. 사용자는 기기 주소를 모르고, 기기는 Core가 배정하지 않은 실행을 거부한다.
 
 2026 오픈소스 개발자대회 출품작 (팀 지엔 · 접수 915).
 

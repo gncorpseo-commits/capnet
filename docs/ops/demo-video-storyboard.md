@@ -18,7 +18,7 @@
 | 초 | 화면 | 자막·내레이션 |
 |----|------|----------------|
 | 0–10 | CapNet 로고 + 한 줄 | “같은 AI 이름 뒤에 다른 구현이 숨을 수 있습니다. CapNet은 DB가 막습니다.” |
-| 10–20 | 문제 슬라이드 | “스토어가 아니라 **채점 가능한 Capability 계약**” |
+| 10–20 | 문제 슬라이드 | “내 데이터가 **어디로 갔는지** 나중에 답할 수 있는가” |
 | 20–45 | `docker compose up` + health | “Postgres + Core + Node 3대. 제약은 스키마에 baked-in.” |
 | 45–75 | `scripts/demo.ps1` 터미널 | “scratch 실게이트 PASSED (acc≈0.70, dummy=false). sanity는 FAILED.” |
 | 75–105 | Task 완주 출력 | “User는 Agent를 몰라도 Task가 완료됩니다.” |
