@@ -116,7 +116,7 @@
 | G4 | THIRD-PARTY · sbom.json | ✅ | cyclonedx 재생성 스크립트 |
 | G5 | CLAUDE · STATE | ✅ | |
 | G6 | 코드 MVP | ✅ | Contest 기술 슬라이스 |
-| G7 | 공식 양식 파일·PDF | ❌ | `contest-report-form-draft.md` → 이식 |
+| G7 | 공식 양식 파일·PDF | 🔶 | 본문 압축본 작성 완료. **hwp/docx 이식 + PDF 저장**만 남음 |
 | G8 | YouTube ≤3분 | ❌ | [`shoot-day-runbook.md`](./shoot-day-runbook.md) |
 | G9 | 포털 zip · Release `v0.1.0-contest` | ❌ | 내부마감 8/26 12:00 |
 | G10 | A/B Must | 보류 | E1 골격만 · SD-001 · **제출 Must 아님** |
@@ -159,9 +159,10 @@ W2 버퍼를 코드 다듬기에 쓰지 않는다. F2에 따라 1차는 글로�
 
 - [ ] M1–M13, M15–M21, **M25** 동작
 - [ ] UC-1 → 4 → 6 → 11 (가능하면 7)
-- [ ] `scripts/demo` 단일 명령 성공 — **깨끗한 환경에서 1회 이상 재현**
-- [ ] `scripts/demo_violations` 위반 6종 전부 DB 거부
-- [ ] sanity 3종 FAILED
+- [x] `scripts/demo` 단일 명령 성공 — **깨끗한 환경 재현 확인 (2026-08-09)**
+      GitHub에서 새로 clone → 빈 볼륨 → `compose up` → demo/sanity/violations/proof_ab 전부 통과 · 무단 노드 호출 403
+- [x] `scripts/demo_violations` 위반 6종 전부 DB 거부
+- [x] sanity 3종 FAILED
 
 제출물
 
@@ -185,9 +186,9 @@ W2 버퍼를 코드 다듬기에 쓰지 않는다. F2에 따라 1차는 글로�
 
 문서
 
-- [ ] README = 5분 기동 안내 (CapNet 명의)
+- [x] README = 5분 기동 안내 · **Linux 명령 우선** · 403 재현 포함
 - [ ] `docs/spec/golden/image-classify-v1.md` 정본 1개
-- [ ] `docs/guide/user-guide-ko.md` 링크
+- [x] `docs/guide/user-guide-ko.md` — 새 서사(접수처·장부)로 재작성
 - [ ] 상대 링크 전부 클릭 확인
 
 ---
