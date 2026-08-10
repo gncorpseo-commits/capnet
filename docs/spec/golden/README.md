@@ -26,6 +26,17 @@ python scripts/check_golden_leakage.py
 # 데모·홀드아웃 매니페스트는 clean 이어야 한다 (학습셋 = HOLDOUT=1 가정)
 ```
 
+sha 정합 검사 (**골든셋을 교체하면 반드시**):
+
+```text
+python3 scripts/check_golden_sha.py
+# 매니페스트 재계산값 vs 선언부 4곳(spec md · 기계 핀 · seed.sql · 보고서 초안) vs 케이스 40건
+```
+
+> 매니페스트만 바꾸고 선언부를 안 고치면 capability 가 **리포에 없는 골든셋**을 가리키게 된다.
+> 사슬은 self-consistent 라 데모는 그대로 통과한다 — 조용히 틀린다 (SD-013).
+> 기존 볼륨은 `seed.sql` 이 재적용되지 않으므로 `migrations/` 로 올린다.
+
 채점 (N=300 · 결과는 `artifacts/` · gitignore):
 
 ```text

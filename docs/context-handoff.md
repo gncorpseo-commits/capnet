@@ -78,7 +78,7 @@
 | 6 | **Phase 1 완주 잔여 3건** — Agent B 실게이트 PASSED · 증명 모드 교체 할당(M14/UC-7) · 통과율 20–80% 실측 → §7.2 판정 리포트 | 대회 제출 후 ([`design/roadmap.md`](./design/roadmap.md) §2) |
 | 7 | ~~마이그레이션 체계 부재~~ → **해소 2026-08-10.** 순방향 러너·원장·정적 검사. [`guide/migrations.md`](./guide/migrations.md). 실 볼륨 적용은 승인 대기 | 승인 후 즉시 |
 | 8 | **제품 유통 v제품-0→1** — SD-007 ✅ → 다음은 **P2-1(tenant 운용)**. 단 `image.classify@1` 은 `trust_domain_min='team'` 이라 tenant task 를 원천 차단한다 — tenant 유통엔 `trust_domain_min='tenant'` capability(+골든셋)가 선행 | 출품 후 · Phase 2 |
-| 9 | **SD-013 골든셋 sha 3중 불일치** — 매니페스트 `c21d9ef7…` / 문서 `0341d121…` / seed `c8254bcb…`. 새 볼륨 capability 가 리포에 없는 골든셋을 가리킨다 (D15) | **촬영 8/23 전** |
+| 9 | **SD-013** — 선언부 5곳을 `c21d9ef7…` 로 통일 완료(+`scripts/check_golden_sha.py`). 남은 미결은 **재게이트**: 구 골든셋 PASS 증서가 그대로 라우팅된다 | **촬영 8/23 전** |
 
 ---
 

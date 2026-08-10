@@ -22,7 +22,7 @@ INSERT INTO capability (
     'closed_set_labels',
     'M', 'team', true,
     'docs/spec/golden/manifest-image-classify-v1.json',
-    'c8254bcb454d6ca362f61c0426e4a7c9c7de42cc81fa6ab3ed097b64c2862066',
+    'c21d9ef796e2165e27926358981489fe397a639d7c0ceb0d01b74846da6b0eef',
     40,
     '{"primary_metric":"accuracy","min_accuracy":0.68,"min_macro_f1":0.65,"max_invalid_rate":0.02,"combine":"AND","min_per_class_recall":0.10,"guarantee":{"type":"floor_on_declared_sample","holds_on":{"dataset":"eurosat-rgb","sampling":"per_class_even_stride","preprocessing":"32x32 RGB","class_balance":"uniform"},"does_not_hold_under":["distribution shift","inputs outside declared allowlist","deliberate overfitting to the static public golden set"],"strengthened_by":"rotating hidden probes (Phase 2 spot-check)"},"deviation":{"enforceable_bound":"1 - min_accuracy","note":"tautological under a floor gate; NOT a constraint. bounding pairwise deviation requires a banded pass criterion","observed":{"n":300,"passer_range":[0.6933,0.8700]}},"scoring_version":1,"threshold_basis":{"kind":"declared_service_level","note":"NOT derived from measurement. admissible band (0.447,0.910] measured: collapsed model 0.447, feasible best 0.910 under no-pretrain 32x32. value is declared and re-declared when a real user requirement exists (supersedes SD-004)"},"dataset":{"id":"eurosat-rgb","zenodo_record":"7711810","archive":"EuroSAT_RGB.zip","archive_sha256":"b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90","zip_root":"EuroSAT_RGB","native_hw":[64,64],"contract_resize_hw":[32,32]}}'::jsonb
 )

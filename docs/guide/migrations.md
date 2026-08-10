@@ -94,6 +94,10 @@ DDL 은 **추가만** 한다 (절대규칙 1). 컬럼 추가는 `NOT NULL DEFAUL
 |---|------|------|
 | 0001 | `baseline` | schema v4.4 를 계보 출발점으로 선언 (no-op · 검증만) |
 | 0002 | `provenance_drift_view` | `provenance_drift` · `provenance_drift_summary` 뷰 추가 (읽기 전용) |
+| 0003 | `golden_set_sha256_holdout` | SD-013 — `capability.golden_set_sha256` 을 홀드아웃 매니페스트 정본으로. 구 값 한정 UPDATE 라 멱등 |
+
+마이그레이션이 `RAISE NOTICE` 로 남긴 경고는 러너가 `[db]` 접두사로 그대로 흘린다.
+0003 처럼 「적용은 됐지만 사람이 알아야 하는 것」을 알리는 통로다.
 
 ### 0002 를 왜 넣었나
 

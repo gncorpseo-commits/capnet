@@ -89,7 +89,7 @@
 15. [x] P1-5 완료 — H1~H4. 판정 = **Go 아님**
 16. [x] SD-009 계약 재정의 — **C안 채택** (v4.6, 등가성 → 관측값)
 17. [x] SD-007 마이그레이션 체계 — 러너·원장·정적 검사 구현·검증 완료. **승인 후 실 볼륨 적용만 남음**
-18. [ ] SD-013 골든셋 sha 3중 불일치 — 정본 확정 + 재게이트 여부 ← **촬영 전 결정 필요**
+18. [x] SD-013 골든셋 sha — 선언부 **5곳** 정본 통일 + `check_golden_sha.py` 신설. **재게이트만 미결** ← 촬영 전 결정
 
 ## 연구·형제 제품 (대회 Must 밖)
 
@@ -109,5 +109,5 @@
 | 5 | ~~실험 가중치 `.meta.json` gitignore~~ | ✅ `*.meta.json` ignore · A/B 메타만 예외 |
 | 6 | 커밋 A 가중치 `HOLDOUT=1` 재학습 (meta `train_images=27000`) | 출품 전 권장 |
 | 7 | 제품 유통 v제품-1 — SD-007 ✅ → **P2-1(tenant 운용) 다음** → credential (D19) | 출품 후 |
-| 8 | **SD-013 골든셋 sha 정본** — 매니페스트 `c21d9ef7…` vs 문서 `0341d121…` vs seed `c8254bcb…`. 정정 시 재게이트 동반 | **촬영 8/23 전** |
+| 8 | **SD-013 재게이트 여부** — 선언부는 `c21d9ef7…` 로 통일 완료. 남은 것은 **구 골든셋 PASS 증서**(`drifted_still_routable=1`)를 재게이트할지. 조회: `SELECT * FROM provenance_drift_summary;` | **촬영 8/23 전** |
 | 9 | **P2-1 tenant 운용은 capability 결정이 선행** — `image.classify@1` 은 `trust_domain_min='team'` 이라 tenant task 가 원천 차단됨. tenant 유통엔 `trust_domain_min='tenant'` 인 capability 가 필요 (골든셋 동반) | Phase 2 착수 시 |
