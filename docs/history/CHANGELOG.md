@@ -1,5 +1,25 @@
 # Changelog
 
+## SD-007 마이그레이션 체계 — 유통 세대 v제품-1 착수 관문 — 2026-08-10
+
+`product-distribution.md` §5 「스키마 제약을 약화하지 않는다. DDL **추가**와 마이그레이션(SD-007)만」의
+적용 수단을 만들었다. 기존 볼륨을 `docker compose down -v` 없이 올릴 수 있다.
+
+- **러너** `apps/core/app/migrate.py` — `status` / `verify` / `up [--dry-run]`. 순방향 전용, 다운그레이드 없음
+- **원장** `schema_migration` (version · name · checksum · applied_at · applied_by)
+- **`migrations/0001_baseline.sql`** — no-op. 신규 볼륨(initdb)과 기존 볼륨이 같은 경로를 타게 하는 장치
+- **`migrations/0002_provenance_drift_view.sql`** — `provenance_drift` · `provenance_drift_summary` 뷰 추가.
+  골든셋 교체 후 **다른 골든셋에서 얻은 PASS 증서가 그대로 라우팅되는지** 조회 가능하게 (D15)
+- **절대규칙을 도구가 강제** — 제약 약화(`DROP CONSTRAINT`·`NOT VALID`…)와
+  `assignment`/`gate_run` 수기 `VALUES` INSERT 를 적용 **전에** 정적 거부
+- 래퍼 `scripts/migrate.sh` · 문서 [`docs/guide/migrations.md`](../guide/migrations.md) · INDEX 링크
+- 새 의존성 **0** (psycopg 만 · alembic 도입 안 함) · compose 무변경 · Dockerfile 에 `COPY migrations` 한 줄
+- 검증: 일회용 컨테이너 11종 — 적용·멱등·부분실패 롤백·체크섬 드리프트 양방향·baseline 가드·파일명/번호 규칙·러너 4개 동시 기동.
+  동시 기동에서 `CREATE TABLE IF NOT EXISTS` 경합 버그를 발견해 잠금 안으로 옮김
+- **실 볼륨 미적용** — 승인 후 `scripts/migrate.sh up`
+- **SD-013 신규**: 골든셋 sha 가 매니페스트 `c21d9ef7…` / 문서 `0341d121…` / seed `c8254bcb…` 로 3중 불일치.
+  자동 수정하지 않았다 — 정정은 재게이트를 동반한다
+
 ## 제품 유통 목표 문서화 (D19) · 데모 골든 홀드아웃 — 2026-08-10
 
 - **D19:** Open Agent + (선택) Open Compute + User-defined Trust Domain. 경제는 선택·비기초. 정본 [`docs/design/product-distribution.md`](../design/product-distribution.md)

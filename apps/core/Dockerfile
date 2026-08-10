@@ -7,6 +7,8 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY apps/core/app /app/app
 COPY apps/core/openapi.yaml /app/openapi.yaml
+# SD-007 러너가 읽는다. 기존 볼륨을 down -v 없이 올리는 경로.
+COPY migrations /app/migrations
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000

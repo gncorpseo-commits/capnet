@@ -1,6 +1,6 @@
 # CapNet decision / debt register
 
-**갱신:** 2026-08-07  
+**갱신:** 2026-08-10  
 분류 정의: [`README.md`](./README.md)
 
 ---
@@ -109,12 +109,32 @@
 - **문서:** [`../design/roadmap.md`](../design/roadmap.md) — 진입조건·산출물·판정 게이트
 - **상태:** open (대회 제출 후 착수)
 
-### SD-007 · 마이그레이션 체계 부재
+### SD-007 · 마이그레이션 체계 부재 — **체계 도입됨 (2026-08-10) · 승인 대기**
 - **무엇:** DDL 적용 경로가 `init.sql` 일괄뿐. 기존 볼륨 업그레이드 수단이 `down -v`밖에 없음
 - **왜:** Phase 1은 스키마 v4.4 동결 전제라 필요가 없었음 (기획서 §16)
 - **영향:** Phase 2 `node_credential` DDL(SD-002)의 **선결과제**. 제약 추가는 절대규칙 1상 허용이나 적용 수단이 없음
 - **대안:** 마이그레이션 도구·순서 결정 → 볼륨 보존 업그레이드 경로 → 승인
-- **예정:** Phase 2 착수 전
+- **구현:** 순방향 전용 러너 `apps/core/app/migrate.py` · `migrations/` · 원장 `schema_migration` · 래퍼 `scripts/migrate.sh` · 문서 [`../guide/migrations.md`](../guide/migrations.md)
+  - 새 의존성 0 (psycopg만) — alembic 도입하지 않음
+  - 0001 baseline을 **no-op**으로 두어 신규 볼륨과 기존 볼륨이 같은 경로를 탄다
+  - 절대규칙 1·2를 러너가 **정적으로 강제** (제약 약화·수기 스냅샷 INSERT 거부)
+  - 검증: 일회용 컨테이너 11종 (적용·멱등·부분실패 롤백·체크섬 드리프트 양방향·baseline 가드·러너 4개 동시 기동)
+- **남은 것:** 실 볼륨 적용은 **미실행**. `github-team-guide.md` 승인 + master merge 후 `scripts/migrate.sh up`
+- **상태:** open (코드 완료 · 승인·적용 대기)
+
+### SD-013 · 골든셋 sha 3중 불일치 (2026-08-10 발견)
+- **무엇:** 홀드아웃 재추출(#26) 후 `capability.golden_set_sha256` 정본이 세 곳에서 다름
+  | 출처 | 값 | 판정 |
+  |------|-----|------|
+  | 커밋된 매니페스트 재계산 | `c21d9ef7…` | **실측 정본** |
+  | `docs/spec/golden/image-classify-v1.md` | `0341d121…` | 어떤 커밋과도 불일치 — 오기 |
+  | `apps/core/sql/seed.sql` | `c8254bcb…` | 재추출 **전** 누출 골든셋 값 |
+- **재현:** `python3 -c "import json,hashlib,pathlib; d=json.loads(pathlib.Path('docs/spec/golden/manifest-image-classify-v1.json').read_text()); print(hashlib.sha256((json.dumps(d,ensure_ascii=False,indent=2,sort_keys=True)+chr(10)).encode()).hexdigest())"` → `c21d9ef7…` (`scripts/extract_golden.py:175-177`과 동일 정본화)
+- **영향:** 새 볼륨의 capability 행이 **리포에 없는 골든셋**을 가리킨다. D15 Provenance by Design 위반. 사슬 자체는 self-consistent(스크립트가 gate_run 스냅샷을 되읽음)라 데모는 통과하므로 **조용히 틀린다**
+- **왜 자동 수정하지 않았나:** sha를 고치면 기존 PASS 증서가 **다른 골든셋에서 얻은 것**이 된다 → 재게이트 동반 결정 필요. 촬영 8/23·보고서 수치와도 얽힘
+- **가시화:** `migrations/0002` 의 `provenance_drift` 뷰. 일회용 DB에서 sha 교체 시 seed 증서가 `still_routable=true` 로 잡히는 것을 실측
+- **대안:** (a) 문서·seed를 `c21d9ef7…` 로 통일 + Agent A/B 재게이트 (b) 구 골든셋으로 되돌리고 재추출 취소
+- **예정:** 촬영(8/23) 전 — 보고서·영상이 sha를 인용한다
 - **상태:** open
 
 ### SD-005 · 출품 패키지(양식·영상·포털) 미완
