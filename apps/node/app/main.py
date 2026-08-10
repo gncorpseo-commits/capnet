@@ -25,6 +25,28 @@ CASES_DIR = os.environ.get("GOLDEN_CASES_DIR", "/golden/cases")
 
 # 이 Node의 신원. Core가 배정한 lease만 가져오고 실행한다.
 NODE_ID = os.environ.get("NODE_ID") or None
+
+# Core 가 발급한 증서 (P2-4). 있으면 모든 Core 호출에 실어 보낸다.
+# 없어도 돈다 — Core 의 REQUIRE_NODE_CREDENTIAL 이 꺼져 있으면 통과한다 (데모 경로).
+# 파일 경로로 주는 편이 낫다: 프로세스 목록·docker inspect 에 시크릿이 노출되지 않는다.
+NODE_CREDENTIAL_FILE = os.environ.get("NODE_CREDENTIAL_FILE") or None
+
+
+def _load_credential() -> str | None:
+    if NODE_CREDENTIAL_FILE and os.path.isfile(NODE_CREDENTIAL_FILE):
+        return open(NODE_CREDENTIAL_FILE, encoding="utf-8").read().strip() or None
+    return os.environ.get("NODE_CREDENTIAL") or None
+
+
+NODE_CREDENTIAL = _load_credential()
+
+
+def _core_headers() -> dict[str, str]:
+    """Core 로 보내는 공통 헤더. 증서가 있으면 신원을 함께 보낸다."""
+    headers = {"content-type": "application/json"}
+    if NODE_CREDENTIAL:
+        headers["Authorization"] = f"CapNet-Node {NODE_CREDENTIAL}"
+    return headers
 POLL_ENABLED = os.environ.get("NODE_POLL", "1") != "0"
 POLL_INTERVAL_S = float(os.environ.get("NODE_POLL_INTERVAL_S", "1.0"))
 
@@ -105,7 +127,7 @@ def _post_complete(assignment_id: uuid.UUID, body: dict[str, Any]) -> dict[str, 
     req = urllib.request.Request(
         url,
         data=json.dumps(body).encode(),
-        headers={"content-type": "application/json"},
+        headers=_core_headers(),
         method="POST",
     )
     try:
@@ -130,6 +152,9 @@ def health() -> dict[str, Any]:
     default_exists = os.path.isfile(WEIGHTS_PATH)
     return {
         "ok": default_exists or bool(files),
+        "node_id": NODE_ID,
+        # 증서 **보유 여부만** 알린다. 값도 prefix 도 내보내지 않는다.
+        "credential_present": bool(NODE_CREDENTIAL),
         "weights_path": WEIGHTS_PATH,
         "weights_sha256": _file_sha256(WEIGHTS_PATH) if default_exists else None,
         "weights": files,
@@ -144,7 +169,7 @@ def _send_heartbeat(availability: str, metrics: dict[str, Any] | None = None) ->
     req = urllib.request.Request(
         url,
         data=json.dumps({"availability": availability, "metrics": metrics or {}}).encode(),
-        headers={"content-type": "application/json"},
+        headers=_core_headers(),
         method="POST",
     )
     try:
@@ -158,8 +183,9 @@ def _fetch_my_assignments() -> list[dict[str, Any]]:
     if not NODE_ID:
         return []
     url = f"{CORE_URL}/v1/internal/nodes/{NODE_ID}/assignments"
+    req = urllib.request.Request(url, headers=_core_headers(), method="GET")
     try:
-        with urllib.request.urlopen(url, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=10) as resp:
             return json.loads(resp.read().decode()).get("assignments", [])
     except Exception:
         return []

@@ -19,3 +19,7 @@ data/golden-V/
 data/golden-n600-*/
 docs/_to_delete/
 .pytest_cache/
+
+# Node 증서 시크릿 (P2-4). 절대 커밋하지 않는다 — 평문은 발급 시 한 번만 나온다.
+data/node-secrets/
+*.credential
