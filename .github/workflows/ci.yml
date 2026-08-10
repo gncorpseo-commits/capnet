@@ -112,18 +112,8 @@ jobs:
           want=$(python3 scripts/check_golden_sha.py --print)
           test "$got" = "$want" || { echo "0003 이 sha 를 올리지 못했다: $got != $want"; exit 1; }
 
-      - name: 폐기 경로 — 근거 없으면 거부 · 폐기하면 차단 · 재통과하면 복권 (SD-014)
-        env:
-          REQUIRE_LIVE_NODE: "0"
-        run: python3 tests/integration/check_revocation.py
 
-      - name: PG 위반 자동 회귀 (M25) — 어느 제약이 거절했는지까지 본다
-        run: python3 tests/integration/check_pg_violations.py
 
-      - name: tenant 신뢰 경계 실동작 (P2-1 · D19)
-        env:
-          REQUIRE_LIVE_NODE: "0"
-        run: python3 tests/integration/check_tenant_routing.py
 
       - name: 새 볼륨에는 placeholder Agent 의 라우팅 증서가 없다 (SD-015)
         run: |
@@ -133,8 +123,10 @@ jobs:
                AND a.weights_sha256='5cd21e43471e2d0a495ce5cee3aae102cbdbd98c7f0db770a74476268b3a3887'")
           test "$n" = "0" || { echo "placeholder Agent 가 라우팅 가능하다: $n"; exit 1; }
 
-      - name: Node 증서 — 발급·검증·폐기·회전·사칭 차단 (P2-4 · SD-002)
-        run: python3 tests/integration/check_node_credential.py
-
-      - name: 아키텍처 결속 · 자원 한도 (I1·I2 · foreign-agent-isolation)
-        run: python3 tests/integration/check_agent_arch.py
+      # 통합 검사는 **검사마다 템플릿 DB 를 복제해** 돌린다 (구조적 격리).
+      # 공유 DB 로 돌리면 커밋하는 검사(check_revocation)가 뒤 검사를 오염시킨다 —
+      # 실측으로 재현했고, 그래서 순서 가정을 코드에 숨기는 대신 구조로 없앴다.
+      - name: 통합 검사 (검사마다 깨끗한 DB)
+        env:
+          REQUIRE_LIVE_NODE: "0"
+        run: scripts/run_integration.sh

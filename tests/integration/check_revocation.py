@@ -187,15 +187,9 @@ def main() -> int:
     with get_conn() as conn:
         conn.execute("UPDATE agent SET status='ACTIVE' WHERE id=%s", (str(AGENT),))
 
-    # 뒷정리 — 이 시험은 커밋한다 (트랜잭션 경계를 넘나드는 계약을 보기 때문에).
-    # 같은 DB 를 쓰는 뒤 단계에 placeholder Agent 가 라우팅 가능한 채로 남으면 안 된다 (SD-015).
-    with get_conn() as conn:
-        fail_gate(conn)
-    with get_conn() as conn:
-        revoke_capability(conn, agent_id=AGENT, capability_id=CAP,
-                          reason="시험 뒷정리 — placeholder Agent 는 라우팅되지 않아야 한다 (SD-015)")
-    with get_conn() as conn:
-        check("뒷정리: placeholder Agent 가 다시 폐기됐다", live_certs(conn) == 0)
+    # 뒷정리를 하지 않는다. 이 검사는 **커밋해야** 하고(트랜잭션 경계가 계약의 일부다),
+    # 그 뒤처리를 여기서 떠안으면 「다음에 무엇이 오는지」를 이 파일이 알아야 한다.
+    # 격리는 scripts/run_integration.sh 가 검사마다 DB 를 복제해서 준다.
 
     print()
     if failures:
