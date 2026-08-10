@@ -7,281 +7,281 @@
       "caseId": "ic1-0001",
       "expected": "annual_crop",
       "file": "cases/ic1-0001.jpg",
-      "sha256": "76085934b2b03ef083d8001b4c93c340a827b3891d99c37014759d7f9c1b546f",
-      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_1539.jpg"
+      "sha256": "185b6d75bede9c9dd9b14f49465cd2d8b2f92678caceee779e382b2e7ea9b777",
+      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_1520.jpg"
     },
     {
       "caseId": "ic1-0002",
       "expected": "annual_crop",
       "file": "cases/ic1-0002.jpg",
-      "sha256": "176d19e6cefcb33416c41b3db075e5dcfd17d459b3ded79402dc12da6b364b98",
-      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_2079.jpg"
+      "sha256": "0a834e2d1cdbee4bc610fea71d05ac2108b14f383f3cc19bb5d7cbc627936ea2",
+      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_2073.jpg"
     },
     {
       "caseId": "ic1-0003",
       "expected": "annual_crop",
       "file": "cases/ic1-0003.jpg",
-      "sha256": "954d63692a78b921f74a334d39b46b19fbfc349be95d89d760db436864c57443",
-      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_2619.jpg"
+      "sha256": "8fb2eed78169000c6373ccc29ccdf9cc0d28b08aae4cd64c0be3e297f7f45a3c",
+      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_2627.jpg"
     },
     {
       "caseId": "ic1-0004",
       "expected": "annual_crop",
       "file": "cases/ic1-0004.jpg",
-      "sha256": "09237291407fd6d4ad675fa687b856545bdfe3f73eb477307d9b3d13562076a7",
-      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_459.jpg"
+      "sha256": "6a6dc0f719dc1cb558c9f89a956b7de346b535c6e99d861ab2915a6c2f94a6e1",
+      "zip_path": "EuroSAT_RGB/AnnualCrop/AnnualCrop_476.jpg"
     },
     {
       "caseId": "ic1-0005",
       "expected": "forest",
       "file": "cases/ic1-0005.jpg",
-      "sha256": "18b00647cb0e85bddef944a5034cb796ffb17d5fa83cdc749f9b1f0c94df8486",
-      "zip_path": "EuroSAT_RGB/Forest/Forest_1539.jpg"
+      "sha256": "bd7bd6ab0e2a3a9a67a8eda6f2c97f0fbb859404d089ff9ae9c492547e537534",
+      "zip_path": "EuroSAT_RGB/Forest/Forest_155.jpg"
     },
     {
       "caseId": "ic1-0006",
       "expected": "forest",
       "file": "cases/ic1-0006.jpg",
-      "sha256": "ef40cdfe3aeb3cc33d437956a9b6859a5384dea84755278f948fd82ac6450f8a",
-      "zip_path": "EuroSAT_RGB/Forest/Forest_2079.jpg"
+      "sha256": "cdaf142f4291c9eeeb622e9527aebe877f1a09b8286927fdc870fbc348ad3b7a",
+      "zip_path": "EuroSAT_RGB/Forest/Forest_207.jpg"
     },
     {
       "caseId": "ic1-0007",
       "expected": "forest",
       "file": "cases/ic1-0007.jpg",
-      "sha256": "250bbaa68c4706028a18c1e44d7def547b9fdb79a6cdbfeb1c61acfe257a166d",
-      "zip_path": "EuroSAT_RGB/Forest/Forest_2619.jpg"
+      "sha256": "8c75ad64b21ad236a02a3f309eccf5a9c1ae7676aeb7db6b9394440339735aa3",
+      "zip_path": "EuroSAT_RGB/Forest/Forest_2639.jpg"
     },
     {
       "caseId": "ic1-0008",
       "expected": "forest",
       "file": "cases/ic1-0008.jpg",
-      "sha256": "664c5642abb299de915d526d99eb422b9cd20e56a05c77709cd8f2e8bffd1d6b",
-      "zip_path": "EuroSAT_RGB/Forest/Forest_459.jpg"
+      "sha256": "6c6ab97e4df1a393c5ad5bf7ba266ebb85f9fe031ec930eb77fc55de1707b178",
+      "zip_path": "EuroSAT_RGB/Forest/Forest_452.jpg"
     },
     {
       "caseId": "ic1-0009",
       "expected": "herbaceous_vegetation",
       "file": "cases/ic1-0009.jpg",
-      "sha256": "76d73b84ef4ac089d98dadecf128985f0dd6626bba835cc9385a0e05a0220a3b",
-      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_1539.jpg"
+      "sha256": "be8361e4b2b33005604bc26f7af2087bc285170d1bf0b5b26082c2ab5676cf06",
+      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_1616.jpg"
     },
     {
       "caseId": "ic1-0010",
       "expected": "herbaceous_vegetation",
       "file": "cases/ic1-0010.jpg",
-      "sha256": "5433d644135b9d401d1345f23fe72db38f7be6636d01ac75dbd1656c788d8b09",
-      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_2079.jpg"
+      "sha256": "ef8af905acb1f1df54d0c0828969f62c50382532bc053bab4e679f9d933b2d69",
+      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_2139.jpg"
     },
     {
       "caseId": "ic1-0011",
       "expected": "herbaceous_vegetation",
       "file": "cases/ic1-0011.jpg",
-      "sha256": "d94a7d0c7488a21a69d5143865086f696b337528422fc91835515d3ef638af9a",
-      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_2619.jpg"
+      "sha256": "43979612ac3cbb90c3d2a29ca5abf66bb229d3c0654e82604549136831a9b6ab",
+      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_2627.jpg"
     },
     {
       "caseId": "ic1-0012",
       "expected": "herbaceous_vegetation",
       "file": "cases/ic1-0012.jpg",
-      "sha256": "7c050c764d9947673e350f64d3ea3d66b793d2215a9257ee71d780df09eb5eaf",
-      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_459.jpg"
+      "sha256": "2f3738145b82482a9345fcea6e7386ebf2c84f824eb92272c710e7e7ff0dee4e",
+      "zip_path": "EuroSAT_RGB/HerbaceousVegetation/HerbaceousVegetation_517.jpg"
     },
     {
       "caseId": "ic1-0013",
       "expected": "highway",
       "file": "cases/ic1-0013.jpg",
-      "sha256": "1d44d2e5defd13138d17e23dca5fb97ce52ff301eb5b0758f28798f1cc9b7810",
-      "zip_path": "EuroSAT_RGB/Highway/Highway_1449.jpg"
+      "sha256": "95bc706f9adcc2e57a31d66a2fe1d0181e05e73bd2c5b4e63b0977f87c8064ed",
+      "zip_path": "EuroSAT_RGB/Highway/Highway_1433.jpg"
     },
     {
       "caseId": "ic1-0014",
       "expected": "highway",
       "file": "cases/ic1-0014.jpg",
-      "sha256": "9737677e407f16602c6e822bd75ab633643a51f0b6e263da3c83a7696a6e9fa6",
-      "zip_path": "EuroSAT_RGB/Highway/Highway_19.jpg"
+      "sha256": "16b40f0686e18eda90a4951b4ea7fb3061ca7eb592141b361c03fb250828e46b",
+      "zip_path": "EuroSAT_RGB/Highway/Highway_1885.jpg"
     },
     {
       "caseId": "ic1-0015",
       "expected": "highway",
       "file": "cases/ic1-0015.jpg",
-      "sha256": "c744f3e3d7921d91fd842d00d8862430b663aab7bc01af4ddbd097c934bd5e76",
-      "zip_path": "EuroSAT_RGB/Highway/Highway_2349.jpg"
+      "sha256": "0bc0d1e675fa1f1c412ecc694b6dbbf3ae448505a7b5f917c2bdcb33297e39e4",
+      "zip_path": "EuroSAT_RGB/Highway/Highway_237.jpg"
     },
     {
       "caseId": "ic1-0016",
       "expected": "highway",
       "file": "cases/ic1-0016.jpg",
-      "sha256": "9a0d49977f8fbd16281af6cac0bc850f69dd16dd2e9ffb67b739104a8ead764e",
-      "zip_path": "EuroSAT_RGB/Highway/Highway_549.jpg"
+      "sha256": "5f6f493f254d85029c701a27c08f54f14ee4886dd69e656e5f24df3be903f158",
+      "zip_path": "EuroSAT_RGB/Highway/Highway_638.jpg"
     },
     {
       "caseId": "ic1-0017",
       "expected": "industrial",
       "file": "cases/ic1-0017.jpg",
-      "sha256": "a18e8b41030949b2f6c656293c7752d6cb633ccbadfb8bf2fa85dc5841df02f4",
-      "zip_path": "EuroSAT_RGB/Industrial/Industrial_1449.jpg"
+      "sha256": "41b0fd3b3f7f44b05e012885607c56d4b5e59cf87ad12547168f0a915670cdf9",
+      "zip_path": "EuroSAT_RGB/Industrial/Industrial_1396.jpg"
     },
     {
       "caseId": "ic1-0018",
       "expected": "industrial",
       "file": "cases/ic1-0018.jpg",
-      "sha256": "8cf0771062d6c40d1f4b49933b11177446effbbf34add8346278dae73c210615",
-      "zip_path": "EuroSAT_RGB/Industrial/Industrial_19.jpg"
+      "sha256": "10c3551e48437a5dae490d523db8c5eadf1064cde760e6372d54127735e59137",
+      "zip_path": "EuroSAT_RGB/Industrial/Industrial_1883.jpg"
     },
     {
       "caseId": "ic1-0019",
       "expected": "industrial",
       "file": "cases/ic1-0019.jpg",
-      "sha256": "497d62e01004c0c73f2c8d8d44c4c4d089b6b4102e1ddcdfca7b09e0ace626c5",
-      "zip_path": "EuroSAT_RGB/Industrial/Industrial_2349.jpg"
+      "sha256": "407cc09ef704f80e260ff54ccde1517b1bab709bbe9616a8c9c3643b2b0c3163",
+      "zip_path": "EuroSAT_RGB/Industrial/Industrial_2295.jpg"
     },
     {
       "caseId": "ic1-0020",
       "expected": "industrial",
       "file": "cases/ic1-0020.jpg",
-      "sha256": "9b2790a75782f916f38a973ccd1345993121a9fd75adf635044e12bc800d5933",
-      "zip_path": "EuroSAT_RGB/Industrial/Industrial_549.jpg"
+      "sha256": "14c481f8dcdfad3bb17425893a446ebbe46d9f8f680e30e86443dca293876ee1",
+      "zip_path": "EuroSAT_RGB/Industrial/Industrial_488.jpg"
     },
     {
       "caseId": "ic1-0021",
       "expected": "pasture",
       "file": "cases/ic1-0021.jpg",
-      "sha256": "050c0f250fc46afa42af35884ced470676dbde9bdfa099ebd6abad34b60efcf8",
-      "zip_path": "EuroSAT_RGB/Pasture/Pasture_1359.jpg"
+      "sha256": "8682060e2a1d53493524c8c20119a0b6ad74c00047667914c9632831356fd398",
+      "zip_path": "EuroSAT_RGB/Pasture/Pasture_136.jpg"
     },
     {
       "caseId": "ic1-0022",
       "expected": "pasture",
       "file": "cases/ic1-0022.jpg",
-      "sha256": "fd50e714708a1b8295252ca5b7b4bd4efc23d461fda672dba2daf0bc0ac2586d",
-      "zip_path": "EuroSAT_RGB/Pasture/Pasture_1719.jpg"
+      "sha256": "5dc2165fd246cd44e0b82189494cd928f0aa056aaeedfa3cbd9d404c1f51a463",
+      "zip_path": "EuroSAT_RGB/Pasture/Pasture_1699.jpg"
     },
     {
       "caseId": "ic1-0023",
       "expected": "pasture",
       "file": "cases/ic1-0023.jpg",
-      "sha256": "8faa1787a1c10b7b91a5a17e8a64100475c4370bf59bee3f05cdcec98d82a4bf",
-      "zip_path": "EuroSAT_RGB/Pasture/Pasture_279.jpg"
+      "sha256": "8c312d8351307c0c394e93935a2e8256f81945025b67feb7501a38b6d58de10e",
+      "zip_path": "EuroSAT_RGB/Pasture/Pasture_295.jpg"
     },
     {
       "caseId": "ic1-0024",
       "expected": "pasture",
       "file": "cases/ic1-0024.jpg",
-      "sha256": "eed9ffaf9a572addd30f5fa6156bf9974e5ef9cc1a372d3e470e8b4f4e843d1b",
-      "zip_path": "EuroSAT_RGB/Pasture/Pasture_639.jpg"
+      "sha256": "28bd5e9a2c9f849f272c16b48541f787bbb8e91ecd6da90882b45dffa6204e9a",
+      "zip_path": "EuroSAT_RGB/Pasture/Pasture_590.jpg"
     },
     {
       "caseId": "ic1-0025",
       "expected": "permanent_crop",
       "file": "cases/ic1-0025.jpg",
-      "sha256": "dd07be822a2a43e5e9d4801caad125d67f841067655faaca0f1633969c9e9a62",
-      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_1449.jpg"
+      "sha256": "cb9cb9f8c45846bb6c6674048fa15f4ce91894e9bc28b0352408c1d3b546b59f",
+      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_1391.jpg"
     },
     {
       "caseId": "ic1-0026",
       "expected": "permanent_crop",
       "file": "cases/ic1-0026.jpg",
-      "sha256": "a4531b7c4d865d2f9042d912d0e621032ca44c738506cae378216e3008fb7a63",
-      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_19.jpg"
+      "sha256": "de176a8786d9d36682eb2b109fe0e4bc0504fe5f512f832919b45f30b850c27e",
+      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_183.jpg"
     },
     {
       "caseId": "ic1-0027",
       "expected": "permanent_crop",
       "file": "cases/ic1-0027.jpg",
-      "sha256": "dbae3773ce08e81f1373bf33247537622f868be5952ecdbdad96faac016f14ef",
-      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_2349.jpg"
+      "sha256": "02b44ea9e419494941bb2860183a306c7d18ba0d42c747feb363a20e01c5e227",
+      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_2286.jpg"
     },
     {
       "caseId": "ic1-0028",
       "expected": "permanent_crop",
       "file": "cases/ic1-0028.jpg",
-      "sha256": "bd352bce02d3ee387355e259ddf962987c2af72bc2584be7ff90b104623f23cc",
-      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_549.jpg"
+      "sha256": "6060f49fb2fc800c5612c3ae39c166a14f978a82f09408b55bfe449167d16e68",
+      "zip_path": "EuroSAT_RGB/PermanentCrop/PermanentCrop_50.jpg"
     },
     {
       "caseId": "ic1-0029",
       "expected": "residential",
       "file": "cases/ic1-0029.jpg",
-      "sha256": "9b7ab436930b57308633028aab4c0b6d96c237e9820cc1a5924e87b812432310",
-      "zip_path": "EuroSAT_RGB/Residential/Residential_1539.jpg"
+      "sha256": "8d5431995b662129f0ac832780e4ae36f6caf83ef94b88819e222d09e8a6cade",
+      "zip_path": "EuroSAT_RGB/Residential/Residential_15.jpg"
     },
     {
       "caseId": "ic1-0030",
       "expected": "residential",
       "file": "cases/ic1-0030.jpg",
-      "sha256": "b03b39bf67ebbe4c9c25b39c942c2119eb429a3e0076afa552b39e224bd54a6b",
-      "zip_path": "EuroSAT_RGB/Residential/Residential_2079.jpg"
+      "sha256": "cdfdd0fe5ccdab28c28593cec7f4ced280745a841655aa0b9a9fba069449c13e",
+      "zip_path": "EuroSAT_RGB/Residential/Residential_2084.jpg"
     },
     {
       "caseId": "ic1-0031",
       "expected": "residential",
       "file": "cases/ic1-0031.jpg",
-      "sha256": "f3057978efdb971712fe3d653df12710cd1426d9f5347739b2e9872ddd944b0c",
-      "zip_path": "EuroSAT_RGB/Residential/Residential_2619.jpg"
+      "sha256": "2aca7920414dac5bf59ac038511228f4bc796903709e9ce98ce29195ce57d9f1",
+      "zip_path": "EuroSAT_RGB/Residential/Residential_2616.jpg"
     },
     {
       "caseId": "ic1-0032",
       "expected": "residential",
       "file": "cases/ic1-0032.jpg",
-      "sha256": "73577682e0baf9de6da9af96c86cb33ac6addd69f9971fbe90867fb17e0143fc",
-      "zip_path": "EuroSAT_RGB/Residential/Residential_459.jpg"
+      "sha256": "b5131dc094e47ac2512b3f9b350c134d4ab8b35b9f62d9f972067c3100cd8dd2",
+      "zip_path": "EuroSAT_RGB/Residential/Residential_468.jpg"
     },
     {
       "caseId": "ic1-0033",
       "expected": "river",
       "file": "cases/ic1-0033.jpg",
-      "sha256": "5aa8732c75f8d04c01508c2353970465632f316b827cebb629d62e9017679860",
-      "zip_path": "EuroSAT_RGB/River/River_1449.jpg"
+      "sha256": "6b4ec7b52901b56044ef4d671c75add0b334392caffe49eebede6d57e5339f50",
+      "zip_path": "EuroSAT_RGB/River/River_1476.jpg"
     },
     {
       "caseId": "ic1-0034",
       "expected": "river",
       "file": "cases/ic1-0034.jpg",
-      "sha256": "3f87ea90461f48801a896a8958a0423d78506b593c033fc9b1db75e8efc7e040",
-      "zip_path": "EuroSAT_RGB/River/River_19.jpg"
+      "sha256": "68cf034ec3fea38d1d2b10c878257ae6e981ef2765ddf4c134c8f058a882ec83",
+      "zip_path": "EuroSAT_RGB/River/River_1892.jpg"
     },
     {
       "caseId": "ic1-0035",
       "expected": "river",
       "file": "cases/ic1-0035.jpg",
-      "sha256": "6909e2d81ff07f20d1b138eef61a6eb72b960e455f639879688070fd5646b82e",
-      "zip_path": "EuroSAT_RGB/River/River_2349.jpg"
+      "sha256": "665a167126f298217e1cbb826f43699b63c58527aef1e8b1076fc4b2cbac4f43",
+      "zip_path": "EuroSAT_RGB/River/River_2328.jpg"
     },
     {
       "caseId": "ic1-0036",
       "expected": "river",
       "file": "cases/ic1-0036.jpg",
-      "sha256": "22d145c3ac62d1d5ff95318e655015aa93324786fe8557eef90c7eccdfbeeada",
-      "zip_path": "EuroSAT_RGB/River/River_549.jpg"
+      "sha256": "5477288a03291b05252a7b89ca332bb36aa97737a3ebd896e7f2eba1821adbb2",
+      "zip_path": "EuroSAT_RGB/River/River_576.jpg"
     },
     {
       "caseId": "ic1-0037",
       "expected": "sea_lake",
       "file": "cases/ic1-0037.jpg",
-      "sha256": "833d769f9c19b5af640b21640bedbff5dae6aa5aa524a5a28ea21aa1d6c2f40b",
-      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_1539.jpg"
+      "sha256": "8f8c375e18d4bdecdbf17087a749dec0e51b3a3f983e39fb678aacfbb77349a0",
+      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_1601.jpg"
     },
     {
       "caseId": "ic1-0038",
       "expected": "sea_lake",
       "file": "cases/ic1-0038.jpg",
-      "sha256": "ecbc79c3998c60261228a97977e2a58f290230314e4b2eb5186e1bbf0753af4d",
-      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_2079.jpg"
+      "sha256": "4ea040bf725e8f6edf367bdc8adbb086908d58fd864e266b4062ffdd90644c77",
+      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_2109.jpg"
     },
     {
       "caseId": "ic1-0039",
       "expected": "sea_lake",
       "file": "cases/ic1-0039.jpg",
-      "sha256": "533919a10992e2055c96139209714f664ff9a3c99345ea6b39bf7aef1919cdfc",
-      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_2619.jpg"
+      "sha256": "ed7f7392355d232dedb385d4ca6a3f960d8edad7f6f4508b53413edd16d08ff4",
+      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_268.jpg"
     },
     {
       "caseId": "ic1-0040",
       "expected": "sea_lake",
       "file": "cases/ic1-0040.jpg",
-      "sha256": "bbd680168ebbad70ea6dd2405a1e7004ebc515a5008361936757200ade9bdc17",
-      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_459.jpg"
+      "sha256": "5cb39918c536bafb9134eabf68affd51d7ed6d02e540274db932f9d1ef8b6cd7",
+      "zip_path": "EuroSAT_RGB/SeaLake/SeaLake_531.jpg"
     }
   ],
   "dataset": "eurosat-rgb",
@@ -309,7 +309,10 @@
     "method": "per_class_even_stride_sorted_names",
     "model_based": false,
     "n": 40,
-    "per_class": 4
+    "note": "데모 n=40과 본편 n=300 분리. n=300은 통계 판정용 골격이며 커밋하지 않음.",
+    "per_class": 4,
+    "split": "holdout",
+    "split_rule": "sha1(zip_entry_name)[:8] % 5 == 0 -> holdout"
   },
   "zenodo_record": "7711810"
 }

@@ -1,5 +1,13 @@
 # Changelog
 
+## 제품 유통 목표 문서화 (D19) · 데모 골든 홀드아웃 — 2026-08-10
+
+- **D19:** Open Agent + (선택) Open Compute + User-defined Trust Domain. 경제는 선택·비기초. 정본 [`docs/design/product-distribution.md`](../design/product-distribution.md)
+- 로드맵 §5.1 · handoff · STATE · INDEX · README 링크 · 사용안내 신뢰 경계 절
+- **데모 N=40** `split=holdout` 재추출 · `check_golden_leakage` clean. 커밋 A 가중치는 여전히 `train_images=27000`
+- 커밋 서명: `user.name`=finn|toma|pl + 팀 noreply (`CLAUDE.md` · github-team-guide)
+- 촬영 런북·regulation sha·handoff A/B Within 무효 반영
+
 ## 사이클 폐쇄 + 서사 전환 (v4.7) — 2026-08-09
 
 **코드** — 사용자 → Core → Node → Core → 사용자 사이클을 닫았다

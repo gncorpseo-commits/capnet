@@ -113,9 +113,9 @@ Gate · Product · Proof **모두** 동일 전처리:
 
 기계 핀: [`eurosat-rgb.json`](./eurosat-rgb.json).  
 **데모 골든셋:** [`manifest-image-classify-v1.json`](./manifest-image-classify-v1.json) · N=40 ·  
-`golden_set_sha256` = `c8254bcb454d6ca362f61c0426e4a7c9c7de42cc81fa6ab3ed097b64c2862066`  
-선택: 클래스당 정렬 파일명 균등 간격 4장. **모델 기반 선택 아님.** 원본 zip은 커밋하지 않고 `cases/` 40장만 둔다.  
-**아직 아닌 것:** scratch 학습 · 실게이트 채점.
+`selection.split` = **holdout** (`sha1(zip_entry_name)[:8] % 5 == 0`).  
+`golden_set_sha256` = `0341d121103c787b87f9d56fc8a5b3b5ad12cad9f21596522dce5ac12f89fa3f`  
+선택: 홀드아웃 풀에서 클래스당 정렬 파일명 균등 간격 4장. **모델 기반 선택 아님.** 원본 zip은 커밋하지 않고 `cases/` 40장만 둔다.
 
 기획서 **§5.2** 데이터 정책(개인정보 미포함, allowlist만)을 데이터 성질로 만족한다.
 

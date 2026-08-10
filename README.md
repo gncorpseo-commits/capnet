@@ -95,6 +95,8 @@ AI 에이전트 스토어는 이미 많다. CapNet이 다루는 건 그 앞의 �
 - 기기가 데이터를 남기지 않는다 — 추론은 평문을 요구한다. TEE 없이는 원리적으로 불가
 - 두 에이전트가 **같은 답**을 낸다 — 등가는 선택 프로파일의 **관측값**이다
 
+제품으로 **무엇을 유통할지**(초대 플릿 · 경제는 선택 · Private ≠ 안전): [`docs/design/product-distribution.md`](docs/design/product-distribution.md).
+
 판정은 앱 `if`가 아니라 **PostgreSQL 제약**이 한다.
 
 - 게이트 미통과 Agent에는 Task를 **할당할 수 없다**

@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-08-08** · 종착점 = **Phase 3+ 전체** (D16) · README는 상태 비보유(링크만)
+> **갱신: 2026-08-10** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · README는 상태 비보유(링크만)
 
 ---
 
@@ -39,6 +39,7 @@
 | **출품 (1순위)** | 양식 이식 ✅ · **촬영 2026-08-23 확정** · 편집·업로드 8/24 · Release/포털 미완 |
 | **Phase 1** | ✅ 완주 · 판정 **Go** (v4.6) |
 | **Phase 2** | 사이클 폐쇄 완료. 유휴 판정은 스키마 필요 → **SD-007 선결** |
+| **제품 유통 (D19)** | 문서 정본 [`product-distribution.md`](docs/design/product-distribution.md). 1호 = 초대 team/tenant · 경제 비기초. **코드 유통 세대 = v제품-0 직전** |
 | **문서 위생** | README stable-only · 일정 정본 = checklist |
 | **역할** | finn · toma · **pl**(동급) · master(merge) — [`github-team-guide`](docs/guide/github-team-guide.md) v1.3 |
 
@@ -66,7 +67,7 @@
 | A/B 편차 (원래 쌍 ho80 vs hob40) | 0.4633 · 일치율 0.450 → EXCEEDS |
 | sanity floor 3종 | 전부 FAILED |
 | M25 위반 6종 | 전부 REJECTED |
-| 골든셋 누출 | **0/300 — 해소** |
+| 골든셋 누출 | 홀드아웃 n300 **0/300** · 데모 N=40도 holdout 재추출(2026-08-10). **커밋 A는 전수 학습** — 일반화 주장은 재학습 후 |
 
 ### 촬영 전 준비 (2026-08-09 완료)
 
@@ -97,4 +98,6 @@
 | 2 | **H1–H4를 8/27 전에 할지** (CPU 3–4h · 출품 트랙과 경합) | master |
 | 3 | A/B를 보고서 Must로 승격할지 (SD-001) | master |
 | 4 | 마이그레이션 체계 (SD-007) — Phase 2 선결 | Phase 2 착수 전 |
-| 5 | 실험 가중치 `.meta.json` gitignore 처리 | 잡무 |
+| 5 | ~~실험 가중치 `.meta.json` gitignore~~ | ✅ `*.meta.json` ignore · A/B 메타만 예외 |
+| 6 | 커밋 A 가중치 `HOLDOUT=1` 재학습 (meta `train_images=27000`) | 출품 전 권장 |
+| 7 | 제품 유통 v제품-1 — SD-007 → credential (D19) | 출품 후 |
