@@ -1,5 +1,31 @@
 # Changelog
 
+## 안정화 — 깨끗한 환경 재현 · arch 백필 (45→1) — 2026-08-11
+
+### 촬영이 의존하는 재현 검증이 낡아 있었다
+
+촬영 준비 ①(「새 clone·빈 볼륨에서 4개 스크립트 전부 통과」)은 **스키마 세대 4** 때 한 것인데,
+그 뒤로 세대가 **8** 까지 올랐고 `CLAIM_SQL`·`seed.sql` 도 바뀌었다.
+
+- **`scripts/clean_room.sh` 신설** — 운영 스택을 건드리지 않고 **별도 프로젝트·별도 포트·빈 볼륨**에서
+  전체 배터리를 돌린다. 언제든 다시 확인할 수 있다
+- `demo.sh`·`proof_ab.sh`·`pass_rate.sh` 를 `CORE_URL`/`NODE_URL` 로 파라미터화 — 주소가 박혀 있어
+  격리 환경에서 못 돌던 것을 푼다
+- **실측: 9/9 통과** — 마이그레이션 8개 적용·verify · 새 볼륨 드리프트 0 · 골든셋 sha 정합 ·
+  M25 위반 6종 · sanity floor 3종 · demo 사슬 · **능력 호출(Agent 미지정)** · Node 온보딩
+
+### legacy arch 백필 — 45건 → 1건
+
+`migrations/0008` 이 arch 를 계약에 묶었지만 그 이전 Agent 는 `arch IS NULL` 이었다.
+그것들의 실행 arch 는 여전히 Node 로컬 파일이 정했다 — I1 이 닫으려던 바로 그 구멍.
+
+- **`scripts/backfill_agent_arch.sh`** — Core 는 가중치 파일을 보지 않으므로 **추측하지 않는다.**
+  가중치를 들고 있는 Node 에게 묻고, `weights_sha256` 이 **일치하는** Agent 만 채운다
+- Node `/health` 의 `weights[]` 에 `arch` 추가 (학습 기록 `<weights>.meta.json` 의 값 · **Node 의 증언**)
+- 실 DB **44건 백필 · 남은 1건은 `seed-agent`**(placeholder · 라우팅 불가) — 정확히 옳은 잔여
+- 같은 stdin 버그를 또 만들었다 — `docker compose exec -T` 가 루프의 stdin 을 먹어 **첫 줄만** 처리했다
+  (25건만 잡혔다). fd 3 분리 + `psql()` 에 `</dev/null`. `regate.sh` 에서 이미 당한 함정이다
+
 ## 남의 Agent 를 받기 위한 첫 두 칸 — arch 결속 · 자원 한도 (I1·I2) — 2026-08-11
 
 새 설계 문서 [`design/foreign-agent-isolation.md`](../design/foreign-agent-isolation.md) —

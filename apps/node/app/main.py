@@ -142,13 +142,20 @@ def _post_complete(assignment_id: uuid.UUID, body: dict[str, Any]) -> dict[str, 
 def health() -> dict[str, Any]:
     files = []
     for path in _list_weight_files():
-        files.append(
-            {
-                "path": path,
-                "sha256": _file_sha256(path),
-                "placeholder": _is_placeholder(path),
-            }
-        )
+        entry = {
+            "path": path,
+            "sha256": _file_sha256(path),
+            "placeholder": _is_placeholder(path),
+        }
+        # 학습 시 기록된 아키텍처. **Node 의 증언**이지 Core 의 판정이 아니다 —
+        # legacy Agent 의 arch 백필에 쓴다 (scripts/backfill_agent_arch.sh).
+        try:
+            from app.infer import _arch_for_weights
+
+            entry["arch"] = _arch_for_weights(path)
+        except Exception:
+            entry["arch"] = None
+        files.append(entry)
     default_exists = os.path.isfile(WEIGHTS_PATH)
     return {
         "ok": default_exists or bool(files),
