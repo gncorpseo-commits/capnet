@@ -17,6 +17,11 @@ echo "== 골든셋 sha 정합 =="
 python3 scripts/check_golden_sha.py || fail=1
 
 echo
+echo "== 출품 패키지 기계 점검 =="
+# 작업 중에도 돌 수 있게 워킹트리 검사는 뺀다. 패키징 직전에는 --skip-tree 없이 돌린다.
+python3 scripts/check_submission.py --skip-tree || fail=1
+
+echo
 if [[ "$fail" -ne 0 ]]; then
   echo "실패 — 위 항목을 고친다." >&2
   exit 1

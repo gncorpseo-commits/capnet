@@ -72,3 +72,17 @@ Invoke-RestMethod http://127.0.0.1:8001/health
 3. [`contest-report-form-draft.md`](./contest-report-form-draft.md) 문장 복사 (본문 ≤5p)  
 4. 붙임1 SBOM · 붙임2 유형3 + raw 가중치 URL  
 5. PDF 동시 저장 → 포털 zip
+
+---
+
+## 촬영 전 기계 점검
+
+```bash
+scripts/run_tests.sh                      # 단위 48 + 골든셋 정합 + 출품 점검
+python3 scripts/check_submission.py       # 패키징 직전 (워킹트리 깨끗함 포함)
+scripts/migrate.sh status                 # 스키마 세대 확인
+```
+
+`check_submission.py` 가 보는 것: 금지 산출물 미동봉 · 필수 가중치 유지 · 라이선스 4종 ·
+사전학습 미사용 선언(meta) · 의존성 THIRD-PARTY 등재 · 시크릿 · 상대 링크 · 골든셋 정본 1개 ·
+골든셋 sha 정합 · 패키지 크기. **영상·촬영·포털은 이 검사 밖이다.**
