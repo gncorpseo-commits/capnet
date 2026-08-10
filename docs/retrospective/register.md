@@ -175,6 +175,26 @@
 - **검증:** `tests/integration/check_revocation.py` 10개 계약 — 대조군 배정 · 근거 없는 폐기 거부 · 행 보존 · claim 차단 · 뷰·audit_log 기록 · 복권 · DISABLED 차단. CI 에 편입
 - **상태:** closed
 
+### SD-015 · 시드가 「얻을 수 없는 증서」를 발급했다 → **해소 (2026-08-11)**
+- **무엇:** `seed-agent` 의 가중치는 `placeholder.safetensors`. 채점기가 **로드조차 못 한다**(safetensors 키 불일치) — 실게이트가 원리적으로 불가능하다. 그런데 seed 가 라우팅 가능 증서를 발급했다
+- **왜 위험했나:** UUID 가 가장 낮아 claim 정렬(`ORDER BY acp.agent_id`)에서 **1순위**였다. `requestedAgentId` 없는 Task 는 이 Agent 로 가서 `dummy:true` 라벨을 받고 **COMPLETED 로 기록**됐다. 실 DB 실측 **5건 SUCCEEDED**
+- **왜 안 걸렸나:** `demo.sh`·`proof_ab.sh` 가 **항상** `requestedAgentId` 를 넘긴다. 그런데 제품 경로는 「모델 이름이 아니라 Capability 로 요청한다」(product-distribution §4)이므로 정면으로 닿는다
+- **증적 보장 자체는 지켜졌다** — `dummy:true` 가 `result_ref` 에 남는다. 그러나 `label` 만 읽는 사용자에게는 지어낸 답이다
+- **조치:** `seed.sql` 이 라우팅 투영을 만들지 않는다 (사슬 gate_run→passed→agent_capability 는 유지 — 시연 가치). 기존 볼륨은 `migrations/0005` 가 폐기 표시로 끊는다
+- **`revoked_gate_run_id` 가 NULL 인 이유:** 근거가 될 FAILED gate_run 을 만들 수 없다(로드 불가). 「기준 미달」이 아니라 **시드 결함**이다. 운영 폐기 API 의 근거 규칙(SD-014)은 그대로 유지된다
+- **의존 정리:** `demo_violations.sql` · `check_pg_violations.py` · `check_revocation.py` 가 시드 증서에 기대고 있었다 — 전부 자기 증서를 스스로 만들도록 바꿨다 (테스트 위생상 옳다)
+- **CI:** 새 볼륨에 placeholder 라우팅 증서가 0건인지 검사
+- **상태:** closed
+
+### SD-016 · claim 이 호환 행렬을 후보 단계에서 보지 않았다 → **해소 (2026-08-11)**
+- **무엇:** `CLAIM_SQL` 이 `domain_compatible`·`tier_compatible` 을 조인하지 않았다. 호환 불가 조합을 **고른 뒤** INSERT 에서 FK 가 거절했다
+- **발견:** P2-1 로 tenant Node 를 함대에 넣자마자 재현됐다
+- **보장 vs 가용성:** 「승인 안 한 도메인으로 라우팅되지 않는다」는 **지켜졌다**(FK 가 거절). 깨진 것은 **가용성**이다 — team Node 가 조금 바빠 tenant Node 가 먼저 정렬되면, 호환 Node 가 멀쩡히 있는데도 `ForeignKeyViolation` 이 나고 Task 가 배정되지 않는다. 실측으로 재현
+- **왜 이제껏 안 보였나:** 함대에 team Node 밖에 없었다. tenant/public Node 가 하나라도 들어오는 순간 발생한다 — 즉 **유통 세대 v제품-1 의 전제였다**
+- **조치:** `CLAIM_SQL` 에 두 행렬을 조인해 **후보 단계에서** 거른다. FK 는 최후 방어로 그대로 둔다 (판정은 제약이 한다)
+- **검증:** `check_tenant_routing.py` 6종 · 재현 시나리오(team Node 점유 후 두 번째 Task)가 예외 없이 처리됨
+- **상태:** closed
+
 ### SD-005 · 출품 패키지(양식·영상·포털) 미완
 - **무엇:** 기술 MVP는 있음 · 공식 보고서 파일·YouTube·포털 zip은 남음
 - **왜:** 공지 39·양식 확정 후 이식 단계

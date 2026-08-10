@@ -1,5 +1,31 @@
 # Changelog
 
+## P2-1 tenant 운용 · 시드 결함 2건 (SD-015 · SD-016) — 2026-08-11
+
+- **`migrations/0006` — tenant 신뢰 경계 운용 (P2-1 · D19).** tenant 플릿 Node + `image.classify@2`(`trust_domain_min='tenant'`).
+  로드맵은 「DDL 추가가 아니라 운용」이라고만 적었는데, 실제로는 한 칸이 더 있었다 —
+  `domain_min_compatible` 상 tenant Task 는 `min='team'` 계약을 **원천적으로 못 쓴다**.
+  기존 계약을 낮추지 않고 새 계약을 추가했다 (출품 트랙 불변)
+- **`tests/integration/check_tenant_routing.py` 6종** — tenant→tenant 배정(양성 대조) · tenant→team 허용 ·
+  **team→tenant 차단** · tenant 가 team 전용 계약 사용 불가 · public 이 tenant 계약 사용 불가 · 거짓 스냅샷 거절
+
+### SD-015 — 시드가 「얻을 수 없는 증서」를 발급했다
+
+`seed-agent` 는 `placeholder.safetensors` 라 **실게이트가 원리적으로 불가능**한데(로드조차 안 된다)
+라우팅 가능 증서를 갖고 있었고, UUID 가 가장 낮아 **claim 1순위**였다.
+`requestedAgentId` 없는 Task 가 `dummy:true` 라벨을 COMPLETED 로 받았다 — 실 DB 에 **5건**.
+
+- `seed.sql` 이 라우팅 투영을 만들지 않는다 · 기존 볼륨은 `migrations/0005` 가 폐기
+- 시드 증서에 기대던 `demo_violations.sql`·`check_pg_violations`·`check_revocation` 을 자립시켰다
+- CI 가 「새 볼륨에 placeholder 라우팅 증서 0건」을 검사한다
+
+### SD-016 — claim 이 호환 행렬을 후보 단계에서 보지 않았다
+
+`CLAIM_SQL` 이 `domain_compatible`·`tier_compatible` 을 조인하지 않아, 호환 불가 조합을 **고른 뒤**
+INSERT 에서 FK 가 거절했다. 라우팅 차단 보장은 지켜지지만 **가용성이 깨진다** —
+team Node 가 바빠 tenant Node 가 먼저 정렬되면 호환 Node 가 있는데도 예외가 나고 Task 가 배정되지 않는다.
+tenant Node 를 넣자마자 재현됐다. 두 행렬을 조인해 후보 단계에서 거른다. FK 는 최후 방어로 유지.
+
 ## PG 위반 19종 자동 회귀 (M25) — 2026-08-11
 
 이 프로젝트의 중심 주장은 「판정은 앱 `if` 가 아니라 PostgreSQL 제약이 한다」이다.

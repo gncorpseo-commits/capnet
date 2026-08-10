@@ -43,6 +43,15 @@ SELECT t.id, acp.agent_id, c.id, n.id,
   JOIN agent_node_ready anr        ON anr.agent_id = acp.agent_id
   JOIN node n                      ON n.id = anr.node_id
                                   AND (%(node_id)s::uuid IS NULL OR n.id = %(node_id)s::uuid)
+  -- 호환 행렬을 **후보 단계에서** 본다 (P2-1 에서 발견).
+  -- 이 조인이 없으면 claim 이 호환 불가 조합을 고르고 INSERT 에서 FK 가 거절한다.
+  -- 보장은 지켜지지만(라우팅은 안 된다) 가용성이 깨진다 — 호환 Node 가 있는데도
+  -- 예외가 나서 Task 가 배정되지 않는다. tenant Node 가 함대에 들어오는 순간 실제로 재현된다.
+  -- FK 는 그대로 최후 방어로 남는다 (판정은 제약이 한다).
+  JOIN domain_compatible dc        ON dc.task_domain = t.trust_domain
+                                  AND dc.node_domain = n.trust_domain
+  JOIN tier_compatible tc          ON tc.capability_tier = c.compute_tier
+                                  AND tc.node_tier_max = n.compute_tier_max
   -- 유휴 판정: 살아 있고(heartbeat 신선) 일을 받을 수 있는 기기만 후보다.
   -- 세션 기록이 아직 없는 기기는 %(require_live)s = false 일 때만 허용한다(초기 기동·데모).
   LEFT JOIN node_liveness nl       ON nl.node_id = n.id

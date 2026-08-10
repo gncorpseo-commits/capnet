@@ -118,11 +118,23 @@
 
 | ID | 산출물 | 비고 |
 |----|--------|------|
-| P2-1 | `tenant` trust_domain 실동작 | 스키마에 이미 있음(`domain_compatible`). **DDL 추가가 아니라 운용** |
+| ~~P2-1~~ | `tenant` trust_domain 실동작 | ✅ **완료 2026-08-11** — `migrations/0006` · 경계 6종 실측. 아래 §3.2 참조 |
 | P2-2 | `work_units` 계측 — `duration_ms` · `vram_mb_peak` | 정산 아님(§8.1-4). **미계측 구간은 소급 불가** — 시작 시점부터만 의미 |
 | P2-3 | 최소 UI (호출면) | §9 각주: 테넌트 파일럿부터는 호출면이 필요 |
 | P2-4 | `node_credential` DDL + 발급 API | **SD-002 · 승인 필요** |
 | P2-5 | spot-check · 재할당 가동 | Proof Track |
+
+### 3.2 P2-1 에서 로드맵이 틀렸던 곳 (2026-08-11)
+
+「스키마에 이미 있음 · DDL 추가가 아니라 운용」은 **절반만 맞았다.** 행은 맞고, 한 칸을 빠뜨렸다.
+
+`domain_min_compatible` 은 task 의 privacy_rank 가 `capability.trust_domain_min` 이상일 것을 요구한다.
+`image.classify@1` 의 min 은 `team`(3) 이라 **tenant Task(2)는 그 계약을 원천적으로 쓸 수 없다** — Node 를 아무리 넣어도 안 된다.
+그래서 tenant 유통에는 `trust_domain_min <= tenant` 인 **계약이 선행**한다. 기존 계약을 낮추지 않고 `image.classify@2` 를 추가했다.
+
+그리고 tenant Node 를 넣자마자 **claim 버그(SD-016)**가 드러났다 — `CLAIM_SQL` 이 호환 행렬을 후보 단계에서 보지 않아,
+호환 Node 가 있는데도 예외로 Task 가 굶었다. 라우팅 차단 보장은 지켜졌고 깨진 것은 가용성이다.
+**단일 도메인 함대에서는 보이지 않던 결함**이라, P2-1 의 진짜 값어치는 여기 있었다.
 
 ### 3.1 여기서 스키마 동결이 깨진다
 

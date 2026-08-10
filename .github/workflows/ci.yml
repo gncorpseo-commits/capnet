@@ -119,3 +119,16 @@ jobs:
 
       - name: PG 위반 자동 회귀 (M25) — 어느 제약이 거절했는지까지 본다
         run: python3 tests/integration/check_pg_violations.py
+
+      - name: tenant 신뢰 경계 실동작 (P2-1 · D19)
+        env:
+          REQUIRE_LIVE_NODE: "0"
+        run: python3 tests/integration/check_tenant_routing.py
+
+      - name: 새 볼륨에는 placeholder Agent 의 라우팅 증서가 없다 (SD-015)
+        run: |
+          n=$(psql -h 127.0.0.1 -U capnet -d capnet -tAc "
+            SELECT count(*) FROM agent_capability_passed acp JOIN agent a ON a.id=acp.agent_id
+             WHERE acp.revoked_at IS NULL
+               AND a.weights_sha256='5cd21e43471e2d0a495ce5cee3aae102cbdbd98c7f0db770a74476268b3a3887'")
+          test "$n" = "0" || { echo "placeholder Agent 가 라우팅 가능하다: $n"; exit 1; }
