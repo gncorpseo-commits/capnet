@@ -116,3 +116,6 @@ jobs:
         env:
           REQUIRE_LIVE_NODE: "0"
         run: python3 tests/integration/check_revocation.py
+
+      - name: PG 위반 자동 회귀 (M25) — 어느 제약이 거절했는지까지 본다
+        run: python3 tests/integration/check_pg_violations.py

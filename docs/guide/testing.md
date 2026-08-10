@@ -68,7 +68,7 @@ python3 -m unittest discover -s tests -v
 | job | 무엇을 |
 |-----|--------|
 | **unit** | 단위 테스트 + `check_golden_sha.py`. 의존성 설치 없음 |
-| **migrate** | postgres 서비스로 **실제 적용**. 아래 6단계 |
+| **migrate** | postgres 서비스로 **실제 적용**. 아래 6단계 + 폐기 경로 + PG 위반 19종 |
 
 migrate job 이 보는 것:
 
@@ -89,8 +89,6 @@ migrate job 이 보는 것:
 - **게이트 사슬 통합 테스트.** `demo.sh`·`proof_ab.sh`·`sanity.sh` 는 여전히 수동이다.
   torch 가 필요해 CI 시간이 크게 늘어난다 — 넣으려면 별도 판단이 필요하다.
 - **lint/포맷 도구.** `ruff` 설정이 없다. 개발 환경에 pip 가 없어 보류했다.
-- **PG 위반 14종 자동 회귀.** `docs/error/pg-violations.md` 는 실측 기록이고 자동 검증이 아니다.
-  `scripts/demo_violations.sql` 을 CI 로 올리는 것이 다음 후보다.
 - **`regate.sh` 테스트.** Node·가중치가 있어야 해서 단위 테스트가 어렵다.
 
 새 판정 도구를 만들면 **테스트를 같이 넣는다.** 그게 이 문서의 요점이다.

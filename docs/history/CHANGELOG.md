@@ -1,5 +1,23 @@
 # Changelog
 
+## PG 위반 19종 자동 회귀 (M25) — 2026-08-11
+
+이 프로젝트의 중심 주장은 「판정은 앱 `if` 가 아니라 PostgreSQL 제약이 한다」이다.
+그 증거가 **수동 실측 기록**(`docs/error/pg-violations.md` 14종)과
+**CI 밖 스크립트**(`scripts/demo_violations.sql` 6종)뿐이었다.
+
+- **`tests/integration/check_pg_violations.py` 신설 · 19개** — CI migrate job 에 편입
+- **어느 제약이 거절했는지까지 대조한다.** 이게 핵심이다 —
+  실제로 `assignment_agent_id_capability_id_fkey` 를 떨어뜨려 보니 그 케이스는 **여전히 거절됐다**
+  (다른 FK 가 잡았다). 거절 여부만 보는 시험이었으면 그때 초록이 떴다
+- **양성 대조** — 정상 할당은 반드시 통과해야 한다. 없으면 스키마가 통째로 망가져도
+  「전부 거절됨」으로 초록이 뜬다
+- 전부 SAVEPOINT + 최종 ROLLBACK. 롤백됐는지도 검사한다 (seed 오염 방지)
+- 변이 검사 — 제약 2종을 실제로 DROP 해 각각 FAIL 재현
+- 만들면서 시험 자체의 결함 3건을 고쳤다: psycopg 다중 문장 · `ck_gate_runner_team` 이 먼저
+  걸려 겨냥한 FK 를 못 보던 것 · 스냅샷을 거짓으로 적어 다른 케이스와 같은 것을 시험하던 것
+- `scripts/demo_violations.sql` 은 촬영용 6종 시연으로 남긴다 (NOTICE 가 화면에 보인다)
+
 ## 출품 패키지 기계 점검 (SD-005) — 2026-08-10
 
 촬영 당일에 사람이 눈으로 훑는 것은 재현되지 않는다. 8/23 촬영·Release 때 또 봐야 하는
