@@ -45,6 +45,7 @@
 - [팀 GitHub 사용 표준](./guide/github-team-guide.md) (Wiki와 동기)
 - [사용 안내 (쉬운 버전)](./guide/user-guide-ko.md)
 - [마이그레이션 운용](./guide/migrations.md) — SD-007 · 기존 볼륨 업그레이드 경로
+- [검증 체계 (테스트·CI)](./guide/testing.md) — 무엇을 자동으로 막는가
 
 ### error
 - [PG 위반 14종 실측](./error/pg-violations.md)

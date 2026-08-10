@@ -1,0 +1,111 @@
+name: CI
+
+# 이 리포에는 오래 테스트가 없었다. 여기서 지키는 것은 두 가지다.
+#   1) 절대규칙이 도구로 강제되는가 (마이그레이션 정적 검사)
+#   2) 골든셋 선언부가 서로 어긋나지 않는가 (SD-013 재발 방지)
+# 그리고 마이그레이션이 **빈 볼륨과 기존 볼륨 양쪽에서** 실제로 도는지 본다.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit:
+    name: 단위 테스트 · 골든셋 정합
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # 의존성 설치가 없다. 표준 라이브러리만 쓴다.
+      - name: 단위 테스트
+        run: python3 -m unittest discover -s tests -v
+      - name: 골든셋 sha 정합
+        run: python3 scripts/check_golden_sha.py
+
+  migrate:
+    name: 마이그레이션 (새 볼륨 · 기존 볼륨)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: capnet
+          POSTGRES_PASSWORD: capnet
+          POSTGRES_DB: capnet
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U capnet -d capnet"
+          --health-interval 3s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://capnet:capnet@127.0.0.1:5432/capnet
+      PGPASSWORD: capnet
+      CAPNET_MIGRATIONS_DIR: ${{ github.workspace }}/migrations
+      PYTHONPATH: ${{ github.workspace }}/apps/core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 러너 의존성 (core 와 동일 핀)
+        run: pip install "psycopg[binary]==3.2.9" "pydantic-settings==2.10.1"
+
+      - name: baseline 가드 — 빈 DB 에서는 아무것도 쓰지 않는다
+        run: |
+          set +e
+          python3 -m app.migrate up
+          rc=$?
+          set -e
+          test "$rc" -ne 0 || { echo "빈 DB 인데 up 이 성공했다"; exit 1; }
+          n=$(psql -h 127.0.0.1 -U capnet -d capnet -tAc \
+            "SELECT count(*) FROM pg_tables WHERE schemaname='public'")
+          test "$n" = "0" || { echo "빈 DB 에 테이블이 생겼다: $n"; exit 1; }
+
+      - name: schema + seed (새 볼륨 경로 = initdb 가 하는 일)
+        run: |
+          psql -h 127.0.0.1 -U capnet -d capnet -v ON_ERROR_STOP=1 -f docs/spec/schema.sql
+          psql -h 127.0.0.1 -U capnet -d capnet -v ON_ERROR_STOP=1 -f apps/core/sql/seed.sql
+
+      - name: verify → up → verify → up (멱등)
+        run: |
+          python3 -m app.migrate verify
+          python3 -m app.migrate up
+          python3 -m app.migrate verify
+          python3 -m app.migrate up | tee /tmp/second.txt
+          grep -q "적용할 것 없음" /tmp/second.txt
+
+      - name: 새 볼륨이면 증적 드리프트가 0 이어야 한다
+        run: |
+          n=$(psql -h 127.0.0.1 -U capnet -d capnet -tAc "SELECT count(*) FROM provenance_drift")
+          test "$n" = "0" || {
+            echo "새 볼륨인데 드리프트 $n 건 — seed 와 매니페스트가 어긋났다"
+            psql -h 127.0.0.1 -U capnet -d capnet -c "SELECT * FROM provenance_drift_summary"
+            exit 1; }
+
+      - name: 체크섬 잠금 — 적용된 파일을 고치면 거부한다
+        run: |
+          printf '\n-- 적용 후 몰래 추가한 줄\n' >> migrations/0001_baseline.sql
+          set +e
+          python3 -m app.migrate verify; rc_v=$?
+          python3 -m app.migrate up;     rc_u=$?
+          set -e
+          git checkout migrations/0001_baseline.sql
+          test "$rc_v" -ne 0 || { echo "verify 가 체크섬 변조를 통과시켰다"; exit 1; }
+          test "$rc_u" -ne 0 || { echo "up 이 체크섬 변조를 통과시켰다"; exit 1; }
+
+      - name: 기존 볼륨 경로 — 구 sha 에서 0003 이 올려준다
+        run: |
+          psql -h 127.0.0.1 -U capnet -d capnet -v ON_ERROR_STOP=1 -c \
+            "DELETE FROM schema_migration WHERE version = 3"
+          psql -h 127.0.0.1 -U capnet -d capnet -v ON_ERROR_STOP=1 -c \
+            "UPDATE capability SET golden_set_sha256 =
+             'c8254bcb454d6ca362f61c0426e4a7c9c7de42cc81fa6ab3ed097b64c2862066'
+             WHERE code = 'image.classify' AND version = 1"
+          python3 -m app.migrate up
+          got=$(psql -h 127.0.0.1 -U capnet -d capnet -tAc \
+            "SELECT golden_set_sha256 FROM capability WHERE code='image.classify' AND version=1")
+          want=$(python3 scripts/check_golden_sha.py --print)
+          test "$got" = "$want" || { echo "0003 이 sha 를 올리지 못했다: $got != $want"; exit 1; }
