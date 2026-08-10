@@ -89,6 +89,12 @@
 16. [x] SD-009 계약 재정의 — **C안 채택** (v4.6, 등가성 → 관측값)
 17. [ ] SD-007 마이그레이션 체계 ← Phase 2 선결
 
+## 연구·형제 제품 (대회 Must 밖)
+
+| 항목 | 상태 |
+|------|------|
+| TeachMe Agent 기획서 | v0.1 · [`docs/research/teachme-plan.md`](docs/research/teachme-plan.md) |
+
 ## 열려 있는 판단
 
 | # | 내용 | 기한 |
