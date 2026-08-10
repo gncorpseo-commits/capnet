@@ -48,7 +48,7 @@
   "golden_demo": {
     "n": 40,
     "manifest": "docs/spec/golden/manifest-image-classify-v1.json",
-    "manifest_sha256": "c8254bcb454d6ca362f61c0426e4a7c9c7de42cc81fa6ab3ed097b64c2862066",
+    "manifest_sha256": "c21d9ef796e2165e27926358981489fe397a639d7c0ceb0d01b74846da6b0eef",
     "selection": "per_class_even_stride_sorted_names"
   },
   "note": "원본 zip 미동봉. 데모 골든 40장은 cases/에만 둔다. scratch 학습 아님."

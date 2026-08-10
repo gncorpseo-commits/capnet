@@ -216,8 +216,23 @@ def _applied(conn: psycopg.Connection) -> dict[int, dict]:
     return {r["version"]: r for r in rows}
 
 
+# 마이그레이션 **본문**이 낸 notice 만 흘린다. 러너 자신의 부트스트랩 DDL 이 내는
+# 「already exists, skipping」 같은 잡음은 막는다.
+_relay_notices = False
+
+
+def _notice(diag: object) -> None:
+    if _relay_notices:
+        message = getattr(diag, "message_primary", None) or ""
+        print(f"  [db] {message.strip()}")
+
+
 def _connect() -> psycopg.Connection:
-    return psycopg.connect(settings.database_url, row_factory=dict_row, autocommit=False)
+    conn = psycopg.connect(settings.database_url, row_factory=dict_row, autocommit=False)
+    # 마이그레이션이 RAISE NOTICE 로 남기는 경고를 삼키지 않는다.
+    # 0003 처럼 「적용은 됐지만 사람이 알아야 하는 것」을 알리는 유일한 통로다.
+    conn.add_notice_handler(_notice)
+    return conn
 
 
 def cmd_status(_args: argparse.Namespace) -> int:
@@ -323,7 +338,12 @@ def cmd_up(args: argparse.Namespace) -> int:
                     print(f"[dry-run] {m.version:04d} {m.name}")
                     continue
                 try:
-                    conn.execute(m.sql)
+                    global _relay_notices
+                    _relay_notices = True
+                    try:
+                        conn.execute(m.sql)
+                    finally:
+                        _relay_notices = False
                     conn.execute(
                         "INSERT INTO schema_migration (version, name, checksum) "
                         "VALUES (%s, %s, %s)",

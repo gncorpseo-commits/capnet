@@ -122,7 +122,7 @@
 - **남은 것:** 실 볼륨 적용은 **미실행**. `github-team-guide.md` 승인 + master merge 후 `scripts/migrate.sh up`
 - **상태:** open (코드 완료 · 승인·적용 대기)
 
-### SD-013 · 골든셋 sha 3중 불일치 (2026-08-10 발견)
+### SD-013 · 골든셋 sha 불일치 — **선언부 정정됨 (2026-08-10) · 재게이트 미결**
 - **무엇:** 홀드아웃 재추출(#26) 후 `capability.golden_set_sha256` 정본이 세 곳에서 다름
   | 출처 | 값 | 판정 |
   |------|-----|------|
@@ -134,8 +134,23 @@
 - **왜 자동 수정하지 않았나:** sha를 고치면 기존 PASS 증서가 **다른 골든셋에서 얻은 것**이 된다 → 재게이트 동반 결정 필요. 촬영 8/23·보고서 수치와도 얽힘
 - **가시화:** `migrations/0002` 의 `provenance_drift` 뷰. 일회용 DB에서 sha 교체 시 seed 증서가 `still_routable=true` 로 잡히는 것을 실측
 - **대안:** (a) 문서·seed를 `c21d9ef7…` 로 통일 + Agent A/B 재게이트 (b) 구 골든셋으로 되돌리고 재추출 취소
-- **예정:** 촬영(8/23) 전 — 보고서·영상이 sha를 인용한다
-- **상태:** open
+- **채택:** **(a)** — 2026-08-10. 실제 불일치는 3곳이 아니라 **5곳**이었다(아래)
+  | 선언부 | 이전 | 지금 |
+  |--------|------|------|
+  | `docs/spec/golden/image-classify-v1.md` | `0341d121…` | `c21d9ef7…` |
+  | `docs/spec/golden/eurosat-rgb.json` (기계 핀) | `c8254bcb…` | `c21d9ef7…` |
+  | `apps/core/sql/seed.sql` | `c8254bcb…` | `c21d9ef7…` |
+  | `docs/ops/contest-report-draft.md` | `c8254bcb…` | `c21d9ef7…` |
+  | 매니페스트 실체 | — | 무변경 (케이스 40건 sha 전부 일치 확인) |
+- **기존 볼륨:** `migrations/0003_golden_set_sha256_holdout.sql`. 구 값에 한정한 UPDATE 라 멱등.
+  `capability` 에 `UNIQUE (id, golden_set_sha256)` 이 없어 이 컬럼을 겨냥한 복합 FK 가 없다 → 기존 스냅샷 FK 안 깨짐
+- **재발 방지:** `scripts/check_golden_sha.py` — 매니페스트 재계산값과 선언부 4곳 + 케이스 파일 40건을 대조.
+  정정 **전**에 돌려 5곳 전부를 실제로 잡는 것을 확인한 뒤 고쳤다
+- **남은 것 (미결):** **재게이트.** UPDATE 이후 구 골든셋에서 PASS 를 받은 증서가 `agent_capability_passed` 에 그대로 남아 라우팅된다.
+  일회용 DB 실측 — `drifted_gate_runs=1 · drifted_still_routable=1`. 증서 삭제는 하지 않았다 (절대규칙 8 · D15 상 사람이 정한다).
+  0003 이 적용 즉시 `RAISE NOTICE` 로 건수를 알리고, `provenance_drift_summary` 로 조회된다
+- **예정:** 재게이트 여부 — 촬영(8/23) 전. 보고서·영상이 sha를 인용한다
+- **상태:** open (선언부 정합 완료 · 재게이트 미결)
 
 ### SD-005 · 출품 패키지(양식·영상·포털) 미완
 - **무엇:** 기술 MVP는 있음 · 공식 보고서 파일·YouTube·포털 zip은 남음
