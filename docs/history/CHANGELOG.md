@@ -1,5 +1,20 @@
 # Changelog
 
+## 출품 패키지 기계 점검 (SD-005) — 2026-08-10
+
+촬영 당일에 사람이 눈으로 훑는 것은 재현되지 않는다. 8/23 촬영·Release 때 또 봐야 하는
+항목들이라 자동으로 고정한다.
+
+- **`scripts/check_submission.py` 신설 · 19개 검사** — 표준 라이브러리만 (새 의존성 0)
+  - 금지 산출물 미동봉(EuroSAT 원본 · golden-n300 · artifacts · **pickle 계열 가중치**) ·
+    필수 scratch 가중치 2종 유지 · 라이선스 4종 · 사전학습 미사용 선언(meta 16건) ·
+    의존성 THIRD-PARTY 등재 · 시크릿 리터럴 · 상대 링크 180개 · 골든셋 정본 1개 ·
+    골든셋 sha 정합 · 패키지 크기 · 워킹트리 청결
+- 현 상태 **19/19 통과** (패키지 0.8 MB / 한도 50 MB)
+- 변이 검사로 실제로 잡는지 확인 — 깨진 링크 · `artifacts/` 추적 · `pretrained=true` 각각 FAIL 재현
+- `run_tests.sh` · CI unit job · 체크리스트 · 촬영 런북에 편입
+- GitHub Wiki 링크(`(Page-Name)`)는 파일이 아니므로 링크 검사에서 제외
+
 ## 능력 증서 폐기 경로 (SD-014) · claim 이 agent.status 를 강제 — 2026-08-10
 
 SD-013 재게이트 중 드러난 공백을 메운다. 재게이트가 FAILED 여도 기존 PASSED 증서가 살아남았고,

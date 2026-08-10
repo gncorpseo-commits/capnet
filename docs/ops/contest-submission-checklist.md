@@ -174,6 +174,14 @@ W2 버퍼를 코드 다듬기에 쓰지 않는다. F2에 따라 1차는 글로�
 
 라이선스
 
+> **기계로 확인 가능한 항목은 `scripts/check_submission.py` 가 대신 본다.**
+> 촬영 당일·Release 직전에 돌린다. 영상·촬영·포털 업로드는 이 검사 밖이다.
+>
+> ```bash
+> python3 scripts/check_submission.py          # 패키징 직전 (워킹트리 깨끗함까지)
+> python3 scripts/check_submission.py --skip-tree   # 작업 중
+> ```
+
 - [ ] LICENSE · NOTICE
 - [ ] THIRD-PARTY-LICENSES.md 최신
 - [ ] sbom.json

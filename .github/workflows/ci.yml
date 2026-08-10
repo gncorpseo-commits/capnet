@@ -25,6 +25,8 @@ jobs:
         run: python3 -m unittest discover -s tests -v
       - name: 골든셋 sha 정합
         run: python3 scripts/check_golden_sha.py
+      - name: 출품 패키지 기계 점검 (SD-005)
+        run: python3 scripts/check_submission.py --verbose --skip-tree
 
   migrate:
     name: 마이그레이션 (새 볼륨 · 기존 볼륨)
