@@ -132,3 +132,6 @@ jobs:
              WHERE acp.revoked_at IS NULL
                AND a.weights_sha256='5cd21e43471e2d0a495ce5cee3aae102cbdbd98c7f0db770a74476268b3a3887'")
           test "$n" = "0" || { echo "placeholder Agent 가 라우팅 가능하다: $n"; exit 1; }
+
+      - name: Node 증서 — 발급·검증·폐기·회전·사칭 차단 (P2-4 · SD-002)
+        run: python3 tests/integration/check_node_credential.py

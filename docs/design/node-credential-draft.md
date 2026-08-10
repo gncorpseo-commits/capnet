@@ -1,7 +1,16 @@
-# node_credential 설계 초안 (DDL 미적용)
+# node_credential 설계 (구현됨)
 
-**상태:** 설계만. `docs/spec/schema.sql` v4.4에 **추가하지 않음**.  
-**갱신:** 2026-08-06  
+> **상태 (2026-08-11):** **구현 완료** — `migrations/0007` · `apps/core/app/credential.py` ·
+> `tests/integration/check_node_credential.py` (17종). SD-002 closed.
+> DDL 은 `schema.sql` 이 아니라 **마이그레이션으로** 추가했다 (기획서 §16 동결 이후의 정식 경로).
+>
+> **열린 질문(§6) 확정:** ①opaque 토큰 + DB sha256 (JWT 는 등급 claim 여지로 배제)
+> ②전 Node · **강제는 플래그**(`REQUIRE_NODE_CREDENTIAL`, 기본 꺼짐) ③`expires_at` 선택 ·
+> 회전은 폐기 후 재발급 ④`api_key` 와 통합하지 않음
+>
+> 아래는 승인 시점의 초안 원문이다. 구현이 이를 따랐다.
+
+**갱신:** 2026-08-06 (초안) · 2026-08-11 (구현)  
 **근거:** Node는 자기 등급을 주장할 수 없다 (CLAUDE · D4 계열). Core가 부여한 증서만 신뢰.
 
 ---
