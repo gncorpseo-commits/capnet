@@ -80,12 +80,21 @@
 - **관련:** Contest M17 이 "만료 스캐너는 후순위"로 두었던 항목. heartbeat 가 생기면서 함께 닫혔다
 - **상태:** closed
 
-### SD-002 · node_credential DDL 보류
-- **무엇:** 설계 문서만 (`docs/design/node-credential-draft.md`). 스키마 미변경
-- **왜:** 프로젝트 규칙 — DDL/마이그레이션은 승인 전 금지
-- **대안:** 승인 후 migration + 발급 API
-- **예정:** 승인 후
-- **상태:** open
+### SD-002 · node_credential DDL 보류 → **해소 (2026-08-11)**
+- **무엇:** 설계 문서만. 스키마 미변경
+- **왜 보류였나:** DDL/마이그레이션은 승인 전 금지 · 적용 수단(SD-007)도 없었다
+- **선행 조건 셋 (로드맵 §3.1):** ①마이그레이션 도구 ✅(SD-007) ②볼륨 보존 경로 ✅ ③승인 ✅(PR)
+- **구현:** `migrations/0007` (v4.4 동결 이후 첫 스키마 변경 · **추가만**) · `app/credential.py` ·
+  발급/폐기/조회 API · `node_credential_status` 뷰
+- **절대규칙 4 를 구조로 강제:** 증서 테이블에 `trust_domain`·`compute_tier_max`·`is_gate_runner` 가
+  **없다.** 증서는 「너는 이 node.id 다」만 말한다. 발급 API 는 `extra="forbid"` 로 등급 필드를 **422** 로 거절
+- **SD-010 과의 관계:** Node 경로가 `node_id` 를 URL 에서 그대로 받아 **아무나 사칭**할 수 있었다.
+  이제 증서가 오면 Core 가 해석한 node_id 와 URL 을 대조한다 — 실측 **403**
+- **강제는 플래그** (`REQUIRE_NODE_CREDENTIAL`, 기본 꺼짐 · 초안 §4). 다만 **토큰이 오면 항상 검증**한다 —
+  잘못된 증서가 통과하는 구간을 만들지 않는다
+- **검증:** 통합 17종 + HTTP 7종(발급·등급필드 422·정상 200·사칭 403·위조 401·무증서 200(기본)·폐기후 401)
+  + 강제 모드 401 + 상태 조회에 시크릿·해시 미노출
+- **상태:** closed
 
 ### SD-003 · golden n=300 케이스 미커밋
 - **무엇:** 추출·채점 파이프라인 · `data/golden-n300/` · `artifacts/` gitignore

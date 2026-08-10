@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -21,6 +21,13 @@ from app.complete import (
     try_audit_succeeded,
 )
 from app.const import SEED_ADMIN_ID
+from app.credential import (
+    CredentialError,
+    issue_credential,
+    list_credential_status,
+    revoke_credential,
+    verify_credential,
+)
 from app.db import get_conn
 from app.gate import (
     RevokeRefused,
@@ -70,6 +77,19 @@ class AgentCreate(BaseModel):
     weights_uri: str
     weights_sha256: str
     weights_format: str = "safetensors"
+
+
+class CredentialIssueBody(BaseModel):
+    """등급 필드가 없다 — 절대규칙 4 (C1). 있으면 400 으로 떨어진다 (extra 금지)."""
+
+    label: str | None = None
+    expires_at: Any | None = Field(default=None, alias="expiresAt")
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
+
+
+class CredentialRevokeBody(BaseModel):
+    reason: str
 
 
 class RevokeBody(BaseModel):
@@ -144,6 +164,36 @@ class CompleteBody(BaseModel):
     confidence: float | None = None
     dummy: bool = True
     duration_ms: int | None = None
+
+
+# 증서 강제. 기본 꺼짐 — 데모·로컬 compose 는 증서 없이 돈다 (초안 §4).
+# 켜지 않아도 **토큰이 오면 항상 검증한다**. 잘못된 증서가 통과하는 구간을 만들지 않는다.
+REQUIRE_NODE_CREDENTIAL = os.environ.get("REQUIRE_NODE_CREDENTIAL", "0") == "1"
+
+
+def _authenticated_node(authorization: str | None) -> uuid.UUID | None:
+    """Authorization 헤더에서 node_id 를 해석한다.
+
+    URL 이 주장하는 node_id 를 믿지 않는다 — 호출자가 이 반환값과 대조한다 (SD-010).
+    """
+    if not authorization:
+        if REQUIRE_NODE_CREDENTIAL:
+            raise HTTPException(status_code=401, detail="node credential required")
+        return None
+    try:
+        with get_conn() as conn:
+            return verify_credential(conn, authorization)
+    except CredentialError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+
+def _assert_node_matches(claimed: uuid.UUID, authorization: str | None) -> None:
+    actual = _authenticated_node(authorization)
+    if actual is not None and actual != claimed:
+        raise HTTPException(
+            status_code=403,
+            detail="credential belongs to a different node",
+        )
 
 
 @app.get("/health")
@@ -292,6 +342,46 @@ def nodes_get(node_id: uuid.UUID) -> dict[str, Any]:
     return row
 
 
+@app.post("/v1/nodes/{node_id}/credentials")
+def credential_issue(node_id: uuid.UUID, body: CredentialIssueBody | None = None) -> dict[str, Any]:
+    """증서 발급 (admin). `secret` 은 **이 응답에만** 있다 — 저장하지 않는다 (C3).
+
+    등급 필드를 받지 않는다 (C1 · 절대규칙 4). 보내면 422 로 떨어진다.
+    회전은 폐기 후 재발급이다 — Node 당 활성 증서는 하나다.
+    """
+    body = body or CredentialIssueBody()
+    try:
+        with get_conn() as conn:
+            return issue_credential(
+                conn,
+                node_id=node_id,
+                issued_by=uuid.UUID(SEED_ADMIN_ID),
+                label=body.label,
+                expires_at=body.expires_at,
+            )
+    except CredentialError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.post("/v1/nodes/{node_id}/credentials/revoke")
+def credential_revoke(node_id: uuid.UUID, body: CredentialRevokeBody) -> dict[str, Any]:
+    try:
+        with get_conn() as conn:
+            row = revoke_credential(conn, node_id=node_id, reason=body.reason)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if row is None:
+        raise HTTPException(status_code=404, detail="active credential not found")
+    return row
+
+
+@app.get("/v1/nodes-credentials")
+def credentials_status() -> dict[str, Any]:
+    """Node 별 증서 상태. 시크릿도 해시도 나가지 않는다 — prefix 만."""
+    with get_conn() as conn:
+        return {"items": list_credential_status(conn)}
+
+
 @app.post("/v1/internal/gate-runs")
 def gate_start(body: GateStartBody) -> dict[str, Any]:
     with get_conn() as conn:
@@ -434,8 +524,16 @@ class HeartbeatBody(BaseModel):
 
 
 @app.post("/v1/internal/nodes/{node_id}/heartbeat")
-def node_heartbeat(node_id: uuid.UUID, body: HeartbeatBody) -> dict[str, Any]:
-    """Node 생존·가용 신고. 이게 없으면 죽은 기기에도 배정이 간다."""
+def node_heartbeat(
+    node_id: uuid.UUID,
+    body: HeartbeatBody,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """Node 생존·가용 신고. 이게 없으면 죽은 기기에도 배정이 간다.
+
+    증서가 오면 URL 의 node_id 와 대조한다 — 사칭 차단 (SD-010 · P2-4).
+    """
+    _assert_node_matches(node_id, authorization)
     try:
         with get_conn() as conn:
             return heartbeat(
@@ -453,12 +551,17 @@ def nodes_liveness() -> dict[str, Any]:
 
 
 @app.get("/v1/internal/nodes/{node_id}/assignments")
-def node_open_assignments(node_id: uuid.UUID) -> dict[str, Any]:
+def node_open_assignments(
+    node_id: uuid.UUID, authorization: str | None = Header(default=None)
+) -> dict[str, Any]:
     """Node가 자기에게 배정된 살아 있는 lease를 가져간다.
 
     큐 pull이 아니다. 배치는 Core 워커가 이미 끝냈고, 여기서는 결과만 전달한다.
     이 경로 덕분에 Core가 Node로 들어갈 필요가 없다 (NAT).
+
+    증서가 오면 URL 의 node_id 와 대조한다 — 사칭 차단 (SD-010 · P2-4).
     """
+    _assert_node_matches(node_id, authorization)
     with get_conn() as conn:
         rows = node_assignments(conn, node_id)
     return {"node_id": str(node_id), "count": len(rows), "assignments": rows}
@@ -484,7 +587,28 @@ def get_task(task_id: uuid.UUID) -> dict[str, Any]:
 
 
 @app.post("/v1/internal/assignments/{assignment_id}/complete")
-def complete(assignment_id: uuid.UUID, body: CompleteBody) -> dict[str, Any]:
+def complete(
+    assignment_id: uuid.UUID,
+    body: CompleteBody,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """결과 보고. 증서가 오면 **그 배정의 주인인지**까지 본다.
+
+    heartbeat·assignments 와 달리 URL 에 node_id 가 없다 — assignment 를 통해 소유권을 확인한다.
+    """
+    node = _authenticated_node(authorization)
+    if node is not None:
+        with get_conn() as conn:
+            owner = conn.execute(
+                "SELECT node_id FROM assignment WHERE id = %s", (str(assignment_id),)
+            ).fetchone()
+        if owner is None:
+            raise HTTPException(status_code=404, detail="assignment not found")
+        if owner["node_id"] != node:
+            raise HTTPException(
+                status_code=403, detail="credential does not own this assignment"
+            )
+
     with get_conn() as conn:
         row = complete_assignment(
             conn,

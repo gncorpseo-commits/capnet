@@ -1,5 +1,29 @@
 # Changelog
 
+## P2-4 node_credential — Node 신원 증서 (SD-002 · SD-010) — 2026-08-11
+
+기획서 §16 이 동결한 v4.4 를 **처음으로** 건드리는 변경이다. 로드맵 §3.1 의 선행 조건 셋
+(①마이그레이션 도구 ②볼륨 보존 경로 ③승인)이 모두 충족돼 열렸고, **추가만** 한다 (절대규칙 1).
+
+**무엇을 막는가.** Node 경로는 `node_id` 를 **URL 에서 그대로** 받았다 —
+`POST /v1/internal/nodes/{node_id}/heartbeat` 를 아무나 부를 수 있었고 방어는
+「팀 내부망 전제」뿐이었다 (SD-010). 이제 증서가 오면 Core 가 시크릿을 검증해 node_id 를
+**해석**하고 URL 이 주장하는 값과 대조한다.
+
+- `migrations/0007` — `node_credential` + `node_credential_status` 뷰 ·
+  활성 증서 1개(부분 UNIQUE) · 이유 없는 폐기 금지 · prefix 형식 CHECK
+- `apps/core/app/credential.py` — 발급·검증·폐기. 평문 시크릿은 **응답에 한 번만**, DB 엔 sha256 만 (C3)
+- API — `POST /v1/nodes/{id}/credentials` · `.../revoke` · `GET /v1/nodes-credentials`
+- **절대규칙 4 를 구조로 강제** — 증서에 등급 컬럼이 **없다.** 발급 API 는 `extra="forbid"` 로
+  등급 필드를 **422** 로 거절한다. 등급은 언제나 `node` 행에서 읽는다
+- **강제는 플래그** (`REQUIRE_NODE_CREDENTIAL`, 기본 꺼짐 — 데모 경로 유지).
+  다만 **토큰이 오면 항상 검증**한다. 잘못된 증서가 통과하는 구간을 만들지 않는다
+- 검증: 통합 17종 · HTTP 7종(사칭 **403** · 위조 **401** · 폐기 후 **401** · 강제 모드 **401**) ·
+  상태 조회에 시크릿·해시 미노출
+
+초안의 열린 질문 4개를 확정했다 — opaque+해시 / 전 Node·플래그 강제 / `expires_at` 선택·폐기 후 재발급 /
+`api_key` 와 통합하지 않음.
+
 ## P2-1 tenant 운용 · 시드 결함 2건 (SD-015 · SD-016) — 2026-08-11
 
 - **`migrations/0006` — tenant 신뢰 경계 운용 (P2-1 · D19).** tenant 플릿 Node + `image.classify@2`(`trust_domain_min='tenant'`).

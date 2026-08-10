@@ -41,6 +41,7 @@
 | **Phase 2** | 사이클 폐쇄 완료. 유휴 판정은 스키마 필요 → SD-007 **해소** |
 | **제품 유통 (D19)** | 문서 정본 [`product-distribution.md`](docs/design/product-distribution.md). 1호 = 초대 team/tenant · 경제 비기초. **코드 유통 세대 = v제품-0 직전** |
 | **마이그레이션 (SD-007)** | ✅ 러너·`migrations/`·원장. **실 볼륨 0001–0003 적용 완료 (2026-08-10)** → [`guide/migrations.md`](docs/guide/migrations.md) |
+| **Node 신원 (P2-4)** | ✅ `0007` `node_credential` — v4.4 동결 이후 첫 스키마 변경(추가만) · 사칭 403 실측 · 강제는 플래그(기본 꺼짐) |
 | **tenant 운용 (P2-1)** | ✅ `0006` — tenant 플릿 Node + `image.classify@2`(min=tenant) · 경계 6종 실측 · **claim 버그 SD-016 발견·수정** |
 | **증적 정합 (SD-013)** | ✅ 골든셋 sha `c21d9ef7…` 통일 · **재게이트 29건 완료** · 라우팅 드리프트 31 → **1건**(`seed-agent` placeholder) |
 | **문서 위생** | README stable-only · 일정 정본 = checklist |
@@ -112,4 +113,4 @@
 | 6 | 커밋 A 가중치 `HOLDOUT=1` 재학습 (meta `train_images=27000`) | 출품 전 권장 |
 | 7 | 제품 유통 v제품-1 — SD-007 ✅ → **P2-1(tenant 운용) 다음** → credential (D19) | 출품 후 |
 | 8 | ~~SD-013 재게이트~~ | ✅ 29건 완료. `seed-agent` 1건도 **SD-015 로 해소** — 시드가 얻을 수 없는 증서를 발급한 결함이었다 |
-| 9 | ~~P2-1 tenant 운용~~ | ✅ `image.classify@2`(min=tenant) 추가 · 경계 실측 6종. 다음은 **P2-4 node_credential**(SD-002 · 승인 필요) |
+| 9 | ~~P2-1 tenant 운용~~ · ~~P2-4 node_credential~~ | ✅ 둘 다 완료. 유통 v제품-1 남은 것은 **lease/재할당 운영화 · 기본 모니터링** |
