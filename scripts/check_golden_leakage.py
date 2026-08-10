@@ -87,6 +87,16 @@ def check(manifest_path: Path, train: set[str]) -> dict:
     }
 
 
+def _out(s: str = "", *, err: bool = False) -> None:
+    """Windows cp949 콘솔에서도 깨지지 않게 ASCII 하이픈만 쓴다."""
+    stream = sys.stderr if err else sys.stdout
+    try:
+        stream.write(s + "\n")
+    except UnicodeEncodeError:
+        stream.buffer.write((s + "\n").encode(stream.encoding or "utf-8", errors="replace"))
+        stream.buffer.flush()
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--zip", default="data/eurosat/EuroSAT_RGB.zip")
@@ -100,42 +110,42 @@ def main() -> int:
 
     zip_path = Path(args.zip)
     if not zip_path.is_file():
-        print(f"EuroSAT zip 없음: {zip_path} — scripts/download_eurosat.sh 먼저", file=sys.stderr)
+        _out(f"EuroSAT zip 없음: {zip_path} - scripts/download_eurosat.sh 먼저", err=True)
         return 1
 
     train = training_names(zip_path, holdout=not args.no_split)
     mode = "전수(구버전)" if args.no_split else "홀드아웃 제외(현재)"
-    print(f"학습셋 이미지 수 [{mode}]: {len(train)}")
+    _out(f"학습셋 이미지 수 [{mode}]: {len(train)}")
 
     manifests = [Path(m) for m in (args.manifest or DEFAULT_MANIFESTS)]
     leaked = False
     for mp in manifests:
         if not mp.is_file():
-            print(f"  (건너뜀 — 없음) {mp}")
+            _out(f"  (건너뜀 - 없음) {mp}")
             continue
         r = check(mp, train)
         pct = (100.0 * r["in_training_set"] / r["cases"]) if r["cases"] else 0.0
         verdict = "LEAK" if r["in_training_set"] else "clean"
-        print(
+        _out(
             "  %-52s cases=%-4d in_train=%-4d (%5.1f%%)  %s"
             % (r["manifest"], r["cases"], r["in_training_set"], pct, verdict)
         )
         if r["no_zip_path"]:
-            print(f"      경고: zip_path 없는 케이스 {r['no_zip_path']}건 — 검사 불가")
+            _out(f"      경고: zip_path 없는 케이스 {r['no_zip_path']}건 - 검사 불가")
         if r["sample"]:
             for z in r["sample"]:
-                print(f"      예: {z}")
+                _out(f"      예: {z}")
         if r["in_training_set"]:
             leaked = True
 
     if leaked:
-        print(
-            "\n겹침 발견. 게이트 점수는 학습 데이터 재현 점수이며 일반화 성능이 아니다.\n"
-            "조치: docs/ops/phase1-verdict.md §6.3 (H1–H4)"
-        )
+        _out("")
+        _out("겹침 발견. 게이트 점수는 학습 데이터 재현 점수이며 일반화 성능이 아니다.")
+        _out("조치: docs/ops/phase1-verdict.md 6.3 (H1-H4)")
         return 2
 
-    print("\n겹침 없음. 골든셋은 홀드아웃이다.")
+    _out("")
+    _out("겹침 없음. 골든셋은 홀드아웃이다.")
     return 0
 
 

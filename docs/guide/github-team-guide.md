@@ -35,38 +35,42 @@
 
 전역 `git config --global` 은 **바꾸지 않는다** (서로 덮어씀).
 
+**이메일 정본:** 팀 계정 noreply만 쓴다.  
+`252522396+gncorpseo-commits@users.noreply.github.com`  
+역할은 `user.name`만 바꾼다. `finn@users.noreply.github.com` 같은 개인 noreply는 GitHub가 다른 사용자(예: 동명이인)에 붙일 수 있다.
+
 ### 방법 A — 커밋 한 번에만 지정 (권장)
 
 ```bash
-git -c user.name=finn -c user.email=finn@users.noreply.github.com commit -m "메시지"
-git -c user.name=toma -c user.email=toma@users.noreply.github.com commit -m "메시지"
-git -c user.name=pl -c user.email=pl@users.noreply.github.com commit -m "메시지"
+EMAIL=252522396+gncorpseo-commits@users.noreply.github.com
+git -c user.name=finn -c user.email=$EMAIL commit -m "메시지"
+git -c user.name=toma -c user.email=$EMAIL commit -m "메시지"
+git -c user.name=pl -c user.email=$EMAIL commit -m "메시지"
 ```
 
 ### 방법 B — 이 저장소에만 local config
 
 ```bash
+EMAIL=252522396+gncorpseo-commits@users.noreply.github.com
 # finn 세션
 git config user.name finn
-git config user.email finn@users.noreply.github.com
+git config user.email "$EMAIL"
 
 # toma 세션
 git config user.name toma
-git config user.email toma@users.noreply.github.com
+git config user.email "$EMAIL"
 
 # pl 세션
 git config user.name pl
-git config user.email pl@users.noreply.github.com
+git config user.email "$EMAIL"
 ```
-
-email은 GitHub가 인식하는 주소(또는 `...@users.noreply.github.com`)를 쓴다.
 
 ### 공동 작업 커밋 trailer
 
 ```text
-Co-authored-by: toma <toma@users.noreply.github.com>
-Co-authored-by: finn <finn@users.noreply.github.com>
-Co-authored-by: pl <pl@users.noreply.github.com>
+Co-authored-by: toma <252522396+gncorpseo-commits@users.noreply.github.com>
+Co-authored-by: finn <252522396+gncorpseo-commits@users.noreply.github.com>
+Co-authored-by: pl <252522396+gncorpseo-commits@users.noreply.github.com>
 ```
 
 ### 승인(Approve)은 name으로 안 바뀜
@@ -137,7 +141,7 @@ gh issue create --repo gncorpseo-commits/capnet \
 
 ```bash
 git add apps/core/README.md docs/history/CHANGELOG.md
-git -c user.name=finn -c user.email=finn@users.noreply.github.com commit -m "W1: Core 골격 추가 — claim 패턴 문서를 먼저 고정하기 위함"
+git -c user.name=finn -c user.email=252522396+gncorpseo-commits@users.noreply.github.com commit -m "W1: Core 골격 추가 — claim 패턴 문서를 먼저 고정하기 위함"
 git push -u origin HEAD
 ```
 

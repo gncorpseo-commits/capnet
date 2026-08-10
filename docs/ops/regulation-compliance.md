@@ -59,8 +59,8 @@
 
 - HTML: https://github.com/gncorpseo-commits/capnet/blob/main/apps/node/weights/eurosat_scratch.safetensors  
 - Raw(다운로드): https://raw.githubusercontent.com/gncorpseo-commits/capnet/main/apps/node/weights/eurosat_scratch.safetensors  
-- sha256: `0c5b16cef57d11e26c58319d80cd47a41a8b8d740ba3470c1d801e7fb9356b5b` (`eurosat_scratch.meta.json`)  
-- 용량: 378,784 bytes · 형식: safetensors · 아키텍처: TinyEuroSAT · pretrained: false  
+- sha256: `74ca92224ff93f6cfab56265466d2c8ed11e0add4581c45a98169e92fb797b43` (`eurosat_scratch.meta.json`)  
+- 용량: 378,784 bytes · 형식: safetensors · 아키텍처: TinyEuroSAT · pretrained: false · `train_images`: 27000 (전수 · HOLDOUT 재학습 전)  
 
 ### 제10조 — 소스 공개
 

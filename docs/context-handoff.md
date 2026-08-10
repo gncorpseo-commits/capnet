@@ -4,7 +4,7 @@
 > 자동 로드되지 않는다. 필요할 때 `@docs/context-handoff.md`로 부른다.
 >
 > 문서 지도: [`INDEX.md`](./INDEX.md) · 주간 상태: [`../STATE.md`](../STATE.md)  
-> 최종 갱신: 2026-08-08 · 일정 정본은 checklist (이 파일에 날짜 표 두지 않음)
+> 최종 갱신: 2026-08-10 · 일정 정본은 checklist (이 파일에 날짜 표 두지 않음)
 
 ---
 
@@ -32,6 +32,7 @@
 | D14 | 문서는 `docs/{guide,error,history,design,spec,ops,research}` + `docs/INDEX.md` | 전역 파일 순번 금지. 진입은 INDEX |
 | D15 | Provenance by Design. 사슬은 Capability → Agent → `weights_sha256`만 (Model Identifier 금지). 완료 = `assignment` + 해시 + `gate_run` 사슬. `audit_log` 실패 ≠ 무조건 FAILED | 기획서 v4.5. UI가 아니라 DB 증적 |
 | D16 | **프로젝트 종착점 = Phase 3+ 로드맵 전체** (기획서 §9). Contest MVP는 Phase 1의 슬라이스이며 **종료 지점이 아니다**. 8/27은 그 슬라이스의 외부 마감일 | 2026-08-08 결정. 실행 계단·진입조건은 [`design/roadmap.md`](./design/roadmap.md). 단 §7.2 Go 없이 Phase 2 코드 금지(§13)는 그대로 |
+| D19 | **제품 유통 목표** = Open Agent + (선택) Open Compute + **User-defined Trust Domain**. 경제는 **선택·비기초**. 1호 유통 = 초대 team/tenant · 저민감 public만. Private Community ≠ 데이터 안전. 세대·금지는 [`design/product-distribution.md`](./design/product-distribution.md) | 2026-08-10. 기획서 §8·스키마 `trust_domain`과 정합. “아무 데이터·아무 Node” 공개 SaaS는 이 세대 밖 |
 
 ---
 
@@ -72,10 +73,11 @@
 | 1 | `contest@oss.kr` 문의 (배점·소스 제출 형식) | 회신 무관 진행 |
 | 2 | EuroSAT 핀 + N=40 + scratch 실게이트 실측(acc≈0.70). 임계 0.68/0.65 보정 | 실측 완료 |
 | 3 | `min_accuracy` — **0.68** (가정 0.75는 실측 위였음) | 보정됨 |
-| 4 | A/B Must **실측 Within**(diff≈0.047) · 문서·영상에 epoch/SE 한계 명시 (SD-001 closed) | 반영 중 |
+| 4 | A/B: 누출 골든 Within(≈0.047)는 **무효**. 홀드아웃 n300은 EXCEEDS(≈0.097). Must 승격 보류 · 한계 명시 (SD-001) | 문서 반영 |
 | 5 | 전역 `~/.claude/CLAUDE.md`의 GitHub 계정 정정 | 급하지 않음 |
 | 6 | **Phase 1 완주 잔여 3건** — Agent B 실게이트 PASSED · 증명 모드 교체 할당(M14/UC-7) · 통과율 20–80% 실측 → §7.2 판정 리포트 | 대회 제출 후 ([`design/roadmap.md`](./design/roadmap.md) §2) |
 | 7 | **마이그레이션 체계 부재** — `init.sql` 일괄 적용뿐. Phase 2 `node_credential` DDL(SD-002)의 선결과제 | Phase 2 착수 전 |
+| 8 | **제품 유통 v제품-0→1** — SD-007 후 credential·tenant 운용. 정본 [`design/product-distribution.md`](./design/product-distribution.md) (D19) | 출품 후 · Phase 2 |
 
 ---
 

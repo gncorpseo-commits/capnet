@@ -37,7 +37,14 @@
 
 ## 저장소 규칙
 
-- 커밋 계정은 **gncorpseo-commits**. 공개 저장소이므로 GitHub noreply 이메일을 쓴다.
+- GitHub 원격 계정은 **gncorpseo-commits**. 커밋 서명 역할 풀은 **finn · toma · pl** (동급). merge는 **master**.
+- 커밋 시 **로컬 `git config`를 바꾸지 말고** `-c`로만 서명한다. 이메일은 팀 noreply만 쓴다 (`finn@…` 등 개인 noreply는 타 계정에 붙을 수 있음):
+
+  ```text
+  git -c user.name=finn -c user.email=252522396+gncorpseo-commits@users.noreply.github.com commit -m "…"
+  ```
+
+  `user.name`만 finn/toma/pl로 바꾸고 email은 위와 동일. 상세는 `docs/guide/github-team-guide.md`.
 - `git add -A` / `git add .` 는 전역 훅이 차단한다. **명시적 경로로만 스테이징한다.** 훅을 끄지 않는다.
 - 버전 이력은 `docs/history/CHANGELOG.md` 단독. README에 중복해 적지 않는다.
 - 세션 상태는 `STATE.md`, 결정·미결은 `docs/context-handoff.md`, 문서 지도는 `docs/INDEX.md`. 역할을 섞지 않는다.
