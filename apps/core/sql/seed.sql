@@ -91,12 +91,21 @@ FROM gate_run_passed grp
 WHERE grp.gate_run_id = '00000000-0000-4000-8000-000000000031'::uuid
 ON CONFLICT (agent_id, capability_id) DO NOTHING;
 
-INSERT INTO agent_capability_passed (agent_id, capability_id, gate_status)
-SELECT ac.agent_id, ac.capability_id, ac.gate_status
-FROM agent_capability ac
-WHERE ac.agent_id = '00000000-0000-4000-8000-000000000020'::uuid
-  AND ac.gate_status = 'PASSED'
-ON CONFLICT (agent_id, capability_id) DO NOTHING;
+-- seed-agent 에는 **라우팅 가능 증서를 발급하지 않는다** (SD-015).
+--
+-- 왜: seed-agent 의 가중치는 `placeholder.safetensors` 다. Node 는 그것을 감지해
+-- dummy 모드로 답한다 — 즉 이 Agent 는 **실게이트를 통과할 수 없다** (로드조차 안 된다).
+-- 얻을 수 없는 증서를 시드가 발급하면 안 된다.
+--
+-- 그런데도 발급돼 있었고, UUID 가 가장 낮아 claim 정렬(`ORDER BY acp.agent_id`)에서
+-- **1순위**였다. requestedAgentId 없이 들어온 Task 는 이 Agent 로 가서
+-- `dummy:true` 라벨을 받고 COMPLETED 로 기록됐다. 증적에 dummy 플래그는 남지만,
+-- `label` 만 읽는 사용자에게는 지어낸 답이다.
+-- 제품 경로가 「Capability 로 요청한다」(product-distribution §4)이므로 정면으로 닿는다.
+--
+-- 사슬(gate_run → gate_run_passed → agent_capability)은 그대로 둔다 — 시연 가치가 있다.
+-- 라우팅 투영(agent_capability_passed)만 만들지 않는다.
+-- 기존 볼륨은 `migrations/0005` 가 폐기 표시로 끊는다.
 
 INSERT INTO agent_node (agent_id, node_id, bind_status, weights_sha256_seen)
 SELECT a.id, n.id, 'BOUND', a.weights_sha256

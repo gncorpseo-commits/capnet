@@ -109,6 +109,12 @@ def all_certs(conn) -> int:
 def main() -> int:
     print("폐기 경로 통합 시험 (SD-014)")
 
+    # 증서를 스스로 만든다. seed 는 더 이상 라우팅 증서를 발급하지 않는다 (SD-015).
+    with get_conn() as conn:
+        pass_gate(conn, "시험 준비 — 증서 발급")
+    with get_conn() as conn:
+        check("준비: 게이트 통과로 증서가 생긴다", live_certs(conn) == 1)
+
     # 대조군 — 정상 경로가 막히지 않았는지 먼저 본다.
     with get_conn() as conn:
         tid = new_task(conn, "ic1-0001")
@@ -180,6 +186,16 @@ def main() -> int:
         check("DISABLED agent 는 배정되지 않는다", claim_next(conn, task_id=tid) is None)
     with get_conn() as conn:
         conn.execute("UPDATE agent SET status='ACTIVE' WHERE id=%s", (str(AGENT),))
+
+    # 뒷정리 — 이 시험은 커밋한다 (트랜잭션 경계를 넘나드는 계약을 보기 때문에).
+    # 같은 DB 를 쓰는 뒤 단계에 placeholder Agent 가 라우팅 가능한 채로 남으면 안 된다 (SD-015).
+    with get_conn() as conn:
+        fail_gate(conn)
+    with get_conn() as conn:
+        revoke_capability(conn, agent_id=AGENT, capability_id=CAP,
+                          reason="시험 뒷정리 — placeholder Agent 는 라우팅되지 않아야 한다 (SD-015)")
+    with get_conn() as conn:
+        check("뒷정리: placeholder Agent 가 다시 폐기됐다", live_certs(conn) == 0)
 
     print()
     if failures:

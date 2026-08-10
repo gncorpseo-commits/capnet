@@ -42,7 +42,7 @@ from app.config import settings  # noqa: E402
 # seed 고정 UUID
 ADMIN = "00000000-0000-4000-8000-000000000001"
 CAP_M = "00000000-0000-4000-8000-000000000010"  # image.classify · M · team
-AGENT = "00000000-0000-4000-8000-000000000020"  # seed-agent (게이트 통과 · 바인딩됨)
+AGENT = "00000000-0000-4000-8000-000000000020"  # seed-agent (사슬은 있으나 SD-015 로 라우팅 증서 없음)
 RUNNER = "00000000-0000-4000-8000-000000000030"  # team gate-runner · M
 GATE_RUN = "00000000-0000-4000-8000-000000000031"
 TASK = "00000000-0000-4000-8000-000000000040"
@@ -106,6 +106,17 @@ INSERT INTO task (id, user_id, capability_id, status, trust_domain,
 SELECT '{TASK_L}', u.id, c.id, 'QUEUED', 'team', c.trust_domain_min,
        '{{"datasetId":"eurosat-rgb","caseId":"v-L"}}'
   FROM app_user u JOIN capability c ON c.id = '{CAP_L}' WHERE u.id = '{ADMIN}';
+
+-- seed 는 더 이상 라우팅 증서를 발급하지 않는다 (SD-015). 시험이 쓸 증서를 스스로 만든다.
+-- 양성 대조가 성립하려면 CAP_M 에 라우팅 가능한 Agent 가 하나는 있어야 한다.
+-- 앞선 시험(check_revocation)이 같은 DB 에 증서를 남겼을 수 있으므로 멱등하게 쓴다.
+-- 폐기 상태로 남아 있으면 되살린다 — 전부 마지막에 ROLLBACK 된다.
+INSERT INTO agent_capability_passed (agent_id, capability_id, gate_status)
+SELECT ac.agent_id, ac.capability_id, ac.gate_status
+  FROM agent_capability ac
+ WHERE ac.agent_id = '{AGENT}' AND ac.capability_id = '{CAP_M}' AND ac.gate_status = 'PASSED'
+ON CONFLICT (agent_id, capability_id) DO UPDATE
+   SET revoked_at = NULL, revoked_reason = NULL, revoked_gate_run_id = NULL;
 """
 
 # 할당 한 건을 만드는 공용 조각 — 스냅샷 값을 인자로 바꿔가며 위반을 만든다.

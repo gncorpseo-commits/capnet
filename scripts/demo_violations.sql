@@ -55,6 +55,16 @@ INSERT INTO capability (
     '{"primary_metric":"accuracy","min_accuracy":0.99}'::jsonb
 );
 
+-- seed 는 라우팅 증서를 발급하지 않는다 (SD-015 — placeholder 가중치는 게이트 불가).
+-- TEST4 가 정상 할당을 한 건 만들어야 하므로, 이 시연이 쓸 증서를 여기서 만든다 (롤백됨).
+INSERT INTO agent_capability_passed (agent_id, capability_id, gate_status)
+SELECT ac.agent_id, ac.capability_id, ac.gate_status
+  FROM agent_capability ac
+ WHERE ac.agent_id = '00000000-0000-4000-8000-000000000020'
+   AND ac.capability_id = '00000000-0000-4000-8000-000000000010'
+   AND ac.gate_status = 'PASSED'
+ON CONFLICT (agent_id, capability_id) DO NOTHING;
+
 SAVEPOINT m25_setup;
 \echo TEST1 gate-ungated assignment
 DO $$
