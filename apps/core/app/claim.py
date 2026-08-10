@@ -35,6 +35,11 @@ SELECT t.id, acp.agent_id, c.id, n.id,
   JOIN agent_capability_passed acp ON acp.capability_id = c.id
                                   AND (t.requested_agent_id IS NULL
                                        OR acp.agent_id = t.requested_agent_id)
+                                  -- 폐기된 증서로는 배정하지 않는다 (SD-014 · 0004)
+                                  AND acp.revoked_at IS NULL
+  -- agent.status 는 스키마에 선언돼 있었지만 claim 이 보지 않았다 (SD-014).
+  -- 선언만 있고 강제가 없으면 DISABLED 가 아무 의미도 없다.
+  JOIN agent ag                    ON ag.id = acp.agent_id AND ag.status = 'ACTIVE'
   JOIN agent_node_ready anr        ON anr.agent_id = acp.agent_id
   JOIN node n                      ON n.id = anr.node_id
                                   AND (%(node_id)s::uuid IS NULL OR n.id = %(node_id)s::uuid)

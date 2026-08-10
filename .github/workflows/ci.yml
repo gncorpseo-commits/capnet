@@ -109,3 +109,8 @@ jobs:
             "SELECT golden_set_sha256 FROM capability WHERE code='image.classify' AND version=1")
           want=$(python3 scripts/check_golden_sha.py --print)
           test "$got" = "$want" || { echo "0003 이 sha 를 올리지 못했다: $got != $want"; exit 1; }
+
+      - name: 폐기 경로 — 근거 없으면 거부 · 폐기하면 차단 · 재통과하면 복권 (SD-014)
+        env:
+          REQUIRE_LIVE_NODE: "0"
+        run: python3 tests/integration/check_revocation.py

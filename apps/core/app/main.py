@@ -22,7 +22,14 @@ from app.complete import (
 )
 from app.const import SEED_ADMIN_ID
 from app.db import get_conn
-from app.gate import finish_gate_run, get_gate_run, list_agent_capabilities, start_gate_run
+from app.gate import (
+    RevokeRefused,
+    finish_gate_run,
+    get_gate_run,
+    list_agent_capabilities,
+    revoke_capability,
+    start_gate_run,
+)
 from app.registry import (
     bind_agent_node,
     create_agent,
@@ -63,6 +70,14 @@ class AgentCreate(BaseModel):
     weights_uri: str
     weights_sha256: str
     weights_format: str = "safetensors"
+
+
+class RevokeBody(BaseModel):
+    agent_id: uuid.UUID = Field(alias="agentId")
+    capability_id: uuid.UUID = Field(alias="capabilityId")
+    reason: str
+
+    model_config = {"populate_by_name": True}
 
 
 class NodeCreate(BaseModel):
@@ -325,6 +340,33 @@ def gate_get(gate_run_id: uuid.UUID) -> dict[str, Any]:
         row = get_gate_run(conn, gate_run_id)
     if row is None:
         raise HTTPException(status_code=404, detail="gate-run not found")
+    return row
+
+
+@app.post("/v1/internal/agent-capabilities/revoke")
+def capability_revoke(body: RevokeBody) -> dict[str, Any]:
+    """능력 증서 폐기 — 행은 남기고 라우팅만 끊는다 (SD-014).
+
+    근거 없이는 거부한다: 현재 골든셋에서 FAILED 인 gate_run 이 있어야 한다.
+    되돌리려면 다시 게이트를 통과시킨다.
+    """
+    try:
+        with get_conn() as conn:
+            row = revoke_capability(
+                conn,
+                agent_id=body.agent_id,
+                capability_id=body.capability_id,
+                reason=body.reason,
+            )
+    except RevokeRefused as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail="routable certificate not found (already revoked, or never passed)",
+        )
     return row
 
 

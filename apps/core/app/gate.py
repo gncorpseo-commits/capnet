@@ -69,7 +69,44 @@ SELECT ac.agent_id, ac.capability_id, ac.gate_status
                           AND grp.capability_id = ac.capability_id
  WHERE grp.gate_run_id = %(gate_run_id)s
    AND ac.gate_status = 'PASSED'
-ON CONFLICT (agent_id, capability_id) DO NOTHING
+-- 폐기됐던 증서가 다시 통과하면 복권한다. DO NOTHING 이면 영원히 폐기 상태로 남는다.
+-- 폐기는 형벌이 아니라 「지금 기준으로 못 미친다」는 표시다 (SD-014).
+ON CONFLICT (agent_id, capability_id) DO UPDATE
+   SET revoked_at = NULL,
+       revoked_reason = NULL,
+       revoked_gate_run_id = NULL
+ WHERE agent_capability_passed.revoked_at IS NOT NULL
+"""
+
+# 폐기 근거 — **현재** 골든셋에서 떨어진 FAILED gate_run 이 있어야 한다.
+# 옛 골든셋에서의 실패로는 폐기하지 않는다. 근거 없는 폐기를 막는 것이 요점이다.
+REVOKE_EVIDENCE_SQL = """
+SELECT gr.id, gr.golden_score, gr.golden_set_sha256, gr.finished_at
+  FROM gate_run gr
+  JOIN capability c ON c.id = gr.capability_id
+ WHERE gr.agent_id = %(agent_id)s
+   AND gr.capability_id = %(capability_id)s
+   AND gr.status = 'FAILED'
+   AND gr.golden_set_sha256 = c.golden_set_sha256
+ ORDER BY gr.finished_at DESC NULLS LAST
+ LIMIT 1
+"""
+
+# 행을 지우지 않는다 — assignment 가 FK 로 참조한다 (D15). 라우팅만 끊는다.
+REVOKE_SQL = """
+UPDATE agent_capability_passed
+   SET revoked_at = now(),
+       revoked_reason = %(reason)s,
+       revoked_gate_run_id = %(gate_run_id)s
+ WHERE agent_id = %(agent_id)s
+   AND capability_id = %(capability_id)s
+   AND revoked_at IS NULL
+RETURNING agent_id, capability_id, revoked_at, revoked_reason, revoked_gate_run_id
+"""
+
+REVOKE_AUDIT_SQL = """
+INSERT INTO audit_log (task_id, actor_type, event, payload)
+VALUES (NULL, 'core', 'capability_revoked', %(payload)s::jsonb)
 """
 
 UPSERT_AC_FAILED_SQL = """
@@ -273,6 +310,73 @@ def finish_gate_run(
 
     out = dict(row)
     out["chain_minted"] = status == "PASSED"
+    return out
+
+
+class RevokeRefused(Exception):
+    """폐기 근거가 없다. 현재 골든셋에서 떨어진 gate_run 이 있어야 한다."""
+
+
+def revoke_capability(
+    conn: psycopg.Connection,
+    *,
+    agent_id: uuid.UUID,
+    capability_id: uuid.UUID,
+    reason: str,
+) -> dict[str, Any] | None:
+    """능력 증서를 폐기한다 — 행은 남기고 라우팅만 끊는다.
+
+    삭제하지 않는 이유: `assignment` 가 `agent_capability_passed` 를 FK 로 참조한다.
+    한 번이라도 실행된 Agent 의 증서는 지울 수 없다. 실행을 인가한 증서를 지우면
+    그 실행의 증적이 끊긴다 (D15).
+
+    근거 없이는 폐기하지 않는다 — **현재** 골든셋에서 FAILED 인 gate_run 이 있어야 한다.
+    되돌리려면 다시 게이트를 통과시킨다 (MINT_ACP_SQL 이 복권한다).
+    """
+    if not reason or not reason.strip():
+        raise ValueError("reason is required")
+
+    evidence = conn.execute(
+        REVOKE_EVIDENCE_SQL,
+        {"agent_id": str(agent_id), "capability_id": str(capability_id)},
+    ).fetchone()
+    if evidence is None:
+        raise RevokeRefused(
+            "현재 골든셋에서 FAILED 인 gate_run 이 없다 — 근거 없는 폐기는 하지 않는다"
+        )
+
+    row = conn.execute(
+        REVOKE_SQL,
+        {
+            "agent_id": str(agent_id),
+            "capability_id": str(capability_id),
+            "reason": reason.strip(),
+            "gate_run_id": str(evidence["id"]),
+        },
+    ).fetchone()
+    if row is None:
+        return None  # 증서가 없거나 이미 폐기됨
+
+    out = dict(row)
+    out["evidence_gate_run_id"] = evidence["id"]
+    out["evidence_score"] = evidence["golden_score"]
+    try:
+        conn.execute(
+            REVOKE_AUDIT_SQL,
+            {
+                "payload": json.dumps(
+                    {
+                        "agent_id": str(agent_id),
+                        "capability_id": str(capability_id),
+                        "reason": reason.strip(),
+                        "evidence_gate_run_id": str(evidence["id"]),
+                    }
+                )
+            },
+        )
+    except pg_errors.Error:
+        # 증적 보조 기록 실패가 폐기 자체를 뒤집지 않는다 (complete.py 와 같은 규약).
+        pass
     return out
 
 

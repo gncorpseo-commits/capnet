@@ -1,5 +1,22 @@
 # Changelog
 
+## 능력 증서 폐기 경로 (SD-014) · claim 이 agent.status 를 강제 — 2026-08-10
+
+SD-013 재게이트 중 드러난 공백을 메운다. 재게이트가 FAILED 여도 기존 PASSED 증서가 살아남았고,
+**폐기할 방법이 아예 없었다.**
+
+- **삭제가 아니라 표시로 끊는다.** `assignment` 가 `agent_capability_passed` 를 FK 로 참조해
+  실행 이력이 있는 증서는 삭제 자체가 불가능하다 (실측 20쌍). 이건 증적 보장이다 (D15)
+- `migrations/0004` — `revoked_at` · `revoked_reason` · `revoked_gate_run_id` 추가 (DDL 추가만) ·
+  `ck_acp_revoked_needs_reason` · 부분 인덱스 · `revoked_capability` 뷰 · `provenance_drift` 가 폐기를 반영
+- **근거 없는 폐기는 거부한다** — 현재 골든셋에서 FAILED 인 `gate_run` 이 있어야 한다 (`RevokeRefused` → HTTP 409)
+- **복권 경로** — 다시 통과하면 되살아난다 (`MINT_ACP_SQL` 을 `DO NOTHING` → `DO UPDATE`)
+- `POST /v1/internal/agent-capabilities/revoke` · `audit_log` 에 `capability_revoked` 기록
+- **`agent.status` 가 이제 실제로 강제된다** — 스키마에 선언만 돼 있고 `CLAIM_SQL` 이 보지 않았다 (SD-010 과 같은 계열).
+  실 DB 41건 전부 ACTIVE 라 오늘 동작은 안 바뀐다
+- `tests/integration/check_revocation.py` 10개 계약 · CI 편입.
+  파일명이 `test_` 로 시작하지 않는 것은 의도 — `unittest discover` 가 집어가면 DB 없는 단위 테스트가 깨진다
+
 ## 검증 체계 도입 — 테스트 48개 · CI — 2026-08-10
 
 이 리포는 오래 **테스트 0 · CI 0** 이었다. SD-007·SD-013 으로 **DB 밖에서 판정하는 도구**가
