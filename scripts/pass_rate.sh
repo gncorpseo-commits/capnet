@@ -11,8 +11,9 @@
 #      인자가 없으면 Node health의 non-placeholder 가중치 전부를 후보로 본다.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-core="http://127.0.0.1:8000"
-node="http://127.0.0.1:8001"
+# 주소를 환경에서 받는다 — 격리 환경(clean_room.sh)에서 같은 스크립트를 그대로 돌리기 위해서다.
+core="${CORE_URL:-http://127.0.0.1:8000}"
+node="${NODE_URL:-http://127.0.0.1:8001}"
 capId="00000000-0000-4000-8000-000000000010"
 runnerId="00000000-0000-4000-8000-000000000030"
 stamp="$(date +%Y%m%d%H%M%S)"
