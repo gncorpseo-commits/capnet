@@ -23,6 +23,21 @@
 | 14 | 행렬 독성 INSERT (`team,public` / `L,S`) | `domain_compatible_check` / `tier_compatible_check` |
 | — | 정상 할당 | 통과 |
 
-**M25 스크립트는 이 표를 그대로 재현하면 된다.** 6종만 골라도 되지만 전부 이미 검증돼 있다.
+**이 표는 이제 자동으로 지켜진다** — `tests/integration/check_pg_violations.py` (CI · migrate job).
+
+```bash
+python3 tests/integration/check_pg_violations.py   # DATABASE_URL 필요 · 전부 롤백된다
+```
+
+수동 기록과 다른 점 셋:
+
+1. **19개 케이스** — 위 14종 + lease 중 task/capability 변경 2종 + 행렬 독성 2종 분리 + **양성 대조**
+2. **어느 제약이 거절했는지**까지 대조한다. 「거절됐다」만 보면 부족하다 —
+   실제로 `assignment_agent_id_capability_id_fkey` 를 떨어뜨려 봤더니 그 케이스는
+   **여전히 거절됐다**. 다른 FK 가 잡았기 때문이다. 거절 여부만 보는 시험은 그때 초록이 뜬다
+3. **양성 대조** — 정상 할당은 반드시 통과해야 한다. 없으면 스키마가 통째로 망가져
+   모든 INSERT 가 실패해도 「전부 거절됨」으로 초록이 뜬다
+
+`scripts/demo_violations.sql` 은 촬영용 6종 시연으로 남긴다 (NOTICE 출력이 화면에 보인다).
 
 업데이트 경로도 함께 닫혀 있다 — 할당이 살아있는 동안 `task.trust_domain`·`capability.compute_tier`·`node.trust_domain`을 아무도 못 바꾼다.
