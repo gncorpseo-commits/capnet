@@ -187,7 +187,7 @@ Task claim은 **Core 워커만** 한다. Node는 큐를 pull하지 않는다. `F
 |------|-------------|-------------|
 | 케이스 수 | **N=40** (클래스당 4장, 모델 기반 선택 **금지**) | n≥300 (`scripts/extract_golden.py --n 300`) |
 | 출처 | EuroSAT RGB, Zenodo `7711810`, MIT | 동일 |
-| `golden_set_sha256` | `c8254bcb…` (manifest 핀) | 추출 시 재계산 |
+| `golden_set_sha256` | `c21d9ef7…` (manifest 핀 · holdout) | 추출 시 재계산 |
 | 전처리 | 64×64 JPEG → **32×32** RGB (게이트=제품) | 동일 |
 
 ### 6.2 채점 규칙
