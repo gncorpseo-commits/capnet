@@ -7,6 +7,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+import psycopg
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -84,6 +85,8 @@ class AgentCreate(BaseModel):
     weights_uri: str
     weights_sha256: str
     weights_format: str = "safetensors"
+    # 허용 아키텍처는 DB 행이다 (agent_arch). 없는 값이면 FK 가 등록을 막는다 (I1).
+    arch: str | None = None
 
 
 class CredentialIssueBody(BaseModel):
@@ -297,7 +300,13 @@ def agents_create(body: AgentCreate) -> dict[str, Any]:
                 weights_uri=body.weights_uri,
                 weights_sha256=body.weights_sha256,
                 weights_format=body.weights_format,
+                arch=body.arch,
             )
+    except psycopg.errors.ForeignKeyViolation as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"unknown arch {body.arch!r} — agent_arch 에 없는 아키텍처다",
+        ) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

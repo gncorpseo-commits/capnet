@@ -16,9 +16,14 @@ LEASE_DETAIL_SQL = """
 SELECT a.id, a.task_id, a.agent_id, a.capability_id, a.node_id, a.status,
        a.lease_expires_at,
        ag.weights_uri, ag.weights_sha256, ag.weights_format,
+       -- arch 는 **Core 가** 말한다. Node 로컬 meta 로 정하면 게이트가 승인한 것과
+       -- 실행한 것이 같다는 보장이 없다 (I1 · foreign-agent-isolation §2.1).
+       ag.arch,
+       aa.max_params,
        t.input_ref, t.status AS task_status
   FROM assignment a
   JOIN agent ag ON ag.id = a.agent_id
+  LEFT JOIN agent_arch aa ON aa.arch = ag.arch
   JOIN task t ON t.id = a.task_id
  WHERE a.id = %(assignment_id)s
 """
@@ -82,9 +87,14 @@ NODE_ASSIGNMENTS_SQL = """
 SELECT a.id, a.task_id, a.agent_id, a.capability_id, a.node_id, a.status,
        a.lease_expires_at,
        ag.weights_uri, ag.weights_sha256, ag.weights_format,
+       -- arch 는 **Core 가** 말한다. Node 로컬 meta 로 정하면 게이트가 승인한 것과
+       -- 실행한 것이 같다는 보장이 없다 (I1 · foreign-agent-isolation §2.1).
+       ag.arch,
+       aa.max_params,
        t.input_ref, t.status AS task_status
   FROM assignment a
   JOIN agent ag ON ag.id = a.agent_id
+  LEFT JOIN agent_arch aa ON aa.arch = ag.arch
   JOIN task t ON t.id = a.task_id
  WHERE a.node_id = %(node_id)s
    AND a.status = 'LEASED'

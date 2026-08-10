@@ -30,7 +30,7 @@ def assert_sha256(value: str) -> None:
 def list_agents(conn: psycopg.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT id, owner_id, name, version, status, manifest_hash, "
-        "weights_format, weights_uri, weights_sha256, created_at "
+        "weights_format, weights_uri, weights_sha256, arch, created_at "
         "FROM agent ORDER BY created_at"
     ).fetchall()
     return [dict(r) for r in rows]
@@ -39,7 +39,7 @@ def list_agents(conn: psycopg.Connection) -> list[dict[str, Any]]:
 def get_agent(conn: psycopg.Connection, agent_id: uuid.UUID) -> dict[str, Any] | None:
     row = conn.execute(
         "SELECT id, owner_id, name, version, status, manifest_hash, "
-        "weights_format, weights_uri, weights_sha256, created_at "
+        "weights_format, weights_uri, weights_sha256, arch, created_at "
         "FROM agent WHERE id = %s",
         (str(agent_id),),
     ).fetchone()
@@ -55,6 +55,7 @@ def create_agent(
     weights_uri: str,
     weights_sha256: str,
     weights_format: str,
+    arch: str | None = None,
 ) -> dict[str, Any]:
     assert_safetensors(weights_format, weights_uri)
     assert_sha256(weights_sha256)
@@ -62,14 +63,15 @@ def create_agent(
         """
         INSERT INTO agent (
             owner_id, name, version, status,
-            manifest_hash, weights_format, weights_uri, weights_sha256
+            manifest_hash, weights_format, weights_uri, weights_sha256, arch
         )
         SELECT %(owner_id)s, %(name)s, %(version)s, 'ACTIVE',
-               %(manifest_hash)s, 'safetensors', %(weights_uri)s, %(weights_sha256)s
+               %(manifest_hash)s, 'safetensors', %(weights_uri)s, %(weights_sha256)s,
+               %(arch)s
           FROM app_user u
          WHERE u.id = %(owner_id)s
         RETURNING id, owner_id, name, version, status, manifest_hash,
-                  weights_format, weights_uri, weights_sha256, created_at
+                  weights_format, weights_uri, weights_sha256, arch, created_at
         """,
         {
             "owner_id": SEED_ADMIN_ID,
@@ -78,6 +80,7 @@ def create_agent(
             "manifest_hash": manifest_hash,
             "weights_uri": weights_uri,
             "weights_sha256": weights_sha256,
+            "arch": arch,
         },
     ).fetchone()
     if row is None:

@@ -135,3 +135,6 @@ jobs:
 
       - name: Node 증서 — 발급·검증·폐기·회전·사칭 차단 (P2-4 · SD-002)
         run: python3 tests/integration/check_node_credential.py
+
+      - name: 아키텍처 결속 · 자원 한도 (I1·I2 · foreign-agent-isolation)
+        run: python3 tests/integration/check_agent_arch.py
