@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from app.allowlist import assert_dataset_id
+from app.allowlist import ALLOWED_DATASET_IDS, assert_dataset_id
 from app.capability import create_capability, get_capability, list_capabilities
 from app.claim import claim_next, reclaim_expired
 from app.complete import (
@@ -58,6 +59,12 @@ app = FastAPI(
 )
 
 _OPENAPI_YAML = Path(__file__).resolve().parents[1] / "openapi.yaml"
+
+# 최소 UI (P2-3 호출면). StaticFiles 는 starlette 동봉이라 새 의존성이 아니다.
+# 외부 자산(CDN·폰트·아이콘)을 쓰지 않는다 — 내부망·오프라인에서 그대로 뜬다.
+_STATIC_DIR = Path(__file__).resolve().parent / "static"
+if _STATIC_DIR.is_dir():
+    app.mount("/ui", StaticFiles(directory=str(_STATIC_DIR), html=True), name="ui")
 
 
 class TaskCreate(BaseModel):
@@ -209,6 +216,17 @@ def health() -> dict[str, Any]:
         "postgres": "up",
         "capability": dict(cap) if cap else None,
     }
+
+
+@app.get("/", include_in_schema=False)
+def root() -> RedirectResponse:
+    return RedirectResponse(url="/ui/nodes.html")
+
+
+@app.get("/v1/datasets")
+def datasets_list() -> dict[str, Any]:
+    """입력 allowlist. 자유 업로드 경로는 없다 (기획서 §5.2 · 절대규칙 7)."""
+    return {"items": sorted(ALLOWED_DATASET_IDS)}
 
 
 @app.get("/openapi.yaml", include_in_schema=False)

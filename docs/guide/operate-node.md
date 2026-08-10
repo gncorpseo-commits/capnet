@@ -8,7 +8,21 @@
 
 ---
 
-## 0. 한 장 요약
+## 0. UI 로 할 수도 있다
+
+Core 가 최소 UI 를 서빙한다 (P2-3 호출면). `http://<core>:8000/ui/nodes.html`
+
+| 화면 | 무엇 |
+|---|---|
+| **Node** (`/ui/nodes.html`) | 등록 · 함대 상태(생존·증서) · 증서 발급/폐기 |
+| **능력 호출** (`/ui/call.html`) | Capability 로 요청 · 결과와 **증적** · dummy 경고 |
+
+외부 자산(CDN·폰트)을 쓰지 않는다 — 내부망·오프라인에서 그대로 뜬다. 새 의존성도 없다.
+UI 가 못 하는 것은 **Agent 게이트·바인딩**이다 (가중치가 기기에 있어야 하므로 터미널 작업).
+
+---
+
+## 0.1 한 장 요약
 
 ```bash
 scripts/node_onboard.sh --name gpu-01 --domain team --tier M   # 등록 + 증서
