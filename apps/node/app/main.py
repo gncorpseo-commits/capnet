@@ -200,7 +200,18 @@ def _is_mine(assignment_id: uuid.UUID) -> bool:
     return any(str(a.get("id")) == str(assignment_id) for a in _fetch_my_assignments())
 
 
-def _run(assignment_id: uuid.UUID, weights_sha256: str, input_ref: str | None) -> dict[str, Any]:
+def _run(
+    assignment_id: uuid.UUID,
+    weights_sha256: str,
+    input_ref: str | None,
+    arch: str | None = None,
+    max_params: int | None = None,
+) -> dict[str, Any]:
+    """배정 1건 실행.
+
+    `arch` 는 **Core 가 말한 값**이다 (I1). 로컬 meta 로 정하면 게이트가 승인한 것과
+    실행한 것이 같다는 보장이 없다. Core 가 모르면(legacy Agent) None 이고, 그때만 로컬로 떨어진다.
+    """
     path = _resolve_weights(weights_sha256)
     dummy = _is_placeholder(path)
     started = time.perf_counter()
@@ -218,7 +229,18 @@ def _run(assignment_id: uuid.UUID, weights_sha256: str, input_ref: str | None) -
         image = case_path(CASES_DIR, cid)
         if not image.is_file():
             raise HTTPException(status_code=404, detail=f"case image missing: {image}")
-        label, confidence = predict_image(path, str(image))
+        from app.infer import ResourceLimitExceeded
+
+        try:
+            label, confidence = predict_image(
+                path, str(image), arch=arch, max_params=max_params
+            )
+        except ResourceLimitExceeded as exc:
+            # 조용히 도는 것보다 터뜨리는 편이 낫다 — Core 가 FAILED 로 기록한다.
+            raise HTTPException(status_code=422, detail=f"resource limit: {exc}") from exc
+        except ValueError as exc:
+            # allowlist 밖 arch. build_model 이 던진다.
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         keys = ["scratch"]
 
     duration_ms = int((time.perf_counter() - started) * 1000)
@@ -270,7 +292,13 @@ def _poll_loop() -> None:
             _send_heartbeat("BUSY" if mine else "AVAILABLE", {"active": len(mine)})
             for a in mine:
                 try:
-                    out = _run(uuid.UUID(str(a["id"])), a["weights_sha256"], a.get("input_ref"))
+                    out = _run(
+                        uuid.UUID(str(a["id"])),
+                        a["weights_sha256"],
+                        a.get("input_ref"),
+                        arch=a.get("arch"),
+                        max_params=a.get("max_params"),
+                    )
                     print(f"node: ran assignment={a['id']} label={out.get('label')}", flush=True)
                 except Exception as exc:  # 한 건 실패가 루프를 죽이지 않는다
                     print(f"node: assignment {a.get('id')} failed: {exc}", flush=True)

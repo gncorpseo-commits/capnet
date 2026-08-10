@@ -1,5 +1,39 @@
 # Changelog
 
+## 남의 Agent 를 받기 위한 첫 두 칸 — arch 결속 · 자원 한도 (I1·I2) — 2026-08-11
+
+새 설계 문서 [`design/foreign-agent-isolation.md`](../design/foreign-agent-isolation.md) —
+「남의 Agent」를 **F1(남의 가중치) · F2(남의 아키텍처 선언) · F3(남의 코드)** 세 단계로 쪼개고,
+F3 앞에 있는 **코드로 못 푸는 전제**(법무 킥오프 · 고객 1곳)를 명시한다.
+Phase 3 진입조건의 「격리 초안」이 이 문서다.
+
+**드러난 구멍 2개 (F1·F2 를 막는 것)**
+
+1. **아키텍처가 계약에 없었다.** `infer.py` 가 Node **로컬 파일**(`meta.json`)에서 arch 를 읽었다.
+   Agent 신원은 `weights_sha256` 뿐이라 arch 는 그 해시에 포함되지 않는다 —
+   게이트가 승인한 것과 실행한 것이 같다는 보장이 **코드에 없었다**
+2. **추론에 자원 한도가 전무했다.** compose 의 `mem_limit` 은 컨테이너 **전체** 한도라,
+   한 건의 악성 추론이 같은 Node 의 다른 lease 까지 죽인다
+
+**I1 — arch 를 계약에 묶는다** (`migrations/0008`)
+
+- `agent_arch` 룩업 테이블 — 허용 아키텍처가 **DB 행**이다 (`compute_tier_rank` 와 같은 idiom).
+  없는 arch 로는 Agent 등록이 **FK 로** 막힌다 (HTTP 400)
+- `agent.arch` → FK. 배정 페이로드가 **Core 의 arch** 를 싣고, Node 는 그것으로 로드한다
+- legacy 는 `arch IS NULL` 로 두고 `agent_arch_unbound` 뷰로 드러낸다 —
+  **실 DB 실측 45건 · 라우팅 가능 35건.** Core 는 가중치 파일을 보지 않으므로 추측으로 채우지 않았다
+
+**I2 — 실행 자원 한도** (부분)
+
+- 파라미터 수 상한 (`agent_arch.max_params` → 페이로드 → **매 호출** 검사) ·
+  입력 픽셀 상한 · torch thread 제한
+- 구현 중 「로드할 때만 검사」 버그를 만들었고 실측으로 잡았다 — 캐시된 뒤 상한을 낮춰도 계속 돌았다
+- **wall-clock timeout 은 아직 없다.** 파이썬에서 CPU 바운드를 안전히 끊으려면 별도 프로세스가 필요하고,
+  그건 F3 의 프로세스 격리와 같은 작업이라 거기서 함께 한다
+
+**검증** — 통합 10종(allowlist 밖 arch 등록 FK 차단 · 페이로드 arch·max_params 전달 · legacy 가시화 · 격리) ·
+Node 한도 실측(정상 / 상한 초과 거부 / allowlist 밖 arch 거부 / legacy 경로 유지) · 실 사슬 회귀 통과.
+
 ## 최소 UI — Node 등록 · 능력 호출 (P2-3) — 2026-08-11
 
 로드맵 P2-3(「최소 UI · 호출면」)을 채운다. Core 가 직접 서빙한다.
