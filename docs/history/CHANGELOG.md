@@ -1,5 +1,36 @@
 # Changelog
 
+## 관리 API 인증 — 정문을 닫는다 (SD-010 해소) — 2026-08-11
+
+**실측으로 드러난 것:** 익명 요청이 `team`·`L등급`·**게이트러너** Node 를 등록하고(HTTP 200)
+증서까지 받았다(HTTP 200). 게이트러너가 되면 **자기 Agent 를 자기가 채점해 통과시킬 수 있다** —
+FK 사슬·증적·Node 증서가 전부 그 위에 쌓은 심층 방어인데 정문이 열려 있었다.
+SD-010 이 「Core API 에 인증이 없다」고 적었고 P2-4 는 그중 Node 사칭만 닫았다.
+
+**스키마가 이미 예견해 뒀다.** `app_user(role IN ('user','developer','admin'))` 과 `api_key` 가
+v4.4 부터 있었고 **코드가 쓰지 않았을 뿐**이다. 새 테이블을 만들지 않았다.
+
+- `apps/core/app/apikey.py` — 발급·검증·폐기·역할 판정. 평문은 발급 때 한 번, DB 엔 sha256 만
+- **역할 순위를 표로 판정한다** (`user < developer < admin`) — 문자열 정렬은 `compute_tier` 에서
+  이미 당한 함정이다
+- 쓰기 엔드포인트 **11개**에 최소 역할 부여 — Node 등록·증서·계약 생성·폐기·claim 은 `admin`,
+  Agent·바인딩·**gate_run 기록**은 `developer`, Task 는 `user`
+- **두 신원이 공존한다** — `CapNet-Node`(기기) · `CapNet-Key`(사람/도구). 섞이지 않는다
+- **부트스트랩 CLI** `python -m app.apikey_cli issue` — API 로만 발급하면 첫 키를 못 만들어 잠긴다
+- `migrations/0009` — `key_prefix` UNIQUE · `last_used_at` · `api_key_status` 뷰 (추가만)
+- `GET /v1/api-keys` (admin) — 시크릿도 해시도 나가지 않는다
+
+**강제는 플래그** (`REQUIRE_API_KEY`, 기본 꺼짐 — 데모 보호). 다만 **키가 오면 항상 검증한다**:
+
+| | 익명 | 위조 키 | user 키 | admin 키 |
+|---|---|---|---|---|
+| 기본 모드 · Node 등록 | 200 | **401** | **403** | 200 |
+| 강제 모드 · Node 등록 | **401** | **401** | **403** | 200 |
+| 강제 모드 · gate_run 기록 | **401** | — | **403** | 200 |
+| 강제 모드 · Task 생성 | **401** | — | **200** | 200 |
+
+`tests/integration/check_api_key.py` 23종. 러너가 자동으로 집어가 CI 수정이 필요 없었다.
+
 ## 통합 검사 격리 — 반창고를 구조로 교체 — 2026-08-11
 
 통합 검사 5개가 **DB 하나를 공유**했다. 넷은 SAVEPOINT + ROLLBACK 으로 스스로 격리하지만

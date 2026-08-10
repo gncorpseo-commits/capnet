@@ -59,7 +59,7 @@
   TinyEuroSATB는 40ep에서 0.9267 → 0.4467로 무너졌다. **A/B 등가 주장이 이 차이 위에 서 있었다** (SD-001)
 - **상태:** closed
 
-### SD-010 · 절대규칙 4는 **코드가 아니라 배치 전제**로만 지켜진다
+### SD-010 · 절대규칙 4는 **코드가 아니라 배치 전제**로만 지켜진다 → **해소 (2026-08-11)**
 - **무엇:** `POST /v1/nodes` 가 요청 본문의 `trust_domain` · `compute_tier_max` · `is_gate_runner` 를 그대로 받는다.
   Core API 에 인증이 **없다**. 실측: `trust_domain=team, compute_tier_max=L, is_gate_runner=true` 로 노드 등록 성공
 - **문서와의 차이:** CHANGELOG W1 은 "Node 등급은 Core 관리자 등록. **Node 런타임 자기주장 경로 없음**"이라고 적었다.
@@ -68,8 +68,17 @@
   D7 이 "MVP Node = 팀 자체 조달만"으로 두었다. **팀 내부망 전제**가 실질 방어다
 - **정직한 서술:** "Node 가 자기 등급을 주장할 수 없다"가 아니라
   **"Node 등급은 Core 가 부여하며, MVP 는 그 API 를 신뢰 경계 안에 둔다"**
-- **해소 경로:** `node_credential` (SD-002) + 인증. Phase 2
-- **상태:** open — 문서 표현 정정 필요
+- **해소 (두 단계):**
+  1. **Node 사칭** — `node_credential` (P2-4 · 2026-08-11). Core 가 증서로 node_id 를 해석하고 URL 과 대조. 실측 403
+  2. **관리 API 인증** — 이 항목의 나머지 절반. 실측으로 **익명 요청이 team·L등급·게이트러너 Node 를 등록하고 증서까지 받았다**.
+     게이트러너가 되면 자기 Agent 를 자기가 채점해 통과시킬 수 있다 — FK 사슬·증적·Node 증서가 전부 그 위에 쌓은 심층 방어인데 **정문이 열려 있었다**
+- **스키마가 이미 예견해 뒀다:** `app_user(role)` · `api_key` 가 v4.4 부터 있었고 **코드가 쓰지 않았을 뿐**이다. 새 테이블 없음 (`0009` 는 UNIQUE·`last_used_at`·조회면만 추가)
+- **역할:** `user < developer < admin` — 순위표로 판정한다 (문자열 정렬 금지 — `compute_tier` 와 같은 함정)
+- **두 신원이 공존:** `CapNet-Node`(기기) · `CapNet-Key`(사람/도구). 섞이지 않는다 — 실측으로 Node 스킴은 관리 API 에서 401
+- **부트스트랩:** `python -m app.apikey_cli issue` — API 로만 발급하면 첫 키를 못 만들어 잠긴다
+- **강제는 플래그** (`REQUIRE_API_KEY`, 기본 꺼짐). 다만 **키가 오면 항상 검증한다** — 강제가 꺼져 있어도 위조 401·역할 부족 403
+- **검증:** HTTP 8종 + 통합 23종. `tests/integration/check_api_key.py`
+- **상태:** closed (강제는 배포 결정)
 
 ### SD-011 · 만료 lease 회수 부재 → **해소 (2026-08-10)**
 - **무엇:** 배정 후 기기가 죽으면 task 가 ASSIGNED/LEASED 에 영구히 갇혔다.

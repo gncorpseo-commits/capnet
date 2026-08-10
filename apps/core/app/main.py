@@ -14,6 +14,13 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app.allowlist import ALLOWED_DATASET_IDS, assert_dataset_id
+from app.apikey import (
+    ApiKeyError,
+    Forbidden,
+    list_key_status,
+    looks_like_api_key,
+    verify_key,
+)
 from app.capability import create_capability, get_capability, list_capabilities
 from app.claim import claim_next, reclaim_expired
 from app.complete import (
@@ -176,6 +183,45 @@ class CompleteBody(BaseModel):
     duration_ms: int | None = None
 
 
+# 관리 API 인증 강제. 기본 꺼짐 — 데모·로컬 compose 를 깨지 않는다.
+# 켜지 않아도 **키가 오면 항상 검증한다.** 잘못된 키가 통과하는 구간을 만들지 않는다.
+#
+# 이 플래그가 꺼져 있는 동안 관리 API 는 열려 있다 — 그게 SD-010 의 상태다.
+# 신뢰 네트워크 밖에 Core 를 두려면 반드시 켠다.
+REQUIRE_API_KEY = os.environ.get("REQUIRE_API_KEY", "0") == "1"
+
+
+def _actor(authorization: str | None) -> dict[str, Any] | None:
+    """Authorization 에서 사용자를 해석한다. 키가 없으면 None (강제 모드면 401)."""
+    if not looks_like_api_key(authorization):
+        if REQUIRE_API_KEY:
+            raise HTTPException(status_code=401, detail="api key required")
+        return None
+    try:
+        with get_conn() as conn:
+            return verify_key(conn, authorization)
+    except ApiKeyError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+
+def _require(minimum: str, authorization: str | None) -> dict[str, Any] | None:
+    """최소 역할을 요구한다.
+
+    키가 오면 **항상** 역할까지 본다 — 강제가 꺼져 있어도 마찬가지다.
+    「강제가 꺼져 있으니 권한 없는 키도 통과」하는 구간을 만들지 않는다.
+    """
+    from app.apikey import assert_role
+
+    actor = _actor(authorization)
+    if actor is None:
+        return None  # 강제 꺼짐 + 키 없음 → 통과 (레거시 경로)
+    try:
+        assert_role(actor, minimum)
+    except Forbidden as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return actor
+
+
 # 증서 강제. 기본 꺼짐 — 데모·로컬 compose 는 증서 없이 돈다 (초안 §4).
 # 켜지 않아도 **토큰이 오면 항상 검증한다**. 잘못된 증서가 통과하는 구간을 만들지 않는다.
 REQUIRE_NODE_CREDENTIAL = os.environ.get("REQUIRE_NODE_CREDENTIAL", "0") == "1"
@@ -246,8 +292,9 @@ def capabilities_list() -> dict[str, Any]:
 
 
 @app.post("/v1/capabilities")
-def capabilities_create(body: CapabilityCreate) -> dict[str, Any]:
+def capabilities_create(body: CapabilityCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """런타임 Capability 등록. UNIQUE(code,version)·CHECK는 DB가 강제한다."""
+    _require("admin", authorization)
     try:
         with get_conn() as conn:
             return create_capability(
@@ -289,7 +336,8 @@ def agents_list() -> dict[str, Any]:
 
 
 @app.post("/v1/agents")
-def agents_create(body: AgentCreate) -> dict[str, Any]:
+def agents_create(body: AgentCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("developer", authorization)
     try:
         with get_conn() as conn:
             return create_agent(
@@ -322,7 +370,8 @@ def agents_get(agent_id: uuid.UUID) -> dict[str, Any]:
 
 
 @app.post("/v1/agents/{agent_id}/bindings")
-def agents_bind(agent_id: uuid.UUID, body: BindBody) -> dict[str, Any]:
+def agents_bind(agent_id: uuid.UUID, body: BindBody, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("developer", authorization)
     try:
         with get_conn() as conn:
             return bind_agent_node(
@@ -342,8 +391,9 @@ def nodes_list() -> dict[str, Any]:
 
 
 @app.post("/v1/nodes")
-def nodes_create(body: NodeCreate) -> dict[str, Any]:
+def nodes_create(body: NodeCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """관리자/Core 등록. Node 런타임이 trust_domain·tier를 주장하는 경로가 아니다."""
+    _require("admin", authorization)
     try:
         with get_conn() as conn:
             return create_node(
@@ -370,12 +420,13 @@ def nodes_get(node_id: uuid.UUID) -> dict[str, Any]:
 
 
 @app.post("/v1/nodes/{node_id}/credentials")
-def credential_issue(node_id: uuid.UUID, body: CredentialIssueBody | None = None) -> dict[str, Any]:
+def credential_issue(node_id: uuid.UUID, body: CredentialIssueBody | None = None, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """증서 발급 (admin). `secret` 은 **이 응답에만** 있다 — 저장하지 않는다 (C3).
 
     등급 필드를 받지 않는다 (C1 · 절대규칙 4). 보내면 422 로 떨어진다.
     회전은 폐기 후 재발급이다 — Node 당 활성 증서는 하나다.
     """
+    _require("admin", authorization)
     body = body or CredentialIssueBody()
     try:
         with get_conn() as conn:
@@ -391,7 +442,8 @@ def credential_issue(node_id: uuid.UUID, body: CredentialIssueBody | None = None
 
 
 @app.post("/v1/nodes/{node_id}/credentials/revoke")
-def credential_revoke(node_id: uuid.UUID, body: CredentialRevokeBody) -> dict[str, Any]:
+def credential_revoke(node_id: uuid.UUID, body: CredentialRevokeBody, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("admin", authorization)
     try:
         with get_conn() as conn:
             row = revoke_credential(conn, node_id=node_id, reason=body.reason)
@@ -402,6 +454,18 @@ def credential_revoke(node_id: uuid.UUID, body: CredentialRevokeBody) -> dict[st
     return row
 
 
+@app.get("/v1/api-keys")
+def api_keys_status(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """발급된 관리 키 상태. 시크릿도 해시도 나가지 않는다 — prefix·역할만.
+
+    발급은 API 로 하지 않는다. 첫 키를 만들 수 없어 잠기기 때문이다 —
+    `python -m app.apikey_cli issue` 가 DB 에 직접 붙는다.
+    """
+    _require("admin", authorization)
+    with get_conn() as conn:
+        return {"items": list_key_status(conn)}
+
+
 @app.get("/v1/nodes-credentials")
 def credentials_status() -> dict[str, Any]:
     """Node 별 증서 상태. 시크릿도 해시도 나가지 않는다 — prefix 만."""
@@ -410,7 +474,8 @@ def credentials_status() -> dict[str, Any]:
 
 
 @app.post("/v1/internal/gate-runs")
-def gate_start(body: GateStartBody) -> dict[str, Any]:
+def gate_start(body: GateStartBody, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("developer", authorization)
     with get_conn() as conn:
         row = start_gate_run(
             conn,
@@ -427,7 +492,8 @@ def gate_start(body: GateStartBody) -> dict[str, Any]:
 
 
 @app.post("/v1/internal/gate-runs/{gate_run_id}/finish")
-def gate_finish(gate_run_id: uuid.UUID, body: GateFinishBody) -> dict[str, Any]:
+def gate_finish(gate_run_id: uuid.UUID, body: GateFinishBody, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("developer", authorization)
     try:
         with get_conn() as conn:
             row = finish_gate_run(
@@ -461,12 +527,13 @@ def gate_get(gate_run_id: uuid.UUID) -> dict[str, Any]:
 
 
 @app.post("/v1/internal/agent-capabilities/revoke")
-def capability_revoke(body: RevokeBody) -> dict[str, Any]:
+def capability_revoke(body: RevokeBody, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """능력 증서 폐기 — 행은 남기고 라우팅만 끊는다 (SD-014).
 
     근거 없이는 거부한다: 현재 골든셋에서 FAILED 인 gate_run 이 있어야 한다.
     되돌리려면 다시 게이트를 통과시킨다.
     """
+    _require("admin", authorization)
     try:
         with get_conn() as conn:
             row = revoke_capability(
@@ -488,7 +555,8 @@ def capability_revoke(body: RevokeBody) -> dict[str, Any]:
 
 
 @app.post("/v1/tasks")
-def create_task(body: TaskCreate) -> dict[str, Any]:
+def create_task(body: TaskCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("user", authorization)
     try:
         assert_dataset_id(body.dataset_id)
     except ValueError as exc:
@@ -532,8 +600,9 @@ def create_task(body: TaskCreate) -> dict[str, Any]:
 
 
 @app.post("/v1/internal/claim")
-def claim(body: ClaimBody | None = None) -> dict[str, Any]:
+def claim(body: ClaimBody | None = None, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """Core 워커 전용. Node는 이 경로를 pull하지 않는다."""
+    _require("admin", authorization)
     payload = body or ClaimBody()
     with get_conn() as conn:
         row = claim_next(conn, task_id=payload.task_id, node_id=payload.node_id)
