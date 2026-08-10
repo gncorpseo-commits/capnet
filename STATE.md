@@ -38,9 +38,10 @@
 |------|------|
 | **출품 (1순위)** | 양식 이식 ✅ · **촬영 2026-08-23 확정** · 편집·업로드 8/24 · Release/포털 미완 |
 | **Phase 1** | ✅ 완주 · 판정 **Go** (v4.6) |
-| **Phase 2** | 사이클 폐쇄 완료. 유휴 판정은 스키마 필요 → SD-007 **체계 도입됨(승인·적용 대기)** |
+| **Phase 2** | 사이클 폐쇄 완료. 유휴 판정은 스키마 필요 → SD-007 **해소** |
 | **제품 유통 (D19)** | 문서 정본 [`product-distribution.md`](docs/design/product-distribution.md). 1호 = 초대 team/tenant · 경제 비기초. **코드 유통 세대 = v제품-0 직전** |
-| **마이그레이션 (SD-007)** | 러너·`migrations/`·원장 구현 완료 · 일회용 DB 11종 검증 통과 · **실 볼륨 미적용** → [`guide/migrations.md`](docs/guide/migrations.md) |
+| **마이그레이션 (SD-007)** | ✅ 러너·`migrations/`·원장. **실 볼륨 0001–0003 적용 완료 (2026-08-10)** → [`guide/migrations.md`](docs/guide/migrations.md) |
+| **증적 정합 (SD-013)** | ✅ 골든셋 sha `c21d9ef7…` 통일 · **재게이트 29건 완료** · 라우팅 드리프트 31 → **1건**(`seed-agent` placeholder) |
 | **문서 위생** | README stable-only · 일정 정본 = checklist |
 | **역할** | finn · toma · **pl**(동급) · master(merge) — [`github-team-guide`](docs/guide/github-team-guide.md) v1.3 |
 
@@ -88,8 +89,8 @@
 14. [x] Phase 1 판정 리포트 → **보류(HOLD)**
 15. [x] P1-5 완료 — H1~H4. 판정 = **Go 아님**
 16. [x] SD-009 계약 재정의 — **C안 채택** (v4.6, 등가성 → 관측값)
-17. [x] SD-007 마이그레이션 체계 — 러너·원장·정적 검사 구현·검증 완료. **승인 후 실 볼륨 적용만 남음**
-18. [x] SD-013 골든셋 sha — 선언부 **5곳** 정본 통일 + `check_golden_sha.py` 신설. **재게이트만 미결** ← 촬영 전 결정
+17. [x] SD-007 마이그레이션 체계 — 러너·원장·정적 검사. #27 머지 · **실 볼륨 0001–0003 적용 완료**
+18. [x] SD-013 골든셋 sha — 선언부 **5곳** 통일 + `check_golden_sha.py`. **재게이트 29건 완료** · `seed-agent` 1건만 남음
 
 ## 연구·형제 제품 (대회 Must 밖)
 
@@ -105,9 +106,9 @@
 | 1 | 중복수혜 팀 확인 | 제출 전 |
 | 2 | **H1–H4를 8/27 전에 할지** (CPU 3–4h · 출품 트랙과 경합) | master |
 | 3 | A/B를 보고서 Must로 승격할지 (SD-001) | master |
-| 4 | ~~마이그레이션 체계 (SD-007)~~ | ✅ 구현·검증 완료 · **승인 + 실 볼륨 `migrate.sh up` 만 남음** |
+| 4 | ~~마이그레이션 체계 (SD-007)~~ | ✅ #27 머지 · **실 볼륨 0001–0003 적용 완료** |
 | 5 | ~~실험 가중치 `.meta.json` gitignore~~ | ✅ `*.meta.json` ignore · A/B 메타만 예외 |
 | 6 | 커밋 A 가중치 `HOLDOUT=1` 재학습 (meta `train_images=27000`) | 출품 전 권장 |
 | 7 | 제품 유통 v제품-1 — SD-007 ✅ → **P2-1(tenant 운용) 다음** → credential (D19) | 출품 후 |
-| 8 | **SD-013 재게이트 여부** — 선언부는 `c21d9ef7…` 로 통일 완료. 남은 것은 **구 골든셋 PASS 증서**(`drifted_still_routable=1`)를 재게이트할지. 조회: `SELECT * FROM provenance_drift_summary;` | **촬영 8/23 전** |
+| 8 | ~~SD-013 재게이트~~ | ✅ 29건 재게이트 완료 (전부 PASSED · acc 0.80~0.95). 남은 1건은 `seed-agent`(placeholder 가중치 · 실게이트 불가) — **폐기할지 결정** |
 | 9 | **P2-1 tenant 운용은 capability 결정이 선행** — `image.classify@1` 은 `trust_domain_min='team'` 이라 tenant task 가 원천 차단됨. tenant 유통엔 `trust_domain_min='tenant'` 인 capability 가 필요 (골든셋 동반) | Phase 2 착수 시 |

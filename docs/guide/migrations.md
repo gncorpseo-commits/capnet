@@ -112,6 +112,19 @@ SELECT * FROM provenance_drift_summary;
 `drifted_still_routable > 0` 이면 재게이트 대상이다. 뷰는 **보이게만** 한다 — sha 를 고치거나 증서를 지우지 않는다.
 그것은 재게이트 결정을 동반하므로 사람이 정한다 (D15 · 절대규칙 8).
 
+재게이트는 `scripts/regate.sh` 로 한다:
+
+```bash
+scripts/regate.sh --dry-run   # 대상만
+scripts/regate.sh
+```
+
+기존 `agent_id` 를 그대로 두고 게이트만 다시 돈다 — `agent_capability.gate_run_id` 가 새 run 으로 옮겨간다.
+`proof_ab.sh` 는 실행마다 **새 Agent 를 등록**하므로 재게이트에 쓸 수 없다.
+
+> **재게이트는 강등을 못 한다.** `gate.py` 의 `UPSERT_AC_FAILED_SQL` 에 `WHERE agent_capability.gate_status <> 'PASSED'` 가 있어,
+> 재게이트 결과가 FAILED 여도 기존 PASSED 증서는 살아남는다. 폐기는 사람이 정한다.
+
 ---
 
 ## 7. 한계
