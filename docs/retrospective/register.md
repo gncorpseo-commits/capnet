@@ -159,6 +159,22 @@
   재게이트가 FAILED 여도 기존 PASSED 증서는 살아남는다. 이번엔 전부 PASSED 라 부딪치지 않았으나 설계 공백이다
 - **상태:** open (`seed-agent` 1건 · 강등 경로 부재)
 
+### SD-014 · 능력 증서 폐기 경로 부재 → **해소 (2026-08-10)**
+- **무엇:** 재게이트가 FAILED 여도 기존 PASSED 증서가 살아남았다. 폐기할 방법이 아예 없었다
+- **발견:** SD-013 재게이트 중. 29건이 전부 PASSED 라 부딪치지 않았으나, 골든셋을 더 엄격히 바꾸면 바로 문제가 된다
+- **왜 그랬나:** `gate.py` `UPSERT_AC_FAILED_SQL` 의 `WHERE agent_capability.gate_status <> 'PASSED'`.
+  이 가드 자체는 **의도된 방어**다 — 잘못된 게이트 한 번이 운영 라우팅을 죽이면 안 된다. 공백은 「대안 경로가 없다」는 것이었다
+- **왜 삭제가 아닌가:** `assignment` 가 `agent_capability_passed (agent_id, capability_id)` 를 FK 로 참조한다.
+  한 번이라도 실행된 Agent 의 증서는 **삭제 자체가 불가능**하다. 실 DB 실측 20쌍이 참조 중. 이건 버그가 아니라 증적 보장이다 (D15) —
+  실행을 인가한 증서를 지우면 그 실행의 증적이 끊긴다
+- **채택:** 행을 남기고 **표시**로 끊는다. `0004` 가 `revoked_at`·`revoked_reason`·`revoked_gate_run_id` 를 추가(DDL 추가만)
+- **근거 강제:** **현재** 골든셋에서 FAILED 인 `gate_run` 이 없으면 폐기를 거부한다 (`RevokeRefused`). 옛 골든셋 실패로는 못 끊는다
+- **복권:** 다시 통과하면 되살아난다 (`MINT_ACP_SQL` 이 `DO NOTHING` → `DO UPDATE`). 폐기는 형벌이 아니라 「지금 기준에 못 미친다」는 표시
+- **같이 메운 구멍:** `agent.status` 가 ACTIVE/DISABLED/DELETED 로 **선언만** 돼 있고 `CLAIM_SQL` 이 전혀 보지 않았다 (SD-010 과 같은 계열).
+  claim 이 이제 `status='ACTIVE'` 를 요구한다. 실 DB 41건 전부 ACTIVE 라 오늘 동작은 안 바뀐다
+- **검증:** `tests/integration/check_revocation.py` 10개 계약 — 대조군 배정 · 근거 없는 폐기 거부 · 행 보존 · claim 차단 · 뷰·audit_log 기록 · 복권 · DISABLED 차단. CI 에 편입
+- **상태:** closed
+
 ### SD-005 · 출품 패키지(양식·영상·포털) 미완
 - **무엇:** 기술 MVP는 있음 · 공식 보고서 파일·YouTube·포털 zip은 남음
 - **왜:** 공지 39·양식 확정 후 이식 단계
