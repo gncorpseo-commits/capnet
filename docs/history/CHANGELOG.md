@@ -1,5 +1,46 @@
 # Changelog
 
+## 최소 UI — Node 등록 · 능력 호출 (P2-3) — 2026-08-11
+
+로드맵 P2-3(「최소 UI · 호출면」)을 채운다. Core 가 직접 서빙한다.
+
+- `/ui/nodes.html` — Node 등록 · 함대 상태(생존·증서) · **증서 발급/폐기**.
+  발급 시 평문 시크릿을 **그 자리에서 한 번만** 보여 주고(C3), 파일 주입을 권장한다고 알린다
+- `/ui/call.html` — **Agent 를 지정하지 않는** 능력 호출. 결과와 함께 **증적**(기기·Agent·가중치 해시)을
+  같이 보여 준다. `dummy=true` 면 「실제 추론이 아니다」를 붉게 띄운다
+- `GET /v1/datasets` — 입력 allowlist 조회면 (절대규칙 7)
+- `GET /` → `/ui/nodes.html` 리다이렉트
+
+**새 의존성 0** — `StaticFiles` 는 starlette 동봉이다. 외부 자산(CDN·폰트·아이콘)을 쓰지 않아
+내부망·오프라인에서 그대로 뜬다. 빌드 단계도 없다.
+
+UI 는 등급을 **Core 가 부여한다**는 것을 화면에 명시하고, 등급 조합 제약(`ck_trust_provision_align`)을
+미리 알려 준다 — 실측으로 `team`+`public` 조합은 **400** 으로 거절된다.
+
+**UI 가 하지 않는 것:** Agent 게이트·바인딩 (가중치가 기기에 있어야 하므로 터미널 작업).
+
+## Node 운영화 — 등록부터 능력 호출까지 (v제품-1) — 2026-08-11
+
+증서(P2-4)를 만들었지만 **Node 런타임이 그것을 보내지 않아** 강제를 켤 수 없었다.
+그리고 「Capability 로 요청한다」는 제품 경로가 스크립트로도 문서로도 없었다. 둘 다 메운다.
+
+- **Node 런타임이 증서를 실어 보낸다** — heartbeat · assignments · complete 세 경로 모두.
+  `NODE_CREDENTIAL_FILE` 로 **파일 주입**을 권장한다 (환경변수 직접 주입은 `docker inspect` 에 노출).
+  `/health` 는 `credential_present` 만 알리고 값도 prefix 도 내보내지 않는다
+- **`scripts/node_onboard.sh`** — 등록 + 증서 발급 + 0600 파일 + 주입할 환경변수 출력.
+  `provision_source` 를 도메인에서 유도한다 (`ck_trust_provision_align` 준수)
+- **`scripts/node_bind.sh`** — 가중치 sha 실측 → Agent 등록 → **team gate-runner 에서** 실게이트
+  (절대규칙 8) → 통과 시에만 바인딩. 미통과면 exit 2
+- **`scripts/call.sh`** — **Agent 를 지정하지 않는** 능력 호출. 증적(node·agent·weights_sha256)을 같이 낸다.
+  `dummy=true` 면 exit 2 — 실제 추론이 아닌 것을 성공으로 읽지 않게
+- `docs/guide/operate-node.md` — 세 단계가 각각 무엇을 세우는지 · 등급 조합 제약 · 강제 켜는 법 ·
+  자주 막히는 곳 · **아직 없는 것**
+- `.gitignore` 에 `data/node-secrets/` · `*.credential`
+
+**실측** — 강제 모드(`REQUIRE_NODE_CREDENTIAL=1`)에서 전체 사슬 확인:
+증서 없는 heartbeat **401** · 증서 실은 Node 가 `is_fresh=true` · 능력 호출이 실가중치로 완료
+(`forest` conf 0.9642 · dummy 아님). 검증 후 시험 증서는 폐기하고 스택을 복구했다.
+
 ## P2-4 node_credential — Node 신원 증서 (SD-002 · SD-010) — 2026-08-11
 
 기획서 §16 이 동결한 v4.4 를 **처음으로** 건드리는 변경이다. 로드맵 §3.1 의 선행 조건 셋

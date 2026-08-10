@@ -1,0 +1,113 @@
+/* CapNet 최소 UI (P2-3 호출면).
+   외부 자산을 쓰지 않는다 — 폰트·CDN·아이콘 전부 없음. 오프라인·내부망에서 그대로 뜬다. */
+
+:root {
+  --bg: #ffffff;
+  --fg: #1a1d21;
+  --muted: #5c6570;
+  --line: #d8dee4;
+  --panel: #f6f8fa;
+  --accent: #0b62d6;
+  --ok: #1a7f37;
+  --warn: #9a6700;
+  --bad: #b42318;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --line: #2b3138;
+    --panel: #161b22; --accent: #4c93ff; --ok: #3fb950; --warn: #d29922; --bad: #f85149;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", "Noto Sans KR", sans-serif;
+}
+
+header {
+  border-bottom: 1px solid var(--line);
+  padding: 14px 20px;
+  display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+}
+header h1 { font-size: 17px; margin: 0; letter-spacing: -0.01em; }
+header .sub { color: var(--muted); font-size: 13px; }
+nav { margin-left: auto; display: flex; gap: 14px; }
+nav a { color: var(--muted); text-decoration: none; font-size: 14px; padding-bottom: 2px; }
+nav a:hover { color: var(--fg); }
+nav a.on { color: var(--fg); border-bottom: 2px solid var(--accent); }
+
+main { max-width: 1080px; margin: 0 auto; padding: 22px 20px 60px; }
+
+section {
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 18px; margin-bottom: 20px; background: var(--bg);
+}
+section > h2 { font-size: 15px; margin: 0 0 4px; }
+section > .hint { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+
+label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
+input, select, textarea {
+  width: 100%; padding: 8px 10px; font: inherit;
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); color: var(--fg);
+}
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.row > div { flex: 1 1 170px; }
+
+button {
+  font: inherit; font-weight: 500; padding: 8px 16px; cursor: pointer;
+  border: 1px solid var(--accent); border-radius: 6px;
+  background: var(--accent); color: #fff;
+}
+button:hover { filter: brightness(1.08); }
+button:disabled { opacity: .55; cursor: not-allowed; }
+button.ghost { background: transparent; color: var(--fg); border-color: var(--line); }
+button.danger { background: transparent; color: var(--bad); border-color: var(--bad); }
+button.sm { padding: 4px 10px; font-size: 13px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { color: var(--muted); font-weight: 500; font-size: 12.5px; }
+td.mono, .mono { font-family: var(--mono); font-size: 12.5px; }
+
+.pill {
+  display: inline-block; padding: 1px 8px; border-radius: 999px;
+  font-size: 12px; border: 1px solid var(--line); color: var(--muted);
+}
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.bad { color: var(--bad); border-color: var(--bad); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+
+.note {
+  border-left: 3px solid var(--line); background: var(--panel);
+  padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 13px; color: var(--muted);
+}
+.note.warn { border-left-color: var(--warn); color: var(--fg); }
+.note.bad { border-left-color: var(--bad); color: var(--fg); }
+.note.ok { border-left-color: var(--ok); }
+.note b { color: var(--fg); }
+
+.secret {
+  font-family: var(--mono); font-size: 13px; word-break: break-all;
+  background: var(--panel); border: 1px dashed var(--warn);
+  padding: 10px 12px; border-radius: 6px; margin: 10px 0;
+}
+
+.result { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font-size: 14px; }
+.result dt { color: var(--muted); }
+.result dd { margin: 0; font-family: var(--mono); font-size: 13px; word-break: break-all; }
+
+.big { font-size: 26px; font-weight: 600; font-family: inherit; letter-spacing: -0.02em; }
+.err { color: var(--bad); font-size: 13.5px; white-space: pre-wrap; }
+.muted { color: var(--muted); }
+.empty { color: var(--muted); font-size: 13.5px; padding: 10px 0; }
+.spin { color: var(--muted); font-size: 13.5px; }
+.scroll { overflow-x: auto; }

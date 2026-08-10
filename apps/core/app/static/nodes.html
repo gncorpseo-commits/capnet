@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CapNet — Node 등록</title>
+<link rel="stylesheet" href="/ui/app.css">
+</head>
+<body>
+<header>
+  <h1>CapNet</h1>
+  <span class="sub">Node 등록 · 증서</span>
+  <nav>
+    <a href="/ui/nodes.html" class="on">Node</a>
+    <a href="/ui/call.html">능력 호출</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>Node 등록</h2>
+    <p class="hint">
+      등급(<span class="mono">trust_domain</span> · <span class="mono">compute_tier_max</span> ·
+      <span class="mono">is_gate_runner</span>)은 <b>Core가 부여한다</b>. Node는 자기 등급을 주장할 수 없다 (절대규칙 4).
+    </p>
+
+    <div class="row">
+      <div><label for="n-name">이름</label><input id="n-name" placeholder="gpu-01"></div>
+      <div><label for="n-device">기기 종류</label>
+        <select id="n-device"><option>PC_GPU</option><option>SERVER</option><option>PHONE</option></select></div>
+      <div><label for="n-domain">신뢰 도메인</label>
+        <select id="n-domain"><option>team</option><option>tenant</option><option>public</option></select></div>
+      <div><label for="n-tier">최대 등급</label>
+        <select id="n-tier"><option>S</option><option selected>M</option><option>L</option></select></div>
+      <div><label for="n-source">조달 경로</label>
+        <select id="n-source"><option value="">(도메인에서 자동)</option><option>team</option><option>invited</option><option>public</option></select></div>
+    </div>
+    <div class="row" style="align-items:center">
+      <div style="flex:0 0 auto"><label style="margin:0">
+        <input type="checkbox" id="n-runner" style="width:auto;margin-right:6px">게이트 러너</label></div>
+      <div style="flex:0 0 auto"><button id="n-submit">등록</button></div>
+    </div>
+
+    <div class="note" id="n-rules">
+      <b>등급 조합 제약</b> — DB가 판정한다(<span class="mono">ck_trust_provision_align</span>).
+      team → team · tenant → team|invited · public → 아무거나.
+      게이트 러너는 <span class="mono">provision_source='team'</span>에서만 가능하다.
+    </div>
+    <p class="err" id="n-err"></p>
+  </section>
+
+  <section>
+    <h2>함대</h2>
+    <p class="hint">증서가 없으면 강제 모드(<span class="mono">REQUIRE_NODE_CREDENTIAL=1</span>)에서 그 Node는 일하지 못한다.</p>
+    <div id="cred-box"></div>
+    <div class="scroll"><table>
+      <thead><tr><th>이름</th><th>도메인</th><th>등급</th><th>조달</th><th>러너</th><th>생존</th><th>증서</th><th></th></tr></thead>
+      <tbody id="n-rows"><tr><td colspan="8" class="spin">불러오는 중…</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>다음 단계</h2>
+    <p class="hint">Node를 등록만 하면 일이 가지 않는다. 사슬이 다 서야 한다.</p>
+    <div class="note">
+      <span class="mono">Agent 등록 → 실게이트 PASSED → 증서 → Node 바인딩</span><br>
+      터미널에서: <span class="mono">scripts/node_bind.sh --node &lt;uuid&gt; --weights eurosat_scratch.safetensors</span><br>
+      게이트는 team gate-runner에서만 돈다 (절대규칙 8). 자세히는 <span class="mono">docs/guide/operate-node.md</span>.
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const text = await r.text();
+  let body = null;
+  try { body = text ? JSON.parse(text) : null; } catch { body = { detail: text }; }
+  if (!r.ok) throw new Error(typeof body?.detail === "string" ? body.detail : JSON.stringify(body?.detail ?? body));
+  return body;
+}
+
+function pill(ok, yes, no, cls) {
+  return `<span class="pill ${ok ? (cls || 'ok') : ''}">${ok ? yes : no}</span>`;
+}
+
+async function loadNodes() {
+  const rows = $("n-rows");
+  try {
+    const [nodes, live, creds] = await Promise.all([
+      api("/v1/nodes"), api("/v1/nodes-liveness"), api("/v1/nodes-credentials"),
+    ]);
+    const liveBy = Object.fromEntries((live.nodes || []).map(n => [n.node_id, n]));
+    const credBy = Object.fromEntries((creds.items || []).map(c => [c.node_id, c]));
+    const items = nodes.items || [];
+    if (!items.length) { rows.innerHTML = '<tr><td colspan="8" class="empty">등록된 Node가 없다.</td></tr>'; return; }
+    rows.innerHTML = items.map(n => {
+      const l = liveBy[n.id], c = credBy[n.id];
+      const alive = l && l.is_fresh;
+      const hasCred = c && c.credential_valid;
+      return `<tr>
+        <td>${esc(n.name)}<div class="mono muted">${esc(n.id).slice(0, 8)}…</div></td>
+        <td>${esc(n.trust_domain)}</td>
+        <td>${esc(n.compute_tier_max)}</td>
+        <td>${esc(n.provision_source)}</td>
+        <td>${n.is_gate_runner ? '예' : '—'}</td>
+        <td>${l ? pill(alive, '살아있음', '응답없음', alive ? 'ok' : 'bad') : '<span class="muted">기록없음</span>'}</td>
+        <td>${hasCred ? `<span class="pill ok">유효</span> <span class="mono muted">${esc(c.key_prefix || '')}</span>`
+                      : '<span class="pill">없음</span>'}</td>
+        <td style="white-space:nowrap">
+          <button class="ghost sm" data-issue="${esc(n.id)}" data-name="${esc(n.name)}">증서 발급</button>
+          ${hasCred ? `<button class="danger sm" data-revoke="${esc(n.id)}">폐기</button>` : ''}
+        </td></tr>`;
+    }).join("");
+  } catch (e) {
+    rows.innerHTML = `<tr><td colspan="8" class="err">${esc(e.message)}</td></tr>`;
+  }
+}
+
+$("n-submit").onclick = async () => {
+  $("n-err").textContent = "";
+  const name = $("n-name").value.trim();
+  if (!name) { $("n-err").textContent = "이름이 필요하다."; return; }
+  const domain = $("n-domain").value;
+  const source = $("n-source").value || ({ team: "team", tenant: "invited", public: "public" })[domain];
+  $("n-submit").disabled = true;
+  try {
+    await api("/v1/nodes", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name, device_type: $("n-device").value, trust_domain: domain,
+        compute_tier_max: $("n-tier").value, provision_source: source,
+        is_gate_runner: $("n-runner").checked,
+      }),
+    });
+    $("n-name").value = "";
+    await loadNodes();
+  } catch (e) {
+    $("n-err").textContent = e.message;
+  } finally { $("n-submit").disabled = false; }
+};
+
+document.addEventListener("click", async (ev) => {
+  const issue = ev.target.closest("[data-issue]");
+  const revoke = ev.target.closest("[data-revoke]");
+  if (issue) {
+    ev.target.disabled = true;
+    try {
+      const c = await api(`/v1/nodes/${issue.dataset.issue}/credentials`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ label: `${issue.dataset.name} (UI)` }),
+      });
+      // 평문은 여기서만 존재한다. 새로고침하면 다시 볼 수 없다 (C3).
+      $("cred-box").innerHTML = `<div class="note warn">
+        <b>${esc(issue.dataset.name)} 의 시크릿 — 지금만 볼 수 있다.</b>
+        저장은 해시만 된다. 잃어버리면 폐기 후 재발급해야 한다.
+        <div class="secret" id="sec-val">${esc(c.secret)}</div>
+        <button class="ghost sm" id="sec-copy">복사</button>
+        <button class="ghost sm" id="sec-hide">지우기</button>
+        <div style="margin-top:8px" class="mono">NODE_CREDENTIAL_FILE 로 파일 주입을 권장한다 —
+        환경변수 직접 주입은 docker inspect 에 그대로 보인다.</div></div>`;
+      $("sec-copy").onclick = () => navigator.clipboard?.writeText(c.secret);
+      $("sec-hide").onclick = () => { $("cred-box").innerHTML = ""; };
+      await loadNodes();
+    } catch (e) {
+      $("cred-box").innerHTML = `<div class="note bad">${esc(e.message)}</div>`;
+    } finally { ev.target.disabled = false; }
+  }
+  if (revoke) {
+    const reason = prompt("폐기 사유 (증적에 남는다)");
+    if (!reason) return;
+    try {
+      await api(`/v1/nodes/${revoke.dataset.revoke}/credentials/revoke`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      $("cred-box").innerHTML = "";
+      await loadNodes();
+    } catch (e) {
+      $("cred-box").innerHTML = `<div class="note bad">${esc(e.message)}</div>`;
+    }
+  }
+});
+
+loadNodes();
+setInterval(loadNodes, 10000);
+</script>
+</body>
+</html>
