@@ -1,5 +1,15 @@
 # Changelog
 
+## 재게이트 29건 · 실 볼륨 마이그레이션 적용 — 2026-08-10
+
+- **실 볼륨에 0001–0003 적용.** `pg_dump` 백업 선행. 적용 시점 드리프트 41건 / 라우팅 가능 31건
+- **`scripts/regate.sh` 신설** — 골든셋 교체 후 기존 `agent_id` 를 그대로 두고 게이트만 다시 돈다.
+  `proof_ab.sh` 는 실행마다 **새 Agent 를 등록**하므로 재게이트에 쓸 수 없다
+- **29건 전부 PASSED** (acc 0.80~0.95). `agent_capability.gate_run_id` 가 새 run(`c21d9ef7…`)으로 이동
+- 라우팅 드리프트 **31 → 1건** · 증서 수 31 유지 · assignment 무손실 · `demo.sh` 사슬 정상
+- 남은 1건은 `seed-agent` — `placeholder.safetensors` 라 실게이트 불가. 새 볼륨에는 생기지 않는 이 볼륨만의 유물
+- 스크립트 버그 1건 수정: `docker compose exec -T` 가 루프 stdin 을 먹어 첫 건만 처리하던 것을 fd 3 분리로 해결
+
 ## SD-013 골든셋 sha 정합 — 선언부 5곳 통일 — 2026-08-10
 
 홀드아웃 재추출(#26) 때 매니페스트만 교체되고 선언부가 따라오지 않아 sha 가 갈렸다.

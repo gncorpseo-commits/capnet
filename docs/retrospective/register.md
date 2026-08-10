@@ -146,11 +146,18 @@
   `capability` 에 `UNIQUE (id, golden_set_sha256)` 이 없어 이 컬럼을 겨냥한 복합 FK 가 없다 → 기존 스냅샷 FK 안 깨짐
 - **재발 방지:** `scripts/check_golden_sha.py` — 매니페스트 재계산값과 선언부 4곳 + 케이스 파일 40건을 대조.
   정정 **전**에 돌려 5곳 전부를 실제로 잡는 것을 확인한 뒤 고쳤다
-- **남은 것 (미결):** **재게이트.** UPDATE 이후 구 골든셋에서 PASS 를 받은 증서가 `agent_capability_passed` 에 그대로 남아 라우팅된다.
-  일회용 DB 실측 — `drifted_gate_runs=1 · drifted_still_routable=1`. 증서 삭제는 하지 않았다 (절대규칙 8 · D15 상 사람이 정한다).
-  0003 이 적용 즉시 `RAISE NOTICE` 로 건수를 알리고, `provenance_drift_summary` 로 조회된다
-- **예정:** 재게이트 여부 — 촬영(8/23) 전. 보고서·영상이 sha를 인용한다
-- **상태:** open (선언부 정합 완료 · 재게이트 미결)
+- **실 볼륨 적용:** 2026-08-10 · `pg_dump` 백업 후 0001–0003 적용. 적용 시점 실측 드리프트 **41건 / 라우팅 가능 31건**
+- **재게이트 (2026-08-10 완료):** `scripts/regate.sh` 신설 — `provenance_drift` 가 잡은 기존 `agent_id` 를 그대로 두고 게이트만 다시 돈다
+  - `proof_ab.sh` 로는 안 된다: 그 스크립트는 실행할 때마다 **새 Agent 를 등록**하므로 기존 증서가 그대로 남는다
+  - 결과 **29건 전부 PASSED** (acc 0.80~0.95, 구 골든셋 대비 상승 — 커밋 가중치가 전수 학습이라 홀드아웃 40장도 학습에 포함됨)
+  - 라우팅 드리프트 **31 → 1건**. `agent_capability.gate_run_id` 가 새 run(`c21d9ef7…`)으로 이동 (gate.py `UPSERT_AC_PASSED`)
+  - 증서 수 31 유지 · assignment 무손실 · `demo.sh` 사슬 정상
+- **남은 1건:** `seed-agent` — 가중치가 `placeholder.safetensors` 라 **실게이트가 원리적으로 불가**.
+  `seed.sql` 의 gate_run 은 수기 스냅샷(score 0.80)이었다. 새 볼륨에서는 seed 가 현재 sha 를 `INSERT … SELECT` 로 집어 드리프트가 0 이므로, **이 볼륨에만 남은 유물**이다.
+  선택: (i) 유물로 두고 문서화 (ii) 증서 폐기 — 폐기는 데이터 삭제라 사람이 정한다
+- **알게 된 것:** 재게이트는 **강등을 못 한다.** `UPSERT_AC_FAILED_SQL` 에 `WHERE agent_capability.gate_status <> 'PASSED'` 가 있어,
+  재게이트가 FAILED 여도 기존 PASSED 증서는 살아남는다. 이번엔 전부 PASSED 라 부딪치지 않았으나 설계 공백이다
+- **상태:** open (`seed-agent` 1건 · 강등 경로 부재)
 
 ### SD-005 · 출품 패키지(양식·영상·포털) 미완
 - **무엇:** 기술 MVP는 있음 · 공식 보고서 파일·YouTube·포털 zip은 남음
