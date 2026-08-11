@@ -8,6 +8,7 @@
 | Starlette | BSD-3-Clause | FastAPI 의존 |
 | Uvicorn | BSD-3-Clause | ASGI 서버 |
 | psycopg | LGPL-3.0 | PostgreSQL 드라이버 |
+| psycopg-pool | LGPL-3.0 | psycopg 커넥션 풀 (SD-017) |
 | Pydantic | MIT | 설정·요청 모델 |
 | pydantic-settings | MIT | 환경변수 설정 |
 | PostgreSQL 16 (Docker 이미지) | PostgreSQL License | DB |
