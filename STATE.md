@@ -43,6 +43,7 @@
 | **마이그레이션 (SD-007)** | ✅ 러너·`migrations/`·원장. **실 볼륨 0001–0003 적용 완료 (2026-08-10)** → [`guide/migrations.md`](docs/guide/migrations.md) |
 | **최소 UI (P2-3)** | ✅ `/ui/nodes.html` 등록·증서 · `/ui/call.html` 능력 호출·증적 · 새 의존성 0 |
 | **운영화 (v제품-1)** | ✅ `node_onboard` → `node_bind` → `call` 3단계 · Node 런타임이 증서 전송 · 강제 모드 실측 → [`guide/operate-node.md`](docs/guide/operate-node.md) |
+| **성능 (SD-017)** | ✅ 커넥션 풀 — API 15ms→**3.8ms** · 100건 부하 5.4/s→**12.4/s** · 포화 해소 |
 | **관리 API 인증** | ✅ `api_key`+역할(user<developer<admin) · 쓰기 11개 보호 · **SD-010 해소** · 강제는 플래그 |
 | **Node 신원 (P2-4)** | ✅ `0007` `node_credential` — v4.4 동결 이후 첫 스키마 변경(추가만) · 사칭 403 실측 · 강제는 플래그(기본 꺼짐) |
 | **tenant 운용 (P2-1)** | ✅ `0006` — tenant 플릿 Node + `image.classify@2`(min=tenant) · 경계 6종 실측 · **claim 버그 SD-016 발견·수정** |

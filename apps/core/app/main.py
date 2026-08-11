@@ -37,7 +37,7 @@ from app.credential import (
     revoke_credential,
     verify_credential,
 )
-from app.db import get_conn
+from app.db import get_conn, pool_stats
 from app.gate import (
     RevokeRefused,
     finish_gate_run,
@@ -325,6 +325,10 @@ def ops_status() -> dict[str, Any]:
         warnings.append(f"arch 미결속 Agent 가 라우팅 가능 {s['arch_unbound_routable']}건")
     if s["api_keys_active"] == 0:
         warnings.append("관리 API 키가 없다 — 강제를 켜면 잠긴다")
+
+    s["db_pool"] = pool_stats()
+    if not s["db_pool"].get("enabled"):
+        warnings.append("DB 커넥션 풀이 꺼져 있다 — 요청마다 새로 연결한다 (SD-017)")
 
     s["enforcement"] = {
         "node_credential": REQUIRE_NODE_CREDENTIAL,
