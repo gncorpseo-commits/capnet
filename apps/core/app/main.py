@@ -278,6 +278,63 @@ def datasets_list() -> dict[str, Any]:
     return {"items": sorted(ALLOWED_DATASET_IDS)}
 
 
+@app.get("/v1/ops/status")
+def ops_status() -> dict[str, Any]:
+    """운영 한 눈 — 함대·큐·증적·신원이 지금 어떤 상태인가.
+
+    조회면이 여러 개로 흩어져 있어서 「지금 괜찮은가」를 보려면 여러 번 물어야 했다.
+    여기서 한 번에 준다. **쓰기 없음 · 시크릿 없음.**
+
+    모니터링이 없다는 게 제품화의 공백 중 하나였다 (SD-017). 이건 그 첫 칸이고,
+    알림·시계열은 아직 없다 — 이 응답을 긁어가는 쪽이 한다.
+    """
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT
+              (SELECT count(*) FROM task WHERE status = 'QUEUED')            AS queue_depth,
+              (SELECT count(*) FROM assignment
+                WHERE status = 'LEASED' AND lease_expires_at > now())        AS leases_live,
+              (SELECT count(*) FROM assignment
+                WHERE status = 'LEASED' AND lease_expires_at <= now())       AS leases_expired,
+              (SELECT count(*) FROM node)                                    AS nodes_total,
+              (SELECT count(*) FROM node_liveness
+                WHERE is_fresh AND availability IN ('AVAILABLE','BUSY'))     AS nodes_ready,
+              (SELECT count(*) FROM agent_capability_passed
+                WHERE revoked_at IS NULL)                                    AS certs_live,
+              (SELECT count(*) FROM revoked_capability)                      AS certs_revoked,
+              (SELECT count(*) FROM provenance_drift WHERE still_routable)   AS drift_routable,
+              (SELECT count(*) FROM agent_arch_unbound WHERE routable)       AS arch_unbound_routable,
+              (SELECT count(*) FROM node_credential_status
+                WHERE NOT credential_valid)                                  AS nodes_without_credential,
+              (SELECT count(*) FROM api_key WHERE revoked_at IS NULL)        AS api_keys_active,
+              (SELECT max(version) FROM schema_migration)                    AS schema_version
+            """
+        ).fetchone()
+    s = dict(row)
+
+    # 「괜찮은가」를 판정해 준다 — 숫자만 주면 보는 사람마다 기준이 달라진다.
+    warnings: list[str] = []
+    if s["nodes_ready"] == 0:
+        warnings.append("일할 수 있는 기기가 없다 (heartbeat 확인)")
+    if s["leases_expired"] > 0:
+        warnings.append(f"만료 lease {s['leases_expired']}건 — 워커가 회수 중이어야 한다")
+    if s["drift_routable"] > 0:
+        warnings.append(f"구 골든셋 증서로 라우팅 가능 {s['drift_routable']}건 (재게이트 대상)")
+    if s["arch_unbound_routable"] > 0:
+        warnings.append(f"arch 미결속 Agent 가 라우팅 가능 {s['arch_unbound_routable']}건")
+    if s["api_keys_active"] == 0:
+        warnings.append("관리 API 키가 없다 — 강제를 켜면 잠긴다")
+
+    s["enforcement"] = {
+        "node_credential": REQUIRE_NODE_CREDENTIAL,
+        "api_key": REQUIRE_API_KEY,
+    }
+    s["warnings"] = warnings
+    s["ok"] = not warnings
+    return s
+
+
 @app.get("/openapi.yaml", include_in_schema=False)
 def openapi_yaml() -> FileResponse:
     if not _OPENAPI_YAML.is_file():
