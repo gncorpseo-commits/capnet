@@ -6,7 +6,7 @@
 
 ## 현재
 
-#48 **머지됨** (`b26ecf0`). B2 Decision **Confirm 완료** → 구현 진행 중.
+#48 **머지됨** (`b26ecf0`). B2 **구현 완료 · PR #49 머지 대기** (master/사람 머지).
 
 ---
 
@@ -264,4 +264,61 @@ Decision 3항 그대로 간다. `b26ecf0`(#48) 머지 확인함.
 ### Out of scope
 
 D6 자체 · `preprocess` 실수행 · TLS · 백업/복구 · Cursor rule.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-13T02:10:00+09:00
+topic: B2-contract-verification
+type: next
+expects: ack
+status: open
+---
+
+## B2 구현 완료 — PR 머지 대기
+
+| | |
+|---|---|
+| **PR** | https://github.com/gncorpseo-commits/capnet/pull/49 |
+| **브랜치** | `finn/b2-contract-verification` (base `main`) |
+| **머지 SHA** | **없음 — 머지 대기.** master/사람이 머지한다 |
+| **CI** | 2/2 pass |
+| **선행** | `b26ecf0` `B1 핫픽스 (#48)` |
+
+### 한 것
+
+`app/contract_check.py` (러너) + `scripts/contract_bind.sh` + `0013`.
+러너가 `arch`·`max_params`·`input_schema`·`output_schema` 를 **실행해서** 판정한다.
+새 의존성 0 — jsonschema 를 쓰지 않고 계약이 실제로 쓰는 것만 본다.
+
+**실측 13/13** — 정상 검증은 `arch` 로드 · `94538 <= 2000000` · 샘플 추론 ·
+`label='annual_crop'` 계약 만족으로 PASSED, **arch 가 틀린 Agent 는 `state_dict` 로드 실패로
+FAILED · acp 미발급.** 「거짓 보고로 통과」가 실제로 막힌다.
+
+회귀: 통합 7/7 · `clean_room` 9/9 · `prod_room` 14/14.
+
+### 리뷰 때 봐 줬으면 하는 것
+
+1. **필수 항목을 5 → 4 로 줄였다** (Decision 3 에 따라 `preprocess` 제외). 검증하지 않는 것을
+   필수로 두는 것보다 낫다고 봤는데, 「보고는 계속 받되 필수만 뺀다」가 맞는지
+2. **`capability` 쪽에 「ungated 면 샘플 필수」 CHECK 를 걸지 않았다** — 기존 볼륨에 샘플 없는
+   ungated 능력이 있으면 마이그레이션이 실패한다. 게이트런 쪽에서 막았는데 이 판단이 맞는지
+3. **CI 가드가 엉뚱한 제약으로 통과하고 있었다** — `0013` 이 새 CHECK 를 앞세우면서
+   「golden 능력에 contract 게이트런」이 원래 의도한 FK 대신 샘플 CHECK 에 걸렸다.
+   고쳐서 18/18 이 됐지만, **제약을 추가할 때마다 기존 검사의 «걸린 이유»가 바뀔 수 있다.**
+   검사에 「어느 제약이 거절했는가」를 단언하게 한 것이 이번에 이걸 잡았다 — 이 방식을 계속 쓸지
+
+### Next (다음 Proposal 후보)
+
+- **`preprocess` 실수행** — 계약이 선언한 전처리(32×32 RGB 등)를 러너가 적용했는지 확인.
+  끝나면 `CONTRACT_CHECKS` 를 다시 5 로 올린다
+- **C: 백업·복구 절차** — 증적 DB 포함 · 입력 바이트 볼륨 제외 (문서는 이미 있다).
+  실제 dump/restore 리허설이 없다
+- **C: 키 회전 · lease 재할당 실측 · 모니터링 기준**
+- **D6 사전학습 해제** — B2 가 닫혔으니 이제 논의 가능하다. 가중치 출처·라이선스 선언이
+  같이 필요하다 (2차 라이선스 검증과 분리된 제품 트랙)
+- 미착수: TLS (온프레/VPN 전제)
+
+**미머지 PR 이 있으므로 큰 새 제안은 하지 않는다** (PROTOCOL). #49 머지 후 올린다.
 ```
