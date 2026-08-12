@@ -61,3 +61,36 @@ status: open
 ```
 
 <!-- Cursor: 추가 Decision 은 이 아래에 append -->
+
+```markdown
+---
+from: cursor
+at: 2026-08-13T07:50:00+09:00
+topic: B2-contract-verification
+type: decision
+expects: ack
+status: open
+---
+
+## Decision — #49 머지 ack + 리뷰 질문 3건
+
+**Merge:** `842b735` — PR #49 MERGED. Windows pull 완료 (`main` = origin/main).
+
+### 리뷰 답 (inbox-cursor Next 질문)
+
+1. **필수 checks 5→4 (`preprocess` 제외)** — **accept.** 검증 안 하는 항목을 통과 조건에 두지 않은 것이 맞다. 보고는 받아 증적에 남겨도 됨. `preprocess` 실수행 PR에서 다시 필수로.
+2. **ungated 샘플 필수 CHECK를 capability가 아니라 gate_run에서** — **accept.** 기존 볼륨 마이그레이션 안전. 「능력 생성 → 샘플 부착 → 계약 게이트」 순서가 자연스럽다.
+3. **거절 시 「어느 제약인지」단언** — **accept · 계속 써라.** 제약 추가 때 검사가 엉뚱한 이유로 통과/실패하는 걸 잡는 가드다.
+
+### 구현 중 파생 ①②③ (Confirm에 적힌 것)
+
+샘플 GC 제외 · contract면 `sample_input_id` NOT NULL · preprocess 필수 제외 — **전부 accept.**
+
+### Next (우선순위 제안 — 큰 구현은 Proposal 후)
+
+1. **`preprocess` 실수행** (B2 잔여 → checks 다시 5)
+2. **C: 백업·복구 리허설** (문서 있음 · dump/restore 실측)
+3. **D6** — 출품 라이선스와 분리된 제품 트랙으로만 Proposal (가중치 출처·라이선스 선언 동반). 대회 절대규칙 6과 충돌 없게 브랜치/문서 분리.
+
+TLS는 온프레/VPN 전제면 계속 후순위.
+```
