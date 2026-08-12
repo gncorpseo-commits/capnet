@@ -1,5 +1,50 @@
 # Changelog
 
+## ② 게이트 선택화 — `0010` 품질 프로파일 (D18 코드 정합) — 2026-08-12
+
+**D18 은 게이트를 «선택적 품질 프로파일» 로 내렸는데 코드가 따라오지 않았다.** 스키마가 게이트를 **6층으로**
+강제하고 있었다.
+
+```
+capability(golden_set_ref/sha256/size/metrics — 전부 NOT NULL)
+  gate_run(PASSED · golden_set_sha256 NOT NULL · CHECK runner_is_gate_runner)
+    → gate_run_passed → agent_capability(PASSED ⇒ gate_run_id NOT NULL)
+      → agent_capability_passed → assignment (FK)
+```
+
+그래서 **새 능력마다 골든셋 40장 + 채점기**가 필요했고 제품이 `image.classify@1` 하나에 묶여 있었다.
+`claim.py` 의 JOIN 만 빼는 것으로는 안 된다 — `assignment` 의 FK 가 `agent_capability_passed` 를 참조하므로
+INSERT 가 FK 에서 거절된다.
+
+**해법 — 계약 바인딩도 게이트런이다.** 사슬을 끊지 않고 «골든셋 0장짜리 게이트런» 을 하나 더 인정한다.
+
+- `capability.quality_profile` (`golden` | `none`) — `none` 이면 `golden_set_*` 는 **센티널**이고
+  CHECK 로 강제된다. **NOT NULL 을 해제하지 않았다.** 읽는 쪽은 숫자가 아니라 프로파일을 먼저 본다
+- `gate_run.kind` (`golden` | `contract`) + `capability_quality_profile` 스냅샷 · 복합 FK 로 실제 값과 묶음
+- 계약 검증도 **team gate-runner 가 한다** — `runner_is_gate_runner` CHECK 그대로 통과 (절대규칙 8).
+  Core 가 스스로 판정을 만들면 「실행과 판정의 분리」가 무너진다
+- **`claim.py`·`assignment` FK 는 한 줄도 안 고쳤다.** contract 게이트런이 기존 경로로 증서를 올리므로
+  라우팅은 지금 그대로 돈다
+
+추가만 — 컬럼 3 · CHECK 4 · UNIQUE 1 · FK 1. 삭제·완화 0. 러너 정적 검사 10/10 OK.
+
+**실측 (빈 볼륨 · 격리 프로젝트) 10/10**
+
+| | |
+|---|---|
+| 기존 데이터 | `image.classify@1·@2` → `golden` · 기존 gate_run → `golden` (동작 불변) |
+| ungated 능력 생성 | ✅ 센티널 갖춰야만 |
+| none 인데 진짜 골든셋 / golden 인데 센티널 / 모르는 프로파일 | ✅ 전부 **거절** (`capability`) |
+| golden×contract · none×golden · contract+골든점수 · 러너 아닌 Node | ✅ 전부 **거절** (`gate_run`) |
+| 정상 contract 사슬 | ✅ `text.embed@1 profile=none · 근거 kind=contract` 로 **acp 발급** |
+| 멱등 | ✅ `적용할 것 없음 (최신 = 0010)` · verify 10/10 체크섬 일치 |
+
+README 102행의 「게이트 미통과 Agent 에는 할당할 수 없다」를 `product-distribution.md` 문구
+(「게이트를 **붙인** Capability 에서는」)에 맞췄다. 결정은 D20.
+
+**아직 없는 것** — ungated 능력을 **만들고 계약을 검증하는 런타임**. 지금은 DDL 과 제약만 섰다.
+`POST /v1/capabilities` 와 gate-runner 의 contract 검증기가 다음 작업이다.
+
 ## P1 정문 — 제품 프로파일 (강제 모드가 기본) — 2026-08-12
 
 **목표가 대회 출품에서 제품으로 바뀌었다.** 대회 일정에 맞춰 미뤄뒀던 것을 순서대로 닫는다. 그 첫 칸.

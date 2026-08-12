@@ -115,7 +115,7 @@ AI 에이전트 스토어는 이미 많다. CapNet이 다루는 건 그 앞의 �
 
 판정은 앱 `if`가 아니라 **PostgreSQL 제약**이 한다.
 
-- 게이트 미통과 Agent에는 Task를 **할당할 수 없다**
+- **게이트를 붙인** Capability(`quality_profile='golden'`)에서는 미통과 Agent에 **할당할 수 없다**
 - `team` Task는 `public` Node로 **내려갈 수 없다**
 - `L` 계약은 `S` Node에서 **실행될 수 없다**
 - 할당 중 Node 신뢰 등급을 **강등할 수 없다**

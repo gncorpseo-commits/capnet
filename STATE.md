@@ -48,6 +48,7 @@
 | **Node 신원 (P2-4)** | ✅ `0007` `node_credential` — v4.4 동결 이후 첫 스키마 변경(추가만) · 사칭 403 실측 · 강제는 플래그(기본 꺼짐) |
 | **tenant 운용 (P2-1)** | ✅ `0006` — tenant 플릿 Node + `image.classify@2`(min=tenant) · 경계 6종 실측 · **claim 버그 SD-016 발견·수정** |
 | **증적 정합 (SD-013)** | ✅ 골든셋 sha `c21d9ef7…` 통일 · **재게이트 29건 완료** · 라우팅 드리프트 31 → **1건**(`seed-agent` placeholder) |
+| **② 게이트 선택화 (2026-08-12)** | ✅ **DDL 완료** — `0010` 품질 프로파일. `capability.quality_profile`(golden\|none) 센티널 CHECK · `gate_run.kind`(golden\|contract) · 복합 FK. **제약 약화 0 · `claim.py` 무수정.** 실증 10/10 → D20. **런타임 미착수** — ungated 능력 생성 API·contract 검증기 |
 | **P1 정문 (2026-08-12)** | ✅ **목표가 제품으로 전환됨.** `compose.prod.yaml` — 인증·증서 강제, postgres 비공개, migrate 수동, `.env` 필수, seed Node `profiles: demo`. 운영 스크립트 7개에 `ccurl` 키 주입. 제품 수용 게이트 `scripts/prod_room.sh` **14/14** · 데모 `clean_room.sh` 9/9 유지 → [`operate-production.md`](docs/guide/operate-production.md) |
 | **라이선스 산출물 (2026-08-12)** | ✅ `sbom.json` 에 `psycopg-pool`(LGPL-3.0) 누락 · torch 무버전 → 해소. Dockerfile `ARG` 가 버전 정본 · SBOM 11개 · 붙임1 11행. **`sbom.json` 드리프트 기계 검사는 아직 없음** |
 | **새 볼륨 재현 (2026-08-12)** | ✅ README 경로가 `demo.sh` 에서 깨져 있었다 — initdb 는 `schema.sql`(08-03)까지만 넣는데 `0007`–`0009`(08-11)를 적용하는 단계가 없었다. compose 일회성 `migrate` 서비스로 해소 · `CAPNET_AUTO_MIGRATE=0` 으로 끈다 |
