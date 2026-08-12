@@ -69,8 +69,14 @@ curl -X POST localhost:8001/v1/execute -H 'content-type: application/json' \
 
 > 빈 볼륨에서 clone → compose up → 위 세 스크립트가 통과하는 것을 **2026-08-12**에 확인했다 (스키마 세대 9 · 마이그레이션 `0001`–`0009`).
 >
-> 제품 배포에서 마이그레이션 시점을 운영자가 직접 잡으려면 `CAPNET_AUTO_MIGRATE=0`으로 일회성 서비스를 끄고
-> `scripts/migrate.sh up`을 원하는 때에 돌린다 → [`docs/guide/migrations.md`](docs/guide/migrations.md).
+> **이 기동은 데모·심사용이다 — 열려 있다.** 관리 API 인증이 꺼져 있고, postgres가 호스트로 공개되고,
+> 마이그레이션이 자동으로 돈다. 제품으로 올릴 때는 오버레이로 그 셋을 뒤집는다:
+>
+> ```bash
+> docker compose -f compose.yaml -f compose.prod.yaml up -d
+> ```
+>
+> 부트스트랩 순서(첫 admin 키는 CLI로만 만들 수 있다)와 실측은 [`docs/guide/operate-production.md`](docs/guide/operate-production.md).
 
 | 보고 싶은 것 | 위치 |
 |--------------|------|

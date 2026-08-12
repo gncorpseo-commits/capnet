@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# 관리 API 인증 헤더(CAPNET_API_KEY)를 한 곳에서 붙인다.
+source "$root/scripts/lib/http.sh"
 # 주소를 환경에서 받는다 — 격리 환경(clean_room.sh)에서 같은 스크립트를 그대로 돌리기 위해서다.
 core="${CORE_URL:-http://127.0.0.1:8000}"
 node="${NODE_URL:-http://127.0.0.1:8001}"
 capId="00000000-0000-4000-8000-000000000010"
 runnerId="00000000-0000-4000-8000-000000000030"
 
-curl -sf "$core/health" >/dev/null
-nh="$(curl -sf "$node/health")"
+ccurl -sf "$core/health" >/dev/null
+nh="$(ccurl -sf "$node/health")"
 sha="$(printf '%s' "$nh" | python3 -c 'import json,sys
 h=json.load(sys.stdin)
 hits=[w for w in h.get("weights",[]) if "eurosat_scratch" in w["path"] and not w["placeholder"]]
@@ -16,7 +18,7 @@ assert hits, "scratch weights missing"
 print(hits[0]["sha256"])')"
 
 ver="0.1.0-scratch-$(date +%Y%m%d%H%M%S)"
-agent="$(curl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
+agent="$(ccurl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
   -d "{\"name\":\"eurosat-scratch\",\"version\":\"$ver\",\"manifest_hash\":\"eurosat-scratch-tiny\",\"weights_uri\":\"file:///weights/eurosat_scratch.safetensors\",\"weights_sha256\":\"$sha\"}")"
 agentId="$(printf '%s' "$agent" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
@@ -31,7 +33,7 @@ fi
 printf '%s\n' "$raw" | python3 -c 'import json,sys; s=json.load(sys.stdin); print("score status=%s acc=%.4f f1=%.4f" % (s["status"], s["golden_score"], s["macro_f1"]))'
 status="$(printf '%s' "$raw" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
 
-gr="$(curl -sf -X POST "$core/v1/internal/gate-runs" -H 'content-type: application/json' \
+gr="$(ccurl -sf -X POST "$core/v1/internal/gate-runs" -H 'content-type: application/json' \
   -d "{\"agent_id\":\"$agentId\",\"capability_id\":\"$capId\",\"runner_node_id\":\"$runnerId\"}")"
 grId="$(printf '%s' "$gr" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
@@ -45,7 +47,7 @@ print(json.dumps({
   "invalid_rate": s["invalid_rate"], "min_per_class_recall": s.get("min_per_class_recall"), "note": "golden-set-v1 scratch TinyEuroSAT",
   "golden_set_sha256": gr["golden_set_sha256"],
 }))' "$gr")"
-fin="$(curl -sf -X POST "$core/v1/internal/gate-runs/$grId/finish" -H 'content-type: application/json' -d "$finish")"
+fin="$(ccurl -sf -X POST "$core/v1/internal/gate-runs/$grId/finish" -H 'content-type: application/json' -d "$finish")"
 printf '%s' "$fin" | python3 -c 'import json,sys
 fin=json.load(sys.stdin)
 summary=fin.get("result_summary") or {}
@@ -59,10 +61,10 @@ if [[ "$status" != "PASSED" ]]; then
   exit 2
 fi
 
-curl -sf -X POST "$core/v1/agents/$agentId/bindings" -H 'content-type: application/json' \
+ccurl -sf -X POST "$core/v1/agents/$agentId/bindings" -H 'content-type: application/json' \
   -d "{\"node_id\":\"$runnerId\",\"weights_sha256_seen\":\"$sha\"}" >/dev/null
 
-task="$(curl -sf -X POST "$core/v1/tasks" -H 'content-type: application/json' \
+task="$(ccurl -sf -X POST "$core/v1/tasks" -H 'content-type: application/json' \
   -d "{\"datasetId\":\"eurosat-rgb\",\"caseId\":\"ic1-0001\",\"requestedAgentId\":\"$agentId\"}")"
 taskId="$(printf '%s' "$task" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
@@ -70,7 +72,7 @@ taskId="$(printf '%s' "$task" | python3 -c 'import json,sys; print(json.load(sys
 # Core 워커가 배정하고, Node가 자기 몫을 가져가 실행하고, 결과가 Core로 돌아온다.
 # 클라이언트는 Node 주소를 알 필요가 없다.
 for _ in $(seq 1 60); do
-  tr="$(curl -sf "$core/v1/tasks/$taskId")"
+  tr="$(ccurl -sf "$core/v1/tasks/$taskId")"
   st="$(printf '%s' "$tr" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
   [[ "$st" == "COMPLETED" || "$st" == "FAILED" ]] && break
   sleep 1

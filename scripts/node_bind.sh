@@ -14,6 +14,8 @@
 #   대상 Node 는 「그 가중치를 들고 있다」는 바인딩만 받는다.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# 관리 API 인증 헤더(CAPNET_API_KEY)를 한 곳에서 붙인다.
+source "$root/scripts/lib/http.sh"
 core="${CORE_URL:-http://127.0.0.1:8000}"
 runner="${RUNNER_NODE_ID:-00000000-0000-4000-8000-000000000030}"
 runner_svc="${RUNNER_SERVICE:-node-m-team}"
@@ -48,7 +50,7 @@ print(h.hexdigest())" 2>/dev/null) || {
 echo "  $weights → ${sha:0:16}…"
 
 echo "== 2) Agent 등록 =="
-agent=$(curl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
+agent=$(ccurl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
   -d "{\"name\":\"$name\",\"version\":\"0.1.0-$stamp\",\"manifest_hash\":\"$name-manifest\",\"weights_uri\":\"file:///weights/$weights\",\"weights_sha256\":\"$sha\"}")
 agent_id=$(printf '%s' "$agent" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "  agent=$agent_id"
@@ -64,7 +66,7 @@ set -e
 status=$(printf '%s' "$raw" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')
 printf '%s' "$raw" | python3 -c 'import json,sys; s=json.load(sys.stdin); print("  status=%s acc=%.4f f1=%.4f" % (s["status"],s["golden_score"],s["macro_f1"]))'
 
-gr=$(curl -sf -X POST "$core/v1/internal/gate-runs" -H 'content-type: application/json' \
+gr=$(ccurl -sf -X POST "$core/v1/internal/gate-runs" -H 'content-type: application/json' \
   -d "{\"agent_id\":\"$agent_id\",\"capability_id\":\"$cap\",\"runner_node_id\":\"$runner\"}")
 gr_id=$(printf '%s' "$gr" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 finish=$(printf '%s' "$raw" | python3 -c '
@@ -74,7 +76,7 @@ print(json.dumps({"status":s["status"],"dummy":False,"golden_score":s["golden_sc
  "cases_total":s["cases_total"],"cases_passed":s["cases_passed"],"macro_f1":s["macro_f1"],
  "invalid_rate":s["invalid_rate"],"min_per_class_recall":s.get("min_per_class_recall"),
  "note":sys.argv[2],"golden_set_sha256":gr["golden_set_sha256"]}))' "$gr" "node_bind $name")
-curl -sf -X POST "$core/v1/internal/gate-runs/$gr_id/finish" \
+ccurl -sf -X POST "$core/v1/internal/gate-runs/$gr_id/finish" \
   -H 'content-type: application/json' -d "$finish" >/dev/null
 
 if [[ "$status" != "PASSED" ]]; then
@@ -83,11 +85,11 @@ if [[ "$status" != "PASSED" ]]; then
 fi
 
 echo "== 4) Node 바인딩 =="
-curl -sf -X POST "$core/v1/agents/$agent_id/bindings" -H 'content-type: application/json' \
+ccurl -sf -X POST "$core/v1/agents/$agent_id/bindings" -H 'content-type: application/json' \
   -d "{\"node_id\":\"$node\",\"weights_sha256_seen\":\"$sha\"}" >/dev/null
 echo "  $agent_id → node $node"
 
 echo
 echo "== 확인 =="
 echo "  scripts/call.sh ic1-0001        # Agent 지정 없이 능력만으로 호출"
-echo "  curl -s $core/v1/nodes-liveness"
+echo "  curl -s $core/v1/nodes-liveness"   # 조회 경로라 키 없이 된다

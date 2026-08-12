@@ -15,6 +15,8 @@
 #   - 시크릿을 커밋하거나 로그에 남기는 일. 출력 파일은 .gitignore 대상 경로에 쓴다
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# 관리 API 인증 헤더(CAPNET_API_KEY)를 한 곳에서 붙인다.
+source "$root/scripts/lib/http.sh"
 core="${CORE_URL:-http://127.0.0.1:8000}"
 
 name=""; device="PC_GPU"; tier="M"; domain="team"; source=""; runner="false"
@@ -56,7 +58,7 @@ curl -sf "$core/health" >/dev/null || { echo "Core 응답 없음: $core" >&2; ex
 echo "== 1) Node 등록 =="
 body=$(printf '{"name":"%s","device_type":"%s","trust_domain":"%s","compute_tier_max":"%s","provision_source":"%s","is_gate_runner":%s}' \
   "$name" "$device" "$domain" "$tier" "$source" "$runner")
-resp=$(curl -sf -X POST "$core/v1/nodes" -H 'content-type: application/json' -d "$body") || {
+resp=$(ccurl -sf -X POST "$core/v1/nodes" -H 'content-type: application/json' -d "$body") || {
   echo "등록 실패 — 등급 조합이 제약에 맞는지 본다 (ck_trust_provision_align)" >&2; exit 1; }
 node_id=$(printf '%s' "$resp" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 printf '%s' "$resp" | python3 -c '
@@ -67,10 +69,10 @@ print("  %s · %s · tier=%s · source=%s · gate_runner=%s"
       % (d["name"], d["trust_domain"], d["compute_tier_max"], d["provision_source"], d["is_gate_runner"]))'
 
 echo "== 2) 증서 발급 =="
-cred=$(curl -sf -X POST "$core/v1/nodes/$node_id/credentials" \
+cred=$(ccurl -sf -X POST "$core/v1/nodes/$node_id/credentials" \
   -H 'content-type: application/json' -d "{\"label\":\"$name onboarding\"}") || {
   echo "발급 실패 — 이미 활성 증서가 있으면 먼저 폐기한다:" >&2
-  echo "  curl -X POST $core/v1/nodes/$node_id/credentials/revoke -H 'content-type: application/json' -d '{\"reason\":\"회전\"}'" >&2
+  echo "  curl -X POST $core/v1/nodes/$node_id/credentials/revoke -H 'content-type: application/json' -H \"Authorization: CapNet-Key \$CAPNET_API_KEY\" -d '{\"reason\":\"회전\"}'" >&2
   exit 1; }
 
 mkdir -p "$outdir"; chmod 700 "$outdir"
@@ -100,7 +102,7 @@ EOF
 echo
 echo "== 다음 =="
 echo "  가중치를 Node 에 두고 Agent 를 바인딩한다 → scripts/node_bind.sh"
-echo "  증서 상태 확인 → curl -s $core/v1/nodes-credentials"
+echo "  증서 상태 확인 → curl -s -H \"Authorization: CapNet-Key \$CAPNET_API_KEY\" $core/v1/nodes-credentials"
 echo
 echo "  시크릿 파일: $secret_file (0600). **커밋하지 않는다.**"
 echo "  회전: revoke 후 이 스크립트의 2단계를 다시 돈다."

@@ -1,0 +1,150 @@
+# 제품 배포 런북 — 정문을 닫고 올린다
+
+> 이 문서는 **제품 배포**용이다. 데모·심사용 기동은 [`../../README.md`](../../README.md) 빠른 시작을 본다.
+> 최초 작성: 2026-08-12 · 실측: 격리 프로젝트·빈 볼륨 e2e 14항목
+
+`compose.yaml` 단독은 **열려 있다** — 관리 API 인증 꺼짐, postgres 호스트 노출, 마이그레이션 자동 적용.
+그 기본값으로 남의 데이터를 받으면 안 된다. `compose.prod.yaml` 오버레이가 그 셋을 전부 뒤집는다.
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up -d
+```
+
+| | 데모 (`compose.yaml`) | 제품 (`+ compose.prod.yaml`) |
+|---|---|---|
+| 관리 API 인증 | 꺼짐 — 쓰기 12개가 열려 있다 | **강제** (`REQUIRE_API_KEY=1`) |
+| Node 증서 | 꺼짐 — 사칭 가능 | **강제** (`REQUIRE_NODE_CREDENTIAL=1`) |
+| postgres | 호스트 5432 공개 | **비공개** |
+| 마이그레이션 | 일회성 서비스가 자동 적용 | **끔** — 운영자가 시점을 잡는다 |
+| DB 비밀번호 | 기본값 `capnet` | **`.env` 필수** (없으면 기동 거부) |
+| seed Node 3대 | 뜬다 | **안 뜬다** (`profiles: demo`) |
+
+---
+
+## 1. 순서 (이 순서를 지킨다)
+
+**닭-달걀이 하나 있다.** 인증을 켠 상태에서는 API 로 첫 키를 만들 수 없다 — 키를 만들려면 키가 필요하다.
+그래서 첫 키만 **CLI**(DB 자격증명을 이미 가진 사람)로 만든다. `scripts/migrate.sh` 와 같은 자리다.
+
+### 1) `.env` 를 채운다
+
+```bash
+cp .env.example .env
+# POSTGRES_PASSWORD 는 반드시 바꾼다
+openssl rand -base64 32
+```
+
+`POSTGRES_USER` · `POSTGRES_PASSWORD` · `POSTGRES_DB` · `DATABASE_URL` 이 없으면 compose 가 기동을 거부한다.
+의도된 것이다 — 기본 비밀번호로 제품이 뜨는 경로를 없앴다.
+
+> `DATABASE_URL` 의 비밀번호는 **URL 인코딩**한다. `$` 는 `%24`, `@` 는 `%40`.
+
+### 2) DB 를 올리고 스키마를 적용한다
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up -d postgres
+scripts/migrate.sh up        # 자동 적용이 꺼져 있으므로 직접 돌린다
+scripts/migrate.sh verify    # "verify OK — N개 파일 · N개 적용 · 체크섬 일치"
+```
+
+새 볼륨이면 initdb 가 `docs/spec/schema.sql` 을 먼저 넣고, 그 위에 `migrations/` 가 올라간다.
+자세한 것은 [`migrations.md`](./migrations.md).
+
+### 3) Core 를 올린다 (아직 키가 없다 — 잠긴 상태가 정상이다)
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up -d core
+curl -s localhost:8000/v1/ops/status | python3 -m json.tool
+```
+
+이때 `"ok": false` 와 `"관리 API 키가 없다 — 강제를 켜면 잠긴다"` 경고가 나온다. **맞는 상태다.**
+
+### 4) 첫 admin 키를 발급한다 (CLI)
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml \
+  run --rm --no-deps core python -m app.apikey_cli issue --role admin --label bootstrap
+```
+
+평문은 **이때 한 번만** 나온다. DB 에는 sha256 만 남는다. 파일로 저장하고 권한을 조인다:
+
+```bash
+umask 077
+printf '%s' 'ck_xxxxxxxx.yyy' > data/admin.key   # *.key 는 .gitignore 대상
+```
+
+이후 운영 스크립트는 키를 환경에서 받는다:
+
+```bash
+export CAPNET_API_KEY_FILE=./data/admin.key      # 또는 CAPNET_API_KEY=...
+```
+
+> 인자로 넘기지 않는다 — `ps` 에 남는다. 환경변수보다 파일이 낫다 — `docker inspect` 에 안 뜬다.
+
+### 5) 기기를 등록하고 증서를 준다
+
+```bash
+scripts/node_onboard.sh --name gpu-01 --tier M --domain team
+```
+
+`data/node-secrets/gpu-01.credential` (0600) 이 떨어지고, Node 런타임에 넣을 환경변수가 출력된다.
+등급(`trust_domain` · `compute_tier_max`)은 **Core 가 부여한다** — Node 가 주장하는 값을 믿지 않는다 (절대규칙 4).
+
+기기 쪽에서:
+
+```bash
+NODE_CREDENTIAL_FILE=/run/secrets/node.credential   # 파일로 넣는다
+CORE_URL=https://core.example.com
+```
+
+### 6) Agent 사슬을 세운다
+
+```bash
+scripts/node_bind.sh --node <uuid> --weights eurosat_scratch.safetensors
+```
+
+Agent 등록 → 실게이트 PASSED → 증서 → Node 바인딩. 이 사슬이 서기 전에는 **배정이 가지 않는다.**
+게이트는 team gate-runner 에서만 돈다 (절대규칙 8).
+
+### 7) 확인
+
+```bash
+curl -s localhost:8000/v1/ops/status \
+  -H "Authorization: CapNet-Key $(cat data/admin.key)" | python3 -m json.tool
+```
+
+- `enforcement.api_key` · `enforcement.node_credential` 이 **둘 다 true**
+- `nodes_without_credential` 이 **0**
+- `api_keys_active` 가 1 이상
+- `drift_routable` · `arch_unbound_routable` 이 **0**
+
+---
+
+## 2. 실측 (2026-08-12 · 빈 볼륨 · 격리 프로젝트)
+
+| # | 확인한 것 | 결과 |
+|---|-----------|------|
+| 1 | postgres 호스트 미노출 | ✅ |
+| 2 | `CAPNET_AUTO_MIGRATE=0` 이면 스키마 안 올라감 | ✅ `schema_migration` 없음 |
+| 3 | 운영자 수동 `migrate up` → `verify` | ✅ 9개 적용·체크섬 일치 |
+| 4 | `/health` 는 인증 없이 200 | ✅ (죽었는지 보려면 열려 있어야 한다) |
+| 5 | 무인증 `POST /v1/nodes` · `/v1/agents` | ✅ **401** |
+| 6 | 가짜 키 | ✅ **401** |
+| 7 | CLI 로 첫 admin 키 발급 | ✅ |
+| 8 | admin 키로 쓰기 | ✅ |
+| 9 | 증서 발급 → 파일 주입 | ✅ |
+| 10 | 증서 없는 Node 의 `assignments` | ✅ **401** (사칭 차단) |
+| 11 | 증서 넣은 Node 하트비트 | ✅ `fresh` |
+| 12 | 강제 모드에서 `demo.sh` 완주 | ✅ `PASSED acc=0.8500` · 증적 SUCCEEDED |
+
+---
+
+## 3. 알려진 한계
+
+- **기기가 데이터를 남기지 않는다는 보장은 없다.** 추론은 평문을 요구하고, TEE 없이는 원리적으로 불가하다.
+  제품이 보장하는 것은 «승인 도메인 밖으로 라우팅되지 않는다 · 실행 증적이 남는다» 까지다.
+- **본문 검증이 인증보다 먼저 돈다.** 잘못된 스키마로 부르면 인증 없이도 `422` 가 온다 (쓰기는 일어나지 않는다).
+  스키마 유효성 오라클이 되므로, 공개망에 둘 때는 앞단에서 rate limit 을 건다.
+- **키 회전 절차가 아직 런북에 없다.** `apikey_cli revoke --prefix` 로 되지만 무중단 회전 순서는 미정.
+- **백업·복구 절차 없음.** `capnet_pg` 볼륨 스냅샷 정책을 정해야 한다.
+- **TLS 종단 없음.** Core 는 평문 HTTP 로 뜬다. 공개망에서는 앞에 리버스 프록시를 둔다.

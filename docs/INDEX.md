@@ -47,6 +47,7 @@
 - [마이그레이션 운용](./guide/migrations.md) — SD-007 · 기존 볼륨 업그레이드 경로
 - [검증 체계 (테스트·CI)](./guide/testing.md) — 무엇을 자동으로 막는가
 - [Node 운영](./guide/operate-node.md) — 등록·증서·바인딩·능력 호출 (v제품-1)
+- [제품 배포 런북](./guide/operate-production.md) — **정문을 닫고 올린다.** 강제 모드·부트스트랩 순서·한계
 
 ### error
 - [PG 위반 14종 실측](./error/pg-violations.md)
