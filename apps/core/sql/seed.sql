@@ -17,7 +17,7 @@ INSERT INTO capability (
     'image.classify', 1,
     'EuroSAT land-cover classify',
     'closed-set 10 labels · native 64x64 RGB · contract resize 32x32 · contest demo N=40',
-    '{"type":"object","required":["datasetId","caseId"],"properties":{"datasetId":{"type":"string"},"caseId":{"type":"string"}}}'::jsonb,
+    '{"type":"object","required":["datasetId","caseId"],"properties":{"datasetId":{"type":"string"},"caseId":{"type":"string"}},"mediaTypes":["image/jpeg"]}'::jsonb,
     '{"type":"object","required":["label"],"properties":{"label":{"type":"string","enum":["annual_crop","forest","herbaceous_vegetation","highway","industrial","pasture","permanent_crop","residential","river","sea_lake"]},"confidence":{"type":"number","minimum":0,"maximum":1}},"additionalProperties":false}'::jsonb,
     'closed_set_labels',
     'M', 'team', true,

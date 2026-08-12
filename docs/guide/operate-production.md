@@ -162,6 +162,20 @@ curl -s localhost:8000/v1/ops/status \
 | 미완료 task | **72시간** 후 `TIMEOUT` 종결 → 그때부터 7일 |
 | GC 주기 | `CORE_GC_INTERVAL_S` 기본 300초 · 배치 `CORE_GC_BATCH` 기본 50 |
 
+**받을 형식을 선언하지 않은 능력은 업로드를 받지 않습니다** (0012 · D8′). 계약에
+`input_schema.mediaTypes` 배열이 있어야 하고, 없으면 `POST /v1/inputs` 가 400 입니다.
+`caseId` 데모 경로는 이 규칙 밖입니다 — 업로드가 없습니다.
+
+```sql
+-- 능력별 선언 확인
+SELECT code, version, input_schema->'mediaTypes' AS media_types, max_input_bytes
+  FROM capability ORDER BY code, version;
+```
+
+업로드는 **받는 즉시 디스크로 흘립니다.** 200MB 를 올려도 Core 의 최대 상주 메모리가
+늘지 않는 것을 실측했습니다 (`VmHWM` 증가 0MB). 그래서 `core` 에 별도 `mem_limit` 을
+걸지 않았습니다 — 상한(256MiB)이 메모리가 아니라 디스크에만 걸립니다.
+
 무엇이 왜 언제 지워지는지는 SQL 로 봅니다:
 
 ```sql
