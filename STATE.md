@@ -49,6 +49,7 @@
 | **tenant 운용 (P2-1)** | ✅ `0006` — tenant 플릿 Node + `image.classify@2`(min=tenant) · 경계 6종 실측 · **claim 버그 SD-016 발견·수정** |
 | **증적 정합 (SD-013)** | ✅ 골든셋 sha `c21d9ef7…` 통일 · **재게이트 29건 완료** · 라우팅 드리프트 31 → **1건**(`seed-agent` placeholder) |
 | **B0 증적 절반 복구 (2026-08-12)** | ✅ task 가 **요청자**(`_actor()` — seed admin 하드코딩 제거)와 **요청 신뢰 도메인**(하드코딩 `'team'` 제거)을 기록. 호환은 복합 FK `domain_min_compatible` 가 판정. 실증 11/11 → D23. **tenant 유통이 구조적으로 가능해짐** |
+| **B2 잔여 — preprocess (2026-08-13)** | ✅ `input_schema.preprocess` 선언 자리 신설(`0014`) · 러너가 **선언을 적용해** 검증 · **`CONTRACT_CHECKS` 5 복귀** · 미선언 능력은 계약 게이트 거절. **골든 정확도 `acc=0.8500` 불변** 실측. 실증 16/16 · CI 가드 21/21. 남은 것: 일반 실행은 아직 기본값(lease 가 전처리를 안 나름) |
 | **B2 계약 검증 실수행 (2026-08-13)** | ✅ 러너가 `arch`(가중치 로드)·`max_params`(파라미터 수)·`input_schema`(샘플 실추론)·`output_schema`(출력 검증)를 **실행해서** 판정. 샘플=`task_input`(복합 FK) · 샘플 없는 계약 게이트런은 DB 가 거절 · 샘플은 GC 제외 · `preprocess` 는 다음. **arch 틀린 Agent 가 FAILED 로 걸림** 실증 13/13 · CI 가드 18/18 |
 | **B1 핫픽스 (2026-08-13)** | ✅ #47 리뷰 반영 — MIME **미선언이면 업로드 400**(`0012` 가 `image.classify` 에 `["image/jpeg"]` 선언) · 업로드 **디스크 스트리밍**(200MB 업로드에 core 상주 메모리 증가 **0MB** 실측 → `mem_limit` 불필요). `max_input_bytes` 불변은 accept(코드 변경 없음). 실증 10/10 |
 | **B1 런타임 (2026-08-13)** | ✅ **Core→Node 바이트 전송 완성.** `POST /v1/inputs`(raw body 스트리밍·새 의존성 0) · Node 가 lease 확인 후 받아 **해시 대조** 후 추론·실행 후 삭제 · GC 워커(72h TIMEOUT·종결 후 7일·고아 24h). 별도 볼륨 `capnet_inputs`. 실증 14/14 — **골든셋 40장 밖의 데이터가 처음 흐름** |

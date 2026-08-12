@@ -12,7 +12,8 @@ from psycopg import errors as pg_errors
 START_SQL = """
 INSERT INTO gate_run (
     agent_id, capability_id, runner_node_id, runner_is_gate_runner,
-    status, golden_set_sha256, kind, capability_quality_profile, sample_input_id
+    status, golden_set_sha256, kind, capability_quality_profile, sample_input_id,
+    capability_preprocess
 )
 SELECT a.id, c.id, n.id, n.is_gate_runner,
        'RUNNING', c.golden_set_sha256,
@@ -22,23 +23,25 @@ SELECT a.id, c.id, n.id, n.is_gate_runner,
        c.quality_profile,
        -- 계약 게이트런은 무엇으로 검증했는지를 남긴다. 샘플이 없으면
        -- ck_gate_run_contract_needs_sample 이 INSERT 를 거절한다 (0013).
-       CASE WHEN c.quality_profile = 'none' THEN c.sample_input_id ELSE NULL END
+       CASE WHEN c.quality_profile = 'none' THEN c.sample_input_id ELSE NULL END,
+       -- 전처리 선언 스냅샷. 없으면 ck_gate_run_contract_needs_preprocess 가 거절한다 (0014).
+       CASE WHEN c.quality_profile = 'none'
+            THEN c.input_schema -> 'preprocess' ELSE NULL END
   FROM agent a
   JOIN capability c ON c.id = %(capability_id)s
   JOIN node n ON n.id = %(runner_node_id)s AND n.is_gate_runner = true
  WHERE a.id = %(agent_id)s
 RETURNING id, agent_id, capability_id, runner_node_id, runner_is_gate_runner,
           status, golden_set_sha256, kind, capability_quality_profile,
-          sample_input_id, created_at
+          sample_input_id, capability_preprocess, created_at
 """
 
 # 계약 게이트런이 통과하려면 러너가 **실행해서** 확인해야 하는 항목 (D20 · B2).
 # 「무엇을 근거로 이 Agent 가 이 능력에 붙었는가」가 증적에 남는다.
 #
-# `preprocess` 는 여기 없다 — 지금까지 그 값은 러너가 **검증 없이 보내는 불린**이었고,
-# 검증하지 않는 것을 필수로 요구하면 「도장은 찍혔는데 확인은 없다」가 된다.
-# 보내오면 증적에 기록하되 통과 조건에서는 뺀다. 실수행이 들어오면 다시 필수로 올린다 (B2 ③).
-CONTRACT_CHECKS = ("input_schema", "output_schema", "arch", "max_params")
+# `preprocess` 가 돌아왔다 (0014) — 계약이 `input_schema.preprocess` 로 값을 선언하게 되면서
+# 러너가 **그 값을 적용해** 확인할 수 있게 됐다. 0013 에서 뺐던 이유(검증 없는 불린)가 사라졌다.
+CONTRACT_CHECKS = ("input_schema", "output_schema", "preprocess", "arch", "max_params")
 
 FINISH_SQL = """
 UPDATE gate_run
@@ -52,7 +55,7 @@ UPDATE gate_run
    AND status = 'RUNNING'
 RETURNING id, agent_id, capability_id, runner_node_id, status,
           golden_score, cases_total, cases_passed, result_summary, finished_at,
-          kind, capability_quality_profile, sample_input_id
+          kind, capability_quality_profile, sample_input_id, capability_preprocess
 """
 
 MINT_PASSED_SQL = """
@@ -163,10 +166,15 @@ def start_gate_run(
         return None
     except pg_errors.CheckViolation as exc:
         # 대표적으로 ck_gate_run_contract_needs_sample — ungated 능력에 계약 샘플이 없다.
+        name = getattr(exc.diag, "constraint_name", "") or ""
+        if "needs_preprocess" in name:
+            raise ValueError(
+                "계약 게이트런을 시작할 수 없다: 이 능력이 전처리를 선언하지 않았다 "
+                f"(input_schema.preprocess) — {name}"
+            ) from exc
         raise ValueError(
             "계약 게이트런을 시작할 수 없다: 이 능력에 검증 샘플이 없다 "
-            "(POST /v1/capabilities/{id}/sample) — "
-            f"{getattr(exc.diag, 'constraint_name', '')}"
+            f"(POST /v1/capabilities/{{id}}/sample) — {name}"
         ) from exc
     return dict(row) if row else None
 
@@ -473,7 +481,8 @@ def get_gate_run(conn: psycopg.Connection, gate_run_id: uuid.UUID) -> dict[str, 
     row = conn.execute(
         "SELECT id, agent_id, capability_id, runner_node_id, runner_is_gate_runner, "
         "status, golden_set_sha256, golden_score, cases_total, cases_passed, "
-        "kind, capability_quality_profile, sample_input_id, result_summary, created_at, finished_at "
+        "kind, capability_quality_profile, sample_input_id, capability_preprocess, "
+        "result_summary, created_at, finished_at "
         "FROM gate_run WHERE id = %s",
         (str(gate_run_id),),
     ).fetchone()

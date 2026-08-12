@@ -6,7 +6,7 @@
 
 ## 현재
 
-#49 **머지됨** (`842b735`). B2 완료. Cursor 리뷰 답 **ack 완료** → 아래 블록. `preprocess` 진행 방식만 **Decision 대기**.
+#50 **머지됨** (`573edba`). `preprocess` Decision = **(가) 바로 구현** → **PR 머지 대기**. 아래 블록.
 
 ---
 
@@ -387,3 +387,55 @@ Next 1순위가 `preprocess` 실수행인데, 「큰 구현은 Proposal 후」�
 
 1. `preprocess` 진행 방식 (가)/(나)/(다)
 2. (가)라면 — 「전처리 미선언 능력은 계약 게이트 거절」이 맞는가
+
+```markdown
+---
+from: claude
+at: 2026-08-13T09:40:00+09:00
+topic: B2-preprocess
+type: next
+expects: ack
+status: open
+---
+
+## `preprocess` 실수행 완료 — PR 머지 대기
+
+Decision **(가) 바로 구현** · **미선언 능력 거절 accept** · **golden/caseId 유지** 그대로 갔다.
+리뷰어가 브리지 기록·커밋을 하지 않으므로 이 블록도 내가 남긴다.
+
+| | |
+|---|---|
+| **PR** | (아래 «PR» 줄 참조) |
+| **머지 SHA** | **없음 — 머지 대기.** master/사람이 머지한다 |
+| **선행** | `573edba` `bridge: … preprocess Decision 요청 (#50)` |
+
+### 한 것
+
+`input_schema.preprocess`(`resize`·`colorspace`) 선언 자리를 만들고(`0014` + `seed.sql`),
+러너가 **그 값을 읽어 적용한 뒤** 샘플 추론한다. `CONTRACT_CHECKS` 를 **5 로 되돌렸다.**
+미선언 능력은 `gate_run.capability_preprocess` 스냅샷 + CHECK 로 **계약 게이트가 거절**한다
+(샘플과 같은 자리 · 같은 이유 — `capability` 에 걸면 기존 볼륨 마이그레이션이 실패한다).
+
+### golden 불변 — 실측으로 확인
+
+선언값을 **지금 하드코딩된 값과 같게**(32×32 RGB) 두어 픽셀 처리가 안 바뀌게 했다.
+
+    clean_room  score status=PASSED acc=0.8500 f1=0.8344
+    prod_room   score status=PASSED acc=0.8500 f1=0.8344
+
+실증 16/16 · CI 가드 18 → **21/21** · 통합 7/7 · `clean_room` 9/9 · `prod_room` 14/14.
+
+### 알아 둘 것 하나 (다음 후보)
+
+지금 선언은 **검증 시점에만** 적용된다. 일반 실행(`node/_run`)은 여전히 `predict_image`
+기본값으로 돈다 — **lease 페이로드가 전처리를 나르지 않는다.** `image.classify` 는 둘이 같은
+값이라 차이가 없지만, **다른 값을 선언한 능력이 생기면 갈라진다.**
+lease 에 전처리를 싣는 것을 다음 후보로 올린다 (`arch`·`max_params` 를 나르는 것과 같은 자리).
+
+### Next 후보
+
+1. **lease 에 전처리 싣기** — 위 갈라짐을 닫는다. 작다
+2. **C: 백업·복구 리허설** — dump/restore 실측
+3. **D6** — 제품 트랙 Proposal (가중치 출처·라이선스 선언 동반)
+4. TLS — 온프레/VPN 전제면 계속 후순위
+```
