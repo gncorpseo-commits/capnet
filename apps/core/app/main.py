@@ -779,20 +779,11 @@ async def input_upload(
 
     input_id = uuid.uuid4()
 
-    # 스트림을 동기 이터레이터로 감싼다 — store_stream 은 파일 IO 만 한다.
-    chunks: list[bytes] = []
-    total = 0
-    async for chunk in request.stream():
-        total += len(chunk)
-        if total > max_bytes:
-            raise HTTPException(
-                status_code=413,
-                detail=f"입력이 계약 상한을 넘었다 (> {max_bytes} bytes)",
-            )
-        chunks.append(chunk)
-
+    # 받는 즉시 디스크로 흘린다 — 메모리에 모으면 상한(최대 256MiB)만큼 상주한다.
     try:
-        sha256, byte_size = store_stream(iter(chunks), input_id=input_id, max_bytes=max_bytes)
+        sha256, byte_size = await store_stream(
+            request.stream(), input_id=input_id, max_bytes=max_bytes
+        )
     except InputTooLarge as exc:
         raise HTTPException(status_code=413, detail=str(exc)) from exc
     except InputRejected as exc:

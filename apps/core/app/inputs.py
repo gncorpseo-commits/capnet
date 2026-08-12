@@ -70,10 +70,11 @@ RETURNING id, capability_id, sha256, byte_size, media_type, uploaded_by,
 
 
 def allowed_media_types(input_schema: Any) -> list[str] | None:
-    """계약이 선언한 MIME 목록. 없으면 None (검사하지 않는다).
+    """계약이 선언한 MIME 목록. 선언이 없으면 None → **업로드를 거절한다.**
 
-    `input_schema.mediaTypes` 를 본다. 계약에 없는 것을 코드가 임의로 정하지 않는다 —
-    「문서에만 있는 정책」을 만들지 않기 위해서다.
+    처음에는 「선언이 없으면 검사하지 않는다」였다. 계약이 안 정한 것을 코드가 정하지
+    않으려는 뜻이었지만, 결과는 **아무 MIME 이나 받는 구멍**이었다 (D8′ 위반).
+    지금은 선언을 **요구**한다 — 받을 형식을 정하지 않은 능력은 업로드를 받지 않는다.
     """
     if not isinstance(input_schema, dict):
         return None
@@ -84,9 +85,13 @@ def allowed_media_types(input_schema: Any) -> list[str] | None:
 
 
 def assert_media_type(media_type: str, input_schema: Any) -> None:
+    """`caseId` 데모 경로는 이 함수를 타지 않는다 — 업로드가 없다."""
     allowed = allowed_media_types(input_schema)
     if allowed is None:
-        return
+        raise InputRejected(
+            "이 계약은 받을 입력 형식을 선언하지 않았다 "
+            "(input_schema.mediaTypes) — 업로드를 받지 않는다"
+        )
     if media_type not in allowed:
         raise InputRejected(
             f"media_type {media_type!r} 은 이 계약이 받지 않는다 (허용: {', '.join(allowed)})"
@@ -100,11 +105,17 @@ def load_capability(
     return dict(row) if row else None
 
 
-def store_stream(chunks: Any, *, input_id: uuid.UUID, max_bytes: int) -> tuple[str, int]:
-    """스트림을 파일로 받으면서 sha256·크기를 잰다. 상한을 넘기면 끊고 지운다.
+async def store_stream(chunks: Any, *, input_id: uuid.UUID, max_bytes: int) -> tuple[str, int]:
+    """스트림을 **디스크로 바로 흘리면서** sha256·크기를 잰다. 상한을 넘기면 끊고 지운다.
+
+    처음에는 청크를 메모리에 모은 뒤 파일로 썼다. 상한이 256MiB 라 최악의 경우 그만큼
+    상주했다 — 동시 업로드 몇 건으로 Core 가 죽는다. 지금은 **받는 즉시 쓴다.**
 
     `max_bytes` 는 계약값이다. 여기서 통과해도 **DB 가 다시 판정한다** — 이 검사는
     「다 받아 놓고 거절」을 피하기 위한 것이고, 계약의 정본은 DB 제약이다.
+
+    파일 쓰기는 동기다. 청크가 1MiB 라 이벤트 루프를 잡는 시간은 무시할 수준이고,
+    스레드풀로 넘기면 순서 보장·에러 전파가 복잡해진다.
     """
     path = blob_path(input_id)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -112,13 +123,13 @@ def store_stream(chunks: Any, *, input_id: uuid.UUID, max_bytes: int) -> tuple[s
     total = 0
     try:
         with open(path, "wb") as fh:
-            for chunk in chunks:
+            async for chunk in chunks:
                 if not chunk:
                     continue
                 total += len(chunk)
                 if total > max_bytes:
                     raise InputTooLarge(
-                        f"입력이 계약 상한을 넘었다 ({total} > {max_bytes} bytes)"
+                        f"입력이 계약 상한을 넘었다 (> {max_bytes} bytes)"
                     )
                 digest.update(chunk)
                 fh.write(chunk)
