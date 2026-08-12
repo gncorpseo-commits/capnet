@@ -23,10 +23,16 @@ Write-Host "python=$py"
 & $py --version
 & $py -m pip install -q cyclonedx-bom
 
+# torch 버전은 Dockerfile 의 ARG 가 정본이다 — 여기에 다시 적으면 둘이 어긋난다.
+$dockerfile = Get-Content (Join-Path $root "apps\node\Dockerfile")
+$torchVer = ($dockerfile | Select-String "^ARG TORCH_VERSION=(.+)$").Matches.Groups[1].Value
+$tvVer    = ($dockerfile | Select-String "^ARG TORCHVISION_VERSION=(.+)$").Matches.Groups[1].Value
+if (-not $torchVer -or -not $tvVer) { throw "apps/node/Dockerfile 에서 torch 핀을 읽지 못했다" }
+
 $req = Join-Path $env:TEMP "capnet-sbom-reqs.txt"
 $core = Get-Content (Join-Path $root "apps\core\requirements.txt")
 $node = Get-Content (Join-Path $root "apps\node\requirements.txt")
-@($core + $node + @("torch", "torchvision")) |
+@($core + $node + @("torch==$torchVer", "torchvision==$tvVer")) |
     Where-Object { $_ -and $_ -notmatch "^\s*#" } |
     Select-Object -Unique |
     Set-Content -Path $req -Encoding utf8

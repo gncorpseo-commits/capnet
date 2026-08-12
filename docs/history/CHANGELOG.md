@@ -1,5 +1,29 @@
 # Changelog
 
+## SBOM 드리프트 · torch 핀 (F4 2차 라이선스 검증) — 2026-08-12
+
+**제출용 라이선스 명세서가 실제 빌드와 어긋나 있었다.** 둘 다 2차 검증(F4)이 직접 보는 산출물이다.
+
+- `sbom.json` 에 **`psycopg-pool` 3.3.1 (LGPL-3.0) 이 없었다.** SBOM 생성 08-06, 의존성 추가 08-11 —
+  `THIRD-PARTY-LICENSES.md` 에는 들어갔는데 SBOM 만 갱신되지 않았다. **LGPL 항목을 빠뜨린 명세서**를 낼 뻔했다
+- `apps/node/Dockerfile` 이 `pip install torch torchvision` 을 **무버전**으로 돌렸는데,
+  붙임1 표는 `2.13.0+cpu` · `0.28.0+cpu` 로 단언하고 있었다. 심사 PC 에서 재빌드하면 달라질 수 있다
+- `check_submission.py` 는 requirements → `THIRD-PARTY-LICENSES.md` 만 대조하고 `sbom.json` 내용은 보지 않는다.
+  그래서 20/20 을 통과한 채로 드리프트가 살아 있었다
+
+**고친 것**
+
+- `ARG TORCH_VERSION=2.13.0+cpu` · `ARG TORCHVISION_VERSION=0.28.0+cpu` — Dockerfile 이 **버전 정본**이 된다.
+  `generate_sbom.sh` · `.ps1` 이 그 ARG 를 읽어 쓰므로 두 곳에 적어 어긋날 일이 없다
+- `sbom.json` 재생성 — 10 → **11 컴포넌트**. `psycopg-pool 3.3.1` 추가, torch/torchvision 에 버전이 붙었다
+  (호스트에 pip 이 없어 `python:3.11-slim` 컨테이너에서 같은 스크립트로 생성)
+- 붙임1 표 10 → 11 행 (LGPL 먼저 순서 유지) + 버전 정본 위치 명시
+
+**실측** — `docker build --no-cache --build-arg INSTALL_TORCH=true` 가 rc=0 이고
+설치본이 `2.13.0+cpu 0.28.0+cpu` 로 나오는 것을 확인했다. 핀이 실제로 해석된다.
+
+**남은 위험** — `sbom.json` 드리프트를 막는 기계 검사는 아직 없다. 다음 의존성 변경에서 같은 일이 반복될 수 있다.
+
 ## 새 볼륨 재현 결함 — compose 일회성 migrate — 2026-08-12
 
 **README 대로 하면 `demo.sh` 가 실패했다.** 빠른 시작에 마이그레이션 단계가 없었다.
