@@ -49,6 +49,7 @@
 | **tenant 운용 (P2-1)** | ✅ `0006` — tenant 플릿 Node + `image.classify@2`(min=tenant) · 경계 6종 실측 · **claim 버그 SD-016 발견·수정** |
 | **증적 정합 (SD-013)** | ✅ 골든셋 sha `c21d9ef7…` 통일 · **재게이트 29건 완료** · 라우팅 드리프트 31 → **1건**(`seed-agent` placeholder) |
 | **B0 증적 절반 복구 (2026-08-12)** | ✅ task 가 **요청자**(`_actor()` — seed admin 하드코딩 제거)와 **요청 신뢰 도메인**(하드코딩 `'team'` 제거)을 기록. 호환은 복합 FK `domain_min_compatible` 가 판정. 실증 11/11 → D23. **tenant 유통이 구조적으로 가능해짐** |
+| **B1 DDL (2026-08-12)** | ✅ `0011` `task_input` — 크기 계약(32MiB 기본·256MiB 상한) · 보존(종결 후 7일·고아 24h·미완료 72h) · `task.finished_at` · `task_input_purge_due` 뷰. **입력이 수집 시점에 능력에 묶인다**(복합 FK) · 크기는 DB 가 거절. 실증 15/15. **런타임 미착수** — 업로드 API·바이트 저장소·lease 전달·GC 워커 |
 | **입력 경로 결정 (2026-08-12)** | ✅ **D22 = Core 중개(2안)** · 서명 URL(1안) 기각 · 데이터셋 등록제(3안) 보조 · **D8′** = 「자유 업로드 금지」→「비통제 수집 금지」. **B1 미착수** — Core→Node 바이트 전송은 아직 없다 (Node 가 `caseId` 로 로컬 골든을 고른다) |
 | **② 게이트 선택화 (2026-08-12)** | ✅ **완료 (DDL + 런타임)** — `0010` 품질 프로파일(센티널 CHECK · `gate_run.kind` · 복합 FK) · `POST /v1/capabilities` 가 센티널을 Core 가 채움 · 계약 게이트런(`kind` 는 **능력이 결정**, `contract_checks` 5종 요구). **제약 약화 0 · `claim.py` 무수정.** 실증 DDL 10/10 · API 7/7 · 계약 10/10 · CI 가드 `check_quality_profile` 16/16 → D20. 남은 것: 계약 검증을 **러너가 실제로 수행**(지금은 보고를 받아 적는다) |
 | **P1 정문 (2026-08-12)** | ✅ **목표가 제품으로 전환됨.** `compose.prod.yaml` — 인증·증서 강제, postgres 비공개, migrate 수동, `.env` 필수, seed Node `profiles: demo`. 운영 스크립트 7개에 `ccurl` 키 주입. 제품 수용 게이트 `scripts/prod_room.sh` **14/14** · 데모 `clean_room.sh` 9/9 유지 → [`operate-production.md`](docs/guide/operate-production.md) |
