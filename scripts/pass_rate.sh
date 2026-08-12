@@ -11,6 +11,8 @@
 #      인자가 없으면 Node health의 non-placeholder 가중치 전부를 후보로 본다.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# 관리 API 인증 헤더(CAPNET_API_KEY)를 한 곳에서 붙인다.
+source "$root/scripts/lib/http.sh"
 # 주소를 환경에서 받는다 — 격리 환경(clean_room.sh)에서 같은 스크립트를 그대로 돌리기 위해서다.
 core="${CORE_URL:-http://127.0.0.1:8000}"
 node="${NODE_URL:-http://127.0.0.1:8001}"
@@ -18,8 +20,8 @@ capId="00000000-0000-4000-8000-000000000010"
 runnerId="00000000-0000-4000-8000-000000000030"
 stamp="$(date +%Y%m%d%H%M%S)"
 
-curl -sf "$core/health" >/dev/null
-nh="$(curl -sf "$node/health")"
+ccurl -sf "$core/health" >/dev/null
+nh="$(ccurl -sf "$node/health")"
 
 if [[ $# -gt 0 ]]; then
   candidates=("$@")
@@ -87,11 +89,11 @@ for wfile in "${candidates[@]}"; do
   fi
 
   # Agent 등록 → gate_run 시작 → finish. 결과가 FAILED여도 사슬에 기록한다.
-  agent="$(curl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
+  agent="$(ccurl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
     -d "{\"name\":\"$label\",\"version\":\"0.1.0-$stamp\",\"manifest_hash\":\"$label-manifest\",\"weights_uri\":\"file:///weights/$wfile\",\"weights_sha256\":\"$sha\"}")"
   agentId="$(printf '%s' "$agent" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
-  gr="$(curl -sf -X POST "$core/v1/internal/gate-runs" -H 'content-type: application/json' \
+  gr="$(ccurl -sf -X POST "$core/v1/internal/gate-runs" -H 'content-type: application/json' \
     -d "{\"agent_id\":\"$agentId\",\"capability_id\":\"$capId\",\"runner_node_id\":\"$runnerId\"}")"
   grId="$(printf '%s' "$gr" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
@@ -105,7 +107,7 @@ print(json.dumps({
   "invalid_rate": s["invalid_rate"], "min_per_class_recall": s.get("min_per_class_recall"), "note": sys.argv[2],
   "golden_set_sha256": gr["golden_set_sha256"],
 }))' "$gr" "pass-rate $wfile")"
-  curl -sf -X POST "$core/v1/internal/gate-runs/$grId/finish" \
+  ccurl -sf -X POST "$core/v1/internal/gate-runs/$grId/finish" \
     -H 'content-type: application/json' -d "$finish" >/dev/null
 
   line="$(printf '%s' "$raw" | python3 -c '

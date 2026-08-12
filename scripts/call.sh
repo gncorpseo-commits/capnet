@@ -12,6 +12,8 @@
 #
 #   사용자는 어느 기기가 실행할지, 어떤 Agent 가 붙을지 모른다. Core 가 정한다.
 set -euo pipefail
+# 관리 API 인증 헤더(CAPNET_API_KEY)를 한 곳에서 붙인다.
+source "$(cd "$(dirname "$0")" && pwd)/lib/http.sh"
 core="${CORE_URL:-http://127.0.0.1:8000}"
 
 case_id="${1:-}"; shift || true
@@ -39,13 +41,13 @@ body="$body}"
 echo "요청: $capability@$version · case=$case_id" >&2
 [[ -n "$agent" ]] && echo "  (증명 모드 — Agent 지정)" >&2
 
-task=$(curl -sf -X POST "$core/v1/tasks" -H 'content-type: application/json' -d "$body") || {
+task=$(ccurl -sf -X POST "$core/v1/tasks" -H 'content-type: application/json' -d "$body") || {
   echo "요청 거절 — allowlist·계약·신뢰 도메인을 본다" >&2; exit 1; }
 task_id=$(printf '%s' "$task" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 deadline=$(( $(date +%s) + timeout_s ))
 while :; do
-  tr=$(curl -sf "$core/v1/tasks/$task_id")
+  tr=$(ccurl -sf "$core/v1/tasks/$task_id")
   st=$(printf '%s' "$tr" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')
   [[ "$st" == "COMPLETED" || "$st" == "FAILED" ]] && break
   [[ $(date +%s) -ge $deadline ]] && { echo "시간 초과 — status=$st (task=$task_id)" >&2; exit 1; }

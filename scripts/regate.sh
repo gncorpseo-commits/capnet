@@ -17,6 +17,8 @@
 #   scripts/regate.sh
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# 관리 API 인증 헤더(CAPNET_API_KEY)를 한 곳에서 붙인다.
+source "$root/scripts/lib/http.sh"
 core="${CORE_URL:-http://127.0.0.1:8000}"
 node="${NODE_URL:-http://127.0.0.1:8001}"
 capId="${CAPABILITY_ID:-00000000-0000-4000-8000-000000000010}"
@@ -77,7 +79,7 @@ while IFS='|' read -r agentId name wsha <&3; do
   fi
 
   # 1) 새 gate_run — capability 의 **현재** sha 를 스냅샷한다 (gate.py START_SQL)
-  gr="$(curl -sf -X POST "$core/v1/internal/gate-runs" -H 'content-type: application/json' \
+  gr="$(ccurl -sf -X POST "$core/v1/internal/gate-runs" -H 'content-type: application/json' \
       -d "{\"agent_id\":\"$agentId\",\"capability_id\":\"$capId\",\"runner_node_id\":\"$runnerId\"}")"
   grId="$(printf '%s' "$gr" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
@@ -106,7 +108,7 @@ print(json.dumps({
   "note": sys.argv[2],
   "golden_set_sha256": gr["golden_set_sha256"],
 }))' "$gr" "regate after golden-set change (SD-013)")"
-  curl -sf -X POST "$core/v1/internal/gate-runs/$grId/finish" \
+  ccurl -sf -X POST "$core/v1/internal/gate-runs/$grId/finish" \
     -H 'content-type: application/json' -d "$finish" >/dev/null
 
   status="$(printf '%s' "$raw" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')"

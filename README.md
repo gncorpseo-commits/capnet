@@ -21,6 +21,13 @@ cd capnet
 docker compose up --build -d          # 1~3분
 ```
 
+기동 순서는 `postgres` → `migrate`(일회성) → `core` → Node다. 새 볼륨은 `docs/spec/schema.sql`까지만 들어가고
+그 뒤 세대는 `migrations/`에 있으므로, `migrate`가 끝나야 `core`가 뜬다. 적용 결과를 보려면:
+
+```bash
+docker compose logs migrate           # "완료 — 9개 적용" (재실행 시 "적용할 것 없음")
+```
+
 **Linux / macOS**
 
 ```bash
@@ -60,7 +67,16 @@ curl -X POST localhost:8001/v1/execute -H 'content-type: application/json' \
 # -> HTTP 403  "assignment not leased to this node"
 ```
 
-> 빈 상태에서 clone → compose up → 위 세 스크립트가 통과하는 것을 2026-08-09에 확인했다.
+> 빈 볼륨에서 clone → compose up → 위 세 스크립트가 통과하는 것을 **2026-08-12**에 확인했다 (스키마 세대 9 · 마이그레이션 `0001`–`0009`).
+>
+> **이 기동은 데모·심사용이다 — 열려 있다.** 관리 API 인증이 꺼져 있고, postgres가 호스트로 공개되고,
+> 마이그레이션이 자동으로 돈다. 제품으로 올릴 때는 오버레이로 그 셋을 뒤집는다:
+>
+> ```bash
+> docker compose -f compose.yaml -f compose.prod.yaml up -d
+> ```
+>
+> 부트스트랩 순서(첫 admin 키는 CLI로만 만들 수 있다)와 실측은 [`docs/guide/operate-production.md`](docs/guide/operate-production.md).
 
 | 보고 싶은 것 | 위치 |
 |--------------|------|
@@ -99,7 +115,7 @@ AI 에이전트 스토어는 이미 많다. CapNet이 다루는 건 그 앞의 �
 
 판정은 앱 `if`가 아니라 **PostgreSQL 제약**이 한다.
 
-- 게이트 미통과 Agent에는 Task를 **할당할 수 없다**
+- **게이트를 붙인** Capability(`quality_profile='golden'`)에서는 미통과 Agent에 **할당할 수 없다**
 - `team` Task는 `public` Node로 **내려갈 수 없다**
 - `L` 계약은 `S` Node에서 **실행될 수 없다**
 - 할당 중 Node 신뢰 등급을 **강등할 수 없다**

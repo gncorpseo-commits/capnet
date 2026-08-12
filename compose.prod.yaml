@@ -1,0 +1,62 @@
+# 제품 배포 오버레이 — 기본값이 "닫혀 있음" 이다.
+#
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d
+#
+# compose.yaml 단독은 **데모·심사용**이다: 인증이 꺼져 있고 postgres 가 호스트로 열려 있고
+# 마이그레이션이 자동으로 돈다. 그 기본값으로 남의 데이터를 받으면 안 된다.
+#
+# 이 오버레이가 뒤집는 것
+#   1. 관리 API 인증 강제 (REQUIRE_API_KEY=1) — 쓰기 경로 12개가 401 이 된다
+#   2. Node 증서 강제 (REQUIRE_NODE_CREDENTIAL=1) — 증서 없는 기기는 401
+#   3. postgres 를 호스트에 노출하지 않는다
+#   4. 마이그레이션 자동 적용을 끈다 — 시점은 운영자가 잡는다
+#   5. 비밀번호·DB URL 을 .env 에서 **필수**로 받는다 (기본값 없음 → 없으면 기동 실패)
+#
+# 부트스트랩 순서는 docs/guide/operate-production.md.
+
+services:
+  postgres:
+    # 기본값을 지운다. .env 에 없으면 compose 가 빈 값으로 기동하다 실패한다 — 그게 맞다.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER 가 .env 에 없다}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 가 .env 에 없다}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB 가 .env 에 없다}
+    # 호스트로 내보내지 않는다. 서버 옆에서 붙을 일은 compose exec 로 한다.
+    ports: !override []
+
+  migrate:
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL 가 .env 에 없다}
+      # 제품에서는 자동 적용을 끈다. 스키마 변경 시점은 앱 기동이 아니라 운영자가 정한다.
+      CAPNET_AUTO_MIGRATE: ${CAPNET_AUTO_MIGRATE:-0}
+
+  core:
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL 가 .env 에 없다}
+      # 정문을 닫는다. 켜기 전에 admin 키를 먼저 발급해야 한다 — 안 그러면 자기가 잠긴다.
+      REQUIRE_API_KEY: "1"
+      REQUIRE_NODE_CREDENTIAL: "1"
+
+  # 데모용 seed Node 3대는 제품 배포에서 뜨지 않는다 (profiles: demo).
+  # 기기는 scripts/node_onboard.sh 로 등록하고 증서를 받은 뒤 각자의 호스트에서 돈다.
+  #
+  # `--profile demo` 로 같이 띄울 때는 증서가 있어야 한다 — 강제 모드에서 증서 없는 기기는 401 이고,
+  # 그게 정상이다. 증서는 **파일로** 넣는다: 환경변수로 주면 docker inspect 에 평문이 뜬다.
+  node-m-team:
+    profiles: ["demo"]
+    environment:
+      NODE_CREDENTIAL_FILE: /secrets/node-m-team.credential
+    volumes:
+      - ./data/node-secrets:/secrets:ro
+  node-s-team:
+    profiles: ["demo"]
+    environment:
+      NODE_CREDENTIAL_FILE: /secrets/node-s-team.credential
+    volumes:
+      - ./data/node-secrets:/secrets:ro
+  node-s-public:
+    profiles: ["demo"]
+    environment:
+      NODE_CREDENTIAL_FILE: /secrets/node-s-public.credential
+    volumes:
+      - ./data/node-secrets:/secrets:ro

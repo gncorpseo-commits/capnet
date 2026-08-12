@@ -252,15 +252,19 @@ OpenAPI: `GET http://127.0.0.1:8000/openapi.yaml`
 | 번호 | 라이브러리명 | 버전 | 라이선스 | 공식 저장소 URL | 사용 목적 및 주요 기능 |
 |------|--------------|------|----------|-----------------|------------------------|
 | 1 | psycopg | 3.2.9 | LGPL-3.0 | https://github.com/psycopg/psycopg | PostgreSQL 드라이버 / 라이브러리로 불러 씀 |
-| 2 | FastAPI | 0.116.1 | MIT | https://github.com/tiangolo/fastapi | Core·Node HTTP API / 라이브러리로 불러 씀 |
-| 3 | uvicorn | 0.35.0 | BSD-3-Clause | https://github.com/encode/uvicorn | ASGI 서버 / 라이브러리로 불러 씀 |
-| 4 | pydantic-settings | 2.10.1 | MIT | https://github.com/pydantic/pydantic-settings | 환경변수 설정 / 라이브러리로 불러 씀 |
-| 5 | safetensors | 0.8.0 | Apache-2.0 | https://github.com/huggingface/safetensors | 가중치 로드(pickle 거부) / 라이브러리로 불러 씀 |
-| 6 | numpy | 2.4.6 | BSD-3-Clause | https://github.com/numpy/numpy | 텐서·배열 백엔드 / 라이브러리로 불러 씀 |
-| 7 | Pillow | 12.3.0 | HPND-derived (MIT-CMU) | https://github.com/python-pillow/Pillow | 골든셋 JPEG 로드 / 라이브러리로 불러 씀 |
-| 8 | torch | 2.13.0+cpu | BSD-3-Clause | https://github.com/pytorch/pytorch | scratch 학습·추론(node-m-team) / 라이브러리로 불러 씀 |
-| 9 | torchvision | 0.28.0+cpu | BSD-3-Clause | https://github.com/pytorch/vision | 32×32 변환 / 라이브러리로 불러 씀 |
-| 10 | PostgreSQL | 16 | PostgreSQL License | https://github.com/postgres/postgres | DB·제약 강제(compose 이미지) / 실행 환경 |
+| 2 | psycopg-pool | 3.3.1 | LGPL-3.0 | https://github.com/psycopg/psycopg | 커넥션 풀(psycopg 공식 동반 패키지) / 라이브러리로 불러 씀 |
+| 3 | FastAPI | 0.116.1 | MIT | https://github.com/tiangolo/fastapi | Core·Node HTTP API / 라이브러리로 불러 씀 |
+| 4 | uvicorn | 0.35.0 | BSD-3-Clause | https://github.com/encode/uvicorn | ASGI 서버 / 라이브러리로 불러 씀 |
+| 5 | pydantic-settings | 2.10.1 | MIT | https://github.com/pydantic/pydantic-settings | 환경변수 설정 / 라이브러리로 불러 씀 |
+| 6 | safetensors | 0.8.0 | Apache-2.0 | https://github.com/huggingface/safetensors | 가중치 로드(pickle 거부) / 라이브러리로 불러 씀 |
+| 7 | numpy | 2.4.6 | BSD-3-Clause | https://github.com/numpy/numpy | 텐서·배열 백엔드 / 라이브러리로 불러 씀 |
+| 8 | Pillow | 12.3.0 | HPND-derived (MIT-CMU) | https://github.com/python-pillow/Pillow | 골든셋 JPEG 로드 / 라이브러리로 불러 씀 |
+| 9 | torch | 2.13.0+cpu | BSD-3-Clause | https://github.com/pytorch/pytorch | scratch 학습·추론(node-m-team) / 라이브러리로 불러 씀 |
+| 10 | torchvision | 0.28.0+cpu | BSD-3-Clause | https://github.com/pytorch/vision | 32×32 변환 / 라이브러리로 불러 씀 |
+| 11 | PostgreSQL | 16 | PostgreSQL License | https://github.com/postgres/postgres | DB·제약 강제(compose 이미지) / 실행 환경 |
+
+torch·torchvision 버전은 `apps/node/Dockerfile` 의 `ARG TORCH_VERSION` · `ARG TORCHVISION_VERSION` 이 정본이다.
+무버전으로 두면 심사 PC 에서 재빌드한 것과 이 표가 달라진다 — 2026-08-12 에 핀을 박고 실측으로 맞췄다.
 
 기계 가독 전체: 저장소 루트 `sbom.json` (`scripts/generate_sbom.ps1`). 사람용 표: `THIRD-PARTY-LICENSES.md`.
 

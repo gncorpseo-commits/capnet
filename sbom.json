@@ -16,8 +16,8 @@
       "version": "0.116.1"
     },
     {
-      "bom-ref": "requirements-L6",
-      "description": "requirements line 6: numpy==2.4.6",
+      "bom-ref": "requirements-L7",
+      "description": "requirements line 7: numpy==2.4.6",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -31,8 +31,8 @@
       "version": "2.4.6"
     },
     {
-      "bom-ref": "requirements-L7",
-      "description": "requirements line 7: pillow==12.3.0",
+      "bom-ref": "requirements-L8",
+      "description": "requirements line 8: pillow==12.3.0",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -68,7 +68,22 @@
     },
     {
       "bom-ref": "requirements-L4",
-      "description": "requirements line 4: pydantic-settings==2.10.1",
+      "description": "requirements line 4: psycopg-pool==3.3.1",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/psycopg-pool/"
+        }
+      ],
+      "name": "psycopg-pool",
+      "purl": "pkg:pypi/psycopg-pool@3.3.1",
+      "type": "library",
+      "version": "3.3.1"
+    },
+    {
+      "bom-ref": "requirements-L5",
+      "description": "requirements line 5: pydantic-settings==2.10.1",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -82,8 +97,8 @@
       "version": "2.10.1"
     },
     {
-      "bom-ref": "requirements-L5",
-      "description": "requirements line 5: safetensors==0.8.0",
+      "bom-ref": "requirements-L6",
+      "description": "requirements line 6: safetensors==0.8.0",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -97,8 +112,8 @@
       "version": "0.8.0"
     },
     {
-      "bom-ref": "requirements-L8",
-      "description": "requirements line 8: torch",
+      "bom-ref": "requirements-L9",
+      "description": "requirements line 9: torch==2.13.0+cpu",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -107,12 +122,13 @@
         }
       ],
       "name": "torch",
-      "purl": "pkg:pypi/torch",
-      "type": "library"
+      "purl": "pkg:pypi/torch@2.13.0%2Bcpu",
+      "type": "library",
+      "version": "2.13.0+cpu"
     },
     {
-      "bom-ref": "requirements-L9",
-      "description": "requirements line 9: torchvision",
+      "bom-ref": "requirements-L10",
+      "description": "requirements line 10: torchvision==0.28.0+cpu",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -121,8 +137,9 @@
         }
       ],
       "name": "torchvision",
-      "purl": "pkg:pypi/torchvision",
-      "type": "library"
+      "purl": "pkg:pypi/torchvision@0.28.0%2Bcpu",
+      "type": "library",
+      "version": "0.28.0+cpu"
     },
     {
       "bom-ref": "requirements-L2",
@@ -165,6 +182,9 @@
       "ref": "requirements-L1"
     },
     {
+      "ref": "requirements-L10"
+    },
+    {
       "ref": "requirements-L2"
     },
     {
@@ -190,7 +210,7 @@
     }
   ],
   "metadata": {
-    "timestamp": "2026-08-06T23:00:00Z",
+    "timestamp": "2026-08-12T12:14:01Z",
     "tools": {
       "components": [
         {
@@ -289,7 +309,7 @@
           ],
           "name": "cyclonedx-python-lib",
           "type": "library",
-          "version": "11.11.0"
+          "version": "11.11.1"
         }
       ]
     },
@@ -317,7 +337,7 @@
       }
     ]
   },
-  "serialNumber": "urn:uuid:3a3143d2-7f59-4100-9350-516052c7b6b1",
+  "serialNumber": "urn:uuid:8d0efa79-c2f6-4e81-a837-5bbbf6263602",
   "version": 1,
   "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
   "bomFormat": "CycloneDX",

@@ -1,5 +1,186 @@
 # Changelog
 
+## 계약 게이트 런타임 — 게이트 없는 능력이 실제로 라우팅된다 — 2026-08-12
+
+`0010` 이 DDL 을, 앞 커밋이 `POST /v1/capabilities` 를 세웠다. 남은 것은 **Agent 를 붙이는 길**이었다.
+
+- **종류는 능력이 정한다.** `START_SQL` 이 `CASE WHEN c.quality_profile='none' THEN 'contract'
+  ELSE 'golden' END` 로 `kind` 를 뽑는다. 앱이 고르지 않으므로 golden 능력에 계약 게이트런을
+  붙이는 경로가 애초에 없다 (DB 복합 FK 는 그 뒤의 방어선)
+- **계약 게이트는 채점하지 않는다.** 대신 러너가 무엇을 확인했는지를 요구한다 —
+  `input_schema` · `output_schema` · `preprocess` · `arch` · `max_params`. 하나라도 빠지거나
+  `true` 가 아니면 PASSED 를 주지 않는다. 「무엇을 근거로 붙었는가」가 `result_summary` 에 남는다
+- **골든 통계는 애초에 받지 않는다.** `ck_gate_run_contract_no_golden_stats` 가 DB 에서도 막지만
+  앱에서 먼저 400 을 준다 — 「점수를 보냈는데 조용히 사라졌다」가 되면 안 된다
+- 반대 방향도 막는다: golden 게이트에 `contract_checks` 를 보내면 400
+- `finish`·`get` 응답에 `kind` 를 실었다. `start` 만 주고 `finish` 는 안 주는 것은 비일관이었다
+
+**실측 (빈 볼륨 · 격리 프로젝트) 10/10**
+
+| | |
+|---|---|
+| ungated 능력 등록 → 게이트런 시작 | ✅ `kind=contract` **자동 결정** |
+| contract + 골든 통계 | ✅ 400 |
+| `contract_checks` 없음 / 일부 누락 / 하나가 false | ✅ 전부 400 (`contract check not satisfied: max_params`) |
+| 전부 확인 보고 | ✅ 200 · `scored_by=contract-v1` |
+| **라우팅 증서** | ✅ `text.embed@1 profile=none 근거=contract` |
+| golden 게이트에 `contract_checks` | ✅ 400 |
+
+회귀: `run_tests` 전부 통과 · 통합 검사 7/7 · `clean_room` 9/9.
+
+**D20 런타임 완료.** 이제 골든셋 없이 능력을 만들고 Agent 를 붙여 라우팅까지 갈 수 있다.
+남은 것은 계약 검증을 **러너가 실제로 수행**하는 것 — 지금은 러너의 보고를 Core 가 받아 적는다.
+보고 자체를 검증하지는 않으므로, 러너를 신뢰하는 만큼만 믿을 수 있다 (절대규칙 8 이 그 신뢰의 근거다).
+
+## ② 게이트 선택화 — `0010` 품질 프로파일 (D18 코드 정합) — 2026-08-12
+
+**D18 은 게이트를 «선택적 품질 프로파일» 로 내렸는데 코드가 따라오지 않았다.** 스키마가 게이트를 **6층으로**
+강제하고 있었다.
+
+```
+capability(golden_set_ref/sha256/size/metrics — 전부 NOT NULL)
+  gate_run(PASSED · golden_set_sha256 NOT NULL · CHECK runner_is_gate_runner)
+    → gate_run_passed → agent_capability(PASSED ⇒ gate_run_id NOT NULL)
+      → agent_capability_passed → assignment (FK)
+```
+
+그래서 **새 능력마다 골든셋 40장 + 채점기**가 필요했고 제품이 `image.classify@1` 하나에 묶여 있었다.
+`claim.py` 의 JOIN 만 빼는 것으로는 안 된다 — `assignment` 의 FK 가 `agent_capability_passed` 를 참조하므로
+INSERT 가 FK 에서 거절된다.
+
+**해법 — 계약 바인딩도 게이트런이다.** 사슬을 끊지 않고 «골든셋 0장짜리 게이트런» 을 하나 더 인정한다.
+
+- `capability.quality_profile` (`golden` | `none`) — `none` 이면 `golden_set_*` 는 **센티널**이고
+  CHECK 로 강제된다. **NOT NULL 을 해제하지 않았다.** 읽는 쪽은 숫자가 아니라 프로파일을 먼저 본다
+- `gate_run.kind` (`golden` | `contract`) + `capability_quality_profile` 스냅샷 · 복합 FK 로 실제 값과 묶음
+- 계약 검증도 **team gate-runner 가 한다** — `runner_is_gate_runner` CHECK 그대로 통과 (절대규칙 8).
+  Core 가 스스로 판정을 만들면 「실행과 판정의 분리」가 무너진다
+- **`claim.py`·`assignment` FK 는 한 줄도 안 고쳤다.** contract 게이트런이 기존 경로로 증서를 올리므로
+  라우팅은 지금 그대로 돈다
+
+추가만 — 컬럼 3 · CHECK 4 · UNIQUE 1 · FK 1. 삭제·완화 0. 러너 정적 검사 10/10 OK.
+
+**실측 (빈 볼륨 · 격리 프로젝트) 10/10**
+
+| | |
+|---|---|
+| 기존 데이터 | `image.classify@1·@2` → `golden` · 기존 gate_run → `golden` (동작 불변) |
+| ungated 능력 생성 | ✅ 센티널 갖춰야만 |
+| none 인데 진짜 골든셋 / golden 인데 센티널 / 모르는 프로파일 | ✅ 전부 **거절** (`capability`) |
+| golden×contract · none×golden · contract+골든점수 · 러너 아닌 Node | ✅ 전부 **거절** (`gate_run`) |
+| 정상 contract 사슬 | ✅ `text.embed@1 profile=none · 근거 kind=contract` 로 **acp 발급** |
+| 멱등 | ✅ `적용할 것 없음 (최신 = 0010)` · verify 10/10 체크섬 일치 |
+
+README 102행의 「게이트 미통과 Agent 에는 할당할 수 없다」를 `product-distribution.md` 문구
+(「게이트를 **붙인** Capability 에서는」)에 맞췄다. 결정은 D20.
+
+**아직 없는 것** — ungated 능력을 **만들고 계약을 검증하는 런타임**. 지금은 DDL 과 제약만 섰다.
+`POST /v1/capabilities` 와 gate-runner 의 contract 검증기가 다음 작업이다.
+
+## P1 정문 — 제품 프로파일 (강제 모드가 기본) — 2026-08-12
+
+**목표가 대회 출품에서 제품으로 바뀌었다.** 대회 일정에 맞춰 미뤄뒀던 것을 순서대로 닫는다. 그 첫 칸.
+
+지금까지 제품 배포를 막던 것은 코드가 아니라 **기본값**이었다. `REQUIRE_API_KEY` · `REQUIRE_NODE_CREDENTIAL`
+이 둘 다 `0` 이라 관리 API 쓰기 12개가 열려 있었고, 시스템이 스스로 `/v1/ops/status` 에서 `ok: false` 와
+`"관리 API 키가 없다 — 강제를 켜면 잠긴다"` 를 내고 있었다.
+
+**`compose.prod.yaml` 오버레이** — 데모 기본값을 건드리지 않고 제품 기본값을 따로 둔다.
+
+| | 데모 | 제품 |
+|---|---|---|
+| 관리 API 인증 | 꺼짐 | **강제** |
+| Node 증서 | 꺼짐 | **강제** |
+| postgres | 호스트 5432 공개 | **비공개** |
+| 마이그레이션 | 자동 | **끔** (운영자가 시점을 잡는다) |
+| DB 비밀번호 | 기본값 `capnet` | **`.env` 필수** — 없으면 기동 거부 |
+| seed Node 3대 | 뜬다 | **안 뜬다** (`profiles: demo`) |
+
+**같이 막힌 것 하나** — 인증을 켜면 운영 스크립트가 전부 401 이었다. `scripts/*.sh` 중 키를 보내는 것이
+하나도 없었다. `scripts/lib/http.sh` 의 `ccurl` 로 한 곳에서 헤더를 붙인다 (7개 스크립트 · 39개 호출).
+키는 환경변수(`CAPNET_API_KEY`) 또는 **파일**(`CAPNET_API_KEY_FILE`)로 받는다 — 인자로 받으면 `ps` 에 남고,
+환경변수는 `docker inspect` 에 뜬다. `/health` 호출은 인증 없이 그대로 둔다.
+
+**증서 주입 경로도 없었다** — compose 에 Node 증서를 넣을 방법이 없어 강제 모드를 증명할 수조차 없었다.
+`compose.prod.yaml` 이 `data/node-secrets` 를 `/secrets` 로 마운트하고 `NODE_CREDENTIAL_FILE` 을 준다.
+
+**실측 — `scripts/prod_room.sh` (제품 수용 게이트, 빈 볼륨·격리 프로젝트) 14/14**
+
+| | |
+|---|---|
+| postgres 호스트 미노출 · 자동 마이그레이션 꺼짐 | ✅ |
+| 무인증 `POST /v1/nodes` · `/v1/agents` · 가짜 키 | ✅ **401** |
+| CLI 부트스트랩 → admin 키로 쓰기 | ✅ **200** |
+| 증서 없는 Node 의 `assignments` | ✅ **401** (사칭 차단) |
+| 증서 넣은 Node 하트비트 | ✅ `fresh` |
+| **강제 모드에서 `demo.sh` 완주** | ✅ `PASSED acc=0.8500` · 증적 SUCCEEDED |
+
+데모 경로 회귀 — `clean_room.sh` **9/9 유지**. `run_tests.sh` 전부 통과.
+
+**발견 (미해결)** — 본문 검증이 인증보다 먼저 돈다. 잘못된 스키마로 부르면 인증 없이 `422` 가 온다.
+쓰기는 일어나지 않지만 스키마 유효성 오라클이 된다. 공개망에서는 앞단 rate limit 이 필요하다.
+
+**다음** — P2 시크릿 위생 · P3 lease 재할당·모니터링 · P4 배포 산출물(태그·digest 핀·백업) ·
+P5 대회발 제약 해제(D6 사전학습 금지 폐지 등). 한계는 [`operate-production.md`](../guide/operate-production.md) §3.
+
+## SBOM 드리프트 · torch 핀 (F4 2차 라이선스 검증) — 2026-08-12
+
+**제출용 라이선스 명세서가 실제 빌드와 어긋나 있었다.** 둘 다 2차 검증(F4)이 직접 보는 산출물이다.
+
+- `sbom.json` 에 **`psycopg-pool` 3.3.1 (LGPL-3.0) 이 없었다.** SBOM 생성 08-06, 의존성 추가 08-11 —
+  `THIRD-PARTY-LICENSES.md` 에는 들어갔는데 SBOM 만 갱신되지 않았다. **LGPL 항목을 빠뜨린 명세서**를 낼 뻔했다
+- `apps/node/Dockerfile` 이 `pip install torch torchvision` 을 **무버전**으로 돌렸는데,
+  붙임1 표는 `2.13.0+cpu` · `0.28.0+cpu` 로 단언하고 있었다. 심사 PC 에서 재빌드하면 달라질 수 있다
+- `check_submission.py` 는 requirements → `THIRD-PARTY-LICENSES.md` 만 대조하고 `sbom.json` 내용은 보지 않는다.
+  그래서 20/20 을 통과한 채로 드리프트가 살아 있었다
+
+**고친 것**
+
+- `ARG TORCH_VERSION=2.13.0+cpu` · `ARG TORCHVISION_VERSION=0.28.0+cpu` — Dockerfile 이 **버전 정본**이 된다.
+  `generate_sbom.sh` · `.ps1` 이 그 ARG 를 읽어 쓰므로 두 곳에 적어 어긋날 일이 없다
+- `sbom.json` 재생성 — 10 → **11 컴포넌트**. `psycopg-pool 3.3.1` 추가, torch/torchvision 에 버전이 붙었다
+  (호스트에 pip 이 없어 `python:3.11-slim` 컨테이너에서 같은 스크립트로 생성)
+- 붙임1 표 10 → 11 행 (LGPL 먼저 순서 유지) + 버전 정본 위치 명시
+
+**실측** — `docker build --no-cache --build-arg INSTALL_TORCH=true` 가 rc=0 이고
+설치본이 `2.13.0+cpu 0.28.0+cpu` 로 나오는 것을 확인했다. 핀이 실제로 해석된다.
+
+**남은 위험** — `sbom.json` 드리프트를 막는 기계 검사는 아직 없다. 다음 의존성 변경에서 같은 일이 반복될 수 있다.
+
+## 새 볼륨 재현 결함 — compose 일회성 migrate — 2026-08-12
+
+**README 대로 하면 `demo.sh` 가 실패했다.** 빠른 시작에 마이그레이션 단계가 없었다.
+
+- 새 볼륨은 initdb 가 `docs/spec/schema.sql`(최종 수정 08-03)까지만 넣는다. 그 뒤 세대인
+  `0007 node_credential` · `0008 agent_arch` · `0009 api_key_hardening`(전부 08-11)은 `migrations/` 에만 있다
+- `compose.yaml` 에 적용 단계가 없고 앱 기동에도 없어서, **자동 적용 경로가 0** 이었다
+- `clean_room.sh` 가 9/9 로 통과한 것은 그 스크립트가 `migrate up` 을 명시적으로 돌리기 때문이다.
+  README 경로는 아무도 돌리지 않고 있었다 — README 의 "2026-08-09 확인" 은 0007~0009 이전이다
+
+**실측 (빈 볼륨 · 격리 프로젝트 · 최신 이미지)**
+
+| | 수정 전 | 수정 후 |
+|---|---|---|
+| `agent_arch` · `node_credential` · `schema_migration` | 전부 없음 | 존재 |
+| `agent.arch` 컬럼 | 없음 | 존재 |
+| `GET /v1/internal/nodes/{id}/assignments` | **500** `UndefinedTable: relation "agent_arch" does not exist` | 200 |
+| `GET /v1/ops/status` | **500** | 200 · `schema_version=9` |
+| `demo_violations.sh` · `sanity.sh` | rc=0 | rc=0 |
+| `demo.sh` | **rc=22** (`POST /v1/agents` → `UndefinedColumn: column "arch" of relation "agent"`) | rc=0 · `PASSED acc=0.8500` |
+
+`demo.sh` 는 `curl -sf` 라 500 을 받으면 **아무 메시지도 없이** 죽는다. 심사자가 보는 것은 무출력 실패다.
+
+**고친 방법 — 일회성 `migrate` 서비스** (`postgres` 뒤 · `core` 앞, `service_completed_successfully`)
+
+- **앱 기동 시 자동 DDL 을 넣지 않았다.** 마이그레이션 시점은 앱이 정할 일이 아니라 운영자가 잡는다.
+  서비스로 두면 명시적으로 남고 로그도 `docker compose logs migrate` 로 따로 본다
+- `CAPNET_AUTO_MIGRATE=0` 이면 즉시 0 으로 빠진다 — 제품 배포는 이걸로 끄고 `scripts/migrate.sh up` 을 직접 돌린다
+- postgres 헬스체크는 initdb 중에도 유닉스 소켓으로 통과할 수 있다 (그때 TCP 는 닫혀 있다).
+  그래서 healthy 만 믿지 않고 `migrate status` 가 baseline 을 볼 때까지 기다린 뒤 적용한다
+- 새 의존성 0 · 앱 코드 변경 0
+
+**남은 것** — `sbom.json` 에 `psycopg-pool` 누락, torch/torchvision 미핀. 2차 라이선스 검증(F4) 트랙이라 따로 간다.
+
 ## DB 커넥션 풀 (SD-017 해소) — 2026-08-11
 
 바로 앞 커밋에서 「측정만 남기고 미룬다」고 했던 것을 **master 결정으로 지금** 한다.
