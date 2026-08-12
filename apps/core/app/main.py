@@ -81,6 +81,10 @@ class TaskCreate(BaseModel):
     capability_code: str = "image.classify"
     capability_version: int = 1
     requested_agent_id: uuid.UUID | None = Field(default=None, alias="requestedAgentId")
+    # 요청자가 자기 작업의 신뢰 도메인을 정한다 (B0). 기본은 종전 동작인 team.
+    # 아무 값이나 되는 게 아니다 — capability.trust_domain_min 과의 호환은
+    # task 의 복합 FK(domain_min_compatible)가 거절한다. 앱이 다시 검사하지 않는다.
+    trust_domain: str = Field(default="team", alias="trustDomain")
 
     model_config = {"populate_by_name": True}
 
@@ -629,7 +633,7 @@ def capability_revoke(body: RevokeBody, authorization: str | None = Header(defau
 
 @app.post("/v1/tasks")
 def create_task(body: TaskCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
-    _require("user", authorization)
+    actor = _require("user", authorization)
     try:
         assert_dataset_id(body.dataset_id)
     except ValueError as exc:
@@ -643,32 +647,52 @@ def create_task(body: TaskCreate, authorization: str | None = Header(default=Non
         ).fetchone()
         if cap is None:
             raise HTTPException(status_code=404, detail="capability not found")
-        user = conn.execute(
-            "SELECT id FROM app_user WHERE id = %s",
-            (SEED_ADMIN_ID,),
+
+        # 요청자는 **키가 말한다** (B0). `_actor()` 가 이미 해석해 둔 것을 버리지 않는다.
+        # 키가 없는 경로(강제 꺼진 데모)에서만 seed admin 으로 떨어진다 — 그때는
+        # 「누가 요청했는지 모른다」가 사실이고, 그 사실이 seed admin 으로 기록된다.
+        user_id = str(actor["user_id"]) if actor else SEED_ADMIN_ID
+        owner = conn.execute(
+            "SELECT id FROM app_user WHERE id = %s", (user_id,)
         ).fetchone()
-        if user is None:
-            raise HTTPException(status_code=500, detail="seed admin missing")
-        # trust_domain_min 스냅샷은 capability 행에서 SELECT
-        created = conn.execute(
-            """
-            INSERT INTO task (
-                user_id, capability_id, status, trust_domain,
-                capability_trust_domain_min, input_ref, requested_agent_id
-            )
-            SELECT %(user_id)s, c.id, 'QUEUED', 'team',
-                   c.trust_domain_min, %(input_ref)s, %(requested_agent_id)s::uuid
-              FROM capability c
-             WHERE c.id = %(capability_id)s
-            RETURNING id, status, input_ref, capability_id, trust_domain, requested_agent_id
-            """,
-            {
-                "user_id": str(user["id"]),
-                "capability_id": str(cap["id"]),
-                "input_ref": input_ref,
-                "requested_agent_id": str(body.requested_agent_id) if body.requested_agent_id else None,
-            },
-        ).fetchone()
+        if owner is None:
+            raise HTTPException(status_code=500, detail=f"app_user missing: {user_id}")
+
+        # trust_domain_min 스냅샷은 capability 행에서 SELECT.
+        # trust_domain 은 요청자가 준 값이며, capability 와 맞지 않으면
+        # task 의 복합 FK(domain_min_compatible)가 INSERT 를 거절한다 — 앱이 판정하지 않는다.
+        try:
+            created = conn.execute(
+                """
+                INSERT INTO task (
+                    user_id, capability_id, status, trust_domain,
+                    capability_trust_domain_min, input_ref, requested_agent_id
+                )
+                SELECT %(user_id)s, c.id, 'QUEUED', %(trust_domain)s,
+                       c.trust_domain_min, %(input_ref)s, %(requested_agent_id)s::uuid
+                  FROM capability c
+                 WHERE c.id = %(capability_id)s
+                RETURNING id, user_id, status, input_ref, capability_id,
+                          trust_domain, capability_trust_domain_min, requested_agent_id
+                """,
+                {
+                    "user_id": user_id,
+                    "capability_id": str(cap["id"]),
+                    "trust_domain": body.trust_domain,
+                    "input_ref": input_ref,
+                    "requested_agent_id": str(body.requested_agent_id) if body.requested_agent_id else None,
+                },
+            ).fetchone()
+        except psycopg.errors.ForeignKeyViolation as exc:
+            # 대표적으로 task_capability_trust_domain_min_trust_domain_fkey —
+            # capability 가 요구하는 최소 도메인보다 낮은 도메인으로 요청한 경우다.
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"trust_domain={body.trust_domain!r} 은 이 capability 에 쓸 수 없다 "
+                    f"(최소 {cap['trust_domain_min']!r}) — {getattr(exc.diag, 'constraint_name', '')}"
+                ),
+            ) from exc
     return dict(created)
 
 
