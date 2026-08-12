@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
 import threading
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -22,6 +24,8 @@ CORE_URL = os.environ.get("CORE_URL", "http://127.0.0.1:8000").rstrip("/")
 WEIGHTS_DIR = os.environ.get("WEIGHTS_DIR", "/weights")
 WEIGHTS_PATH = os.environ.get("WEIGHTS_PATH", os.path.join(WEIGHTS_DIR, "placeholder.safetensors"))
 CASES_DIR = os.environ.get("GOLDEN_CASES_DIR", "/golden/cases")
+# 받은 입력을 잠깐 두는 곳. 실행이 끝나면 지운다 — Node 에 남기지 않는다.
+INPUT_TMP_DIR = os.environ.get("NODE_INPUT_TMP_DIR") or None
 
 # 이 Node의 신원. Core가 배정한 lease만 가져오고 실행한다.
 NODE_ID = os.environ.get("NODE_ID") or None
@@ -120,6 +124,54 @@ def _case_id(input_ref: str | None) -> str | None:
         return json.loads(input_ref).get("caseId")
     except json.JSONDecodeError:
         return None
+
+
+def _input_meta(input_ref: str | None) -> tuple[str, str] | None:
+    """Core 가 받아 둔 입력이면 (inputId, inputSha). 없으면 None → 데모 경로.
+
+    이 갈림길이 D22 의 「해시가 있으면 pull, 없으면 기존 경로」다.
+    """
+    if not input_ref:
+        return None
+    try:
+        payload = json.loads(input_ref)
+    except json.JSONDecodeError:
+        return None
+    iid, sha = payload.get("inputId"), payload.get("inputSha")
+    return (str(iid), str(sha)) if iid and sha else None
+
+
+def _fetch_input(input_id: str, expected_sha: str) -> str:
+    """Core 에서 입력 바이트를 받아 임시 파일로 떨군다. 해시가 다르면 거부.
+
+    Core 가 준 것과 내가 받은 것이 같다는 것을 **Node 가 직접 확인한다.** 전송 중
+    바뀐 바이트로 추론하면 증적의 sha 와 실행한 바이트가 달라진다.
+    """
+    if not NODE_ID:
+        raise HTTPException(status_code=500, detail="NODE_ID 가 없다 — 입력을 받을 수 없다")
+    url = f"{CORE_URL}/v1/internal/inputs/{input_id}/bytes?node_id={NODE_ID}"
+    req = urllib.request.Request(url, headers=_core_headers(), method="GET")
+    digest = hashlib.sha256()
+    fd, tmp = tempfile.mkstemp(prefix="capnet-input-", dir=INPUT_TMP_DIR)
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp, os.fdopen(fd, "wb") as fh:
+            while True:
+                chunk = resp.read(1024 * 1024)
+                if not chunk:
+                    break
+                digest.update(chunk)
+                fh.write(chunk)
+        got = digest.hexdigest()
+        if got != expected_sha:
+            raise HTTPException(
+                status_code=422,
+                detail=f"input sha256 mismatch: got={got[:16]}… want={expected_sha[:16]}…",
+            )
+        return tmp
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        raise
 
 
 def _post_complete(assignment_id: uuid.UUID, body: dict[str, Any]) -> dict[str, Any]:
@@ -230,17 +282,26 @@ def _run(
     else:
         from app.infer import case_path, predict_image
 
-        cid = _case_id(input_ref)
-        if not cid:
-            raise HTTPException(status_code=400, detail="caseId required for scratch infer")
-        image = case_path(CASES_DIR, cid)
-        if not image.is_file():
-            raise HTTPException(status_code=404, detail=f"case image missing: {image}")
+        # D22: Core 가 받아 둔 입력이 있으면 그 바이트로 돈다. 없으면 종전 데모 경로
+        # (caseId → Node 로컬 골든셋)로 그대로 떨어진다.
+        meta = _input_meta(input_ref)
+        fetched: str | None = None
+        if meta is not None:
+            fetched = _fetch_input(*meta)
+            image_path = fetched
+        else:
+            cid = _case_id(input_ref)
+            if not cid:
+                raise HTTPException(status_code=400, detail="caseId required for scratch infer")
+            image = case_path(CASES_DIR, cid)
+            if not image.is_file():
+                raise HTTPException(status_code=404, detail=f"case image missing: {image}")
+            image_path = str(image)
         from app.infer import ResourceLimitExceeded
 
         try:
             label, confidence = predict_image(
-                path, str(image), arch=arch, max_params=max_params
+                path, image_path, arch=arch, max_params=max_params
             )
         except ResourceLimitExceeded as exc:
             # 조용히 도는 것보다 터뜨리는 편이 낫다 — Core 가 FAILED 로 기록한다.
@@ -248,6 +309,11 @@ def _run(
         except ValueError as exc:
             # allowlist 밖 arch. build_model 이 던진다.
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+        finally:
+            # 받은 입력은 Node 에 남기지 않는다 (D22 · 바이트는 휘발성).
+            if fetched:
+                with contextlib.suppress(OSError):
+                    os.unlink(fetched)
         keys = ["scratch"]
 
     duration_ms = int((time.perf_counter() - started) * 1000)

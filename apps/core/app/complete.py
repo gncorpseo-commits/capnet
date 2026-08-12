@@ -46,6 +46,9 @@ MARK_TASK_SQL = """
 UPDATE task
    SET status = 'COMPLETED',
        result_ref = %(result_ref)s,
+       -- 입력 바이트 보존기간(종결 후 7일)의 기준이다 (0011). updated_at 은 claim 회수에서도
+       -- 갱신되므로 TTL 기준이 될 수 없다.
+       finished_at = now(),
        updated_at = now()
  WHERE id = %(task_id)s
    AND status IN ('ASSIGNED', 'RUNNING')

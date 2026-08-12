@@ -38,7 +38,8 @@ def assert_capability_sha256(value: str) -> None:
 def list_capabilities(conn: psycopg.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT id, code, version, name, description, output_kind, compute_tier, "
-        "trust_domain_min, mvp_eligible, quality_profile, golden_set_ref, golden_set_sha256, "
+        "trust_domain_min, mvp_eligible, quality_profile, max_input_bytes, "
+        "golden_set_ref, golden_set_sha256, "
         "golden_set_size, created_at "
         "FROM capability ORDER BY code, version"
     ).fetchall()
@@ -48,7 +49,7 @@ def list_capabilities(conn: psycopg.Connection) -> list[dict[str, Any]]:
 def get_capability(conn: psycopg.Connection, capability_id: uuid.UUID) -> dict[str, Any] | None:
     row = conn.execute(
         "SELECT id, code, version, name, description, input_schema, output_schema, "
-        "output_kind, compute_tier, trust_domain_min, mvp_eligible, quality_profile, "
+        "output_kind, compute_tier, trust_domain_min, mvp_eligible, quality_profile, max_input_bytes, "
         "golden_set_ref, golden_set_sha256, golden_set_size, golden_metrics, created_at "
         "FROM capability WHERE id = %s",
         (str(capability_id),),
@@ -74,6 +75,7 @@ def create_capability(
     golden_set_size: int | None = None,
     golden_metrics: dict[str, Any] | None = None,
     quality_profile: str = "golden",
+    max_input_bytes: int | None = None,
 ) -> dict[str, Any]:
     if not code.strip():
         raise ValueError("code required")
@@ -87,6 +89,10 @@ def create_capability(
         raise ValueError("trust_domain_min must be team, tenant, or public")
     if quality_profile not in _PROFILES:
         raise ValueError(f"quality_profile must be one of {sorted(_PROFILES)}")
+    # 입력 크기 계약 (0011 · D22). 값을 안 주면 DB 기본값(32MiB)이 들어간다.
+    # 절대 상한은 DB CHECK 가 갖는다 — 여기서 다시 적으면 두 곳이 어긋난다.
+    if max_input_bytes is not None and max_input_bytes < 1:
+        raise ValueError("max_input_bytes must be > 0")
 
     if quality_profile == "none":
         # 골든셋 관련 값은 **받지 않는다.** 보내왔다면 호출자가 뭔가 오해한 것이다 —
@@ -146,19 +152,20 @@ def create_capability(
                 input_schema, output_schema, output_kind,
                 compute_tier, trust_domain_min, mvp_eligible,
                 golden_set_ref, golden_set_sha256, golden_set_size, golden_metrics,
-                quality_profile
+                quality_profile, max_input_bytes
             )
             VALUES (
                 %(code)s, %(version)s, %(name)s, %(description)s,
                 %(input_schema)s::jsonb, %(output_schema)s::jsonb, %(output_kind)s,
                 %(compute_tier)s, %(trust_domain_min)s, %(mvp_eligible)s,
                 %(golden_set_ref)s, %(golden_set_sha256)s, %(golden_set_size)s,
-                %(golden_metrics)s::jsonb, %(quality_profile)s
+                %(golden_metrics)s::jsonb, %(quality_profile)s,
+                coalesce(%(max_input_bytes)s::bigint, 33554432)
             )
             RETURNING id, code, version, name, description, input_schema, output_schema,
                       output_kind, compute_tier, trust_domain_min, mvp_eligible,
                       golden_set_ref, golden_set_sha256, golden_set_size, golden_metrics,
-                      quality_profile, created_at
+                      quality_profile, max_input_bytes, created_at
             """,
             {
                 "code": code.strip(),
@@ -176,6 +183,7 @@ def create_capability(
                 "golden_set_size": golden_set_size,
                 "golden_metrics": json.dumps(golden_metrics),
                 "quality_profile": quality_profile,
+                "max_input_bytes": max_input_bytes,
             },
         ).fetchone()
     except pg_errors.UniqueViolation as exc:

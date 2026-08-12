@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import psycopg
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -38,6 +38,21 @@ from app.credential import (
     verify_credential,
 )
 from app.db import get_conn, pool_stats
+from app.inputs import (
+    InputRejected,
+    InputTooLarge,
+    assert_media_type,
+    blob_path,
+    load_capability,
+    mark_purged,
+    node_may_read,
+    purge_blob,
+    purge_due,
+    record,
+    store_stream,
+    timeout_stale_tasks,
+)
+from app.inputs import get as get_input
 from app.gate import (
     RevokeRefused,
     finish_gate_run,
@@ -85,6 +100,8 @@ class TaskCreate(BaseModel):
     # 아무 값이나 되는 게 아니다 — capability.trust_domain_min 과의 호환은
     # task 의 복합 FK(domain_min_compatible)가 거절한다. 앱이 다시 검사하지 않는다.
     trust_domain: str = Field(default="team", alias="trustDomain")
+    # Core 가 받아 둔 입력 (D22). 주면 그 바이트로 실행하고, 없으면 caseId 데모 경로다.
+    input_id: uuid.UUID | None = Field(default=None, alias="inputId")
 
     model_config = {"populate_by_name": True}
 
@@ -173,6 +190,8 @@ class CapabilityCreate(BaseModel):
     # golden = 골든셋 게이트를 붙인다 (아래 4개 필수).
     # none   = 계약만으로 라우팅한다 (아래 4개를 **보내지 않는다** — Core 가 센티널을 채운다).
     quality_profile: str = "golden"
+    # 입력 크기 계약 (0011). 생략하면 32MiB. 절대 상한 256MiB 는 DB 가 거절한다.
+    max_input_bytes: int | None = None
     golden_set_ref: str | None = None
     golden_set_sha256: str | None = None
     golden_set_size: int | None = None
@@ -375,6 +394,7 @@ def capabilities_create(body: CapabilityCreate, authorization: str | None = Head
             return create_capability(
                 conn,
                 quality_profile=body.quality_profile,
+                max_input_bytes=body.max_input_bytes,
                 code=body.code,
                 version=body.version,
                 name=body.name,
@@ -639,8 +659,23 @@ def create_task(body: TaskCreate, authorization: str | None = Header(default=Non
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    input_ref = json.dumps({"datasetId": body.dataset_id, "caseId": body.case_id})
+    ref: dict[str, Any] = {"datasetId": body.dataset_id, "caseId": body.case_id}
     with get_conn() as conn:
+        # Core 가 받아 둔 입력을 쓰는 경로 (D22). 해시를 input_ref 에 실어 Node 가 대조한다.
+        # 이 값이 없으면 종전 데모 경로(caseId → Node 로컬 골든셋)로 그대로 돈다.
+        if body.input_id is not None:
+            ti = get_input(conn, body.input_id)
+            if ti is None:
+                raise HTTPException(status_code=404, detail="input not found")
+            if ti["storage_state"] != "STORED":
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"input bytes are {ti['storage_state']} — 다시 올린다",
+                )
+            ref["inputId"] = str(body.input_id)
+            ref["inputSha"] = ti["sha256"]
+            ref["mediaType"] = ti["media_type"]
+        input_ref = json.dumps(ref)
         cap = conn.execute(
             "SELECT id, trust_domain_min FROM capability WHERE code = %s AND version = %s",
             (body.capability_code, body.capability_version),
@@ -666,14 +701,16 @@ def create_task(body: TaskCreate, authorization: str | None = Header(default=Non
                 """
                 INSERT INTO task (
                     user_id, capability_id, status, trust_domain,
-                    capability_trust_domain_min, input_ref, requested_agent_id
+                    capability_trust_domain_min, input_ref, requested_agent_id, input_id
                 )
                 SELECT %(user_id)s, c.id, 'QUEUED', %(trust_domain)s,
-                       c.trust_domain_min, %(input_ref)s, %(requested_agent_id)s::uuid
+                       c.trust_domain_min, %(input_ref)s, %(requested_agent_id)s::uuid,
+                       %(input_id)s::uuid
                   FROM capability c
                  WHERE c.id = %(capability_id)s
                 RETURNING id, user_id, status, input_ref, capability_id,
-                          trust_domain, capability_trust_domain_min, requested_agent_id
+                          trust_domain, capability_trust_domain_min, requested_agent_id,
+                          input_id
                 """,
                 {
                     "user_id": user_id,
@@ -681,19 +718,168 @@ def create_task(body: TaskCreate, authorization: str | None = Header(default=Non
                     "trust_domain": body.trust_domain,
                     "input_ref": input_ref,
                     "requested_agent_id": str(body.requested_agent_id) if body.requested_agent_id else None,
+                    "input_id": str(body.input_id) if body.input_id else None,
                 },
             ).fetchone()
         except psycopg.errors.ForeignKeyViolation as exc:
-            # 대표적으로 task_capability_trust_domain_min_trust_domain_fkey —
-            # capability 가 요구하는 최소 도메인보다 낮은 도메인으로 요청한 경우다.
+            name = getattr(exc.diag, "constraint_name", "") or ""
+            if "task_input_capability_fkey" in name:
+                # 입력은 수집 시점에 능력에 묶인다 (D8′). 다른 능력의 입력은 못 쓴다.
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "이 입력은 다른 capability 로 수집됐다 — 해당 능력으로 다시 올린다 "
+                        f"({name})"
+                    ),
+                ) from exc
+            # capability 가 요구하는 최소 도메인보다 낮은 도메인으로 요청한 경우.
             raise HTTPException(
                 status_code=400,
                 detail=(
                     f"trust_domain={body.trust_domain!r} 은 이 capability 에 쓸 수 없다 "
-                    f"(최소 {cap['trust_domain_min']!r}) — {getattr(exc.diag, 'constraint_name', '')}"
+                    f"(최소 {cap['trust_domain_min']!r}) — {name}"
                 ),
             ) from exc
     return dict(created)
+
+
+@app.post("/v1/inputs")
+async def input_upload(
+    request: Request,
+    capability: str = "image.classify",
+    version: int = 1,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """입력 바이트를 Core 가 받는다 (D22 · D8′ 「계약된 ingest」).
+
+        curl -X POST 'localhost:8000/v1/inputs?capability=image.classify&version=1' \
+             -H 'content-type: image/jpeg' -H "Authorization: CapNet-Key $KEY" \
+             --data-binary @my.jpg
+
+    **자유 업로드가 아니다.** 입력은 수집 시점에 능력에 묶이고(`task_input.capability_id`),
+    크기는 계약이 정하며(DB 가 판정), MIME 은 계약이 선언한 목록과 대조한다.
+
+    multipart 를 쓰지 않는다 — `python-multipart` 의존성이 새로 필요해진다.
+    raw body 를 스트리밍으로 받고 `content-type` 을 media_type 으로 쓴다.
+    """
+    actor = _require("user", authorization)
+    media_type = (request.headers.get("content-type") or "").split(";")[0].strip()
+    if not media_type:
+        raise HTTPException(status_code=400, detail="content-type 헤더가 필요하다")
+
+    with get_conn() as conn:
+        cap = load_capability(conn, code=capability, version=version)
+        if cap is None:
+            raise HTTPException(status_code=404, detail="capability not found")
+        try:
+            assert_media_type(media_type, cap["input_schema"])
+        except InputRejected as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        max_bytes = int(cap["max_input_bytes"])
+
+    input_id = uuid.uuid4()
+
+    # 스트림을 동기 이터레이터로 감싼다 — store_stream 은 파일 IO 만 한다.
+    chunks: list[bytes] = []
+    total = 0
+    async for chunk in request.stream():
+        total += len(chunk)
+        if total > max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"입력이 계약 상한을 넘었다 (> {max_bytes} bytes)",
+            )
+        chunks.append(chunk)
+
+    try:
+        sha256, byte_size = store_stream(iter(chunks), input_id=input_id, max_bytes=max_bytes)
+    except InputTooLarge as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
+    except InputRejected as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    uploader = str(actor["user_id"]) if actor else SEED_ADMIN_ID
+    try:
+        with get_conn() as conn:
+            row = record(
+                conn,
+                input_id=input_id,
+                capability_id=cap["id"],
+                sha256=sha256,
+                byte_size=byte_size,
+                media_type=media_type,
+                uploaded_by=uploader,
+            )
+    except InputTooLarge as exc:
+        purge_blob(input_id)
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
+    except InputRejected as exc:
+        purge_blob(input_id)
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return row
+
+
+@app.get("/v1/inputs/{input_id}")
+def input_get(input_id: uuid.UUID, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """입력 **메타**. 바이트는 여기서 안 준다 (Node 전용 경로가 따로 있다)."""
+    _require("user", authorization)
+    with get_conn() as conn:
+        row = get_input(conn, input_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="input not found")
+    return row
+
+
+@app.post("/v1/inputs/{input_id}/purge")
+def input_purge(input_id: uuid.UUID, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """바이트만 즉시 삭제한다. **행·해시는 남는다** (증적).
+
+    본경로는 워커 GC 다 (Decision). 이건 사고·고객 요청용 선택 경로다.
+    """
+    _require("admin", authorization)
+    with get_conn() as conn:
+        row = get_input(conn, input_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="input not found")
+        if row["storage_state"] == "PURGED":
+            return {**row, "purged_now": False}
+        marked = mark_purged(conn, input_id)
+    removed = purge_blob(input_id)
+    logger.info("input purged id=%s file_removed=%s", input_id, removed)
+    return {**(marked or row), "purged_now": True, "file_removed": removed}
+
+
+@app.get("/v1/internal/inputs/{input_id}/bytes")
+def input_bytes(
+    input_id: uuid.UUID,
+    node_id: uuid.UUID,
+    authorization: str | None = Header(default=None),
+) -> Any:
+    """Node 가 자기 배정의 입력 바이트를 가져간다.
+
+    **살아 있는 lease 가 있어야 한다.** 증서만으로 아무 입력이나 내려주면 등록된 기기
+    전부가 남의 데이터를 읽는다 — 「승인 도메인 안으로만 간다」가 무너진다.
+    """
+    _assert_node_matches(node_id, authorization)
+    with get_conn() as conn:
+        row = get_input(conn, input_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="input not found")
+        if row["storage_state"] != "STORED":
+            raise HTTPException(status_code=410, detail="input bytes purged")
+        if not node_may_read(conn, node_id=node_id, input_id=input_id):
+            raise HTTPException(
+                status_code=403,
+                detail="이 Node 에 이 입력을 쓰는 살아 있는 lease 가 없다",
+            )
+    path = blob_path(input_id)
+    if not path.is_file():
+        raise HTTPException(status_code=410, detail="input bytes missing on disk")
+    return FileResponse(
+        str(path),
+        media_type=row["media_type"],
+        headers={"x-capnet-input-sha256": row["sha256"]},
+    )
 
 
 @app.post("/v1/internal/claim")
@@ -851,6 +1037,50 @@ def _worker_once() -> dict[str, Any] | None:
         return claim_next(conn)
 
 
+# 입력 바이트 GC 주기. 배정 루프(1s)보다 훨씬 느려도 된다 — TTL 은 시간 단위다.
+GC_INTERVAL_S = float(os.environ.get("CORE_GC_INTERVAL_S", "300"))
+GC_BATCH = int(os.environ.get("CORE_GC_BATCH", "50"))
+
+
+def _gc_once() -> dict[str, int]:
+    """72h 미완료 task 종결 + 만료된 입력 바이트 삭제.
+
+    정책은 코드가 아니라 `task_input_purge_due` 뷰가 갖는다 (0011) — 무엇이 왜 언제
+    지워지는지를 사람이 SQL 로 볼 수 있어야 한다. **바이트만 지우고 행은 남긴다.**
+    """
+    purged = 0
+    freed = 0
+    with get_conn() as conn:
+        timed_out = timeout_stale_tasks(conn)
+        due = purge_due(conn, limit=GC_BATCH)
+        for item in due:
+            input_id = item["task_input_id"]
+            purge_blob(input_id)  # 파일이 이미 없어도 상태는 맞춰 둔다
+            if mark_purged(conn, input_id):
+                purged += 1
+                freed += int(item["byte_size"] or 0)
+                logger.info(
+                    "gc: input purged id=%s reason=%s bytes=%s",
+                    input_id, item["reason"], item["byte_size"],
+                )
+    return {"timed_out": timed_out, "purged": purged, "freed_bytes": freed}
+
+
+def _gc_loop() -> None:
+    logger.info("core gc started (interval=%.0fs batch=%d)", GC_INTERVAL_S, GC_BATCH)
+    while True:
+        try:
+            out = _gc_once()
+            if out["timed_out"] or out["purged"]:
+                logger.info(
+                    "gc: timed_out=%d purged=%d freed=%d bytes",
+                    out["timed_out"], out["purged"], out["freed_bytes"],
+                )
+        except Exception:  # GC 는 죽지 않는다
+            logger.exception("gc: pass failed")
+        time.sleep(GC_INTERVAL_S)
+
+
 def _worker_loop() -> None:
     logger.info("core worker started (interval=%.1fs)", WORKER_INTERVAL_S)
     while True:
@@ -874,3 +1104,4 @@ def _start_worker() -> None:
         logger.info("core worker disabled (CORE_WORKER=0)")
         return
     threading.Thread(target=_worker_loop, name="core-worker", daemon=True).start()
+    threading.Thread(target=_gc_loop, name="core-gc", daemon=True).start()
