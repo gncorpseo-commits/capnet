@@ -1,5 +1,47 @@
 # Changelog
 
+## B0 — task 가 요청자와 신뢰 도메인을 기록한다 (D23) — 2026-08-12
+
+**「누가 무엇으로 실행했는지 증적이 남는다」의 절반이 비어 있었다.**
+
+```python
+user = conn.execute("SELECT id FROM app_user WHERE id = %s", (SEED_ADMIN_ID,))  # 항상 seed admin
+SELECT %(user_id)s, c.id, 'QUEUED', 'team', ...                                 # 'team' 리터럴
+```
+
+- 모든 task 가 **seed admin 소유**였다. `_actor()` 는 P1 부터 API 키로 요청자를 알고 있었는데
+  그 값을 **버리고** 있었다
+- `trust_domain` 이 고정이라 **tenant 유통이 구조적으로 불가능**했다. `image.classify@2`(min=tenant)를
+  0006 에서 만들어 두고도 tenant task 를 만들 방법이 없었다
+
+**고친 것**
+
+- `user_id` = `_actor()["user_id"]`. 키 없는 경로(강제 꺼진 데모)에서만 seed admin 으로 떨어진다 —
+  그때는 「누가 요청했는지 모른다」가 사실이고, 그 사실이 기록되는 것이다
+- `trust_domain` 을 요청자가 지정 (`trustDomain`, 기본 `team` — 종전 동작)
+- **호환은 앱이 검사하지 않는다.** `task` 의 복합 FK
+  `(capability_trust_domain_min, trust_domain) → domain_min_compatible` 이 판정하고,
+  앱은 `ForeignKeyViolation` 을 400 으로 옮기며 어느 제약이 거절했는지 그대로 보여 준다
+
+**실측 (강제 모드 · 빈 볼륨 · 격리 프로젝트) 11/11**
+
+| | |
+|---|---|
+| alice 키로 만든 task | ✅ **alice 소유** (seed admin 아님) |
+| admin 키 | ✅ 다른 소유자 — 섞이지 않는다 |
+| 무인증 | ✅ 401 (P1 유지) |
+| 기본 `trust_domain` | ✅ `team` (종전 동작) |
+| `image.classify@1`(min=team) + tenant · public | ✅ **400** `task_capability_trust_domain_min_trust_domain_fkey` |
+| `image.classify@2`(min=tenant) + tenant · team | ✅ 200 (rank 3 ≥ 2) |
+| 모르는 도메인 | ✅ 400 |
+| 증적 조회 | ✅ `alice · tenant · ic1-0007` — 누가·어느 도메인으로 |
+
+회귀: `run_tests` 전부 통과 · 통합 검사 7/7 · `clean_room` 9/9 · `prod_room` 14/14.
+
+**결정 기록** — D8′(비통제 수집 금지로 재해석) · D22(입력 경로 = Core 중개 2안) · D23(B0).
+다음은 **B1: `task_input`** — 지금도 Node 는 `caseId` 로 로컬 골든셋을 고를 뿐,
+Core→Node 바이트 전송은 **여전히 없다.**
+
 ## 계약 게이트 런타임 — 게이트 없는 능력이 실제로 라우팅된다 — 2026-08-12
 
 `0010` 이 DDL 을, 앞 커밋이 `POST /v1/capabilities` 를 세웠다. 남은 것은 **Agent 를 붙이는 길**이었다.
