@@ -6,7 +6,7 @@
 
 ## 현재
 
-B1 Decision(`topic: B1-task-input`) **Confirm 완료** → 아래 블록 참조. 구현 진행 중.
+B1 **구현 완료 · PR #47 머지 대기** (master/사람 머지). Confirm·Next 블록은 아래 참조.
 
 ---
 
@@ -66,4 +66,57 @@ Windows 클론은 사람이 pull 하면 된다.
 ### 이 PR 에서 하지 않는 것
 
 D6 · 서명 URL(1안) · 데이터셋 사전 동기화(3안) 주경로 · TLS · Cursor rule.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-13T00:20:00+09:00
+topic: B1-task-input
+type: next
+expects: ack
+status: open
+---
+
+## B1 구현 완료 — PR 머지 대기
+
+| | |
+|---|---|
+| **PR** | https://github.com/gncorpseo-commits/capnet/pull/47 |
+| **브랜치** | `finn/b1-task-input-runtime` (base `main`) |
+| **머지 SHA** | **없음 — 머지 대기.** master/사람이 머지한다 |
+| **CI** | 2/2 pass (단위·골든셋 정합 / 마이그레이션 새 볼륨·기존 볼륨) |
+| **선행** | `3c7241b` `0011 task_input (#46)` — DDL 은 이미 main 에 있다 |
+
+### 이 PR 이 한 것
+
+`POST /v1/inputs` (raw body 스트리밍 · 새 의존성 0) · Node 바이트 수신(lease 확인 → 해시
+대조 → 실행 후 삭제) · GC 워커(72h `TIMEOUT` · 종결 후 7일 · 고아 24h · 즉시 purge).
+바이트는 별도 볼륨 `capnet_inputs`.
+
+**골든셋 40장 밖의 데이터가 처음으로 흐른다.** 실측 14/14 —
+업로드 sha 일치 · 1KiB 한도에 413 · 타 능력 입력 400 · **Node 가 업로드한 바이트로 COMPLETED** ·
+lease 없는 Node 403 · 8일 경과 GC 로 디스크 GONE(행은 남음) · PURGED 재사용 409 · `demo.sh` rc=0.
+
+회귀: 통합 7/7 · `clean_room` 9/9 · `prod_room` 14/14.
+
+### 리뷰 때 봐 줬으면 하는 것
+
+1. **`max_input_bytes` 는 입력이 들어온 뒤 못 바꾼다** — `task_input` 이 `capability
+   (id, max_input_bytes)` 를 복합 FK 로 잡아서 UPDATE 가 거절된다. 의도로 보고 새 `@version`
+   으로 바꾸게 했는데, 운영에서 너무 뻣뻣하면 지금 말해 달라
+2. **MIME 검사 위치** — `input_schema.mediaTypes` 가 있으면 대조, 없으면 통과다.
+   계약에 없는 것을 코드가 정하지 않으려고 이렇게 뒀는데, 「선언 없으면 거절」이 맞다면 바꾼다
+3. **업로드는 현재 메모리에 청크를 모은 뒤 파일로 쓴다** — 상한이 256MiB 라 최악 256MiB 상주.
+   Core 메모리 한도를 compose 에 걸지, 아니면 바로 파일로 흘릴지
+
+### Next (다음 Proposal 후보)
+
+- **B2 계약 검증 실수행** — 지금은 러너가 보고한 `contract_checks` 를 Core 가 받아 적기만 한다.
+  D6(사전학습 허용) 전에 닫아야 남의 모델을 받을 수 있다. **추천 1순위**
+- C: 백업·복구 절차 (증적 DB 포함 · 입력 바이트 볼륨 제외 — 문서는 이번 PR 에 넣었다)
+- C: 키 회전 절차 · lease 재할당 실측 · 모니터링 기준
+- 미착수: TLS(온프레/VPN 전제로 ② 뒤) · D6(출품 라이선스와 분리)
+
+**미머지 PR 이 있으므로 큰 새 제안은 하지 않는다** (PROTOCOL). #47 머지 후 B2 Proposal 을 올린다.
 ```
