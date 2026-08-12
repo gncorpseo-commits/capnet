@@ -12,17 +12,25 @@ from psycopg import errors as pg_errors
 START_SQL = """
 INSERT INTO gate_run (
     agent_id, capability_id, runner_node_id, runner_is_gate_runner,
-    status, golden_set_sha256
+    status, golden_set_sha256, kind, capability_quality_profile
 )
 SELECT a.id, c.id, n.id, n.is_gate_runner,
-       'RUNNING', c.golden_set_sha256
+       'RUNNING', c.golden_set_sha256,
+       -- 종류는 **능력이 정한다.** 앱이 고르면 golden 능력에 계약 게이트런을 붙일 수 있다
+       -- (DB 가 복합 FK 로 거절하지만, 애초에 고를 일이 아니다 · D20).
+       CASE WHEN c.quality_profile = 'none' THEN 'contract' ELSE 'golden' END,
+       c.quality_profile
   FROM agent a
   JOIN capability c ON c.id = %(capability_id)s
   JOIN node n ON n.id = %(runner_node_id)s AND n.is_gate_runner = true
  WHERE a.id = %(agent_id)s
 RETURNING id, agent_id, capability_id, runner_node_id, runner_is_gate_runner,
-          status, golden_set_sha256, created_at
+          status, golden_set_sha256, kind, capability_quality_profile, created_at
 """
+
+# 계약 게이트런이 통과하려면 러너가 확인했다고 보고해야 하는 항목 (D20).
+# 「무엇을 근거로 이 Agent 가 이 능력에 붙었는가」가 증적에 남는다.
+CONTRACT_CHECKS = ("input_schema", "output_schema", "preprocess", "arch", "max_params")
 
 FINISH_SQL = """
 UPDATE gate_run
@@ -35,7 +43,8 @@ UPDATE gate_run
  WHERE id = %(gate_run_id)s
    AND status = 'RUNNING'
 RETURNING id, agent_id, capability_id, runner_node_id, status,
-          golden_score, cases_total, cases_passed, result_summary, finished_at
+          golden_score, cases_total, cases_passed, result_summary, finished_at,
+          kind, capability_quality_profile
 """
 
 MINT_PASSED_SQL = """
@@ -151,7 +160,8 @@ def _load_cap_metrics(conn: psycopg.Connection, gate_run_id: uuid.UUID) -> dict[
     row = conn.execute(
         """
         SELECT c.golden_metrics, c.golden_set_size, c.golden_set_sha256 AS capability_sha256,
-               gr.golden_set_sha256 AS gate_run_sha256
+               gr.golden_set_sha256 AS gate_run_sha256,
+               gr.kind
           FROM gate_run gr
           JOIN capability c ON c.id = gr.capability_id
          WHERE gr.id = %s
@@ -239,6 +249,45 @@ def assert_real_finish(
             )
 
 
+def assert_contract_finish(
+    *,
+    status: str,
+    golden_score: float | None,
+    cases_total: int | None,
+    cases_passed: int | None,
+    contract_checks: dict[str, Any] | None,
+) -> None:
+    """계약 게이트런은 **채점하지 않는다.** 대신 러너가 무엇을 확인했는지를 요구한다.
+
+    골든 통계는 애초에 오면 안 된다 — `ck_gate_run_contract_no_golden_stats` 가 DB 에서도
+    막지만, 여기서 먼저 거절해야 「점수를 보냈는데 조용히 사라졌다」가 안 된다.
+    """
+    given = [
+        n for n, v in (
+            ("golden_score", golden_score),
+            ("cases_total", cases_total),
+            ("cases_passed", cases_passed),
+        ) if v is not None
+    ]
+    if given:
+        raise ValueError(
+            f"contract gate takes no golden stats (got {', '.join(given)})"
+        )
+    if status != "PASSED":
+        return
+    if not contract_checks:
+        raise ValueError(
+            "contract PASSED requires contract_checks "
+            f"({', '.join(CONTRACT_CHECKS)})"
+        )
+    missing = [k for k in CONTRACT_CHECKS if k not in contract_checks]
+    if missing:
+        raise ValueError(f"contract_checks missing: {', '.join(missing)}")
+    failed = [k for k in CONTRACT_CHECKS if contract_checks[k] is not True]
+    if failed:
+        raise ValueError(f"contract check not satisfied: {', '.join(failed)}")
+
+
 def finish_gate_run(
     conn: psycopg.Connection,
     *,
@@ -253,36 +302,61 @@ def finish_gate_run(
     invalid_rate: float | None = None,
     min_per_class_recall: float | None = None,
     golden_set_sha256: str | None = None,
+    contract_checks: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     if status not in ("PASSED", "FAILED", "ERROR"):
         raise ValueError("status must be PASSED, FAILED, or ERROR")
 
     cap = _load_cap_metrics(conn, gate_run_id)
     expected_sha = str(cap["gate_run_sha256"])
-    assert_golden_set_sha256(dummy=dummy, provided=golden_set_sha256, expected=expected_sha)
-    assert_real_finish(
-        status=status,
-        dummy=dummy,
-        golden_score=golden_score,
-        cases_total=cases_total,
-        cases_passed=cases_passed,
-        macro_f1=macro_f1,
-        invalid_rate=invalid_rate,
-        min_per_class_recall=min_per_class_recall,
-        cap=cap,
-    )
+    is_contract = cap["kind"] == "contract"
 
-    summary: dict[str, Any] = {
-        "dummy": dummy,
-        "scored_by": "plumbing-only" if dummy else "golden-set-v1",
-        "golden_set_sha256": expected_sha,
-    }
-    if golden_set_sha256 is not None:
-        summary["golden_set_sha256_provided"] = golden_set_sha256
-    if macro_f1 is not None:
-        summary["macro_f1"] = macro_f1
-    if invalid_rate is not None:
-        summary["invalid_rate"] = invalid_rate
+    if is_contract:
+        # 계약 게이트런에는 골든셋이 없다. sha 는 센티널이고 대조할 것이 없다.
+        assert_contract_finish(
+            status=status,
+            golden_score=golden_score,
+            cases_total=cases_total,
+            cases_passed=cases_passed,
+            contract_checks=contract_checks,
+        )
+    else:
+        if contract_checks is not None:
+            raise ValueError("golden gate takes no contract_checks")
+        assert_golden_set_sha256(
+            dummy=dummy, provided=golden_set_sha256, expected=expected_sha
+        )
+        assert_real_finish(
+            status=status,
+            dummy=dummy,
+            golden_score=golden_score,
+            cases_total=cases_total,
+            cases_passed=cases_passed,
+            macro_f1=macro_f1,
+            invalid_rate=invalid_rate,
+            min_per_class_recall=min_per_class_recall,
+            cap=cap,
+        )
+
+    summary: dict[str, Any]
+    if is_contract:
+        summary = {
+            "dummy": dummy,
+            "scored_by": "contract-v1",
+            "contract_checks": contract_checks or {},
+        }
+    else:
+        summary = {
+            "dummy": dummy,
+            "scored_by": "plumbing-only" if dummy else "golden-set-v1",
+            "golden_set_sha256": expected_sha,
+        }
+        if golden_set_sha256 is not None:
+            summary["golden_set_sha256_provided"] = golden_set_sha256
+        if macro_f1 is not None:
+            summary["macro_f1"] = macro_f1
+        if invalid_rate is not None:
+            summary["invalid_rate"] = invalid_rate
     if note:
         summary["note"] = note
 
@@ -384,7 +458,7 @@ def get_gate_run(conn: psycopg.Connection, gate_run_id: uuid.UUID) -> dict[str, 
     row = conn.execute(
         "SELECT id, agent_id, capability_id, runner_node_id, runner_is_gate_runner, "
         "status, golden_set_sha256, golden_score, cases_total, cases_passed, "
-        "result_summary, created_at, finished_at "
+        "kind, capability_quality_profile, result_summary, created_at, finished_at "
         "FROM gate_run WHERE id = %s",
         (str(gate_run_id),),
     ).fetchone()

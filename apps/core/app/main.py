@@ -151,6 +151,8 @@ class GateFinishBody(BaseModel):
     min_per_class_recall: float | None = None
     # S3: 실게이트는 필수. dummy plumbing은 생략 가능(넣으면 스냅샷과 일치해야 함).
     golden_set_sha256: str | None = None
+    # 계약 게이트(quality_profile='none')에서 러너가 확인한 항목. golden 게이트에는 보내지 않는다.
+    contract_checks: dict[str, Any] | None = None
 
 
 class CapabilityCreate(BaseModel):
@@ -579,6 +581,7 @@ def gate_finish(gate_run_id: uuid.UUID, body: GateFinishBody, authorization: str
                 invalid_rate=body.invalid_rate,
                 min_per_class_recall=body.min_per_class_recall,
                 golden_set_sha256=body.golden_set_sha256,
+                contract_checks=body.contract_checks,
             )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

@@ -1,5 +1,37 @@
 # Changelog
 
+## 계약 게이트 런타임 — 게이트 없는 능력이 실제로 라우팅된다 — 2026-08-12
+
+`0010` 이 DDL 을, 앞 커밋이 `POST /v1/capabilities` 를 세웠다. 남은 것은 **Agent 를 붙이는 길**이었다.
+
+- **종류는 능력이 정한다.** `START_SQL` 이 `CASE WHEN c.quality_profile='none' THEN 'contract'
+  ELSE 'golden' END` 로 `kind` 를 뽑는다. 앱이 고르지 않으므로 golden 능력에 계약 게이트런을
+  붙이는 경로가 애초에 없다 (DB 복합 FK 는 그 뒤의 방어선)
+- **계약 게이트는 채점하지 않는다.** 대신 러너가 무엇을 확인했는지를 요구한다 —
+  `input_schema` · `output_schema` · `preprocess` · `arch` · `max_params`. 하나라도 빠지거나
+  `true` 가 아니면 PASSED 를 주지 않는다. 「무엇을 근거로 붙었는가」가 `result_summary` 에 남는다
+- **골든 통계는 애초에 받지 않는다.** `ck_gate_run_contract_no_golden_stats` 가 DB 에서도 막지만
+  앱에서 먼저 400 을 준다 — 「점수를 보냈는데 조용히 사라졌다」가 되면 안 된다
+- 반대 방향도 막는다: golden 게이트에 `contract_checks` 를 보내면 400
+- `finish`·`get` 응답에 `kind` 를 실었다. `start` 만 주고 `finish` 는 안 주는 것은 비일관이었다
+
+**실측 (빈 볼륨 · 격리 프로젝트) 10/10**
+
+| | |
+|---|---|
+| ungated 능력 등록 → 게이트런 시작 | ✅ `kind=contract` **자동 결정** |
+| contract + 골든 통계 | ✅ 400 |
+| `contract_checks` 없음 / 일부 누락 / 하나가 false | ✅ 전부 400 (`contract check not satisfied: max_params`) |
+| 전부 확인 보고 | ✅ 200 · `scored_by=contract-v1` |
+| **라우팅 증서** | ✅ `text.embed@1 profile=none 근거=contract` |
+| golden 게이트에 `contract_checks` | ✅ 400 |
+
+회귀: `run_tests` 전부 통과 · 통합 검사 7/7 · `clean_room` 9/9.
+
+**D20 런타임 완료.** 이제 골든셋 없이 능력을 만들고 Agent 를 붙여 라우팅까지 갈 수 있다.
+남은 것은 계약 검증을 **러너가 실제로 수행**하는 것 — 지금은 러너의 보고를 Core 가 받아 적는다.
+보고 자체를 검증하지는 않으므로, 러너를 신뢰하는 만큼만 믿을 수 있다 (절대규칙 8 이 그 신뢰의 근거다).
+
 ## ② 게이트 선택화 — `0010` 품질 프로파일 (D18 코드 정합) — 2026-08-12
 
 **D18 은 게이트를 «선택적 품질 프로파일» 로 내렸는데 코드가 따라오지 않았다.** 스키마가 게이트를 **6층으로**
