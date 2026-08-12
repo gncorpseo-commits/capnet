@@ -12,25 +12,33 @@ from psycopg import errors as pg_errors
 START_SQL = """
 INSERT INTO gate_run (
     agent_id, capability_id, runner_node_id, runner_is_gate_runner,
-    status, golden_set_sha256, kind, capability_quality_profile
+    status, golden_set_sha256, kind, capability_quality_profile, sample_input_id
 )
 SELECT a.id, c.id, n.id, n.is_gate_runner,
        'RUNNING', c.golden_set_sha256,
        -- 종류는 **능력이 정한다.** 앱이 고르면 golden 능력에 계약 게이트런을 붙일 수 있다
        -- (DB 가 복합 FK 로 거절하지만, 애초에 고를 일이 아니다 · D20).
        CASE WHEN c.quality_profile = 'none' THEN 'contract' ELSE 'golden' END,
-       c.quality_profile
+       c.quality_profile,
+       -- 계약 게이트런은 무엇으로 검증했는지를 남긴다. 샘플이 없으면
+       -- ck_gate_run_contract_needs_sample 이 INSERT 를 거절한다 (0013).
+       CASE WHEN c.quality_profile = 'none' THEN c.sample_input_id ELSE NULL END
   FROM agent a
   JOIN capability c ON c.id = %(capability_id)s
   JOIN node n ON n.id = %(runner_node_id)s AND n.is_gate_runner = true
  WHERE a.id = %(agent_id)s
 RETURNING id, agent_id, capability_id, runner_node_id, runner_is_gate_runner,
-          status, golden_set_sha256, kind, capability_quality_profile, created_at
+          status, golden_set_sha256, kind, capability_quality_profile,
+          sample_input_id, created_at
 """
 
-# 계약 게이트런이 통과하려면 러너가 확인했다고 보고해야 하는 항목 (D20).
+# 계약 게이트런이 통과하려면 러너가 **실행해서** 확인해야 하는 항목 (D20 · B2).
 # 「무엇을 근거로 이 Agent 가 이 능력에 붙었는가」가 증적에 남는다.
-CONTRACT_CHECKS = ("input_schema", "output_schema", "preprocess", "arch", "max_params")
+#
+# `preprocess` 는 여기 없다 — 지금까지 그 값은 러너가 **검증 없이 보내는 불린**이었고,
+# 검증하지 않는 것을 필수로 요구하면 「도장은 찍혔는데 확인은 없다」가 된다.
+# 보내오면 증적에 기록하되 통과 조건에서는 뺀다. 실수행이 들어오면 다시 필수로 올린다 (B2 ③).
+CONTRACT_CHECKS = ("input_schema", "output_schema", "arch", "max_params")
 
 FINISH_SQL = """
 UPDATE gate_run
@@ -44,7 +52,7 @@ UPDATE gate_run
    AND status = 'RUNNING'
 RETURNING id, agent_id, capability_id, runner_node_id, status,
           golden_score, cases_total, cases_passed, result_summary, finished_at,
-          kind, capability_quality_profile
+          kind, capability_quality_profile, sample_input_id
 """
 
 MINT_PASSED_SQL = """
@@ -153,6 +161,13 @@ def start_gate_run(
         ).fetchone()
     except pg_errors.ForeignKeyViolation:
         return None
+    except pg_errors.CheckViolation as exc:
+        # 대표적으로 ck_gate_run_contract_needs_sample — ungated 능력에 계약 샘플이 없다.
+        raise ValueError(
+            "계약 게이트런을 시작할 수 없다: 이 능력에 검증 샘플이 없다 "
+            "(POST /v1/capabilities/{id}/sample) — "
+            f"{getattr(exc.diag, 'constraint_name', '')}"
+        ) from exc
     return dict(row) if row else None
 
 
@@ -458,7 +473,7 @@ def get_gate_run(conn: psycopg.Connection, gate_run_id: uuid.UUID) -> dict[str, 
     row = conn.execute(
         "SELECT id, agent_id, capability_id, runner_node_id, runner_is_gate_runner, "
         "status, golden_set_sha256, golden_score, cases_total, cases_passed, "
-        "kind, capability_quality_profile, result_summary, created_at, finished_at "
+        "kind, capability_quality_profile, sample_input_id, result_summary, created_at, finished_at "
         "FROM gate_run WHERE id = %s",
         (str(gate_run_id),),
     ).fetchone()

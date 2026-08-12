@@ -57,9 +57,20 @@ RETURNING id
 # assignment · gate_run 은 INSERT … SELECT 만 (절대규칙 2).
 GATE_RUN_INSERT = """
 INSERT INTO gate_run (agent_id, capability_id, runner_node_id, runner_is_gate_runner, status,
-                      golden_set_sha256, golden_score, kind, capability_quality_profile)
+                      golden_set_sha256, golden_score, kind, capability_quality_profile,
+                      sample_input_id)
 SELECT %(agent)s, %(cap)s, %(runner)s, %(is_runner)s, 'PASSED',
-       %(sha)s, %(score)s, %(kind)s, %(profile)s
+       %(sha)s, %(score)s, %(kind)s, %(profile)s, %(sample)s
+RETURNING id
+"""
+
+# 계약 게이트런에는 검증 샘플이 필요하다 (0013). 없으면 다른 제약을 시험하기도 전에
+# ck_gate_run_contract_needs_sample 이 먼저 걸려서 **엉뚱한 이유로 통과**한다.
+SAMPLE_INSERT = """
+INSERT INTO task_input (capability_id, sha256, byte_size, media_type, uploaded_by,
+                        capability_max_input_bytes)
+SELECT c.id, %(sha)s, 1024, 'image/jpeg', %(uploader)s, c.max_input_bytes
+  FROM capability c WHERE c.id = %(cap)s
 RETURNING id
 """
 
@@ -142,9 +153,17 @@ def main() -> int:
             name = rejected(conn, CAP_INSERT, params)
             check(name is not None, f"거절: {label}", name or "통과해버렸다")
 
+        # 계약 게이트런용 샘플. 이게 없으면 아래 검사들이 전부
+        # ck_gate_run_contract_needs_sample 로 떨어져 의도한 제약을 시험하지 못한다.
+        sample_id = conn.execute(SAMPLE_INSERT, {
+            "cap": none_cap, "sha": "b" * 64, "uploader": "00000000-0000-4000-8000-000000000001",
+        }).fetchone()
+        sample_id = sample_id["id"] if sample_id else None
+        check(sample_id is not None, "계약 검증 샘플 준비")
+
         # 4~6. gate_run 쪽 규약
         base = {"agent": agent["id"], "runner": runner["id"], "is_runner": True,
-                "score": None, "sha": ZERO_SHA}
+                "score": None, "sha": ZERO_SHA, "sample": sample_id}
         for label, over in [
             ("golden 능력에 contract 게이트런",
              {"cap": golden_cap["id"], "kind": "contract", "profile": "none"}),
@@ -159,6 +178,13 @@ def main() -> int:
         ]:
             name = rejected(conn, GATE_RUN_INSERT, {**base, **over})
             check(name is not None, f"거절: {label}", name or "통과해버렸다")
+
+        # 0013 — 샘플 없는 계약 게이트런은 시작될 수 없다
+        name = rejected(conn, GATE_RUN_INSERT, {
+            **base, "cap": none_cap, "kind": "contract", "profile": "none", "sample": None,
+        })
+        check(name == "ck_gate_run_contract_needs_sample",
+              "거절: 샘플 없는 계약 게이트런 (B2)", name or "통과해버렸다")
 
         # 5. 절대규칙 8 — 게이트러너가 아니면 계약 게이트런도 못 만든다
         if plain:
