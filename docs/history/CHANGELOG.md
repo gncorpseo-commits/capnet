@@ -1,5 +1,70 @@
 # Changelog
 
+## B1 런타임 — Core 가 입력을 받아 Node 로 보낸다 (D22) — 2026-08-13
+
+`0011`(#46)이 DDL 을 세웠고, 이 커밋이 **바이트를 실제로 움직인다.** 브리지 Decision
+(`topic: B1-task-input`)에 Confirm 후 구현 — 범위는 **API · Node 전달 · GC**.
+
+**이제 되는 것**
+
+```bash
+curl -X POST 'localhost:8000/v1/inputs?capability=image.classify&version=1' \
+     -H 'content-type: image/jpeg' -H "Authorization: CapNet-Key $KEY" \
+     --data-binary @my.jpg          # → {id, sha256, byte_size, storage_state}
+curl -X POST localhost:8000/v1/tasks -d '{"inputId":"<id>", ...}'
+```
+
+Node 가 그 바이트를 받아 추론한다. **골든셋 40장 밖의 데이터가 처음으로 흐른다.**
+
+**설계**
+
+- **자유 업로드가 아니다** (D8′). 입력은 수집 시점에 능력에 묶이고, 크기는 계약이 정하며
+  (DB 가 판정), MIME 은 계약이 선언한 `input_schema.mediaTypes` 와 대조한다
+- **새 의존성 0** — `python-multipart` 를 피하려고 multipart 대신 raw body 스트리밍을 쓴다.
+  `content-type` 이 media_type 이다. 상한은 **읽는 도중에** 끊는다 (다 받아 놓고 거절하면
+  256MiB 를 이미 올린 뒤다)
+- **Node 는 lease 가 있어야 바이트를 받는다.** 증서만으로 내려주면 등록된 기기 전부가 남의
+  데이터를 읽는다 — 「승인 도메인 안으로만 간다」가 무너진다. `GET /v1/internal/inputs/{id}/bytes`
+  는 살아 있는 lease 를 확인한다
+- **Node 가 해시를 직접 대조한다.** 전송 중 바뀐 바이트로 추론하면 증적의 sha 와 실행한
+  바이트가 달라진다. 다르면 422
+- **Node 에 남기지 않는다** — 실행이 끝나면 임시 파일을 지운다
+- **바이트는 별도 볼륨** `capnet_inputs`. 증적 DB(`capnet_pg`)와 백업 정책을 분리한다
+- `capability.max_input_bytes` 를 `POST /v1/capabilities` 로 정할 수 있게 했다 —
+  없으면 한도를 조정할 방법이 아예 없었다
+- 데모 경로 유지 — `inputId` 가 없으면 종전 `caseId` → Node 로컬 골든셋
+
+**GC** (`CORE_GC_INTERVAL_S` 기본 300초)
+
+- 정책은 코드가 아니라 `task_input_purge_due` 뷰가 갖는다 — 무엇이 왜 언제 지워지는지 SQL 로 본다
+- 72h 미완료 task 를 `TIMEOUT` 종결 → 그때부터 7일
+- **바이트만 지우고 행은 남긴다.** `task.finished_at` 을 완료 시 기록한다 (TTL 기준)
+- 즉시 삭제 `POST /v1/inputs/{id}/purge` (admin) — 사고·고객 요청용
+
+**실측 (빈 볼륨 · 격리 프로젝트) 14/14**
+
+| | |
+|---|---|
+| 업로드 | ✅ Core 가 잰 sha = 로컬 sha |
+| content-type 없음 · 없는 능력 | ✅ 400 · 404 |
+| 1KiB 한도 능력에 3381B | ✅ **413** |
+| @1 입력을 @2 task 에 | ✅ 400 `task_input_capability_fkey` |
+| **Node 가 업로드한 바이트로 완주** | ✅ `COMPLETED` · 증적 `sha=185b6d75bede… 3381B` |
+| lease 없는 Node | ✅ **403** |
+| 종결 후 7일 전 | ✅ 보존 (만료 대상 0건) |
+| 8일 경과 후 GC | ✅ `purged=1 freed=3381` · 디스크 **GONE** · 행은 남음 |
+| PURGED 입력 재사용 | ✅ 409 |
+| 데모 경로 `demo.sh` | ✅ rc=0 |
+
+회귀: `run_tests` 전부 통과 · 통합 검사 7/7 · `clean_room` 9/9 · `prod_room` 14/14.
+
+**알게 된 제약** — 입력이 하나라도 들어온 뒤에는 `max_input_bytes` 를 **바꿀 수 없다.**
+`task_input` 이 `capability (id, max_input_bytes)` 를 복합 FK 로 참조하므로 UPDATE 가 거절된다.
+「어떤 계약 아래 수집됐는지」가 사후에 안 바뀌는 것이라 의도에 맞고, 바꾸려면 새 `@version` 을 만든다.
+
+**브리지** — `docs/bridge/` 를 origin 에 올린다. Windows 클론이 3커밋 뒤처져 리뷰어가 D20·B0·0011 을
+못 본 상태로 Decision 을 썼다. 이제 양쪽이 같은 우편함을 쓴다.
+
 ## B1 DDL — `0011` task_input · Core 중개 입력 수집 (D22 · D8′) — 2026-08-12
 
 **Core→Node 로 바이트가 전송되지 않는다.** Node 는 `caseId` 로 미리 마운트된 골든셋 40장 중 하나를

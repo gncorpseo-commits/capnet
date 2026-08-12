@@ -52,6 +52,11 @@ services:
       dockerfile: apps/core/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://capnet:capnet@postgres:5432/capnet}
+      CAPNET_INPUTS_DIR: /inputs
+    # 입력 바이트는 **DB 와 다른 볼륨**에 산다 (D22). 백업 정책을 분리하기 위해서다 —
+    # 증적 DB(capnet_pg)는 백업 대상, 입력 바이트(capnet_inputs)는 제외·단기.
+    volumes:
+      - capnet_inputs:/inputs
     ports:
       - "${CORE_PORT:-8000}:8000"
     depends_on:
@@ -117,3 +122,4 @@ services:
 
 volumes:
   capnet_pg:
+  capnet_inputs:
