@@ -38,9 +38,13 @@ def list_agents(conn: psycopg.Connection) -> list[dict[str, Any]]:
 
 def get_agent(conn: psycopg.Connection, agent_id: uuid.UUID) -> dict[str, Any] | None:
     row = conn.execute(
-        "SELECT id, owner_id, name, version, status, manifest_hash, "
-        "weights_format, weights_uri, weights_sha256, arch, created_at "
-        "FROM agent WHERE id = %s",
+        # max_params 도 **Core 가 말한다** (I1 과 같은 이유). 러너가 계약 검증을 하려면
+        # 상한을 알아야 하는데, 게이트 시점에는 lease 페이로드가 없다 (B2).
+        "SELECT a.id, a.owner_id, a.name, a.version, a.status, a.manifest_hash, "
+        "a.weights_format, a.weights_uri, a.weights_sha256, a.arch, "
+        "aa.max_params, a.created_at "
+        "FROM agent a LEFT JOIN agent_arch aa ON aa.arch = a.arch "
+        "WHERE a.id = %s",
         (str(agent_id),),
     ).fetchone()
     return dict(row) if row else None

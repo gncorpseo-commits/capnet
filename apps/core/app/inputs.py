@@ -266,3 +266,59 @@ def node_may_read(
         ).fetchone()
         is not None
     )
+
+
+# ── 계약 검증 샘플 (B2) ────────────────────────────────────────────────────
+
+SET_SAMPLE_SQL = """
+UPDATE capability
+   SET sample_input_id = %(input_id)s
+ WHERE id = %(capability_id)s
+RETURNING id, code, version, quality_profile, sample_input_id
+"""
+
+SAMPLE_SQL = """
+SELECT ti.id, ti.sha256, ti.byte_size, ti.media_type, ti.storage_state
+  FROM capability c
+  JOIN task_input ti ON ti.id = c.sample_input_id
+ WHERE c.id = %(capability_id)s
+"""
+
+
+def set_sample(
+    conn: psycopg.Connection, *, capability_id: uuid.UUID, input_id: uuid.UUID
+) -> dict[str, Any] | None:
+    """계약 검증 샘플을 지정한다.
+
+    **같은 능력으로 수집된 입력만** 샘플이 될 수 있다 — 복합 FK 가 판정한다 (0013).
+    남의 능력 입력을 예시로 걸 수 없다.
+    """
+    try:
+        row = conn.execute(
+            SET_SAMPLE_SQL,
+            {"capability_id": str(capability_id), "input_id": str(input_id)},
+        ).fetchone()
+    except pg_errors.ForeignKeyViolation as exc:
+        raise InputRejected(
+            "이 입력은 다른 capability 로 수집됐다 — 해당 능력으로 다시 올린다 "
+            f"({getattr(exc.diag, 'constraint_name', '')})"
+        ) from exc
+    return dict(row) if row else None
+
+
+def get_sample(conn: psycopg.Connection, capability_id: uuid.UUID) -> dict[str, Any] | None:
+    row = conn.execute(SAMPLE_SQL, {"capability_id": str(capability_id)}).fetchone()
+    return dict(row) if row else None
+
+
+IS_GATE_RUNNER_SQL = "SELECT is_gate_runner FROM node WHERE id = %(node_id)s"
+
+
+def is_gate_runner(conn: psycopg.Connection, node_id: uuid.UUID) -> bool:
+    """게이트러너만 계약 샘플을 받는다 (절대규칙 8).
+
+    샘플은 계약의 일부지 남의 작업 데이터가 아니다. 그래도 아무 Node 나 받게 두면
+    「기기는 배정받은 것만 본다」가 흐려진다.
+    """
+    row = conn.execute(IS_GATE_RUNNER_SQL, {"node_id": str(node_id)}).fetchone()
+    return bool(row and row["is_gate_runner"])

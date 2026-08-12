@@ -6,7 +6,7 @@
 
 ## 현재
 
-#47 **머지됨** (`e529d5d`). 리뷰 Decision 반영한 **핫픽스 PR #48 머지 대기** + **B2 Proposal**. 아래 참조.
+#48 **머지됨** (`b26ecf0`). B2 **구현 완료 · PR #49 머지 대기** (master/사람 머지).
 
 ---
 
@@ -218,4 +218,107 @@ D6(사전학습 허용)를 풀면 **남의 가중치**를 받는다. 그때 「�
 D6 자체 · TLS · 백업/복구 · Cursor rule.
 
 **#48 이 미머지 상태이므로 구현은 시작하지 않는다** (PROTOCOL). Decision 을 기다린다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-13T01:30:00+09:00
+topic: B2-contract-verification
+type: confirm
+expects: none
+status: open
+---
+
+## Confirm — B2 계약 검증 실수행
+
+Decision 3항 그대로 간다. `b26ecf0`(#48) 머지 확인함.
+
+| 질문 | Decision | 구현 |
+|---|---|---|
+| 1) 샘플 입력 | **(가) `task_input`** | `capability.sample_input_id` → `task_input`. **복합 FK 로 같은 능력의 입력만** 샘플이 된다 |
+| 2) 실패 시 | **golden 과 동일** | `FAILED` gate_run · acp 미발급 · 기존 폐기/복권 규약 그대로 |
+| 3) 범위 | `arch` · `max_params` · `input_schema`(샘플 추론) · `output_schema` | 이 넷을 **러너가 실행해서** 판정. `preprocess` 는 다음 |
+
+### 파생되는 결정 두 개 (구현하며 정한 것 — 이견 있으면 말해 달라)
+
+**① 샘플은 GC 대상에서 뺀다.** 샘플은 task 에 연결되지 않으므로 지금 규칙이면
+`orphan-24h` 로 하루 만에 지워진다. 그러면 다음 게이트런이 검증을 못 한다.
+`task_input_purge_due` 뷰에서 **capability 샘플로 지정된 입력을 제외**한다.
+샘플은 「휘발성 작업 바이트」가 아니라 **계약의 일부**다.
+
+**② 샘플 없는 계약 게이트런은 DB 가 거절한다.**
+`gate_run.sample_input_id` + `CHECK (kind <> 'contract' OR sample_input_id IS NOT NULL)`.
+`START_SQL` 이 `capability.sample_input_id` 를 스냅샷하므로, 샘플을 안 붙인 능력은
+계약 게이트런 자체가 시작되지 않는다. 기존 gate_run 은 전부 `kind='golden'` 이라 영향 없다.
+
+`capability` 에 「`quality_profile='none'` 이면 샘플 필수」 CHECK 를 거는 방법도 있었지만,
+**기존 볼륨에 샘플 없는 ungated 능력이 있으면 마이그레이션이 실패한다.** 그래서 게이트런
+쪽에서 막았다 — 능력은 만들어 두고 샘플을 나중에 붙일 수 있다.
+
+**③ 필수 항목을 5 → 4 로 줄인다.** `CONTRACT_CHECKS` 에서 `preprocess` 를 뺀다.
+지금까지 그 값은 **러너가 검증 없이 보내는 불린**이었다. 검증하지 않는 것을 필수로 요구하면
+「도장은 찍혔는데 확인은 없다」가 된다. 보내오면 증적에 기록하되 통과 조건에서는 뺀다.
+`preprocess` 실수행이 들어올 때 다시 필수로 올린다.
+
+### Out of scope
+
+D6 자체 · `preprocess` 실수행 · TLS · 백업/복구 · Cursor rule.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-13T02:10:00+09:00
+topic: B2-contract-verification
+type: next
+expects: ack
+status: open
+---
+
+## B2 구현 완료 — PR 머지 대기
+
+| | |
+|---|---|
+| **PR** | https://github.com/gncorpseo-commits/capnet/pull/49 |
+| **브랜치** | `finn/b2-contract-verification` (base `main`) |
+| **머지 SHA** | **없음 — 머지 대기.** master/사람이 머지한다 |
+| **CI** | 2/2 pass |
+| **선행** | `b26ecf0` `B1 핫픽스 (#48)` |
+
+### 한 것
+
+`app/contract_check.py` (러너) + `scripts/contract_bind.sh` + `0013`.
+러너가 `arch`·`max_params`·`input_schema`·`output_schema` 를 **실행해서** 판정한다.
+새 의존성 0 — jsonschema 를 쓰지 않고 계약이 실제로 쓰는 것만 본다.
+
+**실측 13/13** — 정상 검증은 `arch` 로드 · `94538 <= 2000000` · 샘플 추론 ·
+`label='annual_crop'` 계약 만족으로 PASSED, **arch 가 틀린 Agent 는 `state_dict` 로드 실패로
+FAILED · acp 미발급.** 「거짓 보고로 통과」가 실제로 막힌다.
+
+회귀: 통합 7/7 · `clean_room` 9/9 · `prod_room` 14/14.
+
+### 리뷰 때 봐 줬으면 하는 것
+
+1. **필수 항목을 5 → 4 로 줄였다** (Decision 3 에 따라 `preprocess` 제외). 검증하지 않는 것을
+   필수로 두는 것보다 낫다고 봤는데, 「보고는 계속 받되 필수만 뺀다」가 맞는지
+2. **`capability` 쪽에 「ungated 면 샘플 필수」 CHECK 를 걸지 않았다** — 기존 볼륨에 샘플 없는
+   ungated 능력이 있으면 마이그레이션이 실패한다. 게이트런 쪽에서 막았는데 이 판단이 맞는지
+3. **CI 가드가 엉뚱한 제약으로 통과하고 있었다** — `0013` 이 새 CHECK 를 앞세우면서
+   「golden 능력에 contract 게이트런」이 원래 의도한 FK 대신 샘플 CHECK 에 걸렸다.
+   고쳐서 18/18 이 됐지만, **제약을 추가할 때마다 기존 검사의 «걸린 이유»가 바뀔 수 있다.**
+   검사에 「어느 제약이 거절했는가」를 단언하게 한 것이 이번에 이걸 잡았다 — 이 방식을 계속 쓸지
+
+### Next (다음 Proposal 후보)
+
+- **`preprocess` 실수행** — 계약이 선언한 전처리(32×32 RGB 등)를 러너가 적용했는지 확인.
+  끝나면 `CONTRACT_CHECKS` 를 다시 5 로 올린다
+- **C: 백업·복구 절차** — 증적 DB 포함 · 입력 바이트 볼륨 제외 (문서는 이미 있다).
+  실제 dump/restore 리허설이 없다
+- **C: 키 회전 · lease 재할당 실측 · 모니터링 기준**
+- **D6 사전학습 해제** — B2 가 닫혔으니 이제 논의 가능하다. 가중치 출처·라이선스 선언이
+  같이 필요하다 (2차 라이선스 검증과 분리된 제품 트랙)
+- 미착수: TLS (온프레/VPN 전제)
+
+**미머지 PR 이 있으므로 큰 새 제안은 하지 않는다** (PROTOCOL). #49 머지 후 올린다.
 ```

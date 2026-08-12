@@ -40,6 +40,9 @@ from app.credential import (
 from app.db import get_conn, pool_stats
 from app.inputs import (
     InputRejected,
+    get_sample,
+    is_gate_runner,
+    set_sample,
     InputTooLarge,
     assert_media_type,
     blob_path,
@@ -572,13 +575,16 @@ def credentials_status() -> dict[str, Any]:
 @app.post("/v1/internal/gate-runs")
 def gate_start(body: GateStartBody, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     _require("developer", authorization)
-    with get_conn() as conn:
-        row = start_gate_run(
+    try:
+        with get_conn() as conn:
+            row = start_gate_run(
             conn,
-            agent_id=body.agent_id,
-            capability_id=body.capability_id,
-            runner_node_id=body.runner_node_id,
-        )
+                agent_id=body.agent_id,
+                capability_id=body.capability_id,
+                runner_node_id=body.runner_node_id,
+            )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     if row is None:
         raise HTTPException(
             status_code=409,
@@ -838,6 +844,66 @@ def input_purge(input_id: uuid.UUID, authorization: str | None = Header(default=
     removed = purge_blob(input_id)
     logger.info("input purged id=%s file_removed=%s", input_id, removed)
     return {**(marked or row), "purged_now": True, "file_removed": removed}
+
+
+class SampleBody(BaseModel):
+    input_id: uuid.UUID = Field(alias="inputId")
+
+    model_config = {"populate_by_name": True}
+
+
+@app.post("/v1/capabilities/{capability_id}/sample")
+def capability_set_sample(
+    capability_id: uuid.UUID,
+    body: SampleBody,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """계약 검증 샘플을 지정한다 (B2 · Decision 1 = task_input).
+
+    ungated 능력은 골든셋이 없다. 러너가 **이 바이트로 실제 추론해서** input_schema ·
+    output_schema 를 확인한다. 「무엇을 받는가」를 선언했으면 그 예시도 계약의 일부다.
+
+    같은 능력으로 수집된 입력만 샘플이 될 수 있다 — 복합 FK 가 판정한다 (0013).
+    """
+    _require("admin", authorization)
+    with get_conn() as conn:
+        try:
+            row = set_sample(conn, capability_id=capability_id, input_id=body.input_id)
+        except InputRejected as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if row is None:
+        raise HTTPException(status_code=404, detail="capability not found")
+    return row
+
+
+@app.get("/v1/internal/capabilities/{capability_id}/sample")
+def capability_get_sample(
+    capability_id: uuid.UUID,
+    node_id: uuid.UUID,
+    authorization: str | None = Header(default=None),
+) -> Any:
+    """게이트러너가 계약 샘플 바이트를 가져간다 (B2).
+
+    lease 가 아니라 **게이트러너 자격**으로 준다 — 계약 검증은 배정 이전에 일어난다.
+    절대규칙 8: 게이트는 team gate-runner 에서만 돈다.
+    """
+    _assert_node_matches(node_id, authorization)
+    with get_conn() as conn:
+        if not is_gate_runner(conn, node_id):
+            raise HTTPException(status_code=403, detail="게이트러너만 계약 샘플을 받는다")
+        row = get_sample(conn, capability_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="이 능력에 계약 샘플이 없다")
+    if row["storage_state"] != "STORED":
+        raise HTTPException(status_code=410, detail="sample bytes purged")
+    path = blob_path(row["id"])
+    if not path.is_file():
+        raise HTTPException(status_code=410, detail="sample bytes missing on disk")
+    return FileResponse(
+        str(path),
+        media_type=row["media_type"],
+        headers={"x-capnet-input-sha256": row["sha256"]},
+    )
 
 
 @app.get("/v1/internal/inputs/{input_id}/bytes")
