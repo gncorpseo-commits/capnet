@@ -164,10 +164,13 @@ class CapabilityCreate(BaseModel):
     compute_tier: str = "M"
     trust_domain_min: str = "team"
     mvp_eligible: bool = False
-    golden_set_ref: str
-    golden_set_sha256: str
-    golden_set_size: int
-    golden_metrics: dict[str, Any]
+    # golden = 골든셋 게이트를 붙인다 (아래 4개 필수).
+    # none   = 계약만으로 라우팅한다 (아래 4개를 **보내지 않는다** — Core 가 센티널을 채운다).
+    quality_profile: str = "golden"
+    golden_set_ref: str | None = None
+    golden_set_sha256: str | None = None
+    golden_set_size: int | None = None
+    golden_metrics: dict[str, Any] | None = None
 
 
 class ClaimBody(BaseModel):
@@ -354,12 +357,18 @@ def capabilities_list() -> dict[str, Any]:
 
 @app.post("/v1/capabilities")
 def capabilities_create(body: CapabilityCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
-    """런타임 Capability 등록. UNIQUE(code,version)·CHECK는 DB가 강제한다."""
+    """런타임 Capability 등록. UNIQUE(code,version)·CHECK는 DB가 강제한다.
+
+    `quality_profile='none'` 이면 골든셋 없이 계약만으로 라우팅한다 (D20).
+    센티널은 **Core 가 채운다** — 호출자가 넣으면 거절한다. 규약이 새면 언젠가
+    진짜 골든셋 자리에 센티널이 들어간다.
+    """
     _require("admin", authorization)
     try:
         with get_conn() as conn:
             return create_capability(
                 conn,
+                quality_profile=body.quality_profile,
                 code=body.code,
                 version=body.version,
                 name=body.name,

@@ -15,6 +15,19 @@ from app.const import SHA256_HEX
 _OUTPUT_KINDS = frozenset({"closed_set_labels", "structured", "freeform"})
 _TIERS = frozenset({"L", "M", "S"})
 _DOMAINS = frozenset({"team", "tenant", "public"})
+_PROFILES = frozenset({"golden", "none"})
+
+# 「골든셋 없음」의 고정 표현 (0010 · D20). `golden_set_*` 의 NOT NULL 을 해제하지 않고
+# 규약으로 표현한다 — 값은 `ck_capability_profile_sentinel` 이 강제한다.
+#
+# **호출자가 이 값을 손으로 넣지 않는다.** 넣게 두면 규약이 새고, 언젠가 진짜 골든셋 자리에
+# 센티널이 들어간다. quality_profile='none' 이면 Core 가 채운다.
+SENTINEL_GOLDEN = {
+    "golden_set_ref": "(none)",
+    "golden_set_sha256": "0" * 64,
+    "golden_set_size": 1,
+    "golden_metrics": {},
+}
 
 
 def assert_capability_sha256(value: str) -> None:
@@ -25,7 +38,7 @@ def assert_capability_sha256(value: str) -> None:
 def list_capabilities(conn: psycopg.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT id, code, version, name, description, output_kind, compute_tier, "
-        "trust_domain_min, mvp_eligible, golden_set_ref, golden_set_sha256, "
+        "trust_domain_min, mvp_eligible, quality_profile, golden_set_ref, golden_set_sha256, "
         "golden_set_size, created_at "
         "FROM capability ORDER BY code, version"
     ).fetchall()
@@ -35,7 +48,7 @@ def list_capabilities(conn: psycopg.Connection) -> list[dict[str, Any]]:
 def get_capability(conn: psycopg.Connection, capability_id: uuid.UUID) -> dict[str, Any] | None:
     row = conn.execute(
         "SELECT id, code, version, name, description, input_schema, output_schema, "
-        "output_kind, compute_tier, trust_domain_min, mvp_eligible, "
+        "output_kind, compute_tier, trust_domain_min, mvp_eligible, quality_profile, "
         "golden_set_ref, golden_set_sha256, golden_set_size, golden_metrics, created_at "
         "FROM capability WHERE id = %s",
         (str(capability_id),),
@@ -56,10 +69,11 @@ def create_capability(
     compute_tier: str,
     trust_domain_min: str,
     mvp_eligible: bool,
-    golden_set_ref: str,
-    golden_set_sha256: str,
-    golden_set_size: int,
-    golden_metrics: dict[str, Any],
+    golden_set_ref: str | None = None,
+    golden_set_sha256: str | None = None,
+    golden_set_size: int | None = None,
+    golden_metrics: dict[str, Any] | None = None,
+    quality_profile: str = "golden",
 ) -> dict[str, Any]:
     if not code.strip():
         raise ValueError("code required")
@@ -71,6 +85,52 @@ def create_capability(
         raise ValueError("compute_tier must be L, M, or S")
     if trust_domain_min not in _DOMAINS:
         raise ValueError("trust_domain_min must be team, tenant, or public")
+    if quality_profile not in _PROFILES:
+        raise ValueError(f"quality_profile must be one of {sorted(_PROFILES)}")
+
+    if quality_profile == "none":
+        # 골든셋 관련 값은 **받지 않는다.** 보내왔다면 호출자가 뭔가 오해한 것이다 —
+        # 조용히 덮어쓰면 「골든셋을 줬는데 무시됐다」가 된다.
+        given = [
+            n for n, v in (
+                ("golden_set_ref", golden_set_ref),
+                ("golden_set_sha256", golden_set_sha256),
+                ("golden_set_size", golden_set_size),
+                ("golden_metrics", golden_metrics),
+            ) if v is not None
+        ]
+        if given:
+            raise ValueError(
+                "quality_profile='none' takes no golden set fields "
+                f"(got {', '.join(given)}) — Core fills the sentinel"
+            )
+        golden_set_ref = SENTINEL_GOLDEN["golden_set_ref"]
+        golden_set_sha256 = SENTINEL_GOLDEN["golden_set_sha256"]
+        golden_set_size = SENTINEL_GOLDEN["golden_set_size"]
+        golden_metrics = SENTINEL_GOLDEN["golden_metrics"]
+        # 채점이 없는 능력은 MVP 통계 대상이 아니다.
+        if mvp_eligible:
+            raise ValueError("quality_profile='none' cannot be mvp_eligible")
+    else:
+        missing = [
+            n for n, v in (
+                ("golden_set_ref", golden_set_ref),
+                ("golden_set_sha256", golden_set_sha256),
+                ("golden_set_size", golden_set_size),
+                ("golden_metrics", golden_metrics),
+            ) if v is None
+        ]
+        if missing:
+            raise ValueError(
+                f"quality_profile='golden' requires {', '.join(missing)}"
+            )
+        if golden_set_ref == SENTINEL_GOLDEN["golden_set_ref"] or (
+            golden_set_sha256 == SENTINEL_GOLDEN["golden_set_sha256"]
+        ):
+            raise ValueError(
+                "sentinel golden set values are reserved for quality_profile='none'"
+            )
+
     if golden_set_size < 1:
         raise ValueError("golden_set_size must be > 0")
     assert_capability_sha256(golden_set_sha256)
@@ -85,19 +145,20 @@ def create_capability(
                 code, version, name, description,
                 input_schema, output_schema, output_kind,
                 compute_tier, trust_domain_min, mvp_eligible,
-                golden_set_ref, golden_set_sha256, golden_set_size, golden_metrics
+                golden_set_ref, golden_set_sha256, golden_set_size, golden_metrics,
+                quality_profile
             )
             VALUES (
                 %(code)s, %(version)s, %(name)s, %(description)s,
                 %(input_schema)s::jsonb, %(output_schema)s::jsonb, %(output_kind)s,
                 %(compute_tier)s, %(trust_domain_min)s, %(mvp_eligible)s,
                 %(golden_set_ref)s, %(golden_set_sha256)s, %(golden_set_size)s,
-                %(golden_metrics)s::jsonb
+                %(golden_metrics)s::jsonb, %(quality_profile)s
             )
             RETURNING id, code, version, name, description, input_schema, output_schema,
                       output_kind, compute_tier, trust_domain_min, mvp_eligible,
                       golden_set_ref, golden_set_sha256, golden_set_size, golden_metrics,
-                      created_at
+                      quality_profile, created_at
             """,
             {
                 "code": code.strip(),
@@ -114,6 +175,7 @@ def create_capability(
                 "golden_set_sha256": golden_set_sha256,
                 "golden_set_size": golden_set_size,
                 "golden_metrics": json.dumps(golden_metrics),
+                "quality_profile": quality_profile,
             },
         ).fetchone()
     except pg_errors.UniqueViolation as exc:
