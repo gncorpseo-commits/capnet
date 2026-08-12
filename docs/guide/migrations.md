@@ -21,6 +21,14 @@ Phase 2 의 `node_credential` DDL(SD-002)은 v4.4 동결을 처음 건드리는 
 
 ## 2. 쓰는 법
 
+> **compose 는 이미 자동으로 돌린다.** `compose.yaml` 의 일회성 `migrate` 서비스가 `postgres` 뒤·`core` 앞에서
+> `up` 을 적용한다 (`core` 는 `service_completed_successfully` 로 기다린다). 새 볼륨에서 심사자가
+> 이 절차를 몰라도 재현이 깨지지 않게 하려는 것이다 — 2026-08-12 이전에는 이 단계가 없어서
+> `demo.sh` 가 `agent.arch` 없음으로 무출력 실패했다.
+>
+> **제품 배포에서는 끈다.** `CAPNET_AUTO_MIGRATE=0` 이면 서비스가 즉시 0 으로 빠지고, 아래 명령을
+> 운영자가 원하는 시점에 직접 돌린다. 마이그레이션 시점은 앱 기동이 정할 일이 아니다.
+
 ```bash
 scripts/migrate.sh status         # 적용 상태 (기본값)
 scripts/migrate.sh verify         # 체크섬·금지 패턴 검사 · 쓰기 없음

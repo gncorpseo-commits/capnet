@@ -21,6 +21,13 @@ cd capnet
 docker compose up --build -d          # 1~3분
 ```
 
+기동 순서는 `postgres` → `migrate`(일회성) → `core` → Node다. 새 볼륨은 `docs/spec/schema.sql`까지만 들어가고
+그 뒤 세대는 `migrations/`에 있으므로, `migrate`가 끝나야 `core`가 뜬다. 적용 결과를 보려면:
+
+```bash
+docker compose logs migrate           # "완료 — 9개 적용" (재실행 시 "적용할 것 없음")
+```
+
 **Linux / macOS**
 
 ```bash
@@ -60,7 +67,10 @@ curl -X POST localhost:8001/v1/execute -H 'content-type: application/json' \
 # -> HTTP 403  "assignment not leased to this node"
 ```
 
-> 빈 상태에서 clone → compose up → 위 세 스크립트가 통과하는 것을 2026-08-09에 확인했다.
+> 빈 볼륨에서 clone → compose up → 위 세 스크립트가 통과하는 것을 **2026-08-12**에 확인했다 (스키마 세대 9 · 마이그레이션 `0001`–`0009`).
+>
+> 제품 배포에서 마이그레이션 시점을 운영자가 직접 잡으려면 `CAPNET_AUTO_MIGRATE=0`으로 일회성 서비스를 끄고
+> `scripts/migrate.sh up`을 원하는 때에 돌린다 → [`docs/guide/migrations.md`](docs/guide/migrations.md).
 
 | 보고 싶은 것 | 위치 |
 |--------------|------|

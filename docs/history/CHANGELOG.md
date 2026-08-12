@@ -1,5 +1,39 @@
 # Changelog
 
+## 새 볼륨 재현 결함 — compose 일회성 migrate — 2026-08-12
+
+**README 대로 하면 `demo.sh` 가 실패했다.** 빠른 시작에 마이그레이션 단계가 없었다.
+
+- 새 볼륨은 initdb 가 `docs/spec/schema.sql`(최종 수정 08-03)까지만 넣는다. 그 뒤 세대인
+  `0007 node_credential` · `0008 agent_arch` · `0009 api_key_hardening`(전부 08-11)은 `migrations/` 에만 있다
+- `compose.yaml` 에 적용 단계가 없고 앱 기동에도 없어서, **자동 적용 경로가 0** 이었다
+- `clean_room.sh` 가 9/9 로 통과한 것은 그 스크립트가 `migrate up` 을 명시적으로 돌리기 때문이다.
+  README 경로는 아무도 돌리지 않고 있었다 — README 의 "2026-08-09 확인" 은 0007~0009 이전이다
+
+**실측 (빈 볼륨 · 격리 프로젝트 · 최신 이미지)**
+
+| | 수정 전 | 수정 후 |
+|---|---|---|
+| `agent_arch` · `node_credential` · `schema_migration` | 전부 없음 | 존재 |
+| `agent.arch` 컬럼 | 없음 | 존재 |
+| `GET /v1/internal/nodes/{id}/assignments` | **500** `UndefinedTable: relation "agent_arch" does not exist` | 200 |
+| `GET /v1/ops/status` | **500** | 200 · `schema_version=9` |
+| `demo_violations.sh` · `sanity.sh` | rc=0 | rc=0 |
+| `demo.sh` | **rc=22** (`POST /v1/agents` → `UndefinedColumn: column "arch" of relation "agent"`) | rc=0 · `PASSED acc=0.8500` |
+
+`demo.sh` 는 `curl -sf` 라 500 을 받으면 **아무 메시지도 없이** 죽는다. 심사자가 보는 것은 무출력 실패다.
+
+**고친 방법 — 일회성 `migrate` 서비스** (`postgres` 뒤 · `core` 앞, `service_completed_successfully`)
+
+- **앱 기동 시 자동 DDL 을 넣지 않았다.** 마이그레이션 시점은 앱이 정할 일이 아니라 운영자가 잡는다.
+  서비스로 두면 명시적으로 남고 로그도 `docker compose logs migrate` 로 따로 본다
+- `CAPNET_AUTO_MIGRATE=0` 이면 즉시 0 으로 빠진다 — 제품 배포는 이걸로 끄고 `scripts/migrate.sh up` 을 직접 돌린다
+- postgres 헬스체크는 initdb 중에도 유닉스 소켓으로 통과할 수 있다 (그때 TCP 는 닫혀 있다).
+  그래서 healthy 만 믿지 않고 `migrate status` 가 baseline 을 볼 때까지 기다린 뒤 적용한다
+- 새 의존성 0 · 앱 코드 변경 0
+
+**남은 것** — `sbom.json` 에 `psycopg-pool` 누락, torch/torchvision 미핀. 2차 라이선스 검증(F4) 트랙이라 따로 간다.
+
 ## DB 커넥션 풀 (SD-017 해소) — 2026-08-11
 
 바로 앞 커밋에서 「측정만 남기고 미룬다」고 했던 것을 **master 결정으로 지금** 한다.
