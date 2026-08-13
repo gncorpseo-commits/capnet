@@ -64,6 +64,11 @@ chk "CAPNET_AUTO_MIGRATE=0 이면 적용 안 함" bash -c '
 
 echo
 echo "== 3) 운영자가 직접 마이그레이션 =="
+# 여기서 먼저 빌드한다. `dc run` 은 --build 를 안 받으므로, 이걸 빼면 **마이그레이션이
+# 옛 이미지에서** 돈다 — migrations/ 는 이미지에 COPY 되기 때문이다. §4 의 --build 는
+# 런타임만 덮으므로, 새 마이그레이션이 적용되지 않은 DB 위에 새 코드가 뜬다.
+# (G2 검사를 추가하다 실제로 걸렸다 — 0016 이 안 올라가 초대 발행이 500 이었다.)
+dc build core >/dev/null 2>&1
 dc run --rm --no-deps core python -m app.migrate up 2>&1 | tail -2
 chk "migrate up 성공" dc run --rm --no-deps core python -m app.migrate verify
 
@@ -121,6 +126,31 @@ enf=$(curl -s -m 10 "$CORE_URL/v1/ops/safety" -H "Authorization: CapNet-Key $key
       | python3 -c 'import json,sys; d=json.load(sys.stdin); e=d["enforcement"]; print(e["api_key"], e["node_credential"])' 2>/dev/null)
 echo "    admin 키로 조회 → enforcement: $enf"
 chk "강제 켜짐이 조회면에 그대로 보인다" test "$enf" = "True True"
+
+echo
+echo "== 8-2) 초대 소진은 관리 키 없이 된다 (G2) =="
+# 이 경로만 키 없이 열린다 — 초대받은 사람에게는 관리 키가 없기 때문이다.
+# 열려 있다는 것과 아무나 쓴다는 것은 다르다. 둘 다 여기서 본다.
+inv=$(curl -s -m 10 -X POST "$CORE_URL/v1/nodes/invites" -H 'content-type: application/json' \
+      -H "Authorization: CapNet-Key $key" -d '{"trust_domain":"tenant","label":"prod-room"}')
+itok=$(printf '%s' "$inv" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("secret",""))' 2>/dev/null)
+chk "초대 발행 (admin 키)" test -n "$itok"
+c=$(code -X POST "$CORE_URL/v1/nodes/redeem" -H 'content-type: application/json' -d '{"name":"crew-1"}')
+echo "    POST /v1/nodes/redeem (토큰 없음) → HTTP $c"
+chk "초대 토큰 없는 소진 401" test "$c" = "401"
+red=$(curl -s -m 10 -X POST "$CORE_URL/v1/nodes/redeem" -H 'content-type: application/json' \
+      -H "Authorization: CapNet-Invite $itok" -d '{"name":"crew-1","device_type":"PC_GPU"}')
+got=$(printf '%s' "$red" | python3 -c '
+import json,sys
+d=json.load(sys.stdin); n=d.get("node",{})
+print("%s/%s/%s/%s" % (n.get("trust_domain"), n.get("provision_source"),
+                       n.get("is_gate_runner"), bool(d.get("credential",{}).get("secret"))))' 2>/dev/null)
+echo "    관리 키 없이 소진 → $got (도메인/조달/게이트러너/증서)"
+chk "키 없이 소진되고 등급은 초대장이 정한다" test "$got" = "tenant/invited/False/True"
+c=$(code -X POST "$CORE_URL/v1/nodes/redeem" -H 'content-type: application/json' \
+      -H "Authorization: CapNet-Invite $itok" -d '{"name":"crew-2"}')
+echo "    같은 초대 두 번째 → HTTP $c"
+chk "1회용 초대는 두 번 안 된다" test "$c" = "401"
 
 echo
 echo "== 9) seed 게이트러너 증서 발급 → 파일 주입 =="

@@ -64,6 +64,15 @@ from app.gate import (
     revoke_capability,
     start_gate_run,
 )
+from app.invite import (
+    InviteError,
+    issue_invite,
+    list_invites,
+    looks_like_invite,
+    redeem_invite,
+    revoke_invite,
+    verify_invite,
+)
 from app.safety import safety_posture
 from app.registry import (
     bind_agent_node,
@@ -120,6 +129,28 @@ class AgentCreate(BaseModel):
     # 허용 아키텍처는 DB 행이다 (agent_arch). 없는 값이면 FK 가 등록을 막는다 (I1).
     # 선택 타입이지만 **필수다** — 핸들러가 인증 뒤에서 본다 (G5 · agents_create 주석 참조).
     arch: str | None = None
+
+
+class InviteCreate(BaseModel):
+    """초대 발행. **등급은 여기서 정해진다** — 소진하는 쪽이 아니라 (절대규칙 4)."""
+
+    trust_domain: str = "tenant"          # team 은 DB 가 거절한다
+    compute_tier_max: str = "M"
+    label: str | None = None
+    ttl_days: int = Field(default=7, ge=1, le=90)
+    max_redemptions: int = Field(default=1, ge=1, le=100)
+
+
+class InviteRevokeBody(BaseModel):
+    reason: str = "revoked"
+
+
+class NodeRedeem(BaseModel):
+    """초대 소진. 등급 필드가 **없다** — 초대장이 정한다 (절대규칙 4)."""
+
+    name: str
+    device_type: str = "PC_GPU"
+    gpu: str | None = None
 
 
 class CredentialIssueBody(BaseModel):
@@ -550,6 +581,97 @@ def nodes_create(body: NodeCreate, authorization: str | None = Header(default=No
             )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/v1/nodes/invites")
+def invite_issue(body: InviteCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """초대장을 발행한다 — 평문은 이때 한 번만 나온다 (G2 · 0016).
+
+    **등급은 여기서 정해져 초대장에 박힌다.** 소진하는 쪽은 바꾸지 못한다 (절대규칙 4).
+    `team` 은 초대로 만들 수 없다 — DB 가 거절한다.
+    """
+    actor = _require("admin", authorization)
+    issued_by = uuid.UUID(str(actor["user_id"])) if actor else SEED_ADMIN_ID
+    try:
+        with get_conn() as conn:
+            return issue_invite(
+                conn,
+                issued_by=issued_by,
+                trust_domain=body.trust_domain,
+                compute_tier_max=body.compute_tier_max,
+                label=body.label,
+                ttl_days=body.ttl_days,
+                max_redemptions=body.max_redemptions,
+            )
+    except InviteError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/v1/nodes/invites")
+def invites_list(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """초대장 상태 목록. 시크릿도 해시도 나가지 않는다 — prefix·상태만.
+
+    폐기하려면 `id` 가 필요한데 발행 응답을 잃으면 다시 볼 길이 없다. 그래서 있다.
+    """
+    _require("admin", authorization)
+    with get_conn() as conn:
+        return {"items": list_invites(conn)}
+
+
+@app.post("/v1/nodes/invites/{invite_id}/revoke")
+def invite_revoke(
+    invite_id: uuid.UUID,
+    body: InviteRevokeBody,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    _require("admin", authorization)
+    with get_conn() as conn:
+        row = revoke_invite(conn, invite_id=invite_id, reason=body.reason)
+    if row is None:
+        raise HTTPException(status_code=404, detail="살아 있는 초대가 없다")
+    return row
+
+
+@app.post("/v1/nodes/redeem")
+def node_redeem(body: NodeRedeem, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """초대를 소진해 Node 를 만들고 증서까지 받는다 (G2 · 원스텝).
+
+    **이 경로만 관리 키 없이 열린다.** 초대받은 사람에게는 키가 없기 때문이다 —
+    초대 토큰 자체가 인증이다. 그래서 완화를 겹쳐 둔다: 만료 · 1회용(기본) ·
+    폐기 · `audit_log` · 소진 판정을 DB 의 조건부 UPDATE 가 한다.
+
+    **등급은 초대장에서 읽는다.** 본문은 이름·기기 종류만 준다 (절대규칙 4).
+    `is_gate_runner` 는 언제나 거짓이다 — `ck_gate_runner_team` 이 어차피 막는다.
+    """
+    if not looks_like_invite(authorization):
+        raise HTTPException(status_code=401, detail="초대 토큰이 필요하다 (CapNet-Invite ci_…)")
+    try:
+        with get_conn() as conn:
+            invite = verify_invite(conn, authorization or "")
+            node = create_node(
+                conn,
+                name=body.name,
+                device_type=body.device_type,
+                # 등급은 초대장 값이다. 본문에 무엇이 오든 쓰지 않는다.
+                trust_domain=invite["trust_domain"],
+                compute_tier_max=invite["compute_tier_max"],
+                is_gate_runner=False,
+                gpu=body.gpu,
+                provision_source="invited",
+            )
+            redeem_invite(
+                conn, invite=invite, node_id=node["id"], node_name=body.name
+            )
+            cred = issue_credential(
+                conn, node_id=node["id"], issued_by=invite["issued_by"], label="invite"
+            )
+    except InviteError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except CredentialError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"node": node, "credential": cred}
 
 
 @app.get("/v1/nodes/{node_id}")
