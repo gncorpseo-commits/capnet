@@ -118,6 +118,20 @@ curl -s localhost:8000/v1/ops/status \
 - `api_keys_active` 가 1 이상
 - `drift_routable` · `arch_unbound_routable` 이 **0**
 
+합계가 아니라 **기기 단위**로 「왜 이 기기가 실행 가능한가」를 보려면 (S2):
+
+```bash
+curl -s localhost:8000/v1/ops/safety \
+  -H "Authorization: CapNet-Key $(cat data/admin.key)" | python3 -m json.tool
+```
+
+- `by_task_domain.team.nodes_routable` — **내 team 요청을 실제로 돌릴 수 있는 기기 수**
+- 기기마다 `accepts_task_domains`(받을 수 있는 요청 도메인) · `routable_pairs`
+  (지금 배정될 수 있는 Agent·능력 쌍) · `risks`
+- `routable_pairs` 는 `claim` 의 후보 조건을 그대로 센다 — **조회면과 배정이 갈라지지 않는다**
+
+`developer` 이상이 필요하다. 증서는 `key_prefix`·만료·마지막 사용만 나간다.
+
 ---
 
 ## 2. 실측 (2026-08-12 · 빈 볼륨 · 격리 프로젝트)

@@ -69,7 +69,10 @@ chk "migrate up 성공" dc run --rm --no-deps core python -m app.migrate verify
 
 echo
 echo "== 4) core 기동 (강제 모드) =="
-dc up -d core >/dev/null 2>&1
+# --build 가 없으면 **옛 이미지로 통과할 수 있다.** 이 게이트는 지금 소스가 제품
+# 프로파일에서 도는지를 보는 것이지, 예전에 빌드해 둔 것이 도는지가 아니다.
+# (S2 검사를 추가하다 실제로 걸렸다 — 새 엔드포인트가 404 였다.)
+dc up -d --build core >/dev/null 2>&1
 for i in $(seq 1 60); do curl -sf -m 3 "$CORE_URL/health" >/dev/null 2>&1 && break; sleep 2; done
 chk "health 는 인증 없이 200" test "$(code $CORE_URL/health)" = "200"
 echo -n "    enforcement: "; curl -s -m 10 "$CORE_URL/v1/ops/status" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["enforcement"], "ok=",d["ok"])' 2>/dev/null || echo "(조회 실패)"
@@ -108,6 +111,18 @@ echo "    POST /v1/nodes (admin 키) → HTTP $c"
 chk "admin 키로 Node 등록" bash -c "[ '$c' = '200' ] || [ '$c' = '201' ]"
 
 echo
+echo "== 8-1) 안전 자세 조회면도 강제 아래에 있다 (S2) =="
+# 「누가 내 데이터를 돌릴 수 있나」를 익명이 볼 수 있으면, 증서 없는 기기 목록이
+# 그대로 공격 지도가 된다. 조회면이라고 예외를 두지 않는다.
+c=$(code "$CORE_URL/v1/ops/safety")
+echo "    GET /v1/ops/safety (키 없음) → HTTP $c"
+chk "무인증 안전 조회면 401" test "$c" = "401"
+enf=$(curl -s -m 10 "$CORE_URL/v1/ops/safety" -H "Authorization: CapNet-Key $key" \
+      | python3 -c 'import json,sys; d=json.load(sys.stdin); e=d["enforcement"]; print(e["api_key"], e["node_credential"])' 2>/dev/null)
+echo "    admin 키로 조회 → enforcement: $enf"
+chk "강제 켜짐이 조회면에 그대로 보인다" test "$enf" = "True True"
+
+echo
 echo "== 9) seed 게이트러너 증서 발급 → 파일 주입 =="
 runner=00000000-0000-4000-8000-000000000030
 cred=$(curl -s -m 10 -X POST "$CORE_URL/v1/nodes/$runner/credentials" \
@@ -124,7 +139,7 @@ chk "증서 없는 Node 401" test "$c" = "401"
 
 echo
 echo "== 11) Node 기동 (증서 파일 마운트) =="
-dc --profile demo up -d node-m-team >/dev/null 2>&1
+dc --profile demo up -d --build node-m-team >/dev/null 2>&1
 for i in $(seq 1 60); do curl -sf -m 3 "$NODE_URL/health" >/dev/null 2>&1 && break; sleep 2; done
 chk "Node health 200" test "$(code $NODE_URL/health)" = "200"
 sleep 5

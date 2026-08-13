@@ -64,11 +64,21 @@
 「러닝크루가 자기 기기를 내놓는다」는 시나리오에는 **가입 요청 → 승인 → 증서 발급**이 필요하다.
 값은 스키마에 있고 경로가 없다 — `attempt_no` 와 같은 모양이다.
 
-### G3 — 「누가 내 데이터를 돌릴 수 있나」를 한 면에서 못 본다 🟠
+### G3 — 「누가 내 데이터를 돌릴 수 있나」를 한 면에서 못 본다 (**닫힘** · S2) ✅
 
-`GET /v1/ops/status` 가 `enforcement`·`nodes_without_credential`·`drift_routable` 을 준다.
+~~`GET /v1/ops/status` 가 `enforcement`·`nodes_without_credential`·`drift_routable` 을 준다.
 `GET /v1/nodes-liveness` 가 생존을 준다. 하지만 **한 기기에 대해 「왜 이 기기가 실행 가능한가」**
-(등급·조달·증서·바인딩·계약)를 한 번에 보는 면이 없다. 운영자가 여러 조회를 이어 붙여야 한다.
+(등급·조달·증서·바인딩·계약)를 한 번에 보는 면이 없다. 운영자가 여러 조회를 이어 붙여야 한다.~~
+
+**`GET /v1/ops/safety` 로 닫았다 (2026-08-14).** 기기 단위로 등급·조달 경로·증서·생사·
+받을 수 있는 요청 도메인(`accepts_task_domains`)·라우팅 가능한 (Agent, 능력) 쌍
+(`routable_pairs`)·위험 표시를 한 번에 준다. 읽기 전용 · DDL 0 · 새 의존성 0.
+
+**이 조회면의 유일한 실패 방식은 거짓말이다** — 실제 배정과 다른 그림을 보여주는 것.
+그래서 `routable_pairs` 는 `claim.CLAIM_SQL` 의 후보 조건(증서 유효 · Agent `ACTIVE` ·
+`agent_node_ready` · 티어 호환)을 **그대로** 센다. `check_ops_safety`(21종)가 둘이 같은 답을
+내는지 고정한다 — 조회면이 「가능」이라 한 기기에서 `claim` 이 실제로 배정하고,
+「불가」라 한 기기는 `claim` 도 고르지 않는다.
 
 ### G4 — 증서 회전 절차가 런북에 없다 🟡
 
