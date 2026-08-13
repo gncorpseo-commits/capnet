@@ -20,10 +20,15 @@ SELECT a.id, a.task_id, a.agent_id, a.capability_id, a.node_id, a.status,
        -- 실행한 것이 같다는 보장이 없다 (I1 · foreign-agent-isolation §2.1).
        ag.arch,
        aa.max_params,
+       -- 전처리도 **Core 가 말한다** (0014 · I1 과 같은 이유). 이게 없으면 Node 는
+       -- predict_image 기본값으로 떨어지고, 계약이 다른 값을 선언한 능력에서
+       -- 「검증한 전처리」와 「실행한 전처리」가 갈라진다.
+       c.input_schema -> 'preprocess' AS preprocess,
        t.input_ref, t.status AS task_status
   FROM assignment a
   JOIN agent ag ON ag.id = a.agent_id
   LEFT JOIN agent_arch aa ON aa.arch = ag.arch
+  JOIN capability c ON c.id = a.capability_id
   JOIN task t ON t.id = a.task_id
  WHERE a.id = %(assignment_id)s
 """
@@ -94,10 +99,15 @@ SELECT a.id, a.task_id, a.agent_id, a.capability_id, a.node_id, a.status,
        -- 실행한 것이 같다는 보장이 없다 (I1 · foreign-agent-isolation §2.1).
        ag.arch,
        aa.max_params,
+       -- 전처리도 **Core 가 말한다** (0014 · I1 과 같은 이유). 이게 없으면 Node 는
+       -- predict_image 기본값으로 떨어지고, 계약이 다른 값을 선언한 능력에서
+       -- 「검증한 전처리」와 「실행한 전처리」가 갈라진다.
+       c.input_schema -> 'preprocess' AS preprocess,
        t.input_ref, t.status AS task_status
   FROM assignment a
   JOIN agent ag ON ag.id = a.agent_id
   LEFT JOIN agent_arch aa ON aa.arch = ag.arch
+  JOIN capability c ON c.id = a.capability_id
   JOIN task t ON t.id = a.task_id
  WHERE a.node_id = %(node_id)s
    AND a.status = 'LEASED'
