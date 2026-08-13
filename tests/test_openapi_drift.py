@@ -1,0 +1,83 @@
+"""`openapi.yaml` 이 실제 라우트와 어긋나지 않는지 본다.
+
+## 왜 있는가
+
+드리프트가 **조용히** 쌓였다. `/v1/ops/*` · `/v1/inputs/*` · 증서 계열 15개가 코드에는 있고
+문서에는 없었다 — 여러 세대에 걸쳐서다. 문서만 보고 붙이는 쪽에는 그 경로들이 **없는 것**이다.
+
+한 번 맞추는 것으로는 다시 벌어진다. 그래서 검사로 남긴다.
+
+## 무엇을 지키나
+
+1. `include_in_schema=False` 가 아닌 모든 라우트는 `openapi.yaml` 에 있다
+2. `openapi.yaml` 의 모든 경로는 실제 라우트다 (지운 API 가 문서에 남지 않는다)
+3. 두 사본(`apps/core/` · `docs/spec/`)이 같다
+
+## 왜 파싱을 손으로 하나
+
+`unittest discover` 는 **의존성 없이** 돈다 (CI 단위 잡은 아무것도 설치하지 않는다).
+`app.main` 을 임포트하면 fastapi 가 필요하고, YAML 로 읽으면 pyyaml 이 필요하다.
+그래서 소스와 문서를 **텍스트로** 본다 — 이 검사가 지키려는 것에는 그걸로 충분하다.
+"""
+
+from __future__ import annotations
+
+import re
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+MAIN = ROOT / "apps" / "core" / "app" / "main.py"
+SPEC = ROOT / "apps" / "core" / "openapi.yaml"
+SPEC_COPY = ROOT / "docs" / "spec" / "openapi.yaml"
+
+# @app.get("/v1/x") · @app.post("/v1/x", include_in_schema=False)
+ROUTE_RE = re.compile(r'^@app\.(get|post|put|patch|delete)\(\s*"([^"]+)"([^)]*)\)', re.M)
+# 최상위 paths 항목 — 두 칸 들여쓴 "/..." 줄
+PATH_RE = re.compile(r'^  (/\S*?):\s*$', re.M)
+
+
+def routes() -> list[tuple[str, bool]]:
+    """(경로, 문서화 대상인가) 목록."""
+    src = MAIN.read_text(encoding="utf-8")
+    return [
+        (path, "include_in_schema=False" not in rest)
+        for _method, path, rest in ROUTE_RE.findall(src)
+    ]
+
+
+def spec_paths() -> set[str]:
+    return set(PATH_RE.findall(SPEC.read_text(encoding="utf-8")))
+
+
+class OpenApiDrift(unittest.TestCase):
+    def test_every_public_route_is_documented(self) -> None:
+        documented = spec_paths()
+        missing = sorted({p for p, public in routes() if public} - documented)
+        self.assertEqual(
+            missing, [], f"openapi.yaml 에 없는 라우트 {len(missing)}개: {missing}"
+        )
+
+    def test_no_phantom_paths(self) -> None:
+        """문서에만 있는 경로 — 지운 API 가 남아 있으면 붙이는 쪽이 헛짚는다."""
+        declared = {p for p, _ in routes()}
+        phantom = sorted(spec_paths() - declared)
+        self.assertEqual(
+            phantom, [], f"라우트가 없는 openapi 경로 {len(phantom)}개: {phantom}"
+        )
+
+    def test_two_copies_match(self) -> None:
+        self.assertEqual(
+            SPEC.read_text(encoding="utf-8"),
+            SPEC_COPY.read_text(encoding="utf-8"),
+            "apps/core/openapi.yaml 과 docs/spec/openapi.yaml 이 다르다",
+        )
+
+    def test_parser_actually_finds_things(self) -> None:
+        """검사가 0개를 비교하며 통과하는 상태를 막는다."""
+        self.assertGreater(len(routes()), 20)
+        self.assertGreater(len(spec_paths()), 20)
+
+
+if __name__ == "__main__":
+    unittest.main()
