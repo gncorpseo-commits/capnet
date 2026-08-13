@@ -269,6 +269,244 @@ paths:
       responses:
         "200":
           description: application/yaml
+  /v1/datasets:
+    get:
+      summary: 입력 allowlist (보조 경로)
+      description: >
+        절대규칙 7 = D8′. 본경로는 Core 중개 수집(POST /v1/inputs)이고,
+        allowlist 된 datasetId 는 데모·카탈로그 보조로 남는다.
+      responses:
+        "200":
+          description: items[]
+  /v1/ops/status:
+    get:
+      summary: 운영 한 눈 — 큐·lease·함대·증적·신원 합계
+      description: >
+        쓰기 없음 · 시크릿 없음. 판정(warnings·ok)까지 준다.
+        기기 단위 분해는 GET /v1/ops/safety.
+      responses:
+        "200":
+          description: 합계 + warnings + enforcement + db_pool
+  /v1/ops/safety:
+    get:
+      summary: 안전 자세 — 「누가 내 데이터를 돌릴 수 있나」
+      description: >
+        기기 단위로 등급·조달 경로·증서(prefix·만료)·생사·받을 수 있는 요청 도메인·
+        라우팅 가능한 (Agent, 능력) 쌍·위험 표시. routable_pairs 는 claim 의 후보
+        조건을 그대로 센다 — 조회면과 배정이 갈라지지 않는다. developer 이상.
+      responses:
+        "200":
+          description: totals · by_task_domain · nodes[] · warnings
+        "401":
+          description: 강제 모드에서 키 없음
+        "403":
+          description: 역할 부족
+  /v1/api-keys:
+    get:
+      summary: 발급된 관리 키 상태 (prefix·역할만)
+      description: >
+        시크릿도 해시도 나가지 않는다. 발급은 API 로 하지 않는다 —
+        첫 키를 만들 수 없어 잠기므로 CLI(app.apikey_cli)가 DB 에 직접 붙는다. admin 전용.
+      responses:
+        "200":
+          description: items[]
+        "401":
+          description: 강제 모드에서 키 없음
+        "403":
+          description: 역할 부족
+  /v1/nodes-credentials:
+    get:
+      summary: Node 별 증서 상태 (prefix 만)
+      responses:
+        "200":
+          description: items[]
+  /v1/nodes/{node_id}/credentials:
+    post:
+      summary: Node 증서 발급 — 평문은 이때 한 번만 나온다
+      description: >
+        등급 인자를 받지 않는다 (절대규칙 4). Node 당 활성 증서는 하나이므로
+        회전은 폐기 후 재발급이다 (operate-node.md §2). admin 전용.
+      parameters:
+        - $ref: "#/components/parameters/NodeId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label: { type: string, nullable: true }
+                expires_at: { type: string, format: date-time, nullable: true }
+      responses:
+        "200":
+          description: secret(평문 1회) + prefix + 만료
+        "409":
+          description: 이미 활성 증서가 있다
+  /v1/nodes/{node_id}/credentials/revoke:
+    post:
+      summary: Node 증서 폐기
+      parameters:
+        - $ref: "#/components/parameters/NodeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: 폐기됨
+        "404":
+          description: 활성 증서 없음
+  /v1/inputs:
+    post:
+      summary: 입력 바이트 수집 (Core 중개 · D22)
+      description: >
+        raw body 를 디스크로 스트리밍한다. 크기·MIME 는 능력 계약이 정하고 DB 가 거절한다.
+        입력은 수집 시점에 능력에 묶인다 (복합 FK) — 다른 능력의 입력은 못 쓴다.
+      parameters:
+        - name: capability_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: input_id · sha256 · byte_size · media_type
+        "400":
+          description: content-type 없음 · 선언되지 않은 MIME
+        "404":
+          description: capability 없음
+        "413":
+          description: 크기 계약 초과 (max_input_bytes)
+  /v1/inputs/{input_id}:
+    get:
+      summary: 입력 메타 (바이트는 주지 않는다)
+      parameters:
+        - $ref: "#/components/parameters/InputId"
+      responses:
+        "200":
+          description: sha256 · size · media_type · 보존 상태
+        "404":
+          description: 없음
+  /v1/inputs/{input_id}/purge:
+    post:
+      summary: 바이트만 즉시 삭제 (행·해시는 남는다)
+      description: 증적은 해시로 「어디로 갔는지」 답한다. 바이트는 휘발성이다.
+      parameters:
+        - $ref: "#/components/parameters/InputId"
+      responses:
+        "200":
+          description: 삭제됨
+        "404":
+          description: 없음
+  /v1/capabilities/{capability_id}/sample:
+    post:
+      summary: 계약 게이트용 샘플 입력을 능력에 붙인다
+      description: >
+        계약 게이트런은 샘플이 있어야 한다 — 없으면 DB 가 거절한다 (0013).
+        샘플은 GC 대상에서 제외된다.
+      parameters:
+        - name: capability_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: 붙었다
+        "400":
+          description: 다른 능력의 입력이다
+        "404":
+          description: 능력·입력 없음
+  /v1/internal/capabilities/{capability_id}/sample:
+    get:
+      summary: 러너가 계약 검증용 샘플 메타를 가져간다
+      parameters:
+        - name: capability_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 샘플 메타
+        "404":
+          description: 샘플 없음
+  /v1/internal/inputs/{input_id}/bytes:
+    get:
+      summary: Node 가 자기 lease 의 입력 바이트를 가져간다
+      description: >
+        lease 를 확인한 뒤에만 준다. Node 는 받아서 해시를 대조하고, 실행 후 삭제한다.
+      parameters:
+        - $ref: "#/components/parameters/InputId"
+      responses:
+        "200":
+          description: 바이트 스트림
+        "403":
+          description: 이 Node 의 배정이 아니다
+        "404":
+          description: 바이트 없음 (purge 됨)
+  /v1/internal/agent-capabilities/revoke:
+    post:
+      summary: 증서 폐기 — 폐기된 증서로는 배정되지 않는다 (SD-014)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agent_id: { type: string, format: uuid }
+                capability_id: { type: string, format: uuid }
+                reason: { type: string }
+      responses:
+        "200":
+          description: 폐기됨
+        "409":
+          description: 폐기 거부 (사슬 정합)
+  /v1/internal/assignments/{assignment_id}/fail:
+    post:
+      summary: Node 가 실행 실패를 보고한다 (0015)
+      description: >
+        보고하면 배정은 즉시 FAILED, task 는 QUEUED 로 돌아가 다른 기기가 시도한다.
+        보고가 없으면 실패가 lease 만료로만 드러난다. 이유는 audit_log 에 남는다.
+      parameters:
+        - $ref: "#/components/parameters/AssignmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: 보고됨
+        "403":
+          description: 이 Node 의 배정이 아니다
+        "404":
+          description: 배정 없음 또는 이미 종결
 components:
   parameters:
     AgentId:
@@ -294,6 +532,13 @@ components:
         format: uuid
     AssignmentId:
       name: assignment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    InputId:
+      name: input_id
       in: path
       required: true
       schema:
