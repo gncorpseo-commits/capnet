@@ -1,0 +1,25 @@
+{
+  "_note": [
+    "심사위원이 README 대로 재현했을 때 보는 값의 정본이다.",
+    "보고서 원고가 「기대 출력」으로 예고하는 수치는 여기서만 읽는다 —",
+    "scripts/check_submission.py 의 check_demo_expectation 이 대조한다.",
+    "",
+    "왜 필요한가: SD-008 홀드아웃 재추출(2026-08-10)로 데모 골든 40장이 바뀌었는데",
+    "원고는 0.7000 을 그대로 들고 있었다. 같은 가중치인데 채점 표본이 달라진 것이고,",
+    "심사위원이 재현하면 보고서와 다른 숫자를 봤을 것이다. 선언부가 흩어져 있으면",
+    "또 벌어진다 — 골든셋 sha 를 한 곳으로 모은 SD-013 과 같은 이유다.",
+    "",
+    "값이 바뀌면(가중치 재학습·골든 재추출) 여기를 고치고 원고를 맞춘다.",
+    "역사 기록(docs/ops/phase1-verdict.md 의 과거 실측)은 이 정본과 무관하며 고치지 않는다."
+  ],
+  "measured_at": "2026-08-14",
+  "measured_by": "scripts/clean_room.sh · scripts/prod_room.sh · 촬영 리허설 (셋 다 동일)",
+  "golden_set_size": 40,
+  "accuracy": "0.8500",
+  "macro_f1": "0.8344",
+  "invalid_rate": "0.0000",
+  "gate_status": "PASSED",
+  "dummy": false,
+  "weights": "eurosat_scratch.safetensors (TinyEuroSAT · scratch)",
+  "caveat": "케이스는 홀드아웃 분할이지만 커밋 가중치는 아직 전수 학습(train_images=27000)이다. 일반화 주장은 HOLDOUT=1 재학습 후에만 한다."
+}

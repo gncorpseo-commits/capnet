@@ -91,7 +91,7 @@
 > **6) 규칙 위반 거절 (핵심 차별점).** 아래 6종을 시도하면 PostgreSQL이 **제약 이름과 함께** 거절한다.
 > ① 자격 없는 에이전트 배정 ② 팀 작업 → 공개 기기 ③ 상위 등급 요구 → 하위 등급 기기 ④ 작업 점유 중 기기 등급 강등 ⑤ 준비 상태에서 가중치 교체 ⑥ 통과 기록의 사후 무효화
 >
-> **7) 품질 프로파일 (선택).** 채점 가능한 능력에는 골든셋 게이트를 덧붙일 수 있다. `image.classify@1`이 그 사례이며, scratch 학습 모델이 team 채점 기기에서 **실측 정확도 0.7000 · macro-F1 0.6982로 통과**했다. 상수·난수·스키마 위반 에이전트는 전부 탈락한다.
+> **7) 품질 프로파일 (선택).** 채점 가능한 능력에는 골든셋 게이트를 덧붙일 수 있다. `image.classify@1`이 그 사례이며, scratch 학습 모델이 team 채점 기기에서 **실측 정확도 0.8500 · macro-F1 0.8344로 통과**했다. 상수·난수·스키마 위반 에이전트는 전부 탈락한다.
 
 ### 프로젝트 주요 기능 — 구동 및 시연
 
@@ -103,7 +103,7 @@
 > bash scripts/demo_violations.sh   # 위반 6종을 DB가 거절
 > ```
 > Windows는 동명 `.ps1`. `demo.sh` 어디에도 **기기 주소가 없다** — 사용자는 Core만 호출한다.
-> 기대 출력: `PASSED acc=0.7000` · 증적 한 줄 · `3 runs FAILED` · `NOTICE REJECTED` 6건.
+> 기대 출력: `PASSED acc=0.8500` · 증적 한 줄 · `3 runs FAILED` · `NOTICE REJECTED` 6건.
 > API 명세: `GET http://127.0.0.1:8000/openapi.yaml`
 
 ### 기대효과 및 활용 분야
@@ -190,7 +190,7 @@
 4. **Sanity floor**: 상수·난수·스키마 위반 Agent는 전부 FAILED  
 5. 재현: `docker compose up --build` → `scripts/demo` · `sanity` · `demo_violations`
 
-실측(과장 금지): scratch N=40 **acc 0.7000 · macro_f1 0.6982 · PASSED**(`dummy=false`). seed dummy PASSED ≠ 실게이트. **이 점수는 학습 데이터에 대한 재현 점수다** — 한계점 절 참조.
+실측(과장 금지): scratch N=40 **acc 0.8500 · macro_f1 0.8344 · PASSED**(`dummy=false`). seed dummy PASSED ≠ 실게이트. **이 점수는 학습 데이터에 대한 재현 점수다** — 한계점 절 참조.
 
 ---
 
