@@ -50,6 +50,18 @@ if not hits:
 print(hits[0]["sha256"])' "$1"
 }
 
+# 파일명 → arch (같은 증언. arch 는 등록 필수다 — G5)
+arch_of() {
+  printf '%s' "$nh" | python3 -c '
+import json,sys
+want=sys.argv[1]
+h=json.load(sys.stdin)
+hits=[w for w in h.get("weights",[]) if w["path"].endswith(want) and not w["placeholder"]]
+if not hits or not hits[0].get("arch"):
+    raise SystemExit("arch unknown on node: "+want)
+print(hits[0]["arch"])' "$1"
+}
+
 echo "== 통과율 실측 (team gate-runner · 골든=${GOLDEN:-데모 N=40}) =="
 printf '%-34s %-8s %-8s %-8s %s\n' "candidate" "acc" "macro_f1" "invalid" "gate"
 printf -- '---------------------------------------------------------------------------\n'
@@ -60,6 +72,7 @@ rows=""
 
 for wfile in "${candidates[@]}"; do
   sha="$(sha_of "$wfile")"
+  arch="$(arch_of "$wfile")"
   label="cand-${wfile%.safetensors}-$stamp"
 
   set +e
@@ -90,7 +103,7 @@ for wfile in "${candidates[@]}"; do
 
   # Agent 등록 → gate_run 시작 → finish. 결과가 FAILED여도 사슬에 기록한다.
   agent="$(ccurl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
-    -d "{\"name\":\"$label\",\"version\":\"0.1.0-$stamp\",\"manifest_hash\":\"$label-manifest\",\"weights_uri\":\"file:///weights/$wfile\",\"weights_sha256\":\"$sha\"}")"
+    -d "{\"name\":\"$label\",\"version\":\"0.1.0-$stamp\",\"manifest_hash\":\"$label-manifest\",\"weights_uri\":\"file:///weights/$wfile\",\"weights_sha256\":\"$sha\",\"arch\":\"$arch\"}")"
   agentId="$(printf '%s' "$agent" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
   gr="$(ccurl -sf -X POST "$core/v1/internal/gate-runs" -H 'content-type: application/json' \

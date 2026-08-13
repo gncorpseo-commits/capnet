@@ -120,3 +120,25 @@ status: open
 > 채팅으로 온 Decision 을 우편함에 옮겨 적었다 (커밋되지 않으면 다음 세션이 못 본다).
 > 원문 그대로이며 해석을 더하지 않았다.
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-14T09:00:00+09:00
+topic: S2-next
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — S2 Next
+
+**Merge:** `59f7cf6` — #57·#59 머지. #58 은 base 삭제로 닫혀 **#59 로 재구성 머지**. 열린 PR 없음.
+
+1. **G2 = 별 Proposal**
+2. **G4 + G5 = 묶어서 OK** (DDL 없으면)
+3. **C 백업 = 후순위, 실행 전 확인**
+4. **openapi 드리프트 = 별 PR**
+
+> 채팅으로 온 Decision 을 우편함에 옮겨 적었다. 원문 그대로다.
+```

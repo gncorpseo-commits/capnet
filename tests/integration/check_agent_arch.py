@@ -152,9 +152,45 @@ def main() -> int:
         ).fetchone()["n"]
         check(legacy == unbound, "unbound 뷰가 arch IS NULL 과 일치한다", f"{legacy}=={unbound}")
 
+        # ── G5: 등록에서 arch 를 요구한다 (앱 계층) ────────────────────────
+        # DB 는 arch 를 nullable 로 둔다 — legacy 행을 지우지 않기 위해서다.
+        # 그래서 「새로 만들지 않는다」는 앱이 지킨다. 여기서 그 분기를 직접 본다
+        # (HTTP 서버를 띄우지 않는다 · check_enforcement 와 같은 방식).
+        from fastapi import HTTPException  # noqa: PLC0415
+
+        from app.main import AgentCreate, agents_create  # noqa: PLC0415
+
+        body = AgentCreate(
+            name="no-arch", version="0.1", manifest_hash="m",
+            weights_uri="file:///weights/x.safetensors", weights_sha256="c" * 64,
+        )
+        try:
+            agents_create(body, None)
+        except HTTPException as exc:
+            check(exc.status_code == 400 and "arch" in str(exc.detail),
+                  "arch 없는 등록은 400 으로 막힌다 (G5)", str(exc.detail)[:50])
+        else:
+            check(False, "arch 없는 등록은 400 으로 막힌다 (G5)", "통과해 버렸다")
+
+        # 빈 문자열도 같은 취급 — FK 로 떠넘기지 않는다 (오류 메시지가 달라진다)
+        try:
+            agents_create(body.model_copy(update={"arch": ""}), None)
+        except HTTPException as exc:
+            check(exc.status_code == 400, "빈 arch 도 400", str(exc.detail)[:40])
+        else:
+            check(False, "빈 arch 도 400", "통과해 버렸다")
+
+        # 이 분기는 **인증 뒤**에 있어야 한다. 앞에 있으면 강제 모드에서
+        # 무인증 요청이 401 대신 400/422 를 받는다 (operate-production §5).
+        import inspect  # noqa: PLC0415
+
+        src = inspect.getsource(agents_create)
+        check(src.index("_require(") < src.index("body.arch"),
+              "arch 검사가 _require 뒤에 있다 (무인증은 여전히 401)")
+
         conn.rollback()
         left = conn.execute(
-            "SELECT count(*) AS n FROM agent WHERE name = 'arch-probe'"
+            "SELECT count(*) AS n FROM agent WHERE name IN ('arch-probe', 'no-arch')"
         ).fetchone()["n"]
         check(left == 0, "격리: 시험 Agent 가 롤백됐다")
 

@@ -1,5 +1,50 @@
 # Changelog
 
+## G4·G5 — 증서 회전 런북 · arch 를 등록에서 요구한다 — 2026-08-14
+
+안전 사슬의 남은 노란 칸 둘. **DDL 0 · 새 의존성 0.**
+
+### G5 — `POST /v1/agents` 가 `arch` 를 요구한다
+
+`agent.arch` 는 nullable 이고(legacy), 없는 값이면 FK 가 막았지만 **아예 안 보내면 통과**했다.
+그러면 실행 아키텍처를 Node 로컬 `meta.json` 이 정한다 — I1 이 닫으려던 바로 그 구멍이다.
+
+없으면 **400**. `agent.arch` 는 **nullable 로 둔다** — legacy 행을 지우거나 백필을 강제하지
+않기 위해서다. 그래서 「새로 만들지 않는다」는 DB 가 아니라 앱이 지키고, 그 분기를 검사가 본다.
+
+**분기를 `_require` 뒤에 뒀다.** 앞에 두면(= pydantic 필수 필드로 두면) 본문 검증이 인증보다
+먼저 도는 탓에 강제 모드에서 **무인증 요청이 401 대신 422** 를 받는다 —
+`prod_room` 의 「무인증 쓰기는 401」이 깨진다. 검사 하나가 **분기의 위치 자체**를 고정한다.
+
+등록 스크립트 넷(`demo` · `node_bind` · `proof_ab` · `pass_rate`)이 `arch` 를 싣는다.
+근거는 **학습 기록**이다 — Node `/health` 의 `weights[].arch`(= `<weights>.meta.json`),
+`node_bind` 는 러너에서 `_arch_for_weights` 를 부른다(`--arch` 로 덮어쓸 수 있다).
+`backfill_agent_arch.sh` 와 **같은 출처**다. Core 는 추측하지 않는다.
+
+**실측 (clean room · 빈 볼륨)** — `demo.sh` 가 등록한 Agent 가 `arch=TinyEuroSAT` 로 남고,
+`/v1/ops/safety` 의 `arch_unbound_routable` 이 **1 → 0**. arch 없는 등록은 **HTTP 400**.
+
+### G4 — 증서 회전 런북 (`operate-node.md` §2)
+
+멈춤 → 「일이 안 간다」 확인 → 폐기·재발급 → 재기동 → 확인. 5단계.
+
+**무중단은 되지 않는다는 것을 그대로 적었다.** `node_credential_active_idx` 가 Node 당 활성
+증서를 하나로 강제하므로 새 증서를 먼저 발급해 겹칠 수 없다. 겹치려면 스키마가 바뀐다 —
+별 Decision 이다. 「무중단 순서」를 지어내지 않고 짧은 중단을 인정했다.
+
+**돌려 보고 한 줄을 고쳤다.** 제품 프로파일에서 실제 회전한 결과
+(`cn_99a7a084` → `cn_18209df6` · `credential_valid=true` · `risks` 없음),
+**Node 를 멈춘 직후에도 `is_fresh=true`** 였다 — 마지막 heartbeat 이 아직 신선해서다.
+`heartbeat_timeout_s`(기본 45초)가 지나야 내려간다. 그 창 안에 폐기하면 배정이 401 로 깨진다.
+런북은 이제 `leases_live=0` **그리고** `is_fresh=false` 를 둘 다 기다리라고 적는다.
+**돌려 보지 않았으면 틀린 런북을 남겼다.**
+
+확인 단계는 S2 조회면(`/v1/ops/safety`)을 쓴다 — 조회 여러 개를 이어 붙이지 않는다.
+
+회귀: `check_agent_arch` **9 → 13종** · `run_tests` 전부 · `clean_room` 9/9 · `prod_room` 16/16.
+
+**DB 로 올리는 것은 별 Decision** — `arch NOT NULL` 은 legacy 행 처리가 선행이다.
+
 ## S2 — 「누가 내 데이터를 돌릴 수 있나」를 한 면에서 답한다 — 2026-08-14
 
 안전 사슬 갭 분석의 **G3**. 이 질문에 답하려면 조회면 넷을 이어 붙여야 했다 —

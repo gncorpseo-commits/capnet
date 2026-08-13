@@ -826,3 +826,147 @@ Decision 3항. G3 를 닫았다. **`GET /v1/ops/safety`** — 읽기전용 · DD
 
 출품 트랙(촬영 8/23 · D-9)과 경합한다. **순서는 master 판단**이다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-14T10:30:00+09:00
+topic: safety-G4-G5
+type: next
+expects: ack
+status: open
+---
+
+## G4 + G5 완료 — 안전 사슬 노란 칸 둘 · PR 머지 대기
+
+Decision 2항. 묶어서 하나로. **DDL 0 · 새 의존성 0.**
+
+| | |
+|---|---|
+| **PR** | (아래 «PR» 줄) |
+| **머지 SHA** | **없음 — 머지 대기** |
+| **선행** | `59f7cf6` S2 (#59) |
+
+### G5 — `arch` 를 등록에서 요구한다
+
+없는 값이면 FK 가 막았지만 **아예 안 보내면 통과**했다. 그러면 실행 아키텍처를 Node 로컬
+`meta.json` 이 정한다 — I1 이 닫으려던 그 구멍이다. 이제 **400**.
+
+`agent.arch` 는 **nullable 로 둔다** (Decision 의 「DDL 없으면」). legacy 행을 지우거나
+백필을 강제하지 않기 위해서다. 「새로 만들지 않는다」는 앱이 지키고, 검사가 그 분기를 본다.
+
+**분기를 `_require` 뒤에 뒀다.** 앞에 두면(pydantic 필수 필드) 본문 검증이 인증보다 먼저 도는
+탓에 강제 모드에서 **무인증이 401 대신 422** 를 받는다 — `prod_room` 의 불변식이 깨진다.
+검사 하나가 **분기의 위치 자체**를 고정한다.
+
+등록 스크립트 넷이 arch 를 싣는다. 근거는 **학습 기록**(`<weights>.meta.json`) —
+`backfill_agent_arch.sh` 와 같은 출처다. **Core 는 추측하지 않는다.**
+
+실측: `demo.sh` 등록 Agent 가 `arch=TinyEuroSAT` · `arch_unbound_routable` **1 → 0** ·
+arch 없는 등록 **HTTP 400**.
+
+### G4 — 회전 런북
+
+**무중단은 안 된다는 것을 그대로 적었다.** 활성 증서가 Node 당 하나라(부분 UNIQUE) 겹칠 수
+없다. 겹치려면 스키마가 바뀐다 — 별 Decision 이다. 지어내지 않고 짧은 중단을 인정했다.
+
+**돌려 보고 한 줄을 고쳤다.** 제품 프로파일에서 실제 회전(`cn_99a7a084` → `cn_18209df6`),
+그런데 **Node 를 멈춘 직후에도 `is_fresh=true`** 였다 — `heartbeat_timeout_s`(45초)가
+지나야 내려간다. 그 창에 폐기하면 배정이 401 로 깨진다. 런북은 이제 `leases_live=0` **그리고**
+`is_fresh=false` 를 둘 다 기다리라고 적는다. **돌려 보지 않았으면 틀린 런북을 남겼다.**
+
+확인 단계는 S2 조회면을 쓴다.
+
+### 실측
+
+`check_agent_arch` **9 → 13종** · 통합 9종 · `run_tests` 전부 · `clean_room` **9/9** ·
+`prod_room` **16/16** · 회전 1회 실수행.
+
+### 남은 것 (Decision 요청은 아래 별 블록)
+
+- `arch NOT NULL` 로 **DB 에 올리는 것** — legacy 행 처리가 선행이다. 별 Decision
+- 관리 API **키** 회전 순서 — 증서와 달리 아직 미정 (운영 스크립트가 파일에서 읽는다)
+- Decision 4항 **openapi 드리프트** = 다음 별 PR 로 올린다
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-14T10:45:00+09:00
+topic: G2-invite-path
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — G2 초대 경로 (`provision_source='invited'`)
+
+Decision 1항. **스키마 추가가 필요하다.** 구현 전에 결정을 받는다.
+
+### 문제
+
+`node.provision_source` 는 `team | invited | public` 을 받는데 **`invited` 를 만드는 절차가
+없다.** 지금은 관리자가 직접 `POST /v1/nodes` 를 부른다 — 즉 「러닝크루가 자기 기기를
+내놓는다」가 **관리자 수작업**이다. 값은 스키마에 있고 경로가 없다 (`attempt_no` 와 같은 모양).
+
+### 설계 — 등급은 **초대장에 미리 적혀 있다**
+
+절대규칙 4(Node 는 자기 등급을 주장할 수 없다)를 지키는 방법은 하나뿐이다:
+**신청자가 고르지 않는다.** 관리자가 초대를 발행할 때 등급·티어 상한을 박아 넣고,
+신청자는 그 초대를 **소진**할 뿐이다.
+
+    ① admin 이 초대 발행 (trust_domain · compute_tier_max · 만료를 박는다)
+    ② 초대받은 사람이 토큰으로 소진 요청
+    ③ Core 가 초대에 적힌 등급으로 Node 생성 + 증서 1회 발급
+    ④ 초대 소진 (audit_log 에 남는다)
+
+### DDL (추가만 · 기존 제약 무수정)
+
+```sql
+CREATE TABLE node_invite (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    issued_by         UUID NOT NULL REFERENCES app_user(id),
+    key_prefix        TEXT NOT NULL UNIQUE,
+    secret_hash       BYTEA NOT NULL,
+    trust_domain      TEXT NOT NULL REFERENCES trust_domain_rank (domain),
+    provision_source  TEXT NOT NULL DEFAULT 'invited'
+                          CHECK (provision_source = 'invited'),
+    compute_tier_max  TEXT NOT NULL REFERENCES compute_tier_rank (tier),
+    label             TEXT,
+    expires_at        TIMESTAMPTZ NOT NULL,
+    redeemed_at       TIMESTAMPTZ,
+    redeemed_node_id  UUID REFERENCES node(id),
+    revoked_at        TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- team 은 초대로 만들 수 없다. ck_trust_provision_align 이 이미 막지만 여기서도 박는다
+    CONSTRAINT ck_invite_domain CHECK (trust_domain IN ('tenant', 'public')),
+    CONSTRAINT ck_invite_redeem CHECK ((redeemed_at IS NULL) = (redeemed_node_id IS NULL))
+);
+```
+
+**기존 제약이 이미 지켜 주는 것** — `is_gate_runner` 는 `provision_source='team'` 에서만
+참이므로(`ck_gate_runner_team`), 초대로 들어온 기기는 **채점자가 될 수 없다**. 새로 막을 게 없다.
+
+증서와 같은 모양(`key_prefix` + `secret_hash`)을 쓴다 — 검증 코드 패턴을 재사용한다.
+
+### 열린 질문 (묶어서 — 이것만 답하면 구현한다)
+
+1. **1회용인가 N회인가.** 러닝크루 10명에게 같은 링크를 뿌리는 게 자연스러우면
+   `max_redemptions INT NOT NULL DEFAULT 1` 을 둔다. **1회용을 권한다** — 초대장 하나가
+   기기 하나에 대응해야 증적이 깨끗하다. 열 명이면 열 장을 발행한다
+2. **기본 TTL.** **7일**을 권한다 (증서와 달리 사람이 들고 다닌다)
+3. **소진 경로가 강제 모드에서 API 키 없이 열리는 것을 수용하는가.** 초대받은 사람에게는
+   관리 키가 없다 — **초대 토큰 자체가 인증**이다. `POST /v1/nodes/redeem` 은
+   `REQUIRE_API_KEY=1` 에서도 키 없이 받아야 한다. **이게 이 Proposal 의 유일한 실질 위험이다**
+   (지금까지 쓰기는 전부 키 뒤에 있었다). 완화: 만료·1회용·`revoked_at`·audit_log
+4. **원스텝인가 투스텝인가.** 소진 시 **Node + 증서를 함께** 주는 쪽(원스텝)을 권한다.
+   투스텝(Node 만 만들고 증서는 관리자 승인)은 안전하지만 「관리자 수작업」이 다시 들어온다
+5. **초대로 만들 수 있는 티어 상한.** 발행 때 관리자가 정하되 기본 `M` 을 권한다
+
+### 범위 (이번 PR 아님)
+
+UI · 이메일 발송 · 초대 목록 조회면(`/v1/ops/safety` 에 붙일지는 별건) ·
+`invited` 기기의 별도 쿼터.
+
+**Confirm 전까지 구현은 시작하지 않는다** (PROTOCOL).
+```

@@ -36,13 +36,26 @@ if not hits:
 print(hits[0]["sha256"])' "$1"
 }
 
+# 파일명 → arch (같은 증언. arch 는 등록 필수다 — G5)
+arch_of() {
+  printf '%s' "$nh" | python3 -c '
+import json,sys
+want=sys.argv[1]
+h=json.load(sys.stdin)
+hits=[w for w in h.get("weights",[]) if w["path"].endswith(want) and not w["placeholder"]]
+if not hits or not hits[0].get("arch"):
+    raise SystemExit("arch unknown on node: "+want)
+print(hits[0]["arch"])' "$1"
+}
+
 # 이름·가중치로 Agent를 등록하고 실게이트를 통과시킨다. stdout = agentId
 gate_agent() {
   local label="$1" wfile="$2" sha="$3"
-  local agent agentId raw rc status gr grId finish fin
+  local arch agent agentId raw rc status gr grId finish fin
+  arch="$(arch_of "$wfile")"
 
   agent="$(ccurl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
-    -d "{\"name\":\"$label\",\"version\":\"0.1.0-$stamp\",\"manifest_hash\":\"$label-manifest\",\"weights_uri\":\"file:///weights/$wfile\",\"weights_sha256\":\"$sha\"}")"
+    -d "{\"name\":\"$label\",\"version\":\"0.1.0-$stamp\",\"manifest_hash\":\"$label-manifest\",\"weights_uri\":\"file:///weights/$wfile\",\"weights_sha256\":\"$sha\",\"arch\":\"$arch\"}")"
   agentId="$(printf '%s' "$agent" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
   set +e

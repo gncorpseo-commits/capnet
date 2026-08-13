@@ -80,16 +80,26 @@
 내는지 고정한다 — 조회면이 「가능」이라 한 기기에서 `claim` 이 실제로 배정하고,
 「불가」라 한 기기는 `claim` 도 고르지 않는다.
 
-### G4 — 증서 회전 절차가 런북에 없다 🟡
+### G4 — 증서 회전 절차가 런북에 없다 (**닫힘** · 2026-08-14) ✅
 
-`revoke_credential` 은 있고 「폐기 후 재발급」이 원칙인데, **무중단 회전 순서**가 문서에 없다.
-`operate-production.md` §5 에 한계로만 적혀 있다.
+[`operate-node.md` §2 「증서 회전 런북」](../guide/operate-node.md) 에 5단계로 적었다 —
+멈춤 → lease 빠짐 확인(`/v1/ops/safety`) → 폐기·재발급 → 재기동 → 확인.
 
-### G5 — arch 미선언 Agent 가 남아 있다 🟡
+**무중단은 되지 않는다는 것을 그대로 적었다.** `node_credential_active_idx` 가 Node 당 활성
+증서를 하나로 강제하므로 새 증서를 먼저 발급해 겹칠 수 없다. 겹치려면 스키마가 바뀐다 —
+**별 Decision 이다.** 「무중단 회전 순서」를 지어내는 대신 짧은 중단을 인정했다.
 
-`agent.arch` 는 nullable 이다 (legacy). golden 능력은 게이트가 잡고, 계약 능력은 `contract_check`
-가 `arch=None` 을 실패로 처리한다. `agent_arch_unbound` 뷰로 드러나긴 하지만, **등록 시점에
-막지는 않는다.**
+### G5 — arch 미선언 Agent 가 남아 있다 (**닫힘** · 2026-08-14) ✅
+
+**`POST /v1/agents` 가 `arch` 를 요구한다.** 없으면 400 이다. 없는 값이면 FK 가 막는다(종전).
+
+`agent.arch` 는 **nullable 로 둔다** — legacy 행을 지우거나 백필을 강제하지 않기 위해서다
+(`backfill_agent_arch.sh` 는 Node 의 증언으로만 채운다). 그래서 「새로 만들지 않는다」는
+DB 가 아니라 앱이 지킨다. 그 분기를 `check_agent_arch` 가 직접 본다.
+
+검사 하나는 **분기의 위치**를 본다 — `_require` 보다 앞에 두면 강제 모드에서 무인증 요청이
+401 대신 400/422 를 받는다 (`operate-production` §5 의 「본문 검증이 인증보다 먼저」).
+`ck_agent_arch_not_null` 같은 DB 제약으로 올리는 것은 legacy 행 처리가 필요해 **별 Decision** 이다.
 
 ---
 
