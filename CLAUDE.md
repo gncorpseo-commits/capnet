@@ -35,6 +35,22 @@
 - 큐 claim은 Core 워커만 한다. Node는 큐를 pull하지 않는다. `FOR UPDATE SKIP LOCKED` 필수.
 - 작업을 마치면 `STATE.md`를 갱신한다.
 
+## 브리지 (리뷰어와의 협의)
+
+리뷰는 `docs/bridge/` 우편함으로 오간다. **자동화 없음** — PR·머지가 inbox를 건드리지 않는다.
+
+- **Decision급 제안은 채팅에 두지 않는다.** `docs/bridge/inbox-cursor.md`에 블록으로 올리고 기다린다.
+  Decision급 = 제품 주장·보장 문구, 스키마/DDL 모양, 정책 숫자(한도·TTL), 작업 순서·범위,
+  D-결정 신설·개정, 되돌리기 비싼 것. **내 버그 수정·배선·네이밍은 올리지 않는다.**
+- `expects: decision` = 막고 대기 · `expects: ack` = 알리고 진행(되돌리기 싼 것).
+  전부 `decision`으로 두면 사람 릴레이 속도에 묶인다. 열린 질문은 **묶어서 한 블록**으로.
+- **구현은 Decision과 Confirm이 일치할 때만.** 미머지 PR이 있으면 큰 새 제안은 하지 않는다.
+- **`main` 머지는 master/사람이 한다.** PR까지 올리고 멈춘다.
+- 브리지 결정 중 오래 가는 것은 `docs/context-handoff.md`에 **D-결정으로 승격**한다.
+  「브리지에 적었으니 합의됐다」로 끝내지 않는다.
+
+규칙 전문은 자동으로 읽히지 않는다. 브리지를 쓸 때 부른다 → `@docs/bridge/PROTOCOL.md`
+
 ## 저장소 규칙
 
 - GitHub 원격 계정은 **gncorpseo-commits**. 커밋 서명 역할 풀은 **finn · toma · pl** (동급). merge는 **master**.
@@ -64,3 +80,4 @@
     @docs/INDEX.md
     @docs/context-handoff.md
     @docs/error/pitfalls.md
+    @docs/bridge/PROTOCOL.md
