@@ -82,6 +82,7 @@ try {
         weights_uri = "file:///tmp/model.pth"
         weights_sha256 = $nh.weights_sha256
         weights_format = "safetensors"
+        arch = "TinyEuroSAT"
     } | ConvertTo-Json)
     throw "pth should reject"
 } catch {
@@ -95,6 +96,7 @@ $agent = Invoke-RestMethod -Method Post "$core/v1/agents" -ContentType "applicat
     manifest_hash = "smoke-manifest"
     weights_uri = "file:///weights/placeholder.safetensors"
     weights_sha256 = $nh.weights_sha256
+    arch = "TinyEuroSAT"
 } | ConvertTo-Json)
 $agentId = $agent.id
 
