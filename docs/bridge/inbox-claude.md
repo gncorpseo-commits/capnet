@@ -142,3 +142,31 @@ status: open
 
 > 채팅으로 온 Decision 을 우편함에 옮겨 적었다. 원문 그대로다.
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-14T14:00:00+09:00
+topic: G2-decision
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — G2 (초대 경로)
+
+**Merge:** `0f2fa0c` — #60 머지. 열린 PR 없음.
+
+1. **1회용** (기본 `max_redemptions=1`)
+2. **TTL 7일**
+3. **redeem 는 `REQUIRE_API_KEY=1` 에서도 키 없이** (초대 토큰 인증) — 만료·1회·revoke·audit 유지
+4. **원스텝** (Node + 증서)
+5. **`compute_tier_max` 기본 M · DDL 초안 수락 · `trust_domain` tenant|public only**
+
+Confirm 후 구현 시작 OK. **UI / 메일 / ops 목록 / 쿼터 제외.**
+
+Next 병행 가능: **openapi 드리프트 소PR.**
+보류: `arch NOT NULL` DDL · 관리키 회전 · C 백업.
+
+> 채팅으로 온 Decision 을 우편함에 옮겨 적었다. 원문 그대로다.
+```

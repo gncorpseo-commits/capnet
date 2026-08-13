@@ -132,6 +132,24 @@ def main() -> int:
     check(status_of(m._assert_node_matches, node_a, f"CapNet-Node {cred_a}") == "pass",
           "자기 증서 → 통과")
 
+    # ── 초대 소진: 관리 키 없이 열리는 유일한 쓰기 (G2 · 0016) ───────────
+    #
+    # 이 경로가 «키 없이 열린다»는 것 자체가 이 기능의 위험이다. 그래서 두 가지를 같이 본다:
+    #   ① 초대 토큰 없이는 못 들어온다 (열려 있다 ≠ 아무나 쓴다)
+    #   ② 막는 주체가 «API 키 강제»가 아니다 — 키를 요구하면 초대받은 사람이 못 쓴다
+    body = m.NodeRedeem(name="probe")
+    check(status_of(m.node_redeem, body, None) == 401,
+          "초대 토큰 없이 소진 → 401 (강제 모드에서도 열린 경로다)")
+    detail = ""
+    try:
+        m.node_redeem(body, None)
+    except Exception as exc:  # noqa: BLE001 — HTTPException.detail 만 본다
+        detail = str(getattr(exc, "detail", ""))
+    check("초대 토큰" in detail and "api key" not in detail.lower(),
+          "막는 주체가 API 키 강제가 아니다 (초대 토큰을 요구한다)", detail[:44])
+    check(status_of(m.node_redeem, body, f"CapNet-Invite ci_deadbeef.{'A' * 43}") == 401,
+          "없는 초대 토큰 → 401")
+
     # ── 꺼짐 ────────────────────────────────────────────────────────────
     m = load_main(api_key=False, node_cred=False)
     print("\n  [REQUIRE_API_KEY=0 · REQUIRE_NODE_CREDENTIAL=0 — 데모 경로]")

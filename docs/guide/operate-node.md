@@ -49,6 +49,58 @@ Task(능력·신뢰도메인) ──► Core 워커가 배정 ──► assignme
 
 ---
 
+## 2-A. 초대로 들어오기 (`invited` · G2)
+
+관리 키가 **없는 사람**이 자기 기기를 넣는 경로다. 러닝크루 시나리오가 이것이다.
+
+> **등급은 초대장에 박힌다.** 신청자는 고르지 않는다 (절대규칙 4).
+> 소진 요청 본문에는 `trust_domain` 필드가 **아예 없다.**
+
+**관리자 — 초대 발행** (평문은 이때 한 번만 나온다)
+
+```bash
+curl -sf -X POST $CORE/v1/nodes/invites \
+  -H "Authorization: CapNet-Key $(cat data/admin.key)" \
+  -H 'content-type: application/json' \
+  -d '{"trust_domain":"tenant","compute_tier_max":"M","label":"러닝크루 3기","ttl_days":7}'
+```
+
+| 기본값 | |
+|---|---|
+| `trust_domain` | `tenant` — **`team` 은 초대로 만들 수 없다** (DB 가 거절) |
+| `compute_tier_max` | `M` |
+| `ttl_days` | **7** (사람이 들고 다닌다 — 증서보다 길다) |
+| `max_redemptions` | **1** — 초대장 하나가 기기 하나. 열 명이면 열 장을 발행한다 |
+
+**초대받은 사람 — 소진** (관리 키가 **필요 없다**)
+
+```bash
+curl -sf -X POST $CORE/v1/nodes/redeem \
+  -H "Authorization: CapNet-Invite ci_xxxxxxxx.yyy" \
+  -H 'content-type: application/json' \
+  -d '{"name":"crew-laptop-1","device_type":"PC_GPU"}'
+```
+
+Node 와 **증서를 함께** 받는다 (원스텝). 증서 평문도 이때 한 번만 나온다 —
+`data/node-secrets/<name>.credential` 에 0600 으로 떨구고 §2 의 취급 규칙을 따른다.
+
+**초대 관리**
+
+```bash
+curl -s $CORE/v1/nodes/invites -H "Authorization: CapNet-Key $KEY"        # 상태 목록
+curl -sf -X POST $CORE/v1/nodes/invites/<id>/revoke \
+  -H "Authorization: CapNet-Key $KEY" -H 'content-type: application/json' \
+  -d '{"reason":"오발행"}'
+```
+
+상태는 `USABLE` · `EXPIRED` · `REDEEMED` · `REVOKED` 넷이다.
+
+> **이 경로만 관리 키 없이 열린다.** 그래서 완화가 겹쳐 있다 — 만료 · 1회용 · 폐기 ·
+> `audit_log` 증적, 그리고 소진 판정은 **DB 의 조건부 UPDATE** 가 한다.
+> 초대로 들어온 기기는 `ck_gate_runner_team` 때문에 **채점자가 될 수 없다** (절대규칙 8).
+
+---
+
 ## 2. 등록 + 증서 (`node_onboard.sh`)
 
 ```bash

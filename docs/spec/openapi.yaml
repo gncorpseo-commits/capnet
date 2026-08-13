@@ -507,6 +507,89 @@ paths:
           description: 이 Node 의 배정이 아니다
         "404":
           description: 배정 없음 또는 이미 종결
+  /v1/nodes/invites:
+    post:
+      summary: 초대장 발행 — 평문은 이때 한 번만 나온다 (G2)
+      description: >
+        **등급은 여기서 정해져 초대장에 박힌다.** 소진하는 쪽은 바꾸지 못한다 (절대규칙 4).
+        team 은 초대로 만들 수 없다 — DB 가 거절한다. admin 전용.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trust_domain:
+                  type: string
+                  enum: [tenant, public]
+                  default: tenant
+                compute_tier_max: { type: string, enum: [L, M, S], default: M }
+                label: { type: string, nullable: true }
+                ttl_days: { type: integer, minimum: 1, maximum: 90, default: 7 }
+                max_redemptions: { type: integer, minimum: 1, maximum: 100, default: 1 }
+      responses:
+        "200":
+          description: secret(평문 1회) + prefix + 등급 + 만료
+        "400":
+          description: team 등급 요청 등 DB 가 거절한 조합
+    get:
+      summary: 초대장 상태 목록 (prefix·상태만)
+      description: >
+        USABLE · EXPIRED · REDEEMED · REVOKED. 시크릿도 해시도 나가지 않는다. admin 전용.
+      responses:
+        "200":
+          description: items[]
+  /v1/nodes/invites/{invite_id}/revoke:
+    post:
+      summary: 초대장 폐기
+      parameters:
+        - name: invite_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, default: revoked }
+      responses:
+        "200":
+          description: 폐기됨
+        "404":
+          description: 살아 있는 초대 없음
+  /v1/nodes/redeem:
+    post:
+      summary: 초대를 소진해 Node + 증서를 받는다 (관리 키 불필요)
+      description: >
+        **이 경로만 관리 키 없이 열린다** — 초대받은 사람에게는 키가 없기 때문이다.
+        초대 토큰 자체가 인증이다 (`Authorization: CapNet-Invite ci_….`).
+        본문에 등급 필드가 **없다** — 초대장이 정한다 (절대규칙 4).
+        소진 판정은 DB 의 조건부 UPDATE 가 한다: 만료·폐기·상한을 넘길 수 없다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                device_type:
+                  type: string
+                  enum: [PC_GPU, PHONE, SERVER]
+                  default: PC_GPU
+                gpu: { type: string, nullable: true }
+      responses:
+        "200":
+          description: node + credential(평문 1회)
+        "401":
+          description: 초대 토큰 없음 · 유효하지 않음 · 만료 · 폐기 · 소진됨
+        "409":
+          description: 이 Node 에 이미 활성 증서가 있다
 components:
   parameters:
     AgentId:

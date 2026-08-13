@@ -970,3 +970,74 @@ UI · 이메일 발송 · 초대 목록 조회면(`/v1/ops/safety` 에 붙일지
 
 **Confirm 전까지 구현은 시작하지 않는다** (PROTOCOL).
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-14T15:30:00+09:00
+topic: G2-invite-path
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm + 구현 — G2 초대 경로 · PR 머지 대기
+
+Decision 5항 그대로 받는다. 답이 온 대로만 지었다 — 새로 정한 것 없음.
+
+| 항목 | Decision | 구현 |
+|---|---|---|
+| 1회용 | `max_redemptions=1` | 기본 1 · 상한은 **DB CHECK** |
+| TTL | 7일 | `expires_at NOT NULL` · 기본 7 |
+| redeem 인증 | 키 없이 · 초대 토큰 | `POST /v1/nodes/redeem` — `CapNet-Invite ci_…` |
+| 원스텝 | Node + 증서 | 한 트랜잭션 · 증서 평문 1회 |
+| 등급 | 기본 M · tenant\|public | 초대장에 박힌다 · `ck_invite_domain` |
+
+### 안 만든 자리
+
+`NodeRedeem` 에 **등급 필드가 아예 없다.** 「무시한다」가 아니라 **주장할 자리를 만들지
+않았다** — 절대규칙 4 를 코드 모양으로 지키는 방법이라고 봤다.
+
+### Decision 3항(키 없이 열림)을 어떻게 다뤘나
+
+이게 이 기능의 유일한 실질 위험이라고 적었고, 그대로 다뤘다.
+
+- 완화 넷을 겹쳤다: 만료 · 1회용 · 폐기 · 증적
+- **소진 판정을 DB 로 내렸다** — 조건부 UPDATE 의 WHERE 절이다. 앱을 건너뛰고
+  `CLAIM_SQL` 을 직접 두 번 불러도 상한을 못 넘는 것을 검사가 확인한다
+- `check_enforcement` 에 「**막는 주체가 API 키 강제가 아니다**」를 넣었다.
+  키를 요구하도록 누가 고치면 초대받은 사람이 못 쓰게 되는데, 그건 조용히 벌어진다
+
+### 실측
+
+`check_node_invite` **20/20** · `check_enforcement` 20 → **23종** ·
+`prod_room` 16 → **20종** · `clean_room` 9/9 · `run_tests` 전부.
+
+제품 프로파일에서 **관리 키 없이 소진**해 `tenant/invited/게이트러너 아님/증서 받음`,
+같은 초대 두 번째는 **401**.
+
+### 수용 게이트가 옛 이미지로 마이그레이션하고 있었다 (같이 고침)
+
+8-2 를 붙이자 초대 발행이 **500** 이었다. `0016` 이 적용되지 않아서다 — `prod_room` §3 이
+`dc run … migrate up` 을 **빌드 전에** 돌리는데 `migrations/` 는 이미지에 COPY 된다.
+직전 PR 의 §4 `--build` 는 **런타임만** 덮었다. 그래서 「새 마이그레이션이 없는 DB 위에
+새 코드가 뜨는」 상태가 남아 있었다. §3 앞에 `dc build core` 를 넣었다.
+
+**새 DDL 을 붙이지 않았으면 계속 안 보였다.**
+
+### ack 를 원하는 것 하나
+
+`GET /v1/nodes/invites`(admin · prefix·상태만)를 **넣었다.** Decision 의 「ops 목록 제외」는
+`/v1/ops/safety` 에 붙이는 것으로 읽었다. 폐기하려면 `id` 가 필요한데 발행 응답을 잃으면
+다시 볼 길이 없어서다. 빼는 게 맞으면 뺀다.
+
+### 별건으로 올린 것
+
+**openapi 드리프트 소PR** (Decision 「병행 가능」) — 누락 15개를 채우고
+`tests/test_openapi_drift.py` 로 고정했다. 변이 검사로 가드 확인. 동작 변경 0.
+
+### 남은 것
+
+`arch NOT NULL` DDL · 관리키 회전 · C 백업 — **전부 보류로 둔다** (Decision).
+초대 경로의 다음 칸(초대 발행 UI · 메일 · 쿼터)도 범위 밖으로 남긴다.
+```
