@@ -1,5 +1,35 @@
 # Changelog
 
+## 촬영 리허설 — `.ps1` 이 촬영일에 깨질 뻔했다 — 2026-08-14
+
+D-9 에 촬영 런북(`shoot-day-runbook.md`)의 타임라인 명령을 **순서대로 한 번 돌렸다.**
+리허설 주간(8/18–22)을 기다리지 않은 이유는, 8/13–14 에 들어온 변경이 촬영 경로를
+건드렸기 때문이다 — 특히 G5(`arch` 등록 필수).
+
+**찾은 것 — 촬영은 PowerShell 로 하는데 `.ps1` 을 안 고쳤다.**
+
+G5 에서 `POST /v1/agents` 가 `arch` 를 요구하게 바꾸면서 셸 스크립트 넷은 고쳤지만
+`demo.ps1` · `smoke_w1.ps1` 을 놓쳤다. 리눅스에서 도는 검증 3종(`run_tests` ·
+`clean_room` · `prod_room`)은 `.sh` 만 만지므로 **어느 검사에도 안 걸렸다.**
+촬영 당일 첫 명령에서 **HTTP 400** 을 만났을 것이다.
+
+- `demo.ps1` — `arch` 를 sha 와 **같은 증언**(Node `/health` 의 학습 기록)에서 뽑는다
+- `smoke_w1.ps1` — 정상 등록 경로에 `arch` 추가. 그리고 **`.pth` 거부 검사에도** 넣었다:
+  안 넣으면 「arch 없음」으로 400 이 나서 **「.pth 를 거부했다」가 엉뚱한 이유로 통과**한다
+
+**같은 종류의 누락(「한쪽 계열만 고침」)을 검사로 고정했다** —
+`tests/test_agent_arch_wiring.py`. `POST /v1/agents` 를 부르는 스크립트에 `arch` 가
+없으면 실패하고, **`.sh`·`.ps1` 양쪽이 대상에 잡혔는지**까지 본다.
+`prod_room.sh` 는 예외다 — 「무인증 401」을 보는 검사라 본문이 일부러 불완전하다.
+예외 목록이 낡는 것도 검사가 본다. 변이 검사로 확인했다 (`demo.ps1` 의 arch 를 지우자 실패).
+
+**리허설 결과 — 나머지는 전부 재현됐다.** `demo.sh` `PASSED acc=0.8500` ·
+sanity 3종 FAILED · 위반 **6종 REJECTED** · `proof_ab` A/B 둘 다 완결 · 증적 줄 출력 ·
+`nodes-liveness` · `migrate.sh status` 세대 16 · 촬영 전 기계 점검 3종 통과
+(`check_submission` **20/20** — 워킹트리 포함).
+
+회귀: `run_tests` 52 → **56**.
+
 ## G2 — 초대 경로 · 관리 키 없이 함대에 들어온다 — 2026-08-14
 
 `node.provision_source` 는 `invited` 를 받는데 **그 값을 만드는 절차가 없었다.** 값은 스키마에

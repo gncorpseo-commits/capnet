@@ -14,7 +14,10 @@ if ($scratch.Count -lt 1) {
     throw "scratch weights missing on node-m-team. train: scripts/train_scratch.ps1 then compose up --build"
 }
 $sha = $scratch[0].sha256
-Write-Host "scratch sha256=$sha"
+# arch 는 등록 필수다 (G5). sha 와 **같은 증언**에서 뽑는다 — Node 가 들고 있는 파일의 학습 기록.
+$arch = $scratch[0].arch
+if (-not $arch) { throw "node does not know arch for eurosat_scratch (<weights>.meta.json)" }
+Write-Host "scratch sha256=$sha arch=$arch"
 
 Write-Host "register scratch agent"
 $ver = "0.1.0-scratch-" + (Get-Date -Format "yyyyMMddHHmmss")
@@ -24,6 +27,7 @@ $agent = Invoke-RestMethod -Method Post "$core/v1/agents" -ContentType "applicat
     manifest_hash = "eurosat-scratch-tiny"
     weights_uri = "file:///weights/eurosat_scratch.safetensors"
     weights_sha256 = $sha
+    arch = $arch
 } | ConvertTo-Json)
 
 Write-Host "score golden set on gate-runner container (not dummy)"

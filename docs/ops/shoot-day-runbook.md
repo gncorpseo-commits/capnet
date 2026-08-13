@@ -2,6 +2,12 @@
 
 **목적:** 스토리보드([`demo-video-storyboard.md`](./demo-video-storyboard.md))를 **명령 순서**로 고정.  
 **갱신:** 2026-08-10  
+> **리허설 1회 완료 (2026-08-14).** 아래 타임라인 명령을 순서대로 돌려 전부 재현했다 —
+> `demo.sh` PASSED `acc=0.8500` · sanity 3종 FAILED · 위반 **6종 REJECTED** ·
+> `proof_ab.sh` A/B 둘 다 완결 · 증적 줄 출력. 그 과정에서 **`demo.ps1`·`smoke_w1.ps1` 이
+> `arch` 없이 Agent 를 등록해 HTTP 400 이 나는 것**을 찾아 고쳤다 (G5 이후 회귀).
+> 촬영은 PowerShell 로 하므로 `.sh` 만 도는 검증 3종에는 안 걸리던 구멍이었다.
+
 **촬영일: 2026-08-23 (확정).** 8/24 편집·업로드 → URL 확보. 밀 수 없다 — 영상이 보고서를 막는다.  
 **A/B: UC-7 촬영 가능해졌다** (2026-08-08 `scripts/proof_ab.sh`). Agent A·B가 각각 실게이트를 통과했고, 동일 case를 `requestedAgentId`로 교차 배정해 둘 다 완결됐다. 150–170초를 A/B 교체 화면으로 쓴다.  
 **SD-008:** 데모 골든 N=40은 **홀드아웃 분할** (`selection.split=holdout`). 커밋 가중치 A는 아직 `train_images=27000`(전수) — 게이트 자막은 「홀드아웃 케이스 · 가중치는 전수 학습(재학습 전)」 또는 HOLDOUT=1 재학습 후 「홀드아웃」만. 누출 유출 문구("학습 데이터 기준"만)는 쓰지 않는다.
@@ -78,7 +84,7 @@ Invoke-RestMethod http://127.0.0.1:8001/health
 ## 촬영 전 기계 점검
 
 ```bash
-scripts/run_tests.sh                      # 단위 48 + 골든셋 정합 + 출품 점검
+scripts/run_tests.sh                      # 단위 56 + 골든셋 정합 + 출품 점검
 python3 scripts/check_submission.py       # 패키징 직전 (워킹트리 깨끗함 포함)
 scripts/migrate.sh status                 # 스키마 세대 확인
 ```
