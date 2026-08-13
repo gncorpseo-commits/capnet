@@ -64,6 +64,7 @@ from app.gate import (
     revoke_capability,
     start_gate_run,
 )
+from app.safety import safety_posture
 from app.registry import (
     bind_agent_node,
     create_agent,
@@ -374,6 +375,28 @@ def ops_status() -> dict[str, Any]:
     s["warnings"] = warnings
     s["ok"] = not warnings
     return s
+
+
+@app.get("/v1/ops/safety")
+def ops_safety(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """안전 자세 — 「누가 내 데이터를 돌릴 수 있나」 (S2 · safety-chain G3).
+
+    `/v1/ops/status` 는 함대 **합계**를 준다. 여기는 **기기 단위**로, 한 기기에 대해
+    「왜 실행 가능한가」를 한 면에 모은다 — 등급·조달 경로·증서·생사·받을 수 있는
+    요청 도메인·라우팅 가능한 (Agent, 능력) 쌍, 그리고 위험 표시.
+
+    **읽기 전용 · DDL 0 · 시크릿 없음** (증서는 prefix·만료·마지막 사용만).
+
+    운영 조회면이라 `developer` 이상을 요구한다. 강제가 꺼져 있고 키가 없으면
+    종전대로 통과한다 — 데모 경로를 깨지 않는다. 키가 오면 역할은 항상 본다.
+    """
+    _require("developer", authorization)
+    with get_conn() as conn:
+        return safety_posture(
+            conn,
+            require_api_key=REQUIRE_API_KEY,
+            require_credential=REQUIRE_NODE_CREDENTIAL,
+        )
 
 
 @app.get("/openapi.yaml", include_in_schema=False)
