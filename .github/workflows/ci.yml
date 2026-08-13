@@ -53,7 +53,11 @@ jobs:
         with:
           python-version: "3.11"
       - name: 러너 의존성 (core 와 동일 핀)
-        run: pip install "psycopg[binary]==3.2.9" "pydantic-settings==2.10.1"
+        # check_enforcement 는 app.main 의 강제 분기를 임포트한다 — fastapi 가 필요하다 (S1).
+        # 새 의존성이 아니라 apps/core/requirements.txt 와 같은 핀이다.
+        run: |
+          pip install "psycopg[binary]==3.2.9" "psycopg-pool==3.3.1" \
+                      "pydantic-settings==2.10.1" "fastapi==0.116.1"
 
       - name: baseline 가드 — 빈 DB 에서는 아무것도 쓰지 않는다
         run: |
