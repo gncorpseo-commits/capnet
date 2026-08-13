@@ -25,7 +25,7 @@
 - 기기가 데이터를 남기지 않는다 — 추론은 평문을 요구한다. TEE 없이는 원리적으로 불가
 - 두 에이전트가 **같은 답**을 낸다 — 등가는 선택 프로파일의 **관측값**이다 (§8)
 
-**실측:** 위반 6종 DB 거절 · sanity 3종 탈락 · 품질 프로파일 실게이트 acc 0.7000 / f1 0.6982 (`dummy=false`) · 무단 노드 호출 403
+**실측:** 위반 6종 DB 거절 · sanity 3종 탈락 · 품질 프로파일 실게이트 acc 0.8500 / f1 0.8344 (`dummy=false`) · 무단 노드 호출 403
 
 **재현:** `docker compose up --build -d` → `scripts/demo.sh` → `sanity.sh` → `demo_violations.sh`.
 **`demo.sh` 어디에도 기기 주소가 없다.**
@@ -206,7 +206,7 @@ Task claim은 **Core 워커만** 한다. Node는 큐를 pull하지 않는다. `F
 
 | 실행 | accuracy | macro_f1 | invalid | 결과 |
 |------|----------|----------|---------|------|
-| scratch TinyEuroSAT, N=40, `dummy=false` | 0.7000 | 0.6982 | 0.0000 | **PASSED** |
+| scratch TinyEuroSAT, N=40, `dummy=false` | 0.8500 | 0.8344 | 0.0000 | **PASSED** |
 | sanity 상수·난수·스키마 | — | — | — | **전부 FAILED** |
 
 seed Agent의 dummy `gate_run` PASSED는 **배관용**이며 품질 증명이 아니다.
@@ -258,7 +258,7 @@ curl -X POST http://127.0.0.1:8001/v1/execute -d '{"id":"<남의 배정>",...}'
 
 | 스크립트 | 성공 신호 |
 |----------|-----------|
-| `demo` | `score status=PASSED acc=0.7000` · Task `COMPLETED` · **증적 한 줄**(assignment·node·agent·status) |
+| `demo` | `score status=PASSED acc=0.8500` · Task `COMPLETED` · **증적 한 줄**(assignment·node·agent·status) |
 | `sanity` | 3 runs **FAILED** |
 | `demo_violations` | `NOTICE REJECTED:` ×6 |
 

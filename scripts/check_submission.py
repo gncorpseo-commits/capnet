@@ -188,6 +188,51 @@ def check_golden_sha() -> None:
     check(rc == 0, "골든셋 sha 정합 (SD-013)", "" if rc == 0 else "check_golden_sha.py 실패")
 
 
+# 원고가 「기대 출력」으로 예고하는 수치. 정본은 docs/spec/demo-expectation.json 하나다.
+REPORT_DRAFTS = ("docs/ops/contest-report-draft.md", "docs/ops/contest-report-form-draft.md")
+# 「성적 수치」로 보는 두 모양만 좁게 잡는다.
+#   ① 이름에 **붙은** 값 — acc=0.8500 · 정확도 0.8500 · macro_f1 0.8344 · f1 0.8344
+#   ② 실측 표의 행 — 줄이 `|` 로 시작하고 `dummy=false` 가 있는 것
+# 넓게 잡으면 다른 실측을 오탐한다. 실제로 A/B 통과자 폭(0.1767)과
+# n=300 paired |Δacc|(0.0467)이 걸렸다 — 둘 다 데모 기대치가 아니라 별개 관측이다.
+_ATTACHED = re.compile(r"(?:acc|정확도|macro[-_ ]?f1|f1)\s*[=:]?\s*(0\.\d{4})", re.I)
+_TABLE_ROW = re.compile(r"^\|.*dummy=false")
+_FOUR_DP = re.compile(r"\b0\.\d{4}\b")
+
+
+def check_demo_expectation() -> None:
+    """보고서가 예고한 재현 수치가 정본과 같은가 (SD-013 과 같은 이유).
+
+    심사위원이 README 대로 돌렸을 때 보는 값이다. 흩어져 있으면 또 어긋난다 —
+    실제로 홀드아웃 재추출 뒤 원고가 0.7000 을 그대로 들고 있었다.
+
+    과거 실측 기록(`phase1-verdict.md`)은 **대상이 아니다.** 그건 역사다.
+    """
+    spec = ROOT / "docs" / "spec" / "demo-expectation.json"
+    if not spec.is_file():
+        check(False, "데모 기대치 정본이 있다", str(spec))
+        return
+    exp = json.loads(spec.read_text(encoding="utf-8"))
+    allowed = {exp["accuracy"], exp["macro_f1"], exp["invalid_rate"]}
+
+    bad: list[str] = []
+    seen = 0
+    for rel in REPORT_DRAFTS:
+        path = ROOT / rel
+        if not path.is_file():
+            continue
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            nums = _ATTACHED.findall(line)
+            if _TABLE_ROW.match(line.strip()):
+                nums += _FOUR_DP.findall(line)
+            for num in nums:
+                seen += 1
+                if num not in allowed:
+                    bad.append(f"{rel}:{i} {num}")
+    check(not bad, "보고서 예고 수치가 정본과 같다",
+          f"{seen}개 대조" if not bad else "; ".join(bad[:3]))
+    check(seen > 0, "예고 수치를 실제로 찾았다 (0개 대조로 통과 금지)", f"{seen}개")
+
 def check_clean_tree() -> None:
     dirty = [line for line in git("status", "--porcelain").splitlines() if line]
     check(not dirty, "워킹트리 깨끗 (패키징 전)", f"{len(dirty)}개 변경" if dirty else "")
@@ -215,6 +260,7 @@ def main() -> int:
     check_links()
     check_golden_spec_single()
     check_golden_sha()
+    check_demo_expectation()
     check_package_size()
     if not args.skip_tree:
         check_clean_tree()
