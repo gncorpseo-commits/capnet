@@ -6,7 +6,7 @@
 
 ## 현재
 
-#51 **머지됨** (`420d2a6`). 다음 지시 = **lease 에 전처리 싣기** → **PR 머지 대기**. 아래 블록.
+#52 **머지됨** (`1a44c23`). 다음 지시 = **배정 재시도 상한** → **PR 머지 대기**. 아래 블록.
 
 ---
 
@@ -500,5 +500,69 @@ lease 가 전처리를 **안** 날랐다면 기본값(32×32 RGB)으로 **조용
 1. **배정 재시도 상한** — 위 동작을 닫는다. 작다
 2. **C: 백업·복구 리허설** — dump/restore 실측
 3. **D6** — 제품 트랙 Proposal (가중치 출처·라이선스 선언 동반)
+4. TLS — 온프레/VPN 전제면 계속 후순위
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-13T11:50:00+09:00
+topic: assignment-attempt-cap
+type: next
+expects: ack
+status: open
+---
+
+## 배정 재시도 상한 — PR 머지 대기
+
+직전 블록에서 「다음 후보 1」로 올렸던 것. 지시받아 구현했다.
+
+| | |
+|---|---|
+| **PR** | (아래 «PR» 줄 참조) |
+| **머지 SHA** | **없음 — 머지 대기.** master/사람이 머지한다 |
+| **선행** | `1a44c23` `lease 가 전처리를 나른다 (#52)` |
+
+### 세고 · 멈추고 · 남긴다
+
+- **센다** — `claim` 이 `attempt_no = (기존 배정 수) + 1`
+- **멈춘다** — `capability.max_attempts`(기본 5 · 1–50) 도달 시 `claim` 이 고르지 않고
+  워커가 task `FAILED`. `finished_at` 이 박히므로 입력 TTL 도 여기서 시작
+- **남긴다** — Node 가 `/v1/internal/assignments/{id}/fail` 로 보고 → `audit_log` 에 이유.
+  **로그가 아니라 DB**
+- DB 가 마지막 방어선 — 스냅샷 + 복합 FK + `CHECK (attempt_no <= capability_max_attempts)`
+
+`attempt_no` 와 `FAILED` 는 **v4.4 부터 스키마에 있었다.** 코드가 안 썼을 뿐이다 — `0009` 때와 같다.
+
+### 실측 9/9 — 게이트 통과 후 계약을 깨서 실패를 강제
+
+    attempt_no=1/3 FAILED · 2/3 FAILED · 3/3 FAILED   (정확히 3회)
+    gc: exhausted=1 → task FAILED · finished_at 기록
+    20초 뒤 배정 수 3 → 3                              (무한 루프가 멈췄다)
+    audit_log: assignment.failed 3건 · 이유 포함
+    골든 acc=0.8500 (clean_room · prod_room 동일)
+
+### 정책값 — 이견 있으면 말해 달라 (`expects: ack`)
+
+**기본 `max_attempts = 5`**, 능력별 조정 가능, 절대 상한 50. 일시 장애(기기 재시작·네트워크)를
+넘기기엔 충분하고 잘못된 계약을 오래 끌지 않는 값으로 잡았다. **되돌리기 싼 값**이라 진행했다 —
+바꾸려면 `capability.max_attempts` 만 고치면 된다.
+
+### 또 같은 누락 (기록)
+
+`POST /v1/capabilities` 가 `max_attempts` 를 **안 받고 있었다.** `max_input_bytes` 때와 똑같다 —
+**capability 에 컬럼을 더하면서 API 노출을 빠뜨리는 패턴이 두 번째다.** 첫 실행에서 상한 3 이
+무시되고 기본 5 로 돌아서 잡혔다. 다음에 capability 컬럼을 더할 때는 API·조회면까지 한 묶음으로 본다.
+
+### 남은 한계
+
+실패가 **일시적인지 영구적인지 구분하지 않는다.** 기기 재시작도 계약 오류와 똑같이 시도를
+소모한다. 상한 5 가 완충이지만 백오프·오류 분류는 없다.
+
+### Next 후보
+
+1. **C: 백업·복구 리허설** — dump/restore 실측 (문서는 있다)
+2. **D6** — 제품 트랙 Proposal (가중치 출처·라이선스 선언 동반)
+3. 실패 분류·백오프 — 위 한계
 4. TLS — 온프레/VPN 전제면 계속 후순위
 ```

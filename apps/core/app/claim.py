@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import uuid
 from typing import Any
@@ -26,10 +27,13 @@ CLAIM_SQL = """
 INSERT INTO assignment (
     task_id, agent_id, capability_id, node_id,
     task_trust_domain, node_trust_domain, capability_tier, node_tier_max,
-    lease_expires_at, status)
+    lease_expires_at, status, attempt_no, capability_max_attempts)
 SELECT t.id, acp.agent_id, c.id, n.id,
        t.trust_domain, n.trust_domain, c.compute_tier, n.compute_tier_max,
-       now() + INTERVAL '60 seconds', 'LEASED'
+       now() + INTERVAL '60 seconds', 'LEASED',
+       -- 몇 번째 시도인가 (0015). 세지 않으면 「조용한 무한 재시도」가 된다.
+       (SELECT count(*) + 1 FROM assignment a2 WHERE a2.task_id = t.id),
+       c.max_attempts
   FROM task t
   JOIN capability c                ON c.id = t.capability_id
   JOIN agent_capability_passed acp ON acp.capability_id = c.id
@@ -62,6 +66,10 @@ SELECT t.id, acp.agent_id, c.id, n.id,
        )
    AND (nl.availability IS DISTINCT FROM 'DRAINING')
    AND (nl.availability IS DISTINCT FROM 'OFFLINE')
+   -- 시도 상한을 다 쓴 task 는 고르지 않는다 (0015). 워커가 FAILED 로 종결한다.
+   -- DB 의 ck_assignment_attempt_within_cap 이 마지막 방어선이지만, 여기서 걸러야
+   -- 「상한 초과 INSERT 가 거절돼 claim 이 조용히 실패」하는 상태가 안 된다.
+   AND (SELECT count(*) FROM assignment a3 WHERE a3.task_id = t.id) < c.max_attempts
  -- 덜 바쁜 기기 먼저. 동률이면 UUID 순으로 고정해 재현성을 지킨다.
  ORDER BY (SELECT count(*) FROM assignment a2
             WHERE a2.node_id = n.id AND a2.status = 'LEASED'
@@ -140,3 +148,90 @@ def claim_next(
         {"assignment_id": str(row["id"]), "task_id": str(locked_id)},
     )
     return dict(row)
+
+
+# ── 실패 보고 · 상한 소진 종결 (0015) ─────────────────────────────────────
+
+FAIL_ASSIGNMENT_SQL = """
+UPDATE assignment
+   SET status = 'FAILED', finished_at = now()
+ WHERE id = %(assignment_id)s
+   AND node_id = %(node_id)s
+   AND status IN ('LEASED', 'RUNNING')
+RETURNING id, task_id, attempt_no, capability_max_attempts
+"""
+
+# 실패한 배정의 task 는 다시 QUEUED 로 — **다른 기기가 시도할 수 있어야 한다.**
+# 상한을 다 썼는지는 여기서 보지 않는다. claim 이 고르지 않고, 워커가 종결한다.
+REQUEUE_SQL = """
+UPDATE task
+   SET status = 'QUEUED', current_assignment_id = NULL, updated_at = now()
+ WHERE id = %(task_id)s
+   AND status = 'ASSIGNED'
+   AND current_assignment_id = %(assignment_id)s
+RETURNING id, status
+"""
+
+FAIL_AUDIT_SQL = """
+INSERT INTO audit_log (task_id, actor_type, event, payload)
+VALUES (%(task_id)s, 'node', 'assignment.failed', %(payload)s::jsonb)
+"""
+
+# 상한을 다 쓴 미완료 task 를 종결한다. 정책은 뷰가 갖는다 (0015).
+EXHAUSTED_SQL = """
+UPDATE task t
+   SET status = 'FAILED', finished_at = now(), updated_at = now()
+  FROM task_attempts_exhausted x
+ WHERE t.id = x.task_id
+RETURNING t.id, x.capability_code, x.attempts, x.max_attempts
+"""
+
+
+def fail_assignment(
+    conn: psycopg.Connection,
+    *,
+    assignment_id: uuid.UUID,
+    node_id: uuid.UUID,
+    reason: str,
+) -> dict[str, Any] | None:
+    """Node 가 실행에 실패했다고 보고한다.
+
+    이게 없으면 실패가 **lease 만료(60초)로만** 드러난다 — 그 동안 Node 는 같은 배정을
+    계속 재시도하고, 로그에만 쌓인다. 보고하면 즉시 FAILED 로 남고 시도 횟수에 반영된다.
+    """
+    row = conn.execute(
+        FAIL_ASSIGNMENT_SQL,
+        {"assignment_id": str(assignment_id), "node_id": str(node_id)},
+    ).fetchone()
+    if row is None:
+        return None
+    out = dict(row)
+    conn.execute(
+        FAIL_AUDIT_SQL,
+        {
+            "task_id": str(out["task_id"]),
+            "payload": json.dumps(
+                {
+                    "assignment_id": str(out["id"]),
+                    "node_id": str(node_id),
+                    "attempt_no": out["attempt_no"],
+                    "max_attempts": out["capability_max_attempts"],
+                    # 이유는 Node 가 준 것이다. 길면 자른다 — 증적이지 로그가 아니다.
+                    "reason": (reason or "")[:500],
+                }
+            ),
+        },
+    )
+    conn.execute(
+        REQUEUE_SQL,
+        {"task_id": str(out["task_id"]), "assignment_id": str(out["id"])},
+    )
+    return out
+
+
+def fail_exhausted_tasks(conn: psycopg.Connection) -> list[dict[str, Any]]:
+    """시도 상한을 다 쓴 task 를 FAILED 로 종결한다.
+
+    `finished_at` 을 박으므로 입력 바이트 TTL(종결 후 7일)도 여기서 시작된다 (0011).
+    """
+    return [dict(r) for r in conn.execute(EXHAUSTED_SQL).fetchall()]

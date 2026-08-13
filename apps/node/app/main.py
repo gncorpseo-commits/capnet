@@ -174,6 +174,26 @@ def _fetch_input(input_id: str, expected_sha: str) -> str:
         raise
 
 
+def _report_failure(assignment_id: uuid.UUID, reason: str) -> None:
+    """실행 실패를 Core 에 보고한다 (0015).
+
+    보고하지 않으면 실패가 **lease 만료(60초)로만** 드러나고, 그 동안 같은 배정을 계속
+    재시도한다 — 로그에만 쌓이고 증적에는 없다. 실측으로 채널 불일치 38건이 그렇게 쌓였다.
+
+    보고 자체가 실패해도 삼킨다 — 그때는 종전처럼 lease 만료로 회수된다.
+    """
+    if not NODE_ID:
+        return
+    url = f"{CORE_URL}/v1/internal/assignments/{assignment_id}/fail"
+    body = json.dumps({"nodeId": NODE_ID, "reason": reason[:500]}).encode()
+    req = urllib.request.Request(url, data=body, headers=_core_headers(), method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=10):
+            pass
+    except Exception as exc:
+        print(f"node: failure report failed: {exc}", flush=True)
+
+
 def _post_complete(assignment_id: uuid.UUID, body: dict[str, Any]) -> dict[str, Any]:
     url = f"{CORE_URL}/v1/internal/assignments/{assignment_id}/complete"
     req = urllib.request.Request(
@@ -395,6 +415,9 @@ def _poll_loop() -> None:
                     print(f"node: ran assignment={a['id']} label={out.get('label')}", flush=True)
                 except Exception as exc:  # 한 건 실패가 루프를 죽이지 않는다
                     print(f"node: assignment {a.get('id')} failed: {exc}", flush=True)
+                    # **Core 에 알린다.** 안 알리면 lease 만료까지 같은 배정을 계속 잡는다.
+                    with contextlib.suppress(Exception):
+                        _report_failure(uuid.UUID(str(a["id"])), f"{type(exc).__name__}: {exc}")
         except Exception as exc:
             print(f"node: poll error: {exc}", flush=True)
         time.sleep(POLL_INTERVAL_S)

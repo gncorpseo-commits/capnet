@@ -22,7 +22,7 @@ from app.apikey import (
     verify_key,
 )
 from app.capability import create_capability, get_capability, list_capabilities
-from app.claim import claim_next, reclaim_expired
+from app.claim import claim_next, fail_assignment, fail_exhausted_tasks, reclaim_expired
 from app.complete import (
     complete_assignment,
     lease_detail,
@@ -195,6 +195,8 @@ class CapabilityCreate(BaseModel):
     quality_profile: str = "golden"
     # 입력 크기 계약 (0011). 생략하면 32MiB. 절대 상한 256MiB 는 DB 가 거절한다.
     max_input_bytes: int | None = None
+    # 배정 시도 상한 (0015). 생략하면 5. 절대 상한 50 은 DB 가 거절한다.
+    max_attempts: int | None = None
     golden_set_ref: str | None = None
     golden_set_sha256: str | None = None
     golden_set_size: int | None = None
@@ -398,6 +400,7 @@ def capabilities_create(body: CapabilityCreate, authorization: str | None = Head
                 conn,
                 quality_profile=body.quality_profile,
                 max_input_bytes=body.max_input_bytes,
+                max_attempts=body.max_attempts,
                 code=body.code,
                 version=body.version,
                 name=body.name,
@@ -1003,6 +1006,44 @@ def node_open_assignments(
     return {"node_id": str(node_id), "count": len(rows), "assignments": rows}
 
 
+class FailBody(BaseModel):
+    node_id: uuid.UUID = Field(alias="nodeId")
+    reason: str = ""
+
+    model_config = {"populate_by_name": True}
+
+
+@app.post("/v1/internal/assignments/{assignment_id}/fail")
+def assignment_fail(
+    assignment_id: uuid.UUID,
+    body: FailBody,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """Node 가 실행 실패를 보고한다 (0015).
+
+    이게 없으면 실패가 **lease 만료(60초)로만** 드러나고, 그 동안 Node 는 같은 배정을
+    계속 재시도한다 — 로그에만 쌓이고 증적에는 없다.
+
+    보고하면 배정은 즉시 FAILED 로 남고, task 는 QUEUED 로 돌아가 **다른 기기가 시도**할 수
+    있다. 시도 상한을 다 쓰면 워커가 task 를 FAILED 로 종결한다.
+    """
+    _assert_node_matches(body.node_id, authorization)
+    with get_conn() as conn:
+        row = fail_assignment(
+            conn, assignment_id=assignment_id, node_id=body.node_id, reason=body.reason
+        )
+    if row is None:
+        raise HTTPException(
+            status_code=409,
+            detail="살아 있는 lease 가 아니거나 이 Node 의 배정이 아니다",
+        )
+    logger.info(
+        "assignment failed id=%s task=%s attempt=%s/%s",
+        row["id"], row["task_id"], row["attempt_no"], row["capability_max_attempts"],
+    )
+    return row
+
+
 @app.get("/v1/tasks/{task_id}")
 def get_task(task_id: uuid.UUID) -> dict[str, Any]:
     with get_conn() as conn:
@@ -1109,6 +1150,14 @@ def _gc_once() -> dict[str, int]:
     freed = 0
     with get_conn() as conn:
         timed_out = timeout_stale_tasks(conn)
+        # 시도 상한을 다 쓴 task 를 종결한다 (0015). finished_at 이 박히므로
+        # 입력 바이트 TTL(종결 후 7일)도 여기서 시작된다.
+        exhausted = fail_exhausted_tasks(conn)
+        for item in exhausted:
+            logger.info(
+                "gc: task exhausted id=%s capability=%s attempts=%s/%s",
+                item["id"], item["capability_code"], item["attempts"], item["max_attempts"],
+            )
         due = purge_due(conn, limit=GC_BATCH)
         for item in due:
             input_id = item["task_input_id"]
@@ -1120,7 +1169,12 @@ def _gc_once() -> dict[str, int]:
                     "gc: input purged id=%s reason=%s bytes=%s",
                     input_id, item["reason"], item["byte_size"],
                 )
-    return {"timed_out": timed_out, "purged": purged, "freed_bytes": freed}
+    return {
+        "timed_out": timed_out,
+        "exhausted": len(exhausted),
+        "purged": purged,
+        "freed_bytes": freed,
+    }
 
 
 def _gc_loop() -> None:
@@ -1128,10 +1182,10 @@ def _gc_loop() -> None:
     while True:
         try:
             out = _gc_once()
-            if out["timed_out"] or out["purged"]:
+            if out["timed_out"] or out["purged"] or out["exhausted"]:
                 logger.info(
-                    "gc: timed_out=%d purged=%d freed=%d bytes",
-                    out["timed_out"], out["purged"], out["freed_bytes"],
+                    "gc: timed_out=%d exhausted=%d purged=%d freed=%d bytes",
+                    out["timed_out"], out["exhausted"], out["purged"], out["freed_bytes"],
                 )
         except Exception:  # GC 는 죽지 않는다
             logger.exception("gc: pass failed")
