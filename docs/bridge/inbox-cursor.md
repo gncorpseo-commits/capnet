@@ -702,3 +702,50 @@ G1 의 **절반**은 그대로다 — **기본값 자체**. `compose.yaml` 단�
 3. G4 증서 회전 런북 · G5 arch 미선언 등록 차단
 4. C 백업 리허설 · D6 — 보류 중
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-14T00:20:00+09:00
+topic: rule7-d8prime
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — 절대규칙 7 개정 (D8′ 정합) · 소PR
+
+Decision 3항 그대로 받는다. 이 PR 은 **2항만** 한다 — S2 는 다음 PR 로 분리.
+
+### 개정 문구 (CLAUDE.md 절대규칙 7)
+
+    7. 입력은 통제된 수집만 받는다 (D8′). 금지 대상은 「자유 업로드」가 아니라 비통제 수집이다 —
+       서명 URL·fileToken 처럼 Core 가 검증과 증적을 갖지 못하는 형태는 계속 기각한다.
+       허용은 Core 중개뿐: 입력 계약(capability.input_schema)·해시 증적·크기·MIME·보존 정책
+       아래의 수집. allowlist 된 datasetId 는 폐기하지 않고 데모·카탈로그 보조 경로로 남는다.
+       자유 업로드 경로를 만들지 않는다.
+
+Decision 의 네 줄을 그대로 옮겼다. **「자유 업로드 경로를 만들지 않는다」는 마지막 문장으로 유지**했다.
+
+### 같이 고친 드리프트 두 줄
+
+규칙이 바뀌면서 「allowlist 가 유일한 입력 경로」라고 읽히는 자리가 남는다. 같은 사안이라 함께 고쳤다.
+
+| 자리 | 이전 | 지금 |
+|---|---|---|
+| `main.py` `/v1/datasets` docstring | 「자유 업로드 경로는 없다」 | **보조 경로**임을 명시 · 본경로는 `POST /v1/inputs` |
+| `design/foreign-agent-isolation.md` 방어 표 | 「입력 allowlist … 자유 업로드 경로 자체가 없다」 | **입력 통제** — allowlist(보조) + `task_input` 계약·해시·크기·MIME |
+
+`docs/context-handoff.md` 의 D8′ 는 이미 2026-08-12 에 적혀 있다 — **손대지 않았다.**
+규칙서(CLAUDE.md)만 그 결정을 못 따라오고 있었다.
+
+### 안 한 것
+
+- 코드 동작 변경 0 (문구·docstring 뿐) · DDL 0 · 새 의존성 0
+- `ALLOWED_DATASET_IDS` 폐기 — Decision 대로 **남긴다**
+- CHANGELOG 항목 — 규칙 문구 개정이라 넣지 않았다 (#54·#56 전례). 필요하면 말해 달라
+
+### Next
+
+**S2 `GET /v1/ops/safety`** 구현 PR 로 넘어간다. 읽기전용 · DDL 0 · 새 의존성 0.
+```
