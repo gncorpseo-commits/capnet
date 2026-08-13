@@ -250,13 +250,20 @@ def _fetch_my_assignments() -> list[dict[str, Any]]:
         return []
 
 
-def _is_mine(assignment_id: uuid.UUID) -> bool:
-    """Core가 이 Node에 배정한 lease인지 확인한다.
+def _my_assignment(assignment_id: uuid.UUID) -> dict[str, Any] | None:
+    """Core가 이 Node에 배정한 lease면 **그 행을 그대로** 돌려준다.
 
     이게 없으면 Node에 네트워크로 닿는 누구나 추론을 시킬 수 있다.
     Core의 도메인·티어 FK는 assignment 기록을 막지만 Node 직접 호출은 막지 못한다.
+
+    불린이 아니라 행을 돌려주는 이유: 이 경로도 `arch`·`max_params`·`preprocess` 를
+    **Core 가 말한 값**으로 써야 한다 (I1). 전에는 확인만 하고 버려서, 수동 실행이
+    로컬 meta·기본값으로 떨어지고 있었다.
     """
-    return any(str(a.get("id")) == str(assignment_id) for a in _fetch_my_assignments())
+    for a in _fetch_my_assignments():
+        if str(a.get("id")) == str(assignment_id):
+            return a
+    return None
 
 
 def _run(
@@ -265,11 +272,15 @@ def _run(
     input_ref: str | None,
     arch: str | None = None,
     max_params: int | None = None,
+    preprocess: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """배정 1건 실행.
 
     `arch` 는 **Core 가 말한 값**이다 (I1). 로컬 meta 로 정하면 게이트가 승인한 것과
     실행한 것이 같다는 보장이 없다. Core 가 모르면(legacy Agent) None 이고, 그때만 로컬로 떨어진다.
+
+    `preprocess` 도 같다 (0014). 계약이 선언한 전처리로 돌아야 **계약 검증 때 통과한 그것**과
+    실행이 같아진다. 없으면 종전 기본값(32×32 RGB)으로 떨어진다.
     """
     path = _resolve_weights(weights_sha256)
     dummy = _is_placeholder(path)
@@ -301,7 +312,8 @@ def _run(
 
         try:
             label, confidence = predict_image(
-                path, image_path, arch=arch, max_params=max_params
+                path, image_path, arch=arch, max_params=max_params,
+                preprocess=preprocess,
             )
         except ResourceLimitExceeded as exc:
             # 조용히 도는 것보다 터뜨리는 편이 낫다 — Core 가 FAILED 로 기록한다.
@@ -349,12 +361,19 @@ def execute(body: ExecuteBody) -> dict[str, Any]:
             status_code=503,
             detail="NODE_ID 미설정 — 배정 확인 불가. 실행을 거부한다 (fail closed)",
         )
-    if not _is_mine(body.id):
+    mine = _my_assignment(body.id)
+    if mine is None:
         raise HTTPException(
             status_code=403,
             detail="assignment not leased to this node (Core가 배정하지 않았다)",
         )
-    return _run(body.id, body.weights_sha256, body.input_ref)
+    # 폴링 경로와 같은 값을 쓴다 — 배정마다 다른 계약을 탈 수 있다.
+    return _run(
+        body.id, body.weights_sha256, body.input_ref,
+        arch=mine.get("arch"),
+        max_params=mine.get("max_params"),
+        preprocess=mine.get("preprocess"),
+    )
 
 
 def _poll_loop() -> None:
@@ -371,6 +390,7 @@ def _poll_loop() -> None:
                         a.get("input_ref"),
                         arch=a.get("arch"),
                         max_params=a.get("max_params"),
+                        preprocess=a.get("preprocess"),
                     )
                     print(f"node: ran assignment={a['id']} label={out.get('label')}", flush=True)
                 except Exception as exc:  # 한 건 실패가 루프를 죽이지 않는다
