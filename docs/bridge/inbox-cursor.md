@@ -6,7 +6,7 @@
 
 ## 현재
 
-#52 **머지됨** (`1a44c23`). 다음 지시 = **배정 재시도 상한** → **PR 머지 대기**. 아래 블록.
+#53 **머지됨** (`4f7f6d0`). **우선순위 전환 — 안전 사슬** 갭 분석 + Proposal. **Decision 대기**.
 
 ---
 
@@ -565,4 +565,80 @@ status: open
 2. **D6** — 제품 트랙 Proposal (가중치 출처·라이선스 선언 동반)
 3. 실패 분류·백오프 — 위 한계
 4. TLS — 온프레/VPN 전제면 계속 후순위
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-13T13:20:00+09:00
+topic: safety-chain
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — 안전 사슬을 핵심 기능으로 (Node 등록 → Agent 사용)
+
+우선순위 전환 접수. 골든 성적 평가는 선택 프로파일로 두고, **안전·신뢰 검증**을 본체로 올린다.
+갭 분석 문서: `docs/design/safety-chain.md` (이 PR 에 포함).
+
+### 갭 분석 요약 — 13칸 중 11칸이 이미 서 있다
+
+코드를 읽어 확인한 것만 적었다. **이미 있는 것**:
+
+| | 무엇이 막나 | 막는 주체 |
+|---|---|---|
+| 게이트러너 자격 · 등급 정합 | 아무 기기나 채점자가 되는 것 | **DB** CHECK |
+| Agent 신원 | 선언과 다른 가중치 | **DB** `agent_node_ready` 복합 FK |
+| 실행 가중치 | 이름만 맞는 다른 파일 | Node `_resolve_weights` 가 **로컬 파일을 해싱**해 고른다 |
+| 계약 | 못 지키는 Agent | 러너가 **실행해서** 검증 (B2) |
+| 라우팅 · 실행 권한 · 증적 · 폭주 | 도메인/티어 · lease 없는 호출 · 무한 재시도 | **DB** FK · 403 · CHECK |
+
+**이 사슬은 생각보다 촘촘하다.** 새로 만들 것보다 **구멍 둘**이 문제다.
+
+### 구멍
+
+**G1 (🔴) 강제가 기본 꺼짐 · CI 가 안 지킨다**
+`REQUIRE_API_KEY`·`REQUIRE_NODE_CREDENTIAL` 기본 `0`. `compose.prod.yaml` 이 뒤집지만 **선택**이다.
+그리고 **HTTP 계층 강제 불변식이 CI 에 없다** — `check_api_key`(23)·`check_node_credential`(17)은
+**DB 계층**만 보고, 「강제 모드에서 무인증 401」은 `prod_room.sh`(수동) 에만 있다.
+**안전이 핵심 기능인데 그 회귀를 자동으로 못 잡는다.**
+
+**G2 (🟠) 초대 경로가 없다** — `provision_source` 는 `invited` 를 받는데 그 값을 만드는 절차가 없다.
+러닝크루 시나리오엔 「가입 요청 → 승인 → 증서」가 필요하다. `attempt_no` 와 같은 모양이다.
+
+**G3 (🟠)** 한 기기에 대해 「왜 실행 가능한가」를 한 면에서 못 본다 ·
+**G4 (🟡)** 증서 회전 절차 미문서화 · **G5 (🟡)** arch 미선언 Agent 를 등록에서 막지 않음
+
+### 당장 막을 것 — 둘만 고른다
+
+**S1. HTTP 강제 불변식을 CI 로 고정** ← **1순위 추천**
+`tests/integration/check_enforcement.py` 를 새로 만들어 `run_integration.sh` 가 자동 수집하게 한다.
+DB 계층이 아니라 **앱의 강제 분기**를 본다 — `REQUIRE_*` 를 켠 상태에서
+`_actor`·`_require`·`_authenticated_node`·`_assert_node_matches` 가 401/403 을 내는지.
+`prod_room.sh` 의 HTTP 확인은 그대로 두되, **회귀는 CI 가 잡게** 한다.
+추가만 · 스키마 변경 없음 · 새 의존성 0.
+
+**S2. 안전 자세 조회면 `GET /v1/ops/safety`** ← 2순위
+「누가 내 데이터를 돌릴 수 있나」를 한 번에. 읽기전용 · 새 테이블 없음:
+등록된 Node 별 `trust_domain`·`provision_source`·증서 유무·바인딩된 Agent 수·마지막 하트비트,
+그리고 위험 표시(증서 없음 · 강제 꺼짐 · arch 미선언 Agent 라우팅 가능 · 드리프트).
+운영자가 조회 여러 개를 이어 붙이지 않아도 되게.
+
+**둘 다 DDL 없음 · 제약 약화 없음 · 추가만.**
+
+### 다음 칸 (이번 범위 밖)
+
+G2 초대 경로(스키마 추가 필요 — `node_invite` 등) · G4 회전 런북 · G5 등록 시 arch 요구.
+그리고 C 백업 리허설 · D6 · 폰 Node · Contribution 장부.
+
+### Decision 요청
+
+1. **S1 을 다음 PR 로** 진행해도 되는가 (추천)
+2. **S2 를 같은 PR 에 묶을지, 나눌지** — 성격이 다르다(가드 vs 조회면). 나누는 쪽을 권한다
+3. G2 초대 경로는 **스키마 추가**가 필요하다 — 별도 Proposal 로 올릴까
+
+출품 `phase1-verdict` 문장 수정은 작은 PR 로 병행 가능하다. 원하면 S1 과 별개로 올린다.
+
+**Confirm 전까지 구현은 시작하지 않는다** (PROTOCOL).
 ```
