@@ -118,6 +118,7 @@ class AgentCreate(BaseModel):
     weights_sha256: str
     weights_format: str = "safetensors"
     # 허용 아키텍처는 DB 행이다 (agent_arch). 없는 값이면 FK 가 등록을 막는다 (I1).
+    # 선택 타입이지만 **필수다** — 핸들러가 인증 뒤에서 본다 (G5 · agents_create 주석 참조).
     arch: str | None = None
 
 
@@ -467,6 +468,18 @@ def agents_list() -> dict[str, Any]:
 @app.post("/v1/agents")
 def agents_create(body: AgentCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     _require("developer", authorization)
+    # arch 를 **등록에서** 요구한다 (G5). 없으면 실행 아키텍처를 Node 로컬 meta 가 정하게
+    # 되고, 그게 I1 이 닫으려던 구멍이다. legacy 행(arch IS NULL)은 그대로 두고
+    # `agent_arch_unbound` 로 계속 드러낸다 — 새로 만들지만 않는다.
+    #
+    # 검사를 pydantic 필수 필드로 두지 않은 것은 의도다. 본문 검증이 인증보다 먼저 돌아서
+    # (operate-production §5) 무인증 요청이 401 대신 422 를 받게 된다 — 강제 모드의
+    # 「무인증 쓰기는 401」 불변식이 깨진다. 그래서 `_require` **뒤에서** 본다.
+    if not body.arch:
+        raise HTTPException(
+            status_code=400,
+            detail="arch 를 선언해야 한다 — 허용 목록은 agent_arch 행이다 (I1 · G5)",
+        )
     try:
         with get_conn() as conn:
             return create_agent(

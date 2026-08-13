@@ -3,6 +3,7 @@
 #
 #   scripts/node_bind.sh --node <uuid> --weights eurosat_scratch.safetensors
 #   scripts/node_bind.sh --node <uuid> --weights eurosat_scratch_b.safetensors --name my-agent
+#   scripts/node_bind.sh --node <uuid> --weights w.safetensors --arch TinyEuroSATB   # meta 가 없을 때
 #
 # 왜 필요한가
 #   Node 를 등록하고 증서를 줘도 **일이 가지 않는다.** 배정에는 사슬이 다 서야 한다:
@@ -21,18 +22,19 @@ runner="${RUNNER_NODE_ID:-00000000-0000-4000-8000-000000000030}"
 runner_svc="${RUNNER_SERVICE:-node-m-team}"
 cap="${CAPABILITY_ID:-00000000-0000-4000-8000-000000000010}"
 
-node=""; weights=""; name=""
+node=""; weights=""; name=""; arch=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --node)     node="$2"; shift 2 ;;
     --weights)  weights="$2"; shift 2 ;;
     --name)     name="$2"; shift 2 ;;
+    --arch)     arch="$2"; shift 2 ;;
     --capability-id) cap="$2"; shift 2 ;;
     *) echo "모르는 인자: $1" >&2; exit 1 ;;
   esac
 done
 [[ -n "$node" && -n "$weights" ]] || {
-  echo "사용: scripts/node_bind.sh --node <uuid> --weights <file.safetensors> [--name N]" >&2; exit 1; }
+  echo "사용: scripts/node_bind.sh --node <uuid> --weights <file.safetensors> [--name N] [--arch A]" >&2; exit 1; }
 name="${name:-agent-${weights%.safetensors}}"
 stamp="$(date +%Y%m%d%H%M%S)"
 
@@ -49,9 +51,18 @@ print(h.hexdigest())" 2>/dev/null) || {
   echo "러너에 /weights/$weights 가 없다" >&2; exit 1; }
 echo "  $weights → ${sha:0:16}…"
 
+# arch 는 등록 필수다 (G5). 근거는 학습 기록(`<weights>.meta.json`) — 추측이 아니다.
+# --arch 로 덮어쓸 수 있다 (meta 가 없는 가중치).
+if [[ -z "${arch:-}" ]]; then
+  arch=$(docker compose --project-directory "$root" exec -T "$runner_svc" \
+    python -c "from app.infer import _arch_for_weights; print(_arch_for_weights('/weights/$weights'))" 2>/dev/null | tr -d '\r')
+fi
+[[ -n "$arch" ]] || { echo "arch 를 정할 수 없다 — --arch 로 준다" >&2; exit 1; }
+echo "  arch=$arch"
+
 echo "== 2) Agent 등록 =="
 agent=$(ccurl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
-  -d "{\"name\":\"$name\",\"version\":\"0.1.0-$stamp\",\"manifest_hash\":\"$name-manifest\",\"weights_uri\":\"file:///weights/$weights\",\"weights_sha256\":\"$sha\"}")
+  -d "{\"name\":\"$name\",\"version\":\"0.1.0-$stamp\",\"manifest_hash\":\"$name-manifest\",\"weights_uri\":\"file:///weights/$weights\",\"weights_sha256\":\"$sha\",\"arch\":\"$arch\"}")
 agent_id=$(printf '%s' "$agent" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "  agent=$agent_id"
 

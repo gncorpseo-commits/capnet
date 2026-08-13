@@ -82,10 +82,84 @@ scripts/node_onboard.sh --name tenant-a --domain tenant --tier M   # source=invi
 - 잃어버리면 **복구할 수 없다.** 폐기 후 재발급한다
 - 회전 = 폐기 → 재발급. Node 당 활성 증서는 하나다 (부분 UNIQUE)
 
+### 증서 회전 런북
+
+> **무중단 회전은 지금 구조에서 안 된다.** `node_credential_active_idx` 가 Node 당 활성 증서를
+> **하나로** 강제하므로 새 증서를 먼저 발급해 겹칠 수 없다. 겹치게 하려면 스키마가 바뀐다 —
+> 그건 별 Decision 이다. 아래는 **짧은 중단을 인정하고** 안전하게 도는 순서다.
+
+Node 런타임은 증서를 **임포트 시점에 한 번** 읽는다 (`_load_credential`). 파일만 바꾸면
+바뀌지 않는다 — 재기동이 필요하다.
+
 ```bash
-curl -X POST $CORE/v1/nodes/<id>/credentials/revoke \
-  -H 'content-type: application/json' -d '{"reason":"회전"}'
+export CORE=http://127.0.0.1:8000
+export NODE_ID=<uuid>
+K=(-H "Authorization: CapNet-Key $(cat data/admin.key)")
 ```
+
+**1) 새 일이 가지 않게 한다.** Node 를 멈추면 heartbeat 이 끊기고,
+`claim` 은 신선하지 않은 기기를 고르지 않는다 (`REQUIRE_LIVE_NODE=1` 기본).
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml stop node-m-team
+```
+
+**2) 「일이 안 간다」가 실제로 성립하길 기다린다.** 멈춘 **직후에는 아직 `is_fresh=true`** 다 —
+마지막 heartbeat 이 아직 신선하기 때문이다. `heartbeat_timeout_s`(기본 45초)가 지나야 내려간다.
+그 전에는 `claim` 이 이 기기를 여전히 고를 수 있다. **`is_fresh=false` 와 `leases_live=0` 을
+둘 다 확인한다.**
+
+진행 중이던 lease 는 최대 60초 뒤 만료되고, 워커가 회수해 task 는 `QUEUED` 로 돌아가
+**다른 기기가 시도**한다 (일이 사라지지 않는다).
+
+```bash
+curl -s "${K[@]}" $CORE/v1/ops/safety \
+  | python3 -c 'import json,sys,os
+d=json.load(sys.stdin)
+n=[x for x in d["nodes"] if x["node_id"]==os.environ["NODE_ID"]][0]
+print("leases_live=", n["leases_live"], "is_fresh=", n["is_fresh"])'
+```
+
+`leases_live=0` **그리고** `is_fresh=false` 가 될 때까지 기다린다.
+
+> 실측 (2026-08-14 · 제품 프로파일): 멈춘 직후 `leases_live=0 is_fresh=True` 였다.
+> 그 상태에서 폐기하면 45초 창 안에 배정이 갈 수 있고, 그 배정은 401 로 깨진다.
+
+**3) 폐기 → 재발급.** 평문은 이때 한 번만 나온다.
+
+```bash
+curl -sf -X POST "${K[@]}" $CORE/v1/nodes/$NODE_ID/credentials/revoke \
+  -H 'content-type: application/json' -d '{"reason":"rotation"}' >/dev/null
+
+umask 077
+curl -sf -X POST "${K[@]}" $CORE/v1/nodes/$NODE_ID/credentials \
+  -H 'content-type: application/json' -d '{"label":"rotated"}' \
+  | python3 -c 'import json,sys; sys.stdout.write(json.load(sys.stdin)["secret"])' \
+  > data/node-secrets/node-m-team.credential
+```
+
+**4) 재기동.**
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up -d node-m-team
+```
+
+**5) 확인 — 한 곳에서 본다** (S2). `credential_valid=true` · `is_fresh=true` ·
+`risks` 가 비어 있어야 한다.
+
+```bash
+curl -s "${K[@]}" $CORE/v1/ops/safety \
+  | python3 -c 'import json,sys,os
+d=json.load(sys.stdin)
+n=[x for x in d["nodes"] if x["node_id"]==os.environ["NODE_ID"]][0]
+print(n["credential_valid"], n["is_fresh"], n["key_prefix"], n["risks"])'
+```
+
+**폐기만 하고 재발급을 잊으면** 강제 모드에서 그 Node 는 401 을 받는다 — 조용히 놀지 않고
+`/v1/ops/safety` 의 `risks` 에 뜬다. 그게 3단계와 5단계를 붙여 둔 이유다.
+
+> 순서를 지키지 않으면(먼저 폐기하고 Node 를 안 멈추면) 진행 중이던 배정이 401 로 깨진다.
+> task 는 재시도로 살아나지만 `attempt_no` 를 헛되이 쓴다 (상한 기본 5).
 
 ---
 

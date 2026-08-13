@@ -11,15 +11,18 @@ runnerId="00000000-0000-4000-8000-000000000030"
 
 ccurl -sf "$core/health" >/dev/null
 nh="$(ccurl -sf "$node/health")"
-sha="$(printf '%s' "$nh" | python3 -c 'import json,sys
+# sha 와 arch 를 **같은 증언**에서 뽑는다 — Node 가 들고 있는 파일과 그 학습 기록이다.
+# arch 는 이제 등록 필수다 (G5): 없으면 Core 가 400 을 준다.
+read -r sha arch <<< "$(printf '%s' "$nh" | python3 -c 'import json,sys
 h=json.load(sys.stdin)
 hits=[w for w in h.get("weights",[]) if "eurosat_scratch" in w["path"] and not w["placeholder"]]
 assert hits, "scratch weights missing"
-print(hits[0]["sha256"])')"
+print(hits[0]["sha256"], hits[0].get("arch") or "")')"
+[[ -n "$arch" ]] || { echo "Node 가 arch 를 모른다 — <weights>.meta.json 확인" >&2; exit 1; }
 
 ver="0.1.0-scratch-$(date +%Y%m%d%H%M%S)"
 agent="$(ccurl -sf -X POST "$core/v1/agents" -H 'content-type: application/json' \
-  -d "{\"name\":\"eurosat-scratch\",\"version\":\"$ver\",\"manifest_hash\":\"eurosat-scratch-tiny\",\"weights_uri\":\"file:///weights/eurosat_scratch.safetensors\",\"weights_sha256\":\"$sha\"}")"
+  -d "{\"name\":\"eurosat-scratch\",\"version\":\"$ver\",\"manifest_hash\":\"eurosat-scratch-tiny\",\"weights_uri\":\"file:///weights/eurosat_scratch.safetensors\",\"weights_sha256\":\"$sha\",\"arch\":\"$arch\"}")"
 agentId="$(printf '%s' "$agent" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
 set +e
