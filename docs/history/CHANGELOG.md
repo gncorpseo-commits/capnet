@@ -1,5 +1,54 @@
 # Changelog
 
+## 배정 재시도 상한 — 조용한 무한 재시도를 닫는다 — 2026-08-13
+
+직전 PR 에서 기록한 동작이다. 계약이 모델과 맞지 않으면 실행이 매번 깨지는데,
+
+1. Node 가 그 실패를 **Core 에 보고하지 않았다** — 로그에만 쌓였다
+2. `attempt_no` 는 스키마에 있었지만 **아무도 세지 않았다** (항상 1)
+
+그래서 lease 만료 → 회수 → QUEUED → 재배정 → 또 실패가 **72h `TIMEOUT` 까지** 돌았다.
+실측으로 Node 로그에 채널 불일치 **38건**이 그렇게 쌓였다. **운영에서 보이지 않는 상태다.**
+
+**고친 것 — 세고, 멈추고, 남긴다**
+
+- **센다** — `claim` 이 `attempt_no = (그 task 의 기존 배정 수) + 1` 을 적는다
+- **멈춘다** — `capability.max_attempts`(기본 5 · 1–50). 상한에 닿은 task 는 `claim` 이 고르지
+  않고, 워커가 `FAILED` 로 종결한다. `finished_at` 이 박히므로 입력 바이트 TTL 도 여기서 시작된다
+- **남긴다** — Node 가 `POST /v1/internal/assignments/{id}/fail` 로 보고한다.
+  배정은 즉시 `FAILED`, task 는 `QUEUED` 로 돌아가 **다른 기기가 시도**할 수 있다.
+  실패 이유가 `audit_log` 에 들어간다 — **로그가 아니라 DB**
+- **DB 가 마지막 방어선** — `assignment.capability_max_attempts` 스냅샷 + 복합 FK +
+  `CHECK (attempt_no <= capability_max_attempts)`. 앱이 세고 DB 가 거절한다
+- **`task_attempts_exhausted` 뷰** — 무엇이 왜 멈췄는지를 SQL 로 본다
+
+`attempt_no` 와 `FAILED` 는 **v4.4 부터 스키마에 있었다.** 코드가 쓰지 않았을 뿐이다 —
+`0009`(api_key) 때와 같은 모양이다.
+
+**실측 (빈 볼륨 · 격리 프로젝트) 9/9**
+
+게이트를 통과시킨 뒤 계약을 깨서(`32×32 RGB` → `16×16 L`) 실패를 강제했다.
+
+| | |
+|---|---|
+| 정상 경로 | ✅ `attempt_no=1/5 SUCCEEDED` · `acc=0.8500` |
+| 능력별 상한 지정 (`max_attempts: 3`) | ✅ |
+| **시도 계수** | ✅ `1/3 · 2/3 · 3/3` 전부 `FAILED` — **정확히 3회** |
+| **워커 종결** | ✅ `gc: exhausted=1` → task `FAILED` · `finished_at` 기록 |
+| **재시도 정지** | ✅ 20초 뒤에도 배정 수 3 → 3 (**무한 루프가 멈췄다**) |
+| 증적 | ✅ `audit_log` 에 `assignment.failed` 3건 · 이유 포함 |
+| 상한 초과 배정 | ✅ DB 가 거절 (`assignment`) |
+| 골든 경로 | ✅ `acc=0.8500` — `clean_room`·`prod_room` 동일 |
+
+**`POST /v1/capabilities` 가 `max_attempts` 를 안 받고 있었다** — `max_input_bytes` 때와 같은
+누락이라 첫 실행에서 상한 3 이 무시되고 기본 5 로 돌았다. 같이 노출했다.
+
+회귀: `run_tests` 전부 통과 · 통합 검사 7/7 · `clean_room` 9/9 · `prod_room` 14/14.
+
+**남은 것** — 실패가 **일시적인지 영구적인지 구분하지 않는다.** 기기 재시작 같은 일시 장애도
+계약 오류와 똑같이 시도를 소모한다. 상한을 5 로 둔 것이 그 완충이지만, 백오프나 오류 분류는 없다.
+
+
 ## lease 가 전처리를 나른다 — 검증과 실행이 같아진다 — 2026-08-13
 
 `0014` 로 계약이 전처리를 선언하게 됐지만, 그 값은 **검증 시점에만** 쓰였다.
