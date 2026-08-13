@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Any
 from pathlib import Path
 
 import torch
@@ -55,17 +56,39 @@ def _arch_for_weights(weights_path: str) -> str:
     return "TinyEuroSAT"
 
 
+# 계약이 전처리를 선언하기 전의 값 (D3 · 32×32 RGB). `image.classify` 의 선언값과 같다 —
+# 0014 가 계약에 적어 넣은 것이 바로 이 값이라, 골든 경로의 픽셀 처리는 바뀌지 않는다.
+DEFAULT_PREPROCESS: dict[str, Any] = {"resize": [32, 32], "colorspace": "RGB"}
+
+
+def resolve_preprocess(declared: dict[str, Any] | None) -> tuple[tuple[int, int], str]:
+    """계약 선언을 (resize, colorspace) 로 푼다. 없으면 종전 기본값."""
+    spec = declared or DEFAULT_PREPROCESS
+    size = spec.get("resize") or DEFAULT_PREPROCESS["resize"]
+    if not (isinstance(size, (list, tuple)) and len(size) == 2):
+        raise ValueError(f"preprocess.resize 형식이 아니다: {size!r}")
+    w, h = int(size[0]), int(size[1])
+    if w < 1 or h < 1:
+        raise ValueError(f"preprocess.resize 가 양수가 아니다: {size!r}")
+    space = str(spec.get("colorspace") or DEFAULT_PREPROCESS["colorspace"])
+    return (w, h), space
+
+
 def predict_image(
     weights_path: str,
     image_path: str,
     *,
     arch: str | None = None,
     max_params: int | None = None,
+    preprocess: dict[str, Any] | None = None,
 ) -> tuple[str, float]:
     """추론 1건.
 
     `arch` 가 주어지면 **그것만** 쓴다 — Core 가 말한 값이다. 주어지지 않으면
     로컬 meta 로 떨어진다 (legacy · arch 미선언 Agent).
+
+    `preprocess` 가 주어지면 **계약이 선언한 값**으로 전처리한다 (0014 · B2).
+    주어지지 않으면 종전 기본값 — 골든 경로는 이 길로 그대로 돈다.
     """
     global _model, _loaded_path, _loaded_arch, _loaded_params
     resolved = arch or _arch_for_weights(weights_path)
@@ -90,7 +113,8 @@ def predict_image(
     w, h = img.size
     if w * h > MAX_INPUT_PIXELS:
         raise ResourceLimitExceeded(f"입력 {w}x{h} 픽셀 > 상한 {MAX_INPUT_PIXELS}")
-    img = img.convert("RGB").resize((32, 32))
+    size, space = resolve_preprocess(preprocess)
+    img = img.convert(space).resize(size)
     xb = to_tensor(img).unsqueeze(0)
     with torch.no_grad():
         logits = _model(xb)

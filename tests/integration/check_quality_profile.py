@@ -58,11 +58,15 @@ RETURNING id
 GATE_RUN_INSERT = """
 INSERT INTO gate_run (agent_id, capability_id, runner_node_id, runner_is_gate_runner, status,
                       golden_set_sha256, golden_score, kind, capability_quality_profile,
-                      sample_input_id)
+                      sample_input_id, capability_preprocess)
 SELECT %(agent)s, %(cap)s, %(runner)s, %(is_runner)s, 'PASSED',
-       %(sha)s, %(score)s, %(kind)s, %(profile)s, %(sample)s
+       %(sha)s, %(score)s, %(kind)s, %(profile)s, %(sample)s, %(pre)s::jsonb
 RETURNING id
 """
+
+# 계약 게이트런에는 전처리 선언 스냅샷도 필요하다 (0014). 샘플과 같은 이유로, 없으면
+# 다른 제약을 시험하기 전에 ck_gate_run_contract_needs_preprocess 가 먼저 걸린다.
+PRE = '{"resize": [32, 32], "colorspace": "RGB"}'
 
 # 계약 게이트런에는 검증 샘플이 필요하다 (0013). 없으면 다른 제약을 시험하기도 전에
 # ck_gate_run_contract_needs_sample 이 먼저 걸려서 **엉뚱한 이유로 통과**한다.
@@ -163,7 +167,7 @@ def main() -> int:
 
         # 4~6. gate_run 쪽 규약
         base = {"agent": agent["id"], "runner": runner["id"], "is_runner": True,
-                "score": None, "sha": ZERO_SHA, "sample": sample_id}
+                "score": None, "sha": ZERO_SHA, "sample": sample_id, "pre": PRE}
         for label, over in [
             ("golden 능력에 contract 게이트런",
              {"cap": golden_cap["id"], "kind": "contract", "profile": "none"}),
@@ -185,6 +189,18 @@ def main() -> int:
         })
         check(name == "ck_gate_run_contract_needs_sample",
               "거절: 샘플 없는 계약 게이트런 (B2)", name or "통과해버렸다")
+
+        # 0014 — 전처리 선언 없는 계약 게이트런은 시작될 수 없다
+        for label, over in [
+            ("전처리 미선언", {"pre": None}),
+            ("전처리가 jsonb null", {"pre": "null"}),
+            ("전처리가 객체가 아님", {"pre": '"32x32"'}),
+        ]:
+            name = rejected(conn, GATE_RUN_INSERT, {
+                **base, "cap": none_cap, "kind": "contract", "profile": "none", **over,
+            })
+            check(name == "ck_gate_run_contract_needs_preprocess",
+                  f"거절: {label} 계약 게이트런 (B2)", name or "통과해버렸다")
 
         # 5. 절대규칙 8 — 게이트러너가 아니면 계약 게이트런도 못 만든다
         if plain:

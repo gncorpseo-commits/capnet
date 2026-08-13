@@ -1,5 +1,52 @@
 # Changelog
 
+## B2 잔여 — `preprocess` 실수행 · 필수 checks 5 복귀 — 2026-08-13
+
+`preprocess` 는 0013 에서 필수 항목에서 빠져 있었다. **계약에 그 값을 적을 자리가 없어서**
+러너가 검증 없이 불린만 보냈기 때문이다. `infer.py` 는 32×32 RGB 를 **코드에 박아** 쓰고 있었고,
+D3 는 「전처리는 계약의 일부」라고 말하는데 계약은 그것을 말하지 못했다.
+
+**`input_schema.preprocess` 를 만들었다** (`mediaTypes` 와 같은 자리 · `0012` 와 같은 방식).
+
+```json
+{"preprocess": {"resize": [32, 32], "colorspace": "RGB"}}
+```
+
+- `0014` 가 `image.classify@1·@2` 에 선언을 붙인다 (jsonb 병합 · 멱등 · DDL 없음) · `seed.sql` 동반
+- **선언값이 지금 하드코딩된 값과 같다.** 그래서 골든 경로의 픽셀 처리는 **바뀌지 않는다** —
+  달라지는 것은 「그 값이 어디서 오는가」뿐이다
+- `predict_image(preprocess=...)` — 주면 계약 선언대로, 안 주면 종전 기본값.
+  골든 경로는 안 주는 길로 그대로 돈다
+- 러너는 **선언을 읽어 적용한 뒤** 샘플 추론한다. 그게 도는 것이 `input_schema` 검증이다
+- **`CONTRACT_CHECKS` 4 → 5.** 0013 에서 뺐던 이유(검증 없는 불린)가 사라졌다
+
+**전처리 미선언 능력은 계약 게이트를 거절한다** (Decision accept).
+`gate_run.capability_preprocess` 스냅샷 + `CHECK (kind <> 'contract' OR (… IS NOT NULL AND
+jsonb_typeof(…) = 'object'))`. 샘플(`0013`)과 **같은 자리에 같은 방식**이다 — `capability` 에
+CHECK 를 걸면 기존 볼륨에 선언 없는 ungated 능력이 있을 때 마이그레이션이 실패한다.
+jsonb `null` 이나 문자열이 「선언했다」로 통하는 것도 막는다.
+
+증적에 **무엇을 적용해 통과시켰는지**가 남는다 — 나중에 계약이 바뀌어도 이 증서의 근거는 고정된다.
+
+**실측 (빈 볼륨 · 격리 프로젝트) 16/16**
+
+| | |
+|---|---|
+| 러너 검증 5종 | ✅ `preprocess — 선언 적용: resize=[32, 32] colorspace=RGB` 포함 전부 OK |
+| `contract_checks` 기록 | ✅ **5종** · 스냅샷 `{"resize": [32, 32], "colorspace": "RGB"}` |
+| 전처리 미선언 능력 | ✅ **400** `ck_gate_run_contract_needs_preprocess` |
+| arch 가 틀린 Agent | ✅ `FAILED` · acp 미발급 (회귀 유지) |
+| **골든 채점 결과** | ✅ **`acc=0.8500 f1=0.8344`** — `clean_room`·`prod_room` 양쪽 동일 |
+
+CI 가드 `check_quality_profile` 18 → **21/21** (미선언 · jsonb null · 객체 아님 3종 추가).
+회귀: `run_tests` 전부 통과 · 통합 7/7 · `clean_room` 9/9 · `prod_room` 14/14.
+
+**남은 것** — 지금 선언은 **검증 시점에만** 적용된다. 일반 실행(`node/_run`)은 여전히
+`predict_image` 기본값으로 돈다 — lease 페이로드가 전처리를 나르지 않기 때문이다.
+`image.classify` 는 둘이 같은 값이라 차이가 없지만, **다른 값을 선언한 능력이 생기면 갈라진다.**
+lease 에 전처리를 실어 보내는 것이 다음이다.
+
+
 ## B2 — 계약 검증을 러너가 실제로 수행한다 — 2026-08-13
 
 계약 게이트(`kind='contract'`)는 러너가 보낸 `contract_checks` 가 전부 `true` 인지만 봤다.

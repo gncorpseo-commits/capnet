@@ -14,8 +14,10 @@ D6(사전학습 허용)를 풀면 남의 가중치를 받는데, 그때 이 게�
 | `max_params` | 로드된 파라미터 수를 세어 상한과 비교한다 |
 | `input_schema` | 계약 샘플로 **실제 추론을 돌린다.** 못 읽거나 못 돌리면 실패 |
 | `output_schema` | 그 출력이 `output_schema` 를 만족하는지 — closed-set 이면 라벨 집합까지 |
+| `preprocess` | 계약이 선언한 전처리(`resize`·`colorspace`)를 **적용해서** 추론한다 (0014) |
 
-`preprocess` 는 이번 범위 밖이다 (Decision 3). 실수행이 들어올 때 추가한다.
+`preprocess` 는 0013 에서 잠깐 빠져 있었다 — 계약에 값을 적을 자리가 없어서 러너가
+검증 없이 불린만 보냈기 때문이다. 0014 가 `input_schema.preprocess` 를 만들면서 돌아왔다.
 
 ## 왜 러너인가
 
@@ -109,24 +111,43 @@ def run(
         checks["max_params"] = False
         notes["max_params"] = "arch 실패로 파라미터를 셀 수 없다"
 
-    # 3. 계약 샘플로 실제 추론. 여기서 도는 것이 input_schema 를 만족한다는 증거다.
+    # 3'. 계약이 전처리를 선언했는가. 선언이 없으면 애초에 게이트런이 시작되지 않지만
+    #      (ck_gate_run_contract_needs_preprocess), 러너도 형식을 본다 — 값이 망가져 있으면
+    #      적용 자체가 안 된다.
+    from app.infer import resolve_preprocess
+
+    declared = (contract.get("input_schema") or {}).get("preprocess")
+    try:
+        size, space = resolve_preprocess(declared)
+        if declared is None:
+            raise ValueError("계약이 preprocess 를 선언하지 않았다")
+        checks["preprocess"] = True
+        notes["preprocess"] = f"선언 적용: resize={list(size)} colorspace={space}"
+    except Exception as exc:
+        checks["preprocess"] = False
+        notes["preprocess"] = f"{type(exc).__name__}: {exc}"
+
+    # 3. 계약 샘플로 **선언한 전처리를 적용해** 추론한다.
+    #    여기서 도는 것이 input_schema 를 만족한다는 증거다.
     label: str | None = None
     confidence: float | None = None
-    if checks.get("arch"):
+    if checks.get("arch") and checks.get("preprocess"):
         try:
             from app.infer import predict_image
 
             label, confidence = predict_image(
-                weights, sample, arch=arch, max_params=max_params
+                weights, sample, arch=arch, max_params=max_params, preprocess=declared
             )
             checks["input_schema"] = True
-            notes["input_schema"] = f"샘플 추론 성공 ({Path(sample).stat().st_size} bytes)"
+            notes["input_schema"] = (
+                f"선언 전처리로 샘플 추론 성공 ({Path(sample).stat().st_size} bytes)"
+            )
         except Exception as exc:
             checks["input_schema"] = False
             notes["input_schema"] = f"{type(exc).__name__}: {exc}"
     else:
         checks["input_schema"] = False
-        notes["input_schema"] = "arch 실패로 추론할 수 없다"
+        notes["input_schema"] = "arch 또는 preprocess 실패로 추론할 수 없다"
 
     # 4. 그 출력이 계약을 만족하는가.
     if checks.get("input_schema"):
