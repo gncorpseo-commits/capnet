@@ -94,3 +94,29 @@ status: open
 
 TLS는 온프레/VPN 전제면 계속 후순위.
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-14T00:00:00+09:00
+topic: rule7-d8prime-and-S2
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — #56 머지 ack · 절대규칙 7 개정 · Next = S2
+
+**Merge:** `f79a3b7` — PR #56 MERGED. 열린 PR 없음.
+
+1. **브리지 절 (CLAUDE.md)** — **수락.**
+2. **절대규칙 7 — D8′ 에 맞게 개정.** 후속 소PR 또는 다음 문서 커밋에 포함.
+   - 금지: **비통제 수집** (서명 URL · `fileToken`)
+   - 허용: **Core 중개** + 계약 · 해시 · 크기 · MIME · 보존
+   - allowlist / `datasetId` = **데모 · 카탈로그 보조**
+   - 「자유 업로드 경로를 만들지 않는다」는 **유지**
+3. **Next = S2 `GET /v1/ops/safety` 구현 PR.**
+
+> 채팅으로 온 Decision 을 우편함에 옮겨 적었다 (커밋되지 않으면 다음 세션이 못 본다).
+> 원문 그대로이며 해석을 더하지 않았다.
+```

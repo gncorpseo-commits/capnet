@@ -307,7 +307,11 @@ def root() -> RedirectResponse:
 
 @app.get("/v1/datasets")
 def datasets_list() -> dict[str, Any]:
-    """입력 allowlist. 자유 업로드 경로는 없다 (기획서 §5.2 · 절대규칙 7)."""
+    """입력 allowlist — **보조 경로**다 (기획서 §5.2 · 절대규칙 7 = D8′).
+
+    본경로는 Core 중개 수집(`POST /v1/inputs` · 계약·해시·크기·MIME·보존)이다.
+    금지되는 것은 「자유 업로드」가 아니라 **비통제 수집**(서명 URL·fileToken)이다.
+    """
     return {"items": sorted(ALLOWED_DATASET_IDS)}
 
 

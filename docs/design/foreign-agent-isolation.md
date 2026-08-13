@@ -35,7 +35,7 @@
 |------|------|-------------|
 | safetensors 강제 | `assert_safetensors` · `ck` weights_format | `.pt`/pickle 로드 = 임의 코드 실행 (절대규칙 5) |
 | arch allowlist | `tiny_cnn.ARCH_REGISTRY` | 임의 모델 클래스 구성 |
-| 입력 allowlist | `allowlist.py` · 절대규칙 7 | 자유 업로드 경로 자체가 없다 |
+| 입력 통제 | `allowlist.py`(보조) · `task_input` 계약·해시·크기·MIME · 절대규칙 7(D8′) | 비통제 수집 — 자유 업로드 경로 자체가 없다 |
 | 게이트 사슬 | FK 4단 | 미검증 Agent 에 배정 불가 |
 | 가중치 해시 결속 | `agent_node_ready` 복합 FK | 게이트한 가중치와 다른 것을 실행 불가 |
 | 게이트 러너 고정 | `ck_gate_runner_team` | 제출자가 자기 채점 불가 (절대규칙 8) |
