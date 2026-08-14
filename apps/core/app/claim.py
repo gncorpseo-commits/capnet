@@ -27,9 +27,12 @@ CLAIM_SQL = """
 INSERT INTO assignment (
     task_id, agent_id, capability_id, node_id,
     task_trust_domain, node_trust_domain, capability_tier, node_tier_max,
+    task_org_id, node_org_id,
     lease_expires_at, status, attempt_no, capability_max_attempts)
 SELECT t.id, acp.agent_id, c.id, n.id,
        t.trust_domain, n.trust_domain, c.compute_tier, n.compute_tier_max,
+       -- 조직 스냅샷 (0017 · D24). 판정은 ck_assignment_org 와 복합 FK 가 한다.
+       t.org_id, n.org_id,
        now() + INTERVAL '60 seconds', 'LEASED',
        -- 몇 번째 시도인가 (0015). 세지 않으면 「조용한 무한 재시도」가 된다.
        (SELECT count(*) + 1 FROM assignment a2 WHERE a2.task_id = t.id),
@@ -64,6 +67,11 @@ SELECT t.id, acp.agent_id, c.id, n.id,
         NOT %(require_live)s
         OR (nl.is_fresh AND nl.availability IN ('AVAILABLE', 'BUSY'))
        )
+   -- 조직 경계를 **후보 단계에서** 본다 (0017 · D24). 이 조건이 없으면 claim 이
+   -- 다른 조직 기기를 고르고 INSERT 에서 CHECK 가 거절한다 — 보장은 지켜지지만
+   -- 가용성이 깨진다(호환 기기가 있는데도 배정되지 않는다). P2-1 에서 겪은 것과 같은 모양이다.
+   -- NULL 인 기기는 팀 운영 공용이므로 모든 조직을 받는다.
+   AND (n.org_id IS NULL OR n.org_id IS NOT DISTINCT FROM t.org_id)
    AND (nl.availability IS DISTINCT FROM 'DRAINING')
    AND (nl.availability IS DISTINCT FROM 'OFFLINE')
    -- 시도 상한을 다 쓴 task 는 고르지 않는다 (0015). 워커가 FAILED 로 종결한다.
@@ -78,7 +86,7 @@ SELECT t.id, acp.agent_id, c.id, n.id,
  LIMIT 1
 RETURNING id, task_id, agent_id, capability_id, node_id,
           task_trust_domain, node_trust_domain, capability_tier, node_tier_max,
-          lease_expires_at, status
+          task_org_id, node_org_id, lease_expires_at, status
 """
 
 RECLAIM_SQL = """

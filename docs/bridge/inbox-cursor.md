@@ -1376,3 +1376,57 @@ TLS · rate limit · C 백업 · 관리키 회전 · UI 키 입력칸.
 
 **Confirm 전까지 구현은 시작하지 않는다** (PROTOCOL).
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-16T18:00:00+09:00
+topic: org-boundary
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm + 구현 — 조직 경계 (D24) · PR 머지 대기
+
+Decision 6항 그대로. **원칙 3 + DDL 초안 수락분만** 지었다. 새로 정한 것 없음.
+
+| | Decision | 구현 |
+|---|---|---|
+| 1 | NULL = 팀 공용, 전 조직 수신 · 허용목록 없음 | `ck_assignment_org` 한 줄 — 행렬 없음 |
+| 2 | 초대에 org · admin 인자 · 요청자는 `app_user.org_id` | 그대로. 소진 요청엔 org 필드 **없음** |
+| 3 | default org + 기존 user/task · 기존 Node NULL · NOT NULL 승격 없음 | 그대로 |
+| 4 | Agent org 없음 | 공용 카탈로그 유지 |
+| 5 | 라우팅 + 조회 필터 같은 PR | 하나로 |
+| 6 | `owner_id` 하드코딩 제거 · 라우팅은 org_id 만 | 그대로 |
+
+### Proposal 에서 프로브로 보여준 그 구멍이 닫혔다
+
+같은 상황을 **검사로** 고정했다 — `check_org_boundary` **14/14**.
+「A 의 작업 → B 의 기기」가 `claim` 단계에서 안 골라지고, **앱을 건너뛰고 직접 INSERT 해도**
+`ck_assignment_org` 가 거절한다. 거짓 스냅샷은 복합 FK 가 잡는다.
+
+### 판단 셋 (ack 를 원한다 — 되돌리기 싸다)
+
+1. **`IS NOT DISTINCT FROM` 을 썼다.** 그냥 `=` 면 `task_org_id` 가 NULL 인 행이 **어느 조직
+   기기로든** 통과한다(비교가 NULL → CHECK 통과). 그게 닫으려는 구멍이라 「모르면 거절」로 못박았다
+2. **조회에서 「조직 없는 admin」은 팀 운영자로 보고 전체를 보게 했다.** 조직을 안 쓰는 배포와
+   플랫폼 운영자를 같은 규칙으로 다루려는 것인데, **`developer` 가 아니라 `admin` 에만** 줬다.
+   더 좁혀야 하면 말해 달라
+3. `/v1/nodes`·`/v1/nodes-liveness` 도 조직으로 걸었다. Decision 은 「조회 필터」라고만 했는데,
+   함대 인벤토리도 조직 정보라 같이 걸었다. 과하면 되돌린다
+
+### 실측
+
+`check_org_boundary` **14/14**(신규) · 통합 10 → **11종** · `run_tests` 전부 ·
+`clean_room` **9/9**(데모 경로 안 깨짐 — 공용 기기 덕분) · `prod_room` **27/27**.
+
+### 승격
+
+`docs/context-handoff.md` 에 **D24** 로 올렸다. 「브리지에 적었으니 합의됐다」로 끝내지 않는다.
+
+### 남은 것
+
+조직별 쿼터·요금 없음(경제는 비기초 · D19) · TLS · rate limit · C 백업 · 관리키 회전 ·
+UI 키 입력칸 — **전부 보류 그대로.**
+```

@@ -86,18 +86,18 @@ def looks_like_invite(authorization: str | None) -> bool:
 ISSUE_SQL = """
 INSERT INTO node_invite (
     issued_by, key_prefix, secret_hash, trust_domain, compute_tier_max,
-    label, expires_at, max_redemptions)
+    label, expires_at, max_redemptions, org_id)
 SELECT u.id, %(prefix)s, %(hash)s, %(trust_domain)s, %(tier)s,
        %(label)s, coalesce(%(expires_at)s::timestamptz, now() + make_interval(days => %(ttl)s)),
-       %(max_redemptions)s
+       %(max_redemptions)s, %(org_id)s
   FROM app_user u
  WHERE u.id = %(issued_by)s
 RETURNING id, key_prefix, trust_domain, compute_tier_max, label,
-          expires_at, max_redemptions, redeemed_count, created_at
+          expires_at, max_redemptions, redeemed_count, org_id, created_at
 """
 
 VERIFY_SQL = """
-SELECT i.id, i.secret_hash, i.trust_domain, i.compute_tier_max, i.issued_by,
+SELECT i.id, i.secret_hash, i.trust_domain, i.compute_tier_max, i.issued_by, i.org_id,
        i.revoked_at, i.expires_at, i.max_redemptions, i.redeemed_count,
        s.state, s.usable
   FROM node_invite i
@@ -142,6 +142,8 @@ def issue_invite(
     *,
     issued_by: uuid.UUID,
     trust_domain: str,
+    # 초대로 들어온 기기가 속할 조직 (D24). None = 팀 운영 공용 기기.
+    org_id: uuid.UUID | str | None = None,
     compute_tier_max: str = DEFAULT_TIER,
     label: str | None = None,
     expires_at: Any | None = None,
@@ -150,7 +152,7 @@ def issue_invite(
 ) -> dict[str, Any]:
     """초대장을 발행한다. 반환값의 `secret` 은 **이때 한 번만** 존재한다.
 
-    `trust_domain` 은 여기서 정해져 행에 박힌다 — 소진하는 쪽이 바꾸지 못한다.
+    `trust_domain` 과 `org_id` 는 여기서 정해져 행에 박힌다 — 소진하는 쪽이 바꾸지 못한다.
     """
     prefix, secret, token = new_token()
     try:
@@ -161,6 +163,7 @@ def issue_invite(
                 "prefix": prefix,
                 "hash": _hash(secret),
                 "trust_domain": trust_domain,
+                "org_id": str(org_id) if org_id else None,
                 "tier": compute_tier_max,
                 "label": label,
                 "expires_at": expires_at,
@@ -226,6 +229,7 @@ def redeem_invite(
                     "node_name": node_name,
                     "trust_domain": row["trust_domain"],
                     "compute_tier_max": row["compute_tier_max"],
+                    "org_id": str(invite.get("org_id")) if invite.get("org_id") else None,
                     "redeemed_count": row["redeemed_count"],
                     "max_redemptions": row["max_redemptions"],
                 }

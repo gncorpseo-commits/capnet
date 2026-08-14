@@ -136,6 +136,9 @@ class InviteCreate(BaseModel):
 
     trust_domain: str = "tenant"          # team 은 DB 가 거절한다
     compute_tier_max: str = "M"
+    # 초대로 들어온 기기가 속할 조직 (D24). 생략하면 발행자의 조직.
+    # 등급과 같은 모양이다 — 신청자가 주장하지 못한다.
+    org_id: uuid.UUID | None = None
     label: str | None = None
     ttl_days: int = Field(default=7, ge=1, le=90)
     max_redemptions: int = Field(default=1, ge=1, le=100)
@@ -182,6 +185,9 @@ class NodeCreate(BaseModel):
     is_gate_runner: bool = False
     gpu: str | None = None
     provision_source: str | None = None
+    # 조직 (D24). 생략하면 **팀 운영 공용 기기** — 모든 조직의 작업을 받는다.
+    # admin 이 정한다. Node 가 자기 소속을 주장하는 자리가 아니다.
+    org_id: uuid.UUID | None = None
 
 
 class BindBody(BaseModel):
@@ -316,6 +322,26 @@ def _assert_node_matches(claimed: uuid.UUID, authorization: str | None) -> None:
             status_code=403,
             detail="credential belongs to a different node",
         )
+
+
+def _actor_org(actor: dict[str, Any] | None) -> uuid.UUID | None:
+    """행위자의 조직. 없으면 None — 팀 운영자이거나 강제 꺼진 데모 경로다 (D24).
+
+    `app_user.org_id` 에서 읽는다. 요청 본문은 조직을 **주장하지 못한다** —
+    등급과 같은 규율이다 (절대규칙 4 의 확장).
+    """
+    if actor is None:
+        return None
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT org_id FROM app_user WHERE id = %s", (str(actor["user_id"]),)
+        ).fetchone()
+    return row["org_id"] if row and row["org_id"] else None
+
+
+def _actor_user(actor: dict[str, Any] | None) -> uuid.UUID | str:
+    """행위자의 user_id. 키가 없으면 시드 admin (레거시 경로)."""
+    return uuid.UUID(str(actor["user_id"])) if actor else SEED_ADMIN_ID
 
 
 @app.get("/health")
@@ -500,7 +526,7 @@ def agents_list(authorization: str | None = Header(default=None)) -> dict[str, A
 
 @app.post("/v1/agents")
 def agents_create(body: AgentCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
-    _require("developer", authorization)
+    actor = _require("developer", authorization)
     # arch 를 **등록에서** 요구한다 (G5). 없으면 실행 아키텍처를 Node 로컬 meta 가 정하게
     # 되고, 그게 I1 이 닫으려던 구멍이다. legacy 행(arch IS NULL)은 그대로 두고
     # `agent_arch_unbound` 로 계속 드러낸다 — 새로 만들지만 않는다.
@@ -524,6 +550,7 @@ def agents_create(body: AgentCreate, authorization: str | None = Header(default=
                 weights_sha256=body.weights_sha256,
                 weights_format=body.weights_format,
                 arch=body.arch,
+                owner_id=_actor_user(actor),
             )
     except psycopg.errors.ForeignKeyViolation as exc:
         raise HTTPException(
@@ -562,15 +589,15 @@ def agents_bind(agent_id: uuid.UUID, body: BindBody, authorization: str | None =
 
 @app.get("/v1/nodes")
 def nodes_list(authorization: str | None = Header(default=None)) -> dict[str, Any]:
-    _require("developer", authorization)
+    actor = _require("developer", authorization)
     with get_conn() as conn:
-        return {"items": list_nodes(conn)}
+        return {"items": list_nodes(conn, org_id=_actor_org(actor))}
 
 
 @app.post("/v1/nodes")
 def nodes_create(body: NodeCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """관리자/Core 등록. Node 런타임이 trust_domain·tier를 주장하는 경로가 아니다."""
-    _require("admin", authorization)
+    actor = _require("admin", authorization)
     try:
         with get_conn() as conn:
             return create_node(
@@ -582,6 +609,8 @@ def nodes_create(body: NodeCreate, authorization: str | None = Header(default=No
                 is_gate_runner=body.is_gate_runner,
                 gpu=body.gpu,
                 provision_source=body.provision_source,
+                org_id=body.org_id,
+                owner_id=_actor_user(actor),
             )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -601,6 +630,7 @@ def invite_issue(body: InviteCreate, authorization: str | None = Header(default=
             return issue_invite(
                 conn,
                 issued_by=issued_by,
+                org_id=body.org_id or _actor_org(actor),
                 trust_domain=body.trust_domain,
                 compute_tier_max=body.compute_tier_max,
                 label=body.label,
@@ -662,6 +692,9 @@ def node_redeem(body: NodeRedeem, authorization: str | None = Header(default=Non
                 is_gate_runner=False,
                 gpu=body.gpu,
                 provision_source="invited",
+                # 조직도 초대장이 정한다 (D24). 소진 요청은 여전히 아무것도 주장하지 않는다.
+                org_id=invite["org_id"],
+                owner_id=invite["issued_by"],
             )
             redeem_invite(
                 conn, invite=invite, node_id=node["id"], node_name=body.name
@@ -879,16 +912,19 @@ def create_task(body: TaskCreate, authorization: str | None = Header(default=Non
                 """
                 INSERT INTO task (
                     user_id, capability_id, status, trust_domain,
-                    capability_trust_domain_min, input_ref, requested_agent_id, input_id
+                    capability_trust_domain_min, input_ref, requested_agent_id, input_id,
+                    org_id
                 )
+                -- 조직은 **요청자의 것**을 읽어 박는다 (D24). 본문이 정하지 않는다.
                 SELECT %(user_id)s, c.id, 'QUEUED', %(trust_domain)s,
                        c.trust_domain_min, %(input_ref)s, %(requested_agent_id)s::uuid,
-                       %(input_id)s::uuid
+                       %(input_id)s::uuid,
+                       (SELECT u.org_id FROM app_user u WHERE u.id = %(user_id)s)
                   FROM capability c
                  WHERE c.id = %(capability_id)s
                 RETURNING id, user_id, status, input_ref, capability_id,
                           trust_domain, capability_trust_domain_min, requested_agent_id,
-                          input_id
+                          input_id, org_id
                 """,
                 {
                     "user_id": user_id,
@@ -1154,9 +1190,9 @@ def node_heartbeat(
 @app.get("/v1/nodes-liveness")
 def nodes_liveness(authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """어느 기기가 살아 있고 얼마나 바쁜지. 배정 근거를 사람이 볼 수 있게 한다."""
-    _require("developer", authorization)
+    actor = _require("developer", authorization)
     with get_conn() as conn:
-        return {"nodes": liveness(conn)}
+        return {"nodes": liveness(conn, org_id=_actor_org(actor))}
 
 
 @app.get("/v1/internal/nodes/{node_id}/assignments")
@@ -1222,15 +1258,16 @@ def get_task(task_id: uuid.UUID, authorization: str | None = Header(default=None
     인증 없이 열려 있으면 「증적이 남고 조회된다」가 「누구나 조회된다」가 된다.
 
     소유자가 아니면 **404** 다 (403 아님) — 403 은 「그 id 는 존재한다」를 흘린다.
-    `developer` 이상은 운영상 남의 작업도 본다.
+    `developer` 이상은 **자기 조직 안에서** 남의 작업도 본다 (D24).
+    조직 없는 `admin` 은 팀 운영자로 보고 전체를 본다.
 
     키가 없으면(강제 꺼짐) 종전대로 통과한다 — 데모·심사 재현 경로를 깨지 않는다.
     """
     actor = _require("user", authorization)
     with get_conn() as conn:
         task = conn.execute(
-            "SELECT id, user_id, status, input_ref, result_ref, current_assignment_id, "
-            "capability_id, trust_domain FROM task WHERE id = %s",
+            "SELECT id, user_id, org_id, status, input_ref, result_ref, "
+            "current_assignment_id, capability_id, trust_domain FROM task WHERE id = %s",
             (str(task_id),),
         ).fetchone()
         if task is None:
@@ -1239,7 +1276,15 @@ def get_task(task_id: uuid.UUID, authorization: str | None = Header(default=None
             from app.apikey import ROLE_RANK
 
             is_owner = str(task["user_id"]) == str(actor["user_id"])
-            is_operator = ROLE_RANK.get(str(actor["role"]), 0) >= ROLE_RANK["developer"]
+            rank = ROLE_RANK.get(str(actor["role"]), 0)
+            my_org = _actor_org(actor)
+            # 운영자는 **자기 조직 안에서만** 남의 작업을 본다 (D24).
+            # 조직 없는 admin 은 팀 운영자다 — 플랫폼 전체를 본다.
+            same_org = my_org is not None and str(task["org_id"]) == str(my_org)
+            is_operator = (
+                (rank >= ROLE_RANK["developer"] and same_org)
+                or (rank >= ROLE_RANK["admin"] and my_org is None)
+            )
             if not (is_owner or is_operator):
                 # 없는 것과 같은 답을 준다. 존재 여부를 캐지 못하게.
                 raise HTTPException(status_code=404, detail="task not found")

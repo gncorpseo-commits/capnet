@@ -60,6 +60,8 @@ def create_agent(
     weights_sha256: str,
     weights_format: str,
     arch: str | None = None,
+    # 실제 등록자. 예전엔 시드 admin 이 하드코딩돼 owner_id 가 죽은 컬럼이었다 (D24-6).
+    owner_id: uuid.UUID | str = SEED_ADMIN_ID,
 ) -> dict[str, Any]:
     assert_safetensors(weights_format, weights_uri)
     assert_sha256(weights_sha256)
@@ -78,7 +80,7 @@ def create_agent(
                   weights_format, weights_uri, weights_sha256, arch, created_at
         """,
         {
-            "owner_id": SEED_ADMIN_ID,
+            "owner_id": str(owner_id),
             "name": name,
             "version": version,
             "manifest_hash": manifest_hash,
@@ -92,11 +94,19 @@ def create_agent(
     return dict(row)
 
 
-def list_nodes(conn: psycopg.Connection) -> list[dict[str, Any]]:
+def list_nodes(
+    conn: psycopg.Connection, *, org_id: uuid.UUID | str | None = None
+) -> list[dict[str, Any]]:
+    """함대 목록. `org_id` 를 주면 **그 조직 + 공용 기기**만 보인다 (0017 · D24).
+
+    None 이면 전부 — 팀 운영자(조직 없는 admin)와 강제 꺼진 데모 경로다.
+    """
     rows = conn.execute(
         "SELECT id, owner_id, name, device_type, gpu, provision_source, "
-        "trust_domain, compute_tier_max, is_gate_runner, created_at "
-        "FROM node ORDER BY created_at"
+        "trust_domain, compute_tier_max, is_gate_runner, org_id, created_at "
+        "FROM node WHERE (%(org)s::uuid IS NULL OR org_id IS NULL OR org_id = %(org)s::uuid) "
+        "ORDER BY created_at",
+        {"org": str(org_id) if org_id else None},
     ).fetchall()
     return [dict(r) for r in rows]
 
@@ -121,6 +131,10 @@ def create_node(
     is_gate_runner: bool,
     gpu: str | None,
     provision_source: str | None,
+    # 조직 (0017 · D24). None = 팀 운영 공용 기기 — 모든 조직의 작업을 받는다.
+    org_id: uuid.UUID | str | None = None,
+    # 실제 등록자. 예전엔 시드 admin 하드코딩이었다 (D24-6).
+    owner_id: uuid.UUID | str = SEED_ADMIN_ID,
 ) -> dict[str, Any]:
     # Core가 부여. 요청 본문은 관리자 API이지 Node 런타임의 자기주장이 아니다.
     source = provision_source
@@ -133,17 +147,18 @@ def create_node(
             """
             INSERT INTO node (
                 owner_id, name, device_type, gpu, provision_source,
-                trust_domain, compute_tier_max, is_gate_runner
+                trust_domain, compute_tier_max, is_gate_runner, org_id
             )
             SELECT %(owner_id)s, %(name)s, %(device_type)s, %(gpu)s, %(provision_source)s,
-                   %(trust_domain)s, %(compute_tier_max)s, %(is_gate_runner)s
+                   %(trust_domain)s, %(compute_tier_max)s, %(is_gate_runner)s, %(org_id)s
               FROM app_user u
              WHERE u.id = %(owner_id)s
             RETURNING id, owner_id, name, device_type, gpu, provision_source,
-                      trust_domain, compute_tier_max, is_gate_runner, created_at
+                      trust_domain, compute_tier_max, is_gate_runner, org_id, created_at
             """,
             {
-                "owner_id": SEED_ADMIN_ID,
+                "owner_id": str(owner_id),
+                "org_id": str(org_id) if org_id else None,
                 "name": name,
                 "device_type": device_type,
                 "gpu": gpu,
@@ -271,8 +286,10 @@ def heartbeat(
     return {"session_id": str(row["id"]), "availability": availability}
 
 
-def liveness(conn: psycopg.Connection) -> list[dict[str, Any]]:
-    """node_liveness 뷰 + 진행 중 배정 수."""
+def liveness(
+    conn: psycopg.Connection, *, org_id: uuid.UUID | str | None = None
+) -> list[dict[str, Any]]:
+    """node_liveness 뷰 + 진행 중 배정 수. `org_id` 를 주면 그 조직 + 공용만 (D24)."""
     rows = conn.execute(
         """
         SELECT l.node_id, n.name, l.availability, l.last_heartbeat, l.is_fresh,
@@ -280,7 +297,9 @@ def liveness(conn: psycopg.Connection) -> list[dict[str, Any]]:
                  WHERE a.node_id = l.node_id AND a.status = 'LEASED'
                    AND a.lease_expires_at > now()) AS active
           FROM node_liveness l JOIN node n ON n.id = l.node_id
+         WHERE (%(org)s::uuid IS NULL OR n.org_id IS NULL OR n.org_id = %(org)s::uuid)
          ORDER BY n.name
-        """
+        """,
+        {"org": str(org_id) if org_id else None},
     ).fetchall()
     return [dict(r) for r in rows]
