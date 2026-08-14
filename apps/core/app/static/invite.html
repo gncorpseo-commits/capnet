@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CapNet — 초대 발행</title>
+<link rel="stylesheet" href="/ui/app.css">
+</head>
+<body>
+<header>
+  <h1>CapNet</h1>
+  <span class="sub">초대 발행 (관리자)</span>
+  <nav>
+    <a href="/ui/nodes.html">Node</a>
+    <a href="/ui/call.html">능력 호출</a>
+    <a href="/ui/invite.html" class="on">초대 발행</a>
+    <a href="/ui/redeem.html">초대 소진</a>
+  </nav>
+</header>
+
+<main>
+  <div id="keybar"></div>
+
+  <section>
+    <h2>초대장 발행</h2>
+    <p class="hint">
+      <b>여기서 정한 값이 초대장에 박힌다.</b> 초대받은 사람은 그것을 <b>소진</b>할 뿐이고,
+      등급·조직을 주장할 수 없다 (절대규칙 4). <span class="mono">team</span> 등급은 초대로 만들 수 없다 —
+      DB가 거절한다.
+    </p>
+
+    <div class="row">
+      <div><label for="i-domain">신뢰 도메인</label>
+        <select id="i-domain">
+          <option value="tenant">tenant — 조직 기기</option>
+          <option value="public">public — 공개</option>
+        </select></div>
+      <div><label for="i-tier">연산 등급 상한</label>
+        <select id="i-tier"><option>M</option><option>S</option><option>L</option></select></div>
+    </div>
+    <div class="row">
+      <div><label for="i-org">조직 (org_id)</label>
+        <input id="i-org" placeholder="비우면 팀 운영 공용 기기 — 모든 조직의 작업을 받는다"></div>
+      <div><label for="i-label">메모</label><input id="i-label" placeholder="러닝크루 3기"></div>
+    </div>
+    <div class="row">
+      <div><label for="i-ttl">유효 기간 (일)</label><input id="i-ttl" type="number" min="1" max="90" value="7"></div>
+      <div><label for="i-max">소진 가능 횟수</label><input id="i-max" type="number" min="1" max="100" value="1"></div>
+    </div>
+    <p class="hint">
+      기본은 <b>1회용</b>이다 — 초대장 하나가 기기 하나에 대응해야 증적이 깨끗하다.
+      열 명이면 열 장을 발행한다. 조직을 비우면 <b>공용 기기</b>가 되어 모든 조직의 작업을 받으므로,
+      남의 기기를 공용으로 만들지 않도록 주의한다.
+    </p>
+    <button id="i-go" type="button">발행</button>
+    <div id="i-out"></div>
+  </section>
+
+  <section>
+    <h2>발행한 초대장</h2>
+    <p class="hint">시크릿은 나오지 않는다 — prefix와 상태만. 폐기는 여기서 한다.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>prefix</th><th>메모</th><th>도메인</th><th>등급</th><th>소진</th><th>만료</th><th>상태</th><th></th></tr></thead>
+      <tbody id="i-rows"><tr><td colspan="8" class="spin">불러오는 중…</td></tr></tbody>
+    </table></div>
+  </section>
+</main>
+
+<script src="/ui/app.js"></script>
+<script>
+mountKeyBar("keybar");
+
+function redeemLink(token) {
+  // 토큰을 **해시 조각**에 둔다 — 쿼리스트링은 서버 로그·Referer 로 새어 나간다.
+  return `${location.origin}/ui/redeem.html#${encodeURIComponent(token)}`;
+}
+
+async function issue() {
+  const out = $("i-out");
+  out.innerHTML = '<div class="spin">발행 중…</div>';
+  const body = {
+    trust_domain: $("i-domain").value,
+    compute_tier_max: $("i-tier").value,
+    ttl_days: Number($("i-ttl").value) || 7,
+    max_redemptions: Number($("i-max").value) || 1,
+  };
+  const org = $("i-org").value.trim();
+  const label = $("i-label").value.trim();
+  if (org) body.org_id = org;
+  if (label) body.label = label;
+  try {
+    const r = await api("/v1/nodes/invites", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const link = redeemLink(r.secret);
+    out.innerHTML = `
+      <div class="result">
+        <div class="big">발행됨 · ${esc(r.key_prefix)}</div>
+        <div class="secret">${esc(r.secret)}</div>
+        <p class="hint"><b>평문은 지금 한 번만 나온다.</b> 이 화면을 벗어나면 다시 볼 수 없다.
+           잃어버리면 폐기하고 다시 발행한다.</p>
+        <div class="row">
+          <div><label for="i-link">초대 링크</label><input id="i-link" readonly value="${esc(link)}"></div>
+        </div>
+        <button id="i-copy-token" type="button">토큰 복사</button>
+        <button id="i-copy-link" type="button" class="secondary">링크 복사</button>
+        <p class="hint">
+          도메인 <span class="mono">${esc(r.trust_domain)}</span> ·
+          등급 <span class="mono">${esc(r.compute_tier_max)}</span> ·
+          조직 <span class="mono">${r.org_id ? esc(r.org_id) : "(공용)"}</span> ·
+          만료 <span class="mono">${esc(r.expires_at)}</span>
+        </p>
+      </div>`;
+  $("i-copy-token").onclick = () => copy(r.secret, "i-copy-token");
+  $("i-copy-link").onclick = () => copy(link, "i-copy-link");
+    load();
+  } catch (e) {
+    out.innerHTML = `<div class="err">${esc(e.message)}${e.status === 401 ? " — 관리 키를 넣었나?" : ""}</div>`;
+  }
+}
+
+async function copy(text, btnId) {
+  const btn = $(btnId);
+  const done = () => { const t = btn.textContent; btn.textContent = "복사됨"; setTimeout(() => btn.textContent = t, 1200); };
+  try { await navigator.clipboard.writeText(text); done(); }
+  catch { window.prompt("복사하세요", text); }
+}
+
+async function load() {
+  const rows = $("i-rows");
+  try {
+    const r = await api("/v1/nodes/invites");
+    const items = r.items || [];
+    rows.innerHTML = items.length ? items.map(i => `
+      <tr>
+        <td class="mono">${esc(i.key_prefix)}</td>
+        <td>${esc(i.label || "")}</td>
+        <td>${esc(i.trust_domain)}</td>
+        <td>${esc(i.compute_tier_max)}</td>
+        <td>${i.redeemed_count}/${i.max_redemptions}</td>
+        <td class="mono">${esc(String(i.expires_at).slice(0, 16))}</td>
+        <td><span class="pill">${esc(i.state)}</span></td>
+        <td>${i.state === "USABLE" ? `<button type="button" data-revoke="${esc(i.id)}">폐기</button>` : ""}</td>
+      </tr>`).join("") : '<tr><td colspan="8" class="empty">발행한 초대장이 없다</td></tr>';
+    rows.querySelectorAll("[data-revoke]").forEach(b => {
+      b.onclick = () => revoke(b.getAttribute("data-revoke"));
+    });
+  } catch (e) {
+    rows.innerHTML = `<tr><td colspan="8" class="err">${esc(e.message)}${e.status === 401 ? " — 관리 키가 필요하다" : ""}</td></tr>`;
+  }
+}
+
+async function revoke(id) {
+  try {
+    await api(`/v1/nodes/invites/${id}/revoke`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reason: "UI 에서 폐기" }),
+    });
+    load();
+  } catch (e) { alert(e.message); }
+}
+
+$("i-go").onclick = issue;
+load();
+</script>
+</body>
+</html>

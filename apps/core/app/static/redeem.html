@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CapNet — 초대 소진</title>
+<link rel="stylesheet" href="/ui/app.css">
+</head>
+<body>
+<header>
+  <h1>CapNet</h1>
+  <span class="sub">초대 소진 — 기기 참여</span>
+  <nav>
+    <a href="/ui/nodes.html">Node</a>
+    <a href="/ui/call.html">능력 호출</a>
+    <a href="/ui/invite.html">초대 발행</a>
+    <a href="/ui/redeem.html" class="on">초대 소진</a>
+  </nav>
+</header>
+
+<main>
+  <section>
+    <h2>초대장으로 기기 등록</h2>
+    <p class="hint">
+      <b>관리 키가 필요 없다.</b> 초대 토큰 자체가 인증이다.
+      등급·조직·연산 상한을 여기서 고르지 않는 것은 의도다 — <b>초대장에 이미 박혀 있고</b>,
+      요청이 그것을 바꿀 수 없다 (절대규칙 4).
+    </p>
+
+    <div class="row">
+      <div><label for="r-token">초대 토큰</label>
+        <input id="r-token" autocomplete="off" spellcheck="false" placeholder="ci_xxxxxxxx.yyy"></div>
+    </div>
+    <div class="row">
+      <div><label for="r-name">기기 이름</label><input id="r-name" placeholder="crew-laptop-1"></div>
+      <div><label for="r-device">기기 종류</label>
+        <select id="r-device"><option>PC_GPU</option><option>SERVER</option><option>PHONE</option></select></div>
+    </div>
+    <div class="row">
+      <div><label for="r-gpu">GPU (선택)</label><input id="r-gpu" placeholder="RTX 4060"></div>
+    </div>
+    <button id="r-go" type="button">소진하고 기기 등록</button>
+    <div id="r-out"></div>
+  </section>
+
+  <section>
+    <h2>다음</h2>
+    <div class="note">
+      증서 시크릿을 <span class="mono">data/node-secrets/&lt;이름&gt;.credential</span> 에
+      <span class="mono">0600</span> 으로 저장하고 Node 런타임에
+      <span class="mono">NODE_CREDENTIAL_FILE</span> 로 넣는다.<br>
+      Node 는 <b>Core가 배정한 일만</b> 가져간다. 기기 포트를 밖으로 열 필요가 없다.<br>
+      자세히는 <span class="mono">docs/guide/operate-node.md</span>.
+    </div>
+  </section>
+</main>
+
+<script src="/ui/app.js"></script>
+<script>
+// 초대 링크는 토큰을 **해시 조각**에 담는다 — 쿼리스트링은 서버 로그·Referer 로 샌다.
+if (location.hash.length > 1) {
+  $("r-token").value = decodeURIComponent(location.hash.slice(1));
+  // 주소창에서 지운다. 화면을 남에게 보여 줄 때 토큰이 딸려 가지 않게.
+  history.replaceState(null, "", location.pathname);
+}
+
+async function redeem() {
+  const out = $("r-out");
+  const token = $("r-token").value.trim();
+  const name = $("r-name").value.trim();
+  if (!token || !name) { out.innerHTML = '<div class="err">토큰과 기기 이름이 필요하다</div>'; return; }
+  out.innerHTML = '<div class="spin">소진 중…</div>';
+  const body = { name, device_type: $("r-device").value };
+  const gpu = $("r-gpu").value.trim();
+  if (gpu) body.gpu = gpu;
+  try {
+    // 관리 키를 붙이지 않는다 — 초대 토큰이 인증이다.
+    const r = await apiInvite("/v1/nodes/redeem", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }, token);
+    const n = r.node || {};
+    const c = r.credential || {};
+    out.innerHTML = `
+      <div class="result">
+        <div class="big">등록됨 · ${esc(n.name)}</div>
+        <div class="secret">${esc(c.secret)}</div>
+        <p class="hint"><b>증서 평문은 지금 한 번만 나온다.</b> 파일로 저장하고 이 화면을 닫는다.
+           잃어버리면 복구할 수 없다 — 폐기 후 재발급이다.</p>
+        <button id="r-copy" type="button">증서 복사</button>
+        <p class="hint">
+          <b>초대장이 정한 값</b> — 도메인 <span class="mono">${esc(n.trust_domain)}</span> ·
+          등급 <span class="mono">${esc(n.compute_tier_max)}</span> ·
+          조달 <span class="mono">${esc(n.provision_source)}</span> ·
+          조직 <span class="mono">${n.org_id ? esc(n.org_id) : "(공용)"}</span><br>
+          기기 id <span class="mono">${esc(n.id)}</span>
+        </p>
+      </div>`;
+    $("r-copy").onclick = async () => {
+      try { await navigator.clipboard.writeText(c.secret); $("r-copy").textContent = "복사됨"; }
+      catch { window.prompt("복사하세요", c.secret); }
+    };
+  } catch (e) {
+    const hint = e.status === 401 ? " — 만료·폐기됐거나 이미 소진된 초대일 수 있다" : "";
+    out.innerHTML = `<div class="err">${esc(e.message)}${esc(hint)}</div>`;
+  }
+}
+
+$("r-go").onclick = redeem;
+</script>
+</body>
+</html>

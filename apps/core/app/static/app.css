@@ -111,3 +111,10 @@ td.mono, .mono { font-family: var(--mono); font-size: 12.5px; }
 .empty { color: var(--muted); font-size: 13.5px; padding: 10px 0; }
 .spin { color: var(--muted); font-size: 13.5px; }
 .scroll { overflow-x: auto; }
+
+/* 관리 키 입력줄 (강제 모드에서 UI 를 쓰려면 필요하다).
+   키는 sessionStorage 에만 산다 — 서버로는 요청 헤더로만 간다. */
+.keybar { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.keybar label { margin: 0; white-space: nowrap; }
+.keybar input { flex: 1 1 22rem; min-width: 14rem; }
+button.secondary { background: #2a2f3a; }
