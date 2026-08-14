@@ -349,7 +349,7 @@ def datasets_list() -> dict[str, Any]:
 
 
 @app.get("/v1/ops/status")
-def ops_status() -> dict[str, Any]:
+def ops_status(authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """운영 한 눈 — 함대·큐·증적·신원이 지금 어떤 상태인가.
 
     조회면이 여러 개로 흩어져 있어서 「지금 괜찮은가」를 보려면 여러 번 물어야 했다.
@@ -358,6 +358,7 @@ def ops_status() -> dict[str, Any]:
     모니터링이 없다는 게 제품화의 공백 중 하나였다 (SD-017). 이건 그 첫 칸이고,
     알림·시계열은 아직 없다 — 이 응답을 긁어가는 쪽이 한다.
     """
+    _require("developer", authorization)
     with get_conn() as conn:
         row = conn.execute(
             """
@@ -491,7 +492,8 @@ def capabilities_get(capability_id: uuid.UUID) -> dict[str, Any]:
 
 
 @app.get("/v1/agents")
-def agents_list() -> dict[str, Any]:
+def agents_list(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("developer", authorization)
     with get_conn() as conn:
         return {"items": list_agents(conn)}
 
@@ -533,7 +535,8 @@ def agents_create(body: AgentCreate, authorization: str | None = Header(default=
 
 
 @app.get("/v1/agents/{agent_id}")
-def agents_get(agent_id: uuid.UUID) -> dict[str, Any]:
+def agents_get(agent_id: uuid.UUID, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("developer", authorization)
     with get_conn() as conn:
         row = get_agent(conn, agent_id)
         if row is None:
@@ -558,7 +561,8 @@ def agents_bind(agent_id: uuid.UUID, body: BindBody, authorization: str | None =
 
 
 @app.get("/v1/nodes")
-def nodes_list() -> dict[str, Any]:
+def nodes_list(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("developer", authorization)
     with get_conn() as conn:
         return {"items": list_nodes(conn)}
 
@@ -675,7 +679,8 @@ def node_redeem(body: NodeRedeem, authorization: str | None = Header(default=Non
 
 
 @app.get("/v1/nodes/{node_id}")
-def nodes_get(node_id: uuid.UUID) -> dict[str, Any]:
+def nodes_get(node_id: uuid.UUID, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("developer", authorization)
     with get_conn() as conn:
         row = get_node(conn, node_id)
     if row is None:
@@ -731,8 +736,9 @@ def api_keys_status(authorization: str | None = Header(default=None)) -> dict[st
 
 
 @app.get("/v1/nodes-credentials")
-def credentials_status() -> dict[str, Any]:
+def credentials_status(authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """Node 별 증서 상태. 시크릿도 해시도 나가지 않는다 — prefix 만."""
+    _require("admin", authorization)
     with get_conn() as conn:
         return {"items": list_credential_status(conn)}
 
@@ -786,7 +792,8 @@ def gate_finish(gate_run_id: uuid.UUID, body: GateFinishBody, authorization: str
 
 
 @app.get("/v1/internal/gate-runs/{gate_run_id}")
-def gate_get(gate_run_id: uuid.UUID) -> dict[str, Any]:
+def gate_get(gate_run_id: uuid.UUID, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    _require("developer", authorization)
     with get_conn() as conn:
         row = get_gate_run(conn, gate_run_id)
     if row is None:
@@ -1145,8 +1152,9 @@ def node_heartbeat(
 
 
 @app.get("/v1/nodes-liveness")
-def nodes_liveness() -> dict[str, Any]:
+def nodes_liveness(authorization: str | None = Header(default=None)) -> dict[str, Any]:
     """어느 기기가 살아 있고 얼마나 바쁜지. 배정 근거를 사람이 볼 수 있게 한다."""
+    _require("developer", authorization)
     with get_conn() as conn:
         return {"nodes": liveness(conn)}
 
@@ -1207,15 +1215,34 @@ def assignment_fail(
 
 
 @app.get("/v1/tasks/{task_id}")
-def get_task(task_id: uuid.UUID) -> dict[str, Any]:
+def get_task(task_id: uuid.UUID, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """작업 상태와 실행 증적. **자기 작업만** 본다.
+
+    이 응답에는 결과(`result_ref`)와 증적(어느 기기·어느 에이전트)이 들어 있다.
+    인증 없이 열려 있으면 「증적이 남고 조회된다」가 「누구나 조회된다」가 된다.
+
+    소유자가 아니면 **404** 다 (403 아님) — 403 은 「그 id 는 존재한다」를 흘린다.
+    `developer` 이상은 운영상 남의 작업도 본다.
+
+    키가 없으면(강제 꺼짐) 종전대로 통과한다 — 데모·심사 재현 경로를 깨지 않는다.
+    """
+    actor = _require("user", authorization)
     with get_conn() as conn:
         task = conn.execute(
-            "SELECT id, status, input_ref, result_ref, current_assignment_id, capability_id, trust_domain "
-            "FROM task WHERE id = %s",
+            "SELECT id, user_id, status, input_ref, result_ref, current_assignment_id, "
+            "capability_id, trust_domain FROM task WHERE id = %s",
             (str(task_id),),
         ).fetchone()
         if task is None:
             raise HTTPException(status_code=404, detail="task not found")
+        if actor is not None:
+            from app.apikey import ROLE_RANK
+
+            is_owner = str(task["user_id"]) == str(actor["user_id"])
+            is_operator = ROLE_RANK.get(str(actor["role"]), 0) >= ROLE_RANK["developer"]
+            if not (is_owner or is_operator):
+                # 없는 것과 같은 답을 준다. 존재 여부를 캐지 못하게.
+                raise HTTPException(status_code=404, detail="task not found")
         assignment = None
         if task["current_assignment_id"]:
             assignment = conn.execute(

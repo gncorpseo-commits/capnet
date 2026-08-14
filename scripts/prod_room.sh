@@ -80,7 +80,8 @@ echo "== 4) core 기동 (강제 모드) =="
 dc up -d --build core >/dev/null 2>&1
 for i in $(seq 1 60); do curl -sf -m 3 "$CORE_URL/health" >/dev/null 2>&1 && break; sleep 2; done
 chk "health 는 인증 없이 200" test "$(code $CORE_URL/health)" = "200"
-echo -n "    enforcement: "; curl -s -m 10 "$CORE_URL/v1/ops/status" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["enforcement"], "ok=",d["ok"])' 2>/dev/null || echo "(조회 실패)"
+# enforcement 표시는 §8-3 으로 옮겼다 — 조회면도 키를 요구하므로(read-auth)
+# 키를 발급하기 전인 여기서는 401 이 정상이다.
 
 echo
 echo "== 5) 무인증 쓰기는 막힌다 =="
@@ -153,6 +154,37 @@ echo "    같은 초대 두 번째 → HTTP $c"
 chk "1회용 초대는 두 번 안 된다" test "$c" = "401"
 
 echo
+echo "== 8-3) 조회면도 강제 아래에 있다 · 남의 작업은 안 보인다 (read-auth) =="
+# 쓰기만 잠그면 「증적이 남고 조회된다」가 「누구나 조회된다」가 된다.
+c=$(code "$CORE_URL/v1/ops/status");        echo "    GET /v1/ops/status (키 없음) → HTTP $c"
+chk "무인증 운영 조회면 401" test "$c" = "401"
+c=$(code "$CORE_URL/v1/nodes-credentials"); echo "    GET /v1/nodes-credentials (키 없음) → HTTP $c"
+chk "무인증 증서 조회면 401" test "$c" = "401"
+echo -n "    enforcement: "; curl -s -m 10 "$CORE_URL/v1/ops/status" \
+  -H "Authorization: CapNet-Key $key" \
+  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["enforcement"], "ok=",d["ok"])' 2>/dev/null \
+  || echo "(조회 실패)"
+
+# 소유권 — 다른 사용자의 키로는 남의 작업이 **404** 다 (403 이면 존재를 흘린다).
+other=$(dc run --rm --no-deps core python -m app.apikey_cli issue --role user --label other 2>&1 \
+        | grep -oE 'ck_[0-9a-f]{8}\.[A-Za-z0-9_-]+' | head -1)
+chk "다른 사용자 키 발급" test -n "$other"
+tid=$(curl -s -m 10 -X POST "$CORE_URL/v1/tasks" -H 'content-type: application/json' \
+      -H "Authorization: CapNet-Key $key" \
+      -d '{"datasetId":"eurosat-rgb","caseId":"ic1-0001"}' \
+      | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))' 2>/dev/null)
+chk "작업 생성 (admin 키)" test -n "$tid"
+c=$(code "$CORE_URL/v1/tasks/$tid" -H "Authorization: CapNet-Key $key")
+echo "    소유자(admin) 조회 → HTTP $c"
+chk "소유자는 자기 작업을 본다" test "$c" = "200"
+c=$(code "$CORE_URL/v1/tasks/$tid" -H "Authorization: CapNet-Key $other")
+echo "    다른 사용자 조회 → HTTP $c"
+chk "남의 작업은 404 (403 아님)" test "$c" = "404"
+c=$(code "$CORE_URL/v1/tasks/$tid")
+echo "    무인증 조회 → HTTP $c"
+chk "무인증 작업 조회 401" test "$c" = "401"
+
+echo
 echo "== 9) seed 게이트러너 증서 발급 → 파일 주입 =="
 runner=00000000-0000-4000-8000-000000000030
 cred=$(curl -s -m 10 -X POST "$CORE_URL/v1/nodes/$runner/credentials" \
@@ -173,7 +205,7 @@ dc --profile demo up -d --build node-m-team >/dev/null 2>&1
 for i in $(seq 1 60); do curl -sf -m 3 "$NODE_URL/health" >/dev/null 2>&1 && break; sleep 2; done
 chk "Node health 200" test "$(code $NODE_URL/health)" = "200"
 sleep 5
-hb=$(curl -s -m 10 "$CORE_URL/v1/nodes-liveness" | python3 -c '
+hb=$(curl -s -m 10 "$CORE_URL/v1/nodes-liveness" -H "Authorization: CapNet-Key $key" | python3 -c '
 import json,sys
 d=json.load(sys.stdin)
 for n in d["nodes"]:
