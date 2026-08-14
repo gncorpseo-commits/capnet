@@ -13,10 +13,14 @@
   <nav>
     <a href="/ui/nodes.html" class="on">Node</a>
     <a href="/ui/call.html">능력 호출</a>
+    <a href="/ui/invite.html">초대 발행</a>
+    <a href="/ui/redeem.html">초대 소진</a>
   </nav>
 </header>
 
 <main>
+  <div id="keybar"></div>
+
   <section>
     <h2>Node 등록</h2>
     <p class="hint">
@@ -70,18 +74,9 @@
   </section>
 </main>
 
+<script src="/ui/app.js"></script>
 <script>
-const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-async function api(path, opts) {
-  const r = await fetch(path, opts);
-  const text = await r.text();
-  let body = null;
-  try { body = text ? JSON.parse(text) : null; } catch { body = { detail: text }; }
-  if (!r.ok) throw new Error(typeof body?.detail === "string" ? body.detail : JSON.stringify(body?.detail ?? body));
-  return body;
-}
+mountKeyBar("keybar");
 
 function pill(ok, yes, no, cls) {
   return `<span class="pill ${ok ? (cls || 'ok') : ''}">${ok ? yes : no}</span>`;
