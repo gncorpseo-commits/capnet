@@ -75,7 +75,8 @@ Task(능력·신뢰도메인) ──► Core 워커가 배정 ──► assignme
 curl -sf -X POST $CORE/v1/nodes/invites \
   -H "Authorization: CapNet-Key $(cat data/admin.key)" \
   -H 'content-type: application/json' \
-  -d '{"trust_domain":"tenant","compute_tier_max":"M","label":"러닝크루 3기","ttl_days":7}'
+  -d '{"trust_domain":"tenant","compute_tier_max":"M","label":"러닝크루 3기","ttl_days":7,
+       "org_id":"<조직 uuid>"}'
 ```
 
 | 기본값 | |
@@ -84,6 +85,7 @@ curl -sf -X POST $CORE/v1/nodes/invites \
 | `compute_tier_max` | `M` |
 | `ttl_days` | **7** (사람이 들고 다닌다 — 증서보다 길다) |
 | `max_redemptions` | **1** — 초대장 하나가 기기 하나. 열 명이면 열 장을 발행한다 |
+| `org_id` | 생략하면 **발행자의 조직**. 조직이 없으면 **팀 운영 공용 기기**가 된다 (D24) |
 
 **초대받은 사람 — 소진** (관리 키가 **필요 없다**)
 
@@ -111,6 +113,10 @@ curl -sf -X POST $CORE/v1/nodes/invites/<id>/revoke \
 > **이 경로만 관리 키 없이 열린다.** 그래서 완화가 겹쳐 있다 — 만료 · 1회용 · 폐기 ·
 > `audit_log` 증적, 그리고 소진 판정은 **DB 의 조건부 UPDATE** 가 한다.
 > 초대로 들어온 기기는 `ck_gate_runner_team` 때문에 **채점자가 될 수 없다** (절대규칙 8).
+>
+> **조직도 초대장이 정한다** (D24). 소진 요청에는 `org_id` 필드가 없다 — 등급과 같은 규율이다.
+> 그 기기는 그 조직의 작업만 받는다(`ck_assignment_org`). 조직을 안 박으면 공용 기기가 되어
+> **모든 조직의 작업**을 받으므로, 남의 기기를 공용으로 만들지 않도록 주의한다.
 
 ---
 
