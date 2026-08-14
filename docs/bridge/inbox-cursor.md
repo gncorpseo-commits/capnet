@@ -1268,3 +1268,111 @@ Decision 5항 그대로. **DDL 0 · 새 의존성 0.**
   **다중 조직에 열려면 이 칸이 먼저다.** 별 Proposal 로 올릴 준비가 돼 있다
 - UI 키 입력칸 · TLS · rate limit · 백업(C) · 관리키 회전
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-16T10:00:00+09:00
+topic: org-boundary
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — 조직 경계 (D19 유통의 마지막 칸)
+
+read-auth(#69) 다음. **DDL 이 필요하고 되돌리기 비싸다** — 그래서 구현 전에 결정을 받는다.
+
+### 이건 조회 문제가 아니다 — **실행 문제다** (실측)
+
+read-auth 로 「누가 볼 수 있나」는 닫았다. 이건 **「어디서 도는가」** 다.
+
+일회용 프로브로 재현했다(리포에 넣지 않았다). 서로 다른 조직의 tenant 기기 둘을 만들고,
+**조직 A 의 작업을 조직 B 의 기기로** 배정해 봤다:
+
+    기기 소유자(owner_id) —
+      org-a-node   owner_id=…0001
+      org-b-node   owner_id=…0001      ← 두 조직의 기기인데 소유자가 같다 (시드 admin)
+
+    조직 A 의 작업을 조직 B 의 기기로 배정 시도 —
+      결과: 배정됨 ← 막지 못한다
+
+**제품 주장이 다중 조직에서는 성립하지 않는다.** 「승인하지 않은 신뢰 도메인으로
+라우팅되지 않는다」는 참이지만, **같은 등급의 다른 조직**은 승인한 적이 없는데도 라우팅된다.
+
+### 왜 이렇게 됐나 — 등급을 소속으로 쓰고 있었다
+
+`trust_domain='tenant'` 는 **민감도 등급**이지 **어느 조직**이 아니다.
+tenant 가 둘이면 둘 다 `'tenant'` 라 `domain_compatible` 이 **구별할 수가 없다.**
+등급 축 하나로 두 가지를 표현하려 한 것이 원인이다.
+
+그리고 소유자 컬럼은 **이미 있는데 죽어 있다** — `node.owner_id` · `agent.owner_id` 가
+`registry.py` 에서 **전부 시드 admin 으로 하드코딩**된다(81·146행). 진짜인 것은
+`task.user_id` 하나뿐이다(B0).
+
+### 설계 원칙 셋
+
+1. **조직은 등급과 다른 축이다.** 섞지 않는다 — 섞으면 D19 의 「팀 → 초청 → 개방」이 무너진다
+2. **판정은 DB 가 한다.** 도메인·티어와 **같은 모양** — 스냅샷 + 복합 FK. 앱이 비교하지 않는다
+3. **초대(G2)가 org 를 정하는 자리다.** 등급을 초대장에 박은 것과 같은 모양을 재사용한다 —
+   신청자가 자기 조직을 주장하지 못한다 (절대규칙 4 의 확장)
+
+### DDL 초안 (추가만 · 기존 제약 무수정)
+
+```sql
+CREATE TABLE org (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code       TEXT NOT NULL UNIQUE,
+    name       TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE app_user   ADD COLUMN org_id UUID REFERENCES org(id);
+ALTER TABLE node       ADD COLUMN org_id UUID REFERENCES org(id);  -- NULL = 공용(팀 운영)
+ALTER TABLE task       ADD COLUMN org_id UUID REFERENCES org(id);  -- 요청자 org 스냅샷
+ALTER TABLE node_invite ADD COLUMN org_id UUID REFERENCES org(id);
+
+-- 배정에 스냅샷을 싣고 DB 가 판정한다 (domain·tier 와 같은 모양)
+ALTER TABLE assignment ADD COLUMN task_org_id UUID;
+ALTER TABLE assignment ADD COLUMN node_org_id UUID;
+ALTER TABLE assignment ADD CONSTRAINT ck_assignment_org
+    CHECK (node_org_id IS NULL OR node_org_id = task_org_id);
+-- 스냅샷이 진짜 행과 같아야 한다
+ALTER TABLE node ADD UNIQUE (id, org_id);
+ALTER TABLE task ADD UNIQUE (id, org_id);
+ALTER TABLE assignment ADD FOREIGN KEY (node_id, node_org_id) REFERENCES node (id, org_id);
+ALTER TABLE assignment ADD FOREIGN KEY (task_id, task_org_id) REFERENCES task (id, org_id);
+```
+
+`ck_assignment_org` 한 줄이 요점이다 — **같은 조직이거나, 공용 기기이거나.**
+행렬 테이블이 필요 없다(도메인·티어와 달리 순서가 아니라 동일성이므로).
+`claim` 은 `INSERT … SELECT` 로 스냅샷을 채우고 **판정은 CHECK 와 FK 가** 한다 (절대규칙 2).
+
+### 열린 질문 (묶어서 — 이것만 답하면 구현한다)
+
+1. **공용 기기 정책.** `node.org_id IS NULL` = 팀이 운영하는 공용 기기 → **모든 조직의 작업을
+   받는다**. 이 모양이 맞나? (권장) 아니면 조직별 명시 허용 목록이 필요한가
+2. **org 부여 경로.** 초대장(G2)에 `org_id` 를 박고, admin 직접 등록 시엔 인자로 받는다.
+   요청자 org 는 `app_user.org_id` 에서 읽는다. 맞나
+3. **백필.** 기존 행을 어떻게 두나 — **권장:** `default` org 를 하나 만들어 기존
+   `app_user`·`task` 를 넣고, **기존 team 기기는 `NULL`(공용)로 둔다.** 그러면 지금 동작이
+   그대로 유지된다(데모·심사 안 깨짐). `NOT NULL` 승격은 하지 않는다
+4. **Agent 도 org 를 갖나.** 나는 **아니오**를 권한다 — Agent 는 **공용 카탈로그**로 두고
+   격리는 「어디서 도는가」로만 건다. Agent 에까지 걸면 조직마다 게이트를 다시 돌려야 한다
+5. **강제 시점.** 라우팅(FK·CHECK)이 본체다. 조회 필터(read-auth 확장 — 남의 조직 작업 404)를
+   **같은 PR 에 넣을까, 나눌까.** 나는 **같은 PR**을 권한다 — 나누면 그 사이가 어중간하다
+6. **죽은 소유자 컬럼.** `node.owner_id`·`agent.owner_id` 의 시드 하드코딩을 같이 고칠까,
+   별건으로 둘까. org 가 들어오면 owner 는 **조직 안의 사람**을 뜻하게 되므로 같이 손대는
+   편이 자연스럽다고 본다
+
+### 범위 밖 (보류 그대로)
+
+TLS · rate limit · C 백업 · 관리키 회전 · UI 키 입력칸.
+
+### 크기
+
+마이그레이션 1개(`0017`) · `claim` 스냅샷 2컬럼 · 조회 필터 · 초대에 org · 검사 2종
+(라우팅 거절 실측 + 조회 격리). **제약 약화 0.**
+
+**Confirm 전까지 구현은 시작하지 않는다** (PROTOCOL).
+```
