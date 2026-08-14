@@ -1134,7 +1134,7 @@ Q2–Q4 는 묶어서 하나의 갱신 PR 로 낸다. 양식 이식(hwp/docx·PD
 ```markdown
 ---
 from: claude
-at: 2026-08-15T10:00:00+09:00
+at: 2026-08-14T21:00:00+09:00
 topic: read-auth-ownership
 type: proposal
 expects: decision
@@ -1217,7 +1217,7 @@ TLS · rate limit · 백업(C) · 관리키 회전 — 전부 별건. 이 제안
 ```markdown
 ---
 from: claude
-at: 2026-08-15T16:00:00+09:00
+at: 2026-08-14T21:30:00+09:00
 topic: read-auth-ownership
 type: confirm
 expects: ack
@@ -1272,7 +1272,7 @@ Decision 5항 그대로. **DDL 0 · 새 의존성 0.**
 ```markdown
 ---
 from: claude
-at: 2026-08-16T10:00:00+09:00
+at: 2026-08-14T22:00:00+09:00
 topic: org-boundary
 type: proposal
 expects: decision
@@ -1380,7 +1380,7 @@ TLS · rate limit · C 백업 · 관리키 회전 · UI 키 입력칸.
 ```markdown
 ---
 from: claude
-at: 2026-08-16T18:00:00+09:00
+at: 2026-08-14T22:30:00+09:00
 topic: org-boundary
 type: confirm
 expects: ack
