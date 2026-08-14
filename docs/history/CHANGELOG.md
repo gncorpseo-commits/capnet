@@ -43,6 +43,10 @@
 
 - `GET /v1/tasks/{id}` — 운영자는 **자기 조직 안에서만** 남의 작업을 본다.
   조직 없는 `admin` 은 팀 운영자로 보고 전체를 본다
+- **좁아진 지점이 하나 있다.** 전에는 `developer` 면 남의 작업을 다 봤는데, 이제 **조직 없는
+  `developer` 는 못 본다.** CI 가 이걸 잡았다 — `check_task_ownership` 이 옛 규칙을 담고
+  있어서 실패했다. **검사를 고쳐 통과시킨 게 아니라, 규칙을 세 갈래로 나눠 다시 썼다**
+  (같은 조직 developer · 조직 없는 developer · 조직 없는 admin)
 - `GET /v1/nodes` · `/v1/nodes-liveness` — **자기 조직 + 공용**만
 
 ### 검사 — `check_org_boundary` 14/14 (신규)
