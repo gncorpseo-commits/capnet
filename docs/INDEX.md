@@ -71,6 +71,7 @@
 - [데모 manifest N=40](./spec/golden/manifest-image-classify-v1.json)
 - [골든 산출물 안내 · n=300](./spec/golden/README.md)
 - [EuroSAT RGB archive 핀](./spec/golden/eurosat-rgb.json)
+- [데모 기대 수치 정본](./spec/demo-expectation.json) — 보고서가 예고하는 재현 수치. `check_submission` 이 대조한다
 
 ### ops
 - [Contest MVP 2026](./ops/Contest_MVP_2026.md) — 시나리오·UC (**일정은 checklist**)
