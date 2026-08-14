@@ -132,6 +132,22 @@ def main() -> int:
     check(status_of(m._assert_node_matches, node_a, f"CapNet-Node {cred_a}") == "pass",
           "자기 증서 → 통과")
 
+
+    # ── 조회면 인증·소유권 (read-auth) ──────────────────────────────────
+    #
+    # 쓰기만 잠그면 「증적이 남고 조회된다」가 「누구나 조회된다」가 된다.
+    # 여기서 보는 것은 **강제 모드에서 조회면이 실제로 막히는가**다.
+    check(status_of(m.ops_status, None) == 401, "무인증 운영 조회면 → 401")
+    check(status_of(m.credentials_status, None) == 401, "무인증 증서 조회면 → 401")
+    check(status_of(m.nodes_list, None) == 401, "무인증 함대 목록 → 401")
+    check(status_of(m.credentials_status, user_key) == 403,
+          "증서 조회면은 admin 이다 (user→403)")
+    check(status_of(m.nodes_list, user_key) == 403,
+          "함대 목록은 developer 다 (user→403)")
+    # 능력 카탈로그는 공개로 남긴다 — 「능력만 요구하면 된다」의 앞면이다 (Decision 1)
+    check(status_of(m.capabilities_list) == "pass", "능력 카탈로그는 공개다")
+    check(status_of(m.datasets_list) == "pass", "입력 allowlist 는 공개다")
+
     # ── 초대 소진: 관리 키 없이 열리는 유일한 쓰기 (G2 · 0016) ───────────
     #
     # 이 경로가 «키 없이 열린다»는 것 자체가 이 기능의 위험이다. 그래서 두 가지를 같이 본다:
