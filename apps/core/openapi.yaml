@@ -527,6 +527,9 @@ paths:
                 label: { type: string, nullable: true }
                 ttl_days: { type: integer, minimum: 1, maximum: 90, default: 7 }
                 max_redemptions: { type: integer, minimum: 1, maximum: 100, default: 1 }
+                # 초대로 들어온 기기가 속할 조직 (D24). 생략하면 발행자의 조직.
+                # 등급과 마찬가지로 발행 시점에 박히며 소진하는 쪽이 바꾸지 못한다.
+                org_id: { type: string, format: uuid, nullable: true }
       responses:
         "200":
           description: secret(평문 1회) + prefix + 등급 + 만료
@@ -585,7 +588,7 @@ paths:
                 gpu: { type: string, nullable: true }
       responses:
         "200":
-          description: node + credential(평문 1회)
+          description: node + credential(평문 1회). node.org_id 는 **초대장이 정한 값**이다
         "401":
           description: 초대 토큰 없음 · 유효하지 않음 · 만료 · 폐기 · 소진됨
         "409":
@@ -656,6 +659,9 @@ components:
         is_gate_runner: { type: boolean, default: false }
         gpu: { type: string, nullable: true }
         provision_source: { type: string, nullable: true }
+        # 조직 (D24 · 0017). 생략하면 팀 운영 공용 기기 — 모든 조직의 작업을 받는다.
+        # Node 가 자기 소속을 주장하는 자리가 아니다 (절대규칙 4).
+        org_id: { type: string, format: uuid, nullable: true }
     BindBody:
       type: object
       required: [node_id, weights_sha256_seen]
