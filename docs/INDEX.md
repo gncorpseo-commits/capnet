@@ -61,6 +61,7 @@
 - [실행 로드맵 Phase 1→3+](./design/roadmap.md) — 진입조건·판정 게이트 (**일정 정본 아님**)
 - [제품 유통 목표](./design/product-distribution.md) — 범위·세대·금지 (D19)
 - [안전 사슬](./design/safety-chain.md) — **Node 등록 → Agent 사용**. 13칸 관문·구멍·보장/불보장
+- [단계 6 실행기 준비](./design/step6-executors.md) — **준비 문서.** 실행기를 더 얹기 전에 닫아야 할 구멍 셋(`structured` 출력 검증 · 작업 접수 · 학습 데이터 라이선스)과 추천 순서
 - [남의 Agent 격리](./design/foreign-agent-isolation.md) — F1/F2/F3 위협 모델 · Phase 3 격리 초안
 - [node_credential 설계 초안](./design/node-credential-draft.md) (**DDL 미적용**)
 
