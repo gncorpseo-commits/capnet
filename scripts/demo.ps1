@@ -46,6 +46,7 @@ $gr = Invoke-RestMethod -Method Post "$core/v1/internal/gate-runs" -ContentType 
     runner_node_id = $runnerId
 } | ConvertTo-Json)
 
+# demo.sh 와 동일 — 계약이 min_per_class_recall 을 선언하면 finish 에 필수 (없으면 400).
 $finishBody = @{
     status = $score.status
     dummy = $false
@@ -54,6 +55,7 @@ $finishBody = @{
     cases_passed = $score.cases_passed
     macro_f1 = $score.macro_f1
     invalid_rate = $score.invalid_rate
+    min_per_class_recall = $score.min_per_class_recall
     golden_set_sha256 = $gr.golden_set_sha256
     note = "golden-set-v1 scratch TinyEuroSAT"
 } | ConvertTo-Json
@@ -61,7 +63,9 @@ try {
     $fin = Invoke-RestMethod -Method Post "$core/v1/internal/gate-runs/$($gr.id)/finish" `
         -ContentType "application/json" -Body $finishBody
 } catch {
-    throw "real gate finish rejected: $($_.Exception.Message)"
+    $detail = $_.ErrorDetails.Message
+    if (-not $detail) { $detail = $_.Exception.Message }
+    throw "real gate finish rejected: $detail"
 }
 $summary = $fin.result_summary
 if ($summary -is [string]) { $summary = $summary | ConvertFrom-Json }
@@ -72,7 +76,7 @@ if ($score.status -ne "PASSED") {
 }
 if (-not $fin.chain_minted) { throw "PASSED chain not minted" }
 
-Write-Host "bind READY + task + claim + scratch execute"
+Write-Host "bind READY + task (Core 중개 — Node 주소로 실행하지 않는다)"
 $bind = Invoke-RestMethod -Method Post "$core/v1/agents/$($agent.id)/bindings" -ContentType "application/json" -Body (@{
     node_id = $runnerId
     weights_sha256_seen = $sha
@@ -84,21 +88,26 @@ $t = Invoke-RestMethod -Method Post "$core/v1/tasks" -ContentType "application/j
     caseId = "ic1-0001"
     requestedAgentId = $agent.id
 } | ConvertTo-Json)
-$c = Invoke-RestMethod -Method Post "$core/v1/internal/claim" -ContentType "application/json" -Body (@{
-    task_id = $t.id
-} | ConvertTo-Json)
-$e = Invoke-RestMethod -Method Post "$node/v1/execute" -ContentType "application/json" -Body (@{
-    id = $c.id
-    weights_sha256 = $c.weights_sha256
-    input_ref = $c.input_ref
-} | ConvertTo-Json)
-if ($e.dummy) { throw "execute was dummy — scratch path not used" }
-$got = Invoke-RestMethod "$core/v1/tasks/$($t.id)"
-if ($got.status -ne "COMPLETED") { throw "task $($got.status)" }
-Write-Host "demo OK - real gate PASSED + scratch task COMPLETED"
-Write-Host ("label={0} assignment={1}" -f $e.label, $got.assignment.status)
-# 배정 시점 스냅샷 — .sh 와 같은 줄을 찍는다. 촬영은 PowerShell 이고,
-# 검증 3종은 .sh 만 만지므로 여기가 뒤처지면 촬영일에야 드러난다 (G5 회귀 전례).
+
+# Core 워커가 배정하고, Node 가 자기 lease 를 가져와 실행한다. demo.sh 와 같은 사이클.
+$got = $null
+for ($i = 0; $i -lt 60; $i++) {
+    $got = Invoke-RestMethod "$core/v1/tasks/$($t.id)"
+    if ($got.status -eq "COMPLETED" -or $got.status -eq "FAILED") { break }
+    Start-Sleep -Seconds 1
+}
+if ($null -eq $got) { throw "task poll returned nothing" }
+if ($got.status -ne "COMPLETED") { throw "task not completed: $($got.status)" }
+
+$res = $got.result_ref
+if ($res -is [string]) { $res = $res | ConvertFrom-Json }
+if ($res.dummy) { throw "execute was dummy — scratch path not used" }
+if (-not $got.assignment) { throw "assignment missing on completed task" }
+
+Write-Host "demo OK - real gate PASSED + scratch task COMPLETED (Core 중개)"
+Write-Host ("label={0}" -f $res.label)
+Write-Host ("증적: assignment={0} node={1} agent={2} status={3}" -f `
+    $got.assignment.id, $got.assignment.node_id, $got.assignment.agent_id, $got.assignment.status)
 Write-Host ("경계: 신뢰도메인 task={0} -> node={1} · 티어 capability={2} <= node_max={3}" -f `
     $got.assignment.task_trust_domain, $got.assignment.node_trust_domain, `
     $got.assignment.capability_tier, $got.assignment.node_tier_max)
