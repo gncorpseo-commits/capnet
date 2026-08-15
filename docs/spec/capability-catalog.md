@@ -231,8 +231,8 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 
 | 집합 | 항목 | 언제 |
 |---|---|---|
-| **공통 4** | `input_schema` · `output_schema` · `preprocess` · `weights_fingerprint` | **항상** |
-| **참조 구현 +2** | `arch` · `max_params` | Core 의 `REFERENCE_ARCHS` 에 있을 때 |
+| **공통 5** | `input_schema` · `output_schema` · `preprocess` · `weights_fingerprint` · **`max_params`** | **항상** |
+| **참조 구현 +1** | `arch` | Core 의 `REFERENCE_ARCHS` 에 있을 때 |
 
 `REFERENCE_ARCHS` 는 **우리 러너에 빌더가 있는 arch** 다 (현재 `TinyEuroSAT`·`TinyEuroSATB`).
 이것은 정책이 아니라 **코드 사실**이라 DB 행(`agent_arch`)이 아니라 상수로 둔다 —
@@ -249,10 +249,15 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 | `preprocess` | 선언을 **적용해** 추론 | 선언이 **읽히는지**만 |
 | `input_schema` | 계약 샘플로 **실추론** | `mediaTypes` **선언 정합**만 |
 | `output_schema` | 실제 출력을 계약과 대조 | 스키마 **선언 정합**만 |
-| `arch`·`max_params` | 모델을 세워 로드하고 파라미터를 셈 | **보고하지 않는다** |
+| `max_params` | 로드 후 torch 로 셈 | **지문의 shape 합계로 셈** (D-maxp) |
+| `arch` | 모델을 세워 로드 | **보고하지 않는다** |
 
 비참조 경로가 `arch` 를 `false` 로 보내지 않는 것은 의도다 — `false` 는
 「검사했는데 떨어졌다」로 읽힌다. **아예 없는 것이 「검사하지 않았다」의 정직한 표현**이다.
+
+**`max_params` 는 다르다.** 지문의 shape 합계로 **실제로 셀 수 있으므로** 비참조에서도
+판정한다(D-maxp) — 「실행해야만 알 수 있는 값」이 아니었다. 이게 빠져 있는 동안
+비참조 모델에는 **파라미터 상한이 없었다.** 상한 정본은 `agent_arch.max_params`(DB 행)다.
 
 ### 지문은 왜 torch 도 safetensors 라이브러리도 안 쓰는가
 
@@ -306,12 +311,26 @@ DB 행이므로 아무 arch 나 들어오지 못한다. 다만 **`agent_arch` �
 지금은 운영자가 DB 에 직접 넣어야 한다. 52개로 넓히려면 이 등록 경로가 필요하고,
 그건 **관리 API 이므로 별 Decision** 이다 (아무나 arch 를 늘리면 allowlist 가 무의미해진다).
 
+### 허용 아키텍처 등록 (D-arch)
+
+`agent.arch` 는 `agent_arch` 를 FK 로 참조한다(`0008` · I1) — **허용 목록이 DB 행**이다.
+그 행을 넣는 경로가 없어서 운영자가 DB 에 직접 INSERT 해야 했다. 이제 관리 API 가 있다.
+
+| | |
+|---|---|
+| `GET /v1/arches` | 목록 (**developer 이상** — 어떤 구조를 받는가는 운영 정보다) |
+| `POST /v1/arches` | **추가만** (**admin**) · 중복 409 · 이름 형식 위반 400 |
+
+**갱신·삭제 경로를 만들지 않았다.** `max_params` 는 계약 게이트의 상한이라 사후에 바꾸면
+**이미 통과한 증서의 근거가 바뀐다**(D15). 상한을 바꿔야 하면 **새 arch 이름**으로 등록한다.
+중복을 `ON CONFLICT DO NOTHING` 으로 넘기지도 않는다 — 다른 상한으로 다시 등록한 운영자가
+**성공했다고 믿고 옛 값을 쓰게 된다.**
+
 ### 아직 하지 않은 것
 
-파라미터 수는 지문의 shape 만으로 셀 수 있고 **실제로 세어 증적에 남긴다**(`_params`).
-그런데 비참조 경로에서는 **필수 검사가 아니다** — Decision 2-C 가 `max_params` 를
-참조 구현 쪽에 두었기 때문이다. 즉 **비참조 모델에는 지금 파라미터 상한이 없다.**
-필수로 올리려면 별 Decision 이 필요하다. 값은 이미 있으므로 한 줄이면 된다.
+**`max_params` 자체의 상한이 없다.** 관리자가 `max_params=10^18` 로 등록하면 사실상 무제한이다.
+`agent_arch` 등록이 admin 전용이라 아무나 못 하지만, **숫자 상한은 정책이므로 Decision 이 필요하다** —
+여기서 임의로 정하지 않았다.
 
 ---
 

@@ -1999,3 +1999,69 @@ DB 행이 아니라 상수로 뒀다. `agent_arch` 는 「등록해도 되는가
 
 `run_tests` 79→**95** · `clean_room` **9/9** · `prod_room` **27/27** · `acc=0.8500` **불변**.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-16T03:00:00+09:00
+topic: d-arch-and-d-maxp
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm + 구현 — D-arch · D-maxp · PR 머지 대기
+
+두 Decision 범위 그대로. **DDL 0 · 새 의존성 0 · `image.classify@1` 무회귀.**
+한 PR 에 넣은 것은 **하나만으로는 반쪽**이기 때문이다 — arch 를 등록할 수 있어야
+상한이 의미를 갖고, 상한이 강제돼야 등록이 위험하지 않다.
+
+### D-arch
+
+| | |
+|---|---|
+| `GET /v1/arches` | developer 이상 |
+| `POST /v1/arches` | **admin · 추가만** |
+
+갱신·삭제 경로 **없음**(D15 — 상한을 사후에 바꾸면 통과한 증서의 근거가 바뀐다).
+중복 **409**(조용한 무시 금지). 이름은 `^[A-Za-z][A-Za-z0-9_.-]{0,63}$`.
+
+### D-maxp
+
+`CONTRACT_CHECKS_COMMON` 에 `max_params` 승격 · `REFERENCE` 는 `arch` 하나만 남았다.
+비참조는 **지문 shape 합계**로 센다 — torch 없이 판정된다.
+
+### 종단 실측
+
+`POST /v1/arches` **200** · 중복 **409** · 이름 위반 **400** · `max_params=0` **400**.
+상한 50,000 에 94,538 모델 → **FAIL · 바인딩 거부** · 상한 200,000 → PASS ·
+참조 `TinyEuroSAT` **6종 전부** 무회귀.
+
+### ack 를 원하는 판단 셋
+
+1. **`GET /v1/arches` 를 같이 만들었다** (Decision 은 등록 API 만 말했다). 등록하려는 사람이
+   **먼저 확인**할 수 없으면 중복 409 를 받고서야 알게 된다. `developer` 로 막았다
+2. **`MAX_PARAMS_DEFAULT` 를 `app/limits.py` 로 꺼냈다** — `infer.py` 가 최상단에서
+   `import torch` 를 해서, 안 옮기면 비참조 경로가 torch 없는 Node 에서 못 돈다
+   (`preprocess` 때와 같은 이유)
+3. **중복을 409 로 했다** (idempotent 200 이 아니라). 스크립트에는 409 가 불편하지만,
+   다른 `max_params` 로 다시 등록한 운영자가 **성공했다고 믿는 것**이 더 위험하다고 봤다
+
+### 보고 — 다음 Decision 후보 (**하지 않았다**)
+
+**`max_params` 자체의 상한이 없다.** admin 이 `10^18` 로 등록하면 사실상 무제한이고,
+그러면 D-maxp 가 세운 상한이 형식만 남는다. **정책 숫자라 임의로 정하지 않았다.**
+
+### 변이 검사가 내 가드의 구멍 둘을 찾았다
+
+처음 쓴 검사는 변이 3종 중 **1종만** 잡았다 — ① 엔드포인트 창이 다음 핸들러까지 넘쳐
+`_require("admin")` 변이를 놓쳤고 ② `max_params` 공통 제거 변이는 `psycopg` 없는 환경에서
+**skip 되는 클래스에만** 검사가 있었다. 둘 다 고쳐 **3/3** 잡힌다.
+
+`assertNotIn("ON CONFLICT", …)` 가 **docstring** 을 잡는 사고도 났다(세 번째 —
+`localStorage` · `NOT VALID` 에 이어). `ast` 로 docstring 만 걷어냈다.
+
+### 출품 불변식
+
+`run_tests` 95→**107** · `clean_room` **9/9** · `prod_room` **27/27** · `acc=0.8500` **불변**.
+```

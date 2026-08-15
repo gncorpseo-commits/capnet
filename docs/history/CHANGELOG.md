@@ -1,5 +1,82 @@
 # Changelog
 
+## arch 등록 API · 비참조 파라미터 상한 (D-arch · D-maxp) — 2026-08-15
+
+**DDL 0.** 두 Decision 을 함께 구현했다 — 하나가 없으면 다른 하나가 반쪽이기 때문이다.
+
+### D-arch — 막는 문은 있는데 여는 문이 없었다
+
+`agent.arch` 는 `agent_arch` 를 FK 로 참조한다(`0008` · I1). 없는 arch 로는 Agent 등록이
+막히고 **그건 설계대로다.** 그런데 그 행을 넣는 경로가 없어서, 새 모달리티를 붙이려면
+운영자가 DB 에 직접 INSERT 해야 했다 — 제품 경로가 아니다.
+
+| | |
+|---|---|
+| `GET /v1/arches` | 목록 · **developer 이상** (어떤 구조를 받는가는 운영 정보다) |
+| `POST /v1/arches` | **추가만** · **admin** |
+
+**갱신·삭제를 만들지 않은 것이 설계다.** `max_params` 는 계약 게이트의 상한이라 사후에
+올리면 **이미 통과한 증서의 근거가 바뀐다**(D15) — 증적이 「그때 무엇을 기준으로
+통과했는가」를 답하지 못하게 된다. 상한을 바꿔야 하면 **새 arch 이름**으로 등록한다.
+
+**중복을 조용히 넘기지도 않는다.** `ON CONFLICT DO NOTHING` 이면 다른 상한으로 다시 등록한
+운영자가 **성공했다고 믿고 옛 값을 쓴다.** 409 로 지금 값을 함께 알려 준다.
+
+### D-maxp — 비참조 모델에는 상한이 **아예 없었다**
+
+C2 를 넣을 때 `max_params` 를 참조 구현 쪽에 뒀다. 그래서 비참조 arch 는 파라미터 상한
+없이 통과했다. 그런데 **지문의 shape 합계로 셀 수 있으므로** 「실행해야만 알 수 있는 값」이
+아니었다 — 공통 검사로 올렸다.
+
+`CONTRACT_CHECKS_COMMON` 5종(+`max_params`) · `CONTRACT_CHECKS_REFERENCE` 1종(`arch`).
+
+`MAX_PARAMS_DEFAULT` 도 `infer.py`(최상단 `import torch`)에서 `app/limits.py` 로 꺼냈다 —
+`preprocess` 때와 같은 이유다. **상한 정본은 `agent_arch.max_params`(DB 행)**이고 그 값은
+기본값일 뿐이라는 것도 적어 뒀다.
+
+### 종단 실측 (격리 스택)
+
+| 시도 | 결과 |
+|---|---|
+| `POST /v1/arches` 신규 | **200** |
+| 같은 이름 재등록 | **409** — 현재 `max_params` 를 함께 알려 준다 |
+| `arch="Tiny Model;DROP"` | **400** |
+| `max_params=0` | **400** (`agent_arch_max_params_check`) |
+| 비참조 · 상한 **50,000** · 모델 94,538 | **FAIL → gate_run FAILED → 바인딩 거부** |
+| 비참조 · 상한 **200,000** | PASS → 바인딩 |
+| 참조 `TinyEuroSAT` | **6종 전부** (샘플 실추론 포함) — 무회귀 |
+
+다섯째 줄이 D-maxp 의 요점이다. **그 전에는 저 모델이 상한 없이 통과했다.**
+
+### 변이 검사가 가드 구멍 둘을 찾았다
+
+처음 쓴 검사는 변이 3종 중 **1종만** 잡았다.
+
+1. **창이 다음 엔드포인트까지 넘쳤다.** `_require("admin")` 을 `developer` 로 바꿔도,
+   고정 길이로 자른 창에 바로 뒤 `capabilities_create` 의 `_require("admin")` 이 들어와
+   통과했다. 다음 `@app.` 앞까지만 자르게 고쳤다
+2. **검사가 skip 되는 클래스에만 있었다.** `max_params` 를 공통 집합에서 빼는 변이는
+   `psycopg` 없는 환경에서 **아무 검사에도 안 걸렸다.** 소스로 보는 가드를 따로 추가했다
+
+고친 뒤 **3/3 전부** 잡힌다.
+
+### 검사가 설명을 잡는 사고 — 세 번째
+
+`assertNotIn("ON CONFLICT", …)` 가 「`ON CONFLICT DO NOTHING` 으로 넘기지 않는다」는
+**docstring** 을 잡았다. `localStorage`(#74) · `NOT VALID`(`0018`)에 이은 세 번째다.
+
+이번엔 `ast` 로 **docstring 만** 걷어냈다 — 삼중따옴표를 통째로 지우면 SQL 리터럴까지
+사라져 `UPDATE`·`DELETE` 검사가 무력해진다.
+
+### 실측
+
+`run_tests` 95 → **107** · `clean_room` **9/9** · `prod_room` **27/27** · `acc=0.8500` 불변.
+
+### 남은 것
+
+**`max_params` 자체의 상한이 없다.** admin 이 `10^18` 로 등록하면 사실상 무제한이다.
+**정책 숫자이므로 임의로 정하지 않았다** — Decision 이 필요하다.
+
 ## C2 가중치 지문 — 계약 게이트가 이미지를 벗어났다 (단계 4) — 2026-08-15
 
 Decision 2-C. **DDL 0.** `text.summarize` 같은 능력은 계약 게이트를 통과할 **방법이 없었다** —

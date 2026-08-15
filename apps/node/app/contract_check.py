@@ -92,13 +92,17 @@ def _is_reference_arch(arch: str | None) -> bool:
 
 
 def _declaration_only(
-    *, arch: str | None, contract: dict[str, Any],
+    *, arch: str | None, max_params: int | None, contract: dict[str, Any],
     checks: dict[str, bool], notes: dict[str, str], fp: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    """참조 구현이 없을 때의 계약 검사 — **선언 정합**만 본다 (C2).
+    """참조 구현이 없을 때의 계약 검사 (C2 · D-maxp).
 
-    실행하지 않으므로 `arch`·`max_params` 를 보고하지 않는다. Core 도 요구하지 않는다
+    모델을 세우지 않으므로 `arch` 는 **보고하지 않는다** — Core 도 요구하지 않는다
     (`required_contract_checks`). **거짓으로 true 를 채우지 않는 것**이 이 함수의 요점이다.
+
+    `max_params` 는 다르다. 지문의 shape 합계로 **실제로 셀 수 있으므로** 판정한다 —
+    「실행해야만 알 수 있는 값」이 아니었다. 이게 빠져 있는 동안 비참조 모델에는
+    파라미터 상한이 **없었다** (D-maxp).
     """
     from app.preprocess import resolve_preprocess
 
@@ -138,6 +142,22 @@ def _declaration_only(
     else:
         checks["output_schema"] = False
         notes["output_schema"] = "output_schema 가 비어 있다"
+
+    # max_params — **지문의 shape 합계로** 판정한다 (D-maxp). torch 없이 셀 수 있으므로
+    # 실행 없이도 상한을 강제할 수 있다. 상한은 Core 가 `agent_arch` 에서 읽어 보낸 값이다.
+    from app.limits import MAX_PARAMS_DEFAULT
+
+    cap = max_params or MAX_PARAMS_DEFAULT
+    if fp is None:
+        checks["max_params"] = False
+        notes["max_params"] = "지문 실패로 파라미터를 셀 수 없다"
+    else:
+        counted = fp["param_count"]
+        checks["max_params"] = counted <= cap
+        notes["max_params"] = (
+            f"{counted} <= {cap} (지문 shape 합계)" if counted <= cap
+            else f"{counted} > {cap} (지문 shape 합계)"
+        )
 
     notes["_limits"] = (
         "참조 구현이 아니므로 실행 판정을 하지 않았다. 지문은 «그 파일이 그 구조다»까지만 "
@@ -188,12 +208,13 @@ def run(
     # 「할 수 없는 것을 했다고 보고하지 않는다」가 요점이다.
     if not _is_reference_arch(arch):
         return _declaration_only(
-            arch=arch, contract=contract, checks=checks, notes=notes, fp=fp,
+            arch=arch, max_params=max_params, contract=contract,
+            checks=checks, notes=notes, fp=fp,
         )
 
     # 1·2. arch 로 세우고 로드한 뒤 파라미터를 센다.
     #      predict_image 가 둘 다 하지만, 무엇이 깨졌는지 구분해서 보고해야 한다.
-    from app.infer import MAX_PARAMS_DEFAULT
+    from app.limits import MAX_PARAMS_DEFAULT
     from app.tiny_cnn import build_model
     from safetensors.torch import load_file
 
