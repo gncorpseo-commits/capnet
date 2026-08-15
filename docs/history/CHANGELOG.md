@@ -1,5 +1,75 @@
 # Changelog
 
+## 출품 10일 완성도 — 문서·계약·데모 출력 — 2026-08-15
+
+코드가 아니라 **주장**을 정리했다. 촬영 D-8 · 내부 마감 D-11 이고, 1차는 서면으로만 갈린다(F2).
+
+### 심사위원이 먼저 보는 숫자가 틀려 있었다
+
+`README:51` 이 `acc=0.7000` 을 들고 있었다. 홀드아웃 재추출(SD-008)로 데모 골든 40장이 바뀐 뒤
+**원고는 고쳐졌는데 README 만 남아 있었다.** 정본(`docs/spec/demo-expectation.json`)은 `0.8500` 이다.
+
+같은 일이 또 벌어지지 않게 `check_submission` 의 대조 대상에 **README 를 넣었다.** 변이 검사로
+확인했다 — `0.7000` 으로 되돌리자 `README.md:51` 을 집어낸다.
+
+### 「열려 있다」를 사고가 아니라 **선택**으로 적는다
+
+README 에 그 문단은 이미 있었다. 없던 것은 **플래그 이름**(`REQUIRE_API_KEY` ·
+`REQUIRE_NODE_CREDENTIAL` · `CAPNET_AUTO_MIGRATE`)과 **최신 세대**였다 — 「세대 9 · `0001`–`0009`」로
+멈춰 있었는데 실제는 `0017` 까지다. 바로 위 `logs migrate` 예상 출력도 「9개」→「17개」로 고쳤다.
+
+### 반증된 보장은 이미 발급되지 않고 있었다
+
+골든셋 정의서 §7 이 `equivalence.max_deviation = 0.05` 를 **발급 필드로** 적고 있었다.
+그런데 실제 발급값(`seed.sql`)에는 그게 **없다** — `deviation.enforceable_bound = "1 - min_accuracy"`
+와 `"tautological under a floor gate; NOT a constraint"` 로 이미 개정돼 있었다.
+
+즉 **틀린 보장이 나간 적은 없고, 문서만 뒤처져 있었다.** 그래서 문서를 seed 에 맞추고
+「발급 정본은 seed.sql 이다 — 다르면 seed 가 옳다」를 §7 머리에 박았다. 왜 빠졌는지도 절로 남겼다:
+하한형 게이트가 강제할 수 있는 유일한 상한은 `1 - min_accuracy` = **0.32** 라는 동어반복이고,
+편차를 실제로 묶으려면 밴드형 통과 기준이 필요하다(SD-009 → D17 → D18).
+
+`compare_ab.py --max-deviation` 은 **그대로 뒀다.** 계약 발급이 아니라 관측 도구다.
+
+### D2 는 「이름이 아니라 계약」이 아니라 **계약의 구성**이 폐기됐다
+
+`context-handoff` D2 에 취소선을 그었다. 근거란에 **무엇이 살아남고 무엇이 죽었는지**를 적었다 —
+「이름이 아니라 계약」은 유효하고, 골든셋·게이트를 계약에 **포함**시킨 부분이 D17 에서 무너졌다.
+개정 후: 계약 = 인터페이스(스키마·전처리·실행조건), 골든셋+게이트 = 선택 품질 프로파일(D18·D20).
+
+### 증적이 DB 에는 있는데 **밖에서 볼 수 없었다**
+
+`assignment` 는 배정 시점의 `task_trust_domain`·`node_trust_domain`·`capability_tier`·`node_tier_max`
+를 스냅샷으로 들고 있다 — **앱이 계산한 값이 아니라 DB 가 복합 FK 로 검증한 값**이고, 제품 주장
+(「승인한 신뢰 도메인 안의 기기로만 간다」)의 증적이 정확히 이 넷이다.
+
+그런데 `GET /v1/tasks/{id}` 가 `id·status·agent_id·node_id·finished_at` 만 돌려주고 있었다.
+**「조회해서 찍기」가 성립하지 않았다.** psql 직결은 `compose.prod` 에서 postgres 가 비공개라
+제품 경로에서 깨지고, `/v1/ops/safety` 는 기기 단위라 「이 배정이 왜 허용됐나」를 못 찍는다.
+그래서 **API SELECT 를 넓혔다** — 읽기전용 · DDL 0 · 인증/소유권 분기는 그 앞단이라 무수정.
+
+```text
+증적: assignment=… node=… agent=… status=SUCCEEDED
+경계: 신뢰도메인 task=team -> node=team · 티어 capability=M <= node_max=M
+```
+
+**`demo.ps1` 도 같이 고쳤다.** 촬영은 PowerShell 인데 검증 3종은 `.sh` 만 만진다 — 직전에
+정확히 그 비대칭으로 사고가 났다(G5 · `arch` 누락 HTTP 400).
+
+### 사슬은 세 칸이고, 한 칸만 빠져도 조용히 무의미해진다
+
+`tests/test_assignment_evidence_wiring.py` **4종** — 컬럼이 있다(schema) → API 가 준다 →
+데모가 찍는다(`.sh` **와** `.ps1`) → openapi 에 적힌다. `test_openapi_drift` 는 **경로만** 보고
+필드는 못 잡으므로(#73 의 `org_id` 누출이 그 모양이었다) 이 건에 한해 그 구멍을 막았다.
+
+변이 검사로 확인했다 — API SELECT 를 되돌리고 `.ps1` 만 안 고친 상태에서 **2건 실패**.
+
+### 돌리지 못한 것
+
+**`clean_room.sh` · `prod_room.sh` 를 못 돌렸다.** 이 세션에서 Docker Desktop 이 WSL 에 붙어 있지
+않다(`docker` 명령 자체가 없다). `run_tests` 는 64→**68종** 전부 통과했지만 **새 출력 두 줄을
+실제로 찍어 보지는 못했다.** 정적 가드로 사슬만 고정했고, 한계로 적어 둔다.
+
 ## 러닝크루 화면 — 초대 발행·소진 + 키 입력줄 — 2026-08-15
 
 G2(초대 경로)는 **API 로만** 있었다. 「러닝크루가 자기 기기를 내놓는다」를 하려면

@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-08-14** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · README는 상태 비보유(링크만)
+> **갱신: 2026-08-15** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · README는 상태 비보유(링크만)
 
 ---
 
@@ -49,6 +49,7 @@
 | **tenant 운용 (P2-1)** | ✅ `0006` — tenant 플릿 Node + `image.classify@2`(min=tenant) · 경계 6종 실측 · **claim 버그 SD-016 발견·수정** |
 | **증적 정합 (SD-013)** | ✅ 골든셋 sha `c21d9ef7…` 통일 · **재게이트 29건 완료** · 라우팅 드리프트 31 → **1건**(`seed-agent` placeholder) |
 | **B0 증적 절반 복구 (2026-08-12)** | ✅ task 가 **요청자**(`_actor()` — seed admin 하드코딩 제거)와 **요청 신뢰 도메인**(하드코딩 `'team'` 제거)을 기록. 호환은 복합 FK `domain_min_compatible` 가 판정. 실증 11/11 → D23. **tenant 유통이 구조적으로 가능해짐** |
+| **출품 10일 완성도 (2026-08-15)** | ✅ **주장을 정리했다 — 코드 동작은 한 칸만.** README 기대 수치가 `0.7000`(홀드아웃 재추출 전 값)로 남아 있었다 → 정본 `0.8500` · `check_submission` 대조 대상에 **README 추가**(변이 검사 확인). 「데모 compose 는 열려 있다」를 **플래그 이름과 함께** 못박고 세대 9→**17** 정정. 골든셋 정의서 §7 의 `equivalence.max_deviation=0.05` 는 **발급된 적이 없었고**(seed 는 이미 `deviation.enforceable_bound` 로 개정) 문서만 뒤처져 있었다 → seed 에 맞춤. `context-handoff` **D2 취소선**(계약의 *구성*이 폐기 · D18·D20). **증적이 DB 에는 있는데 밖에서 안 보였다** — `GET /v1/tasks/{id}` 가 배정 스냅샷 4열을 안 줘서 API SELECT 를 넓혔다(읽기전용·DDL 0) · `demo.sh`·`demo.ps1` 이 **「경계」 한 줄**을 찍는다. `test_assignment_evidence_wiring` **4종**(신규) 이 schema→API→데모→openapi 사슬 고정 · `run_tests` 64→**68**. **`clean_room`·`prod_room` 은 못 돌렸다 — 이 세션에 Docker 없음** |
 | **러닝크루 화면 (2026-08-15)** | ✅ **초대 발행·소진 화면 + 키 입력줄.** `/ui/invite.html`(admin) · `/ui/redeem.html`(**관리 키 불필요** — 초대 토큰이 인증). **소진 화면엔 등급·조직·티어 입력칸이 없다** — 주장할 자리를 안 만든다(절대규칙 4). 토큰은 해시 조각으로 전달·주소창에서 즉시 삭제. 키는 `sessionStorage` 만(탭 닫으면 소멸·URL 미탑재) → **read-auth 이후 못 쓰던 UI 가 강제 모드에서 복귀**. `test_ui_invariants` **8종**(변이 검사 확인) · 강제 모드 실측 401/200 · `prod_room` 27/27. 새 의존성 0 |
 | **조직 경계 (2026-08-14)** | ✅ **등급과 소속을 분리 (D24 · `0017`).** `trust_domain='tenant'` 는 민감도지 소속이 아니어서 **A 의 작업이 B 의 기기에 배정됐다** — 조회가 아니라 **실행** 구멍이었다. 스냅샷 2 + 복합 FK 2 + `ck_assignment_org`(**같은 조직이거나 공용이거나**)로 DB 가 판정. `node.org_id IS NULL` = 팀 공용(전 조직 수신). 조직은 **초대장에 박힌다** · Agent 는 공용 카탈로그. **죽어 있던 `owner_id` 하드코딩도 제거.** `check_org_boundary` **14/14**(신규) · 통합 10→**11종** · `clean_room` 9/9 · `prod_room` 27/27. **추가만 · NOT NULL 승격 없음** |
 | **조회면 인증·소유권 (2026-08-14)** | ✅ **「증적이 남고 조회된다」의 뒷문을 닫음.** 열린 조회면 15개 중 8개에 역할(공개는 `/health`·카탈로그·allowlist만), `GET /v1/tasks/{id}` 는 **자기 작업만** — 남의 것도 **없는 것도 404**(403은 존재를 흘린다). **DDL 0** — `task.user_id`(B0)를 아무도 안 보고 있었을 뿐. 강제 꺼짐이면 종전대로 통과(`clean_room` 9/9). `check_task_ownership` **10/10**(신규) · `check_enforcement` 23→**30** · `prod_room` 20→**27**. **남은 것: 조직 경계 없음** — developer 키 하나면 tenant 둘을 다 본다 (별 Proposal) |

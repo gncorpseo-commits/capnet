@@ -91,4 +91,8 @@ if res.get("dummy"):
 a=d["assignment"]
 print("demo OK - real gate PASSED + scratch task COMPLETED (Core 중개)")
 print("label=", res.get("label"))
-print("증적: assignment=%s node=%s agent=%s status=%s" % (a["id"], a["node_id"], a["agent_id"], a["status"]))'
+print("증적: assignment=%s node=%s agent=%s status=%s" % (a["id"], a["node_id"], a["agent_id"], a["status"]))
+# 배정 시점 스냅샷. 앱이 계산한 값이 아니라 DB 가 복합 FK 로 검증한 값이다 —
+# 「승인한 신뢰 도메인 안의 기기로만 갔다」를 눈으로 보이는 줄.
+print("경계: 신뢰도메인 task=%s -> node=%s · 티어 capability=%s <= node_max=%s"
+      % (a["task_trust_domain"], a["node_trust_domain"], a["capability_tier"], a["node_tier_max"]))'

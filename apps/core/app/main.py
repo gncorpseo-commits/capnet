@@ -1290,8 +1290,13 @@ def get_task(task_id: uuid.UUID, authorization: str | None = Header(default=None
                 raise HTTPException(status_code=404, detail="task not found")
         assignment = None
         if task["current_assignment_id"]:
+            # 배정 시점의 **스냅샷**도 같이 준다 — 「승인 도메인 안으로만 갔다」를
+            # 증적으로 보이려면 어느 도메인·어느 티어로 판정됐는지가 응답에 있어야 한다.
+            # 이 네 열은 DB 가 복합 FK 로 검증한 값이지 앱이 계산한 값이 아니다.
             assignment = conn.execute(
-                "SELECT id, status, agent_id, node_id, finished_at FROM assignment WHERE id = %s",
+                "SELECT id, status, agent_id, node_id, finished_at, "
+                "task_trust_domain, node_trust_domain, capability_tier, node_tier_max "
+                "FROM assignment WHERE id = %s",
                 (str(task["current_assignment_id"]),),
             ).fetchone()
     return {**dict(task), "assignment": dict(assignment) if assignment else None}

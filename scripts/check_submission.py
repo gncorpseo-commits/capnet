@@ -189,7 +189,13 @@ def check_golden_sha() -> None:
 
 
 # 원고가 「기대 출력」으로 예고하는 수치. 정본은 docs/spec/demo-expectation.json 하나다.
-REPORT_DRAFTS = ("docs/ops/contest-report-draft.md", "docs/ops/contest-report-form-draft.md")
+# README 도 대상이다 — 심사위원이 **가장 먼저** 보고 그대로 돌려 보는 예고표가 거기 있고,
+# 실제로 홀드아웃 재추출 뒤 README 만 0.7000 을 들고 남아 있었다 (원고는 고쳐졌는데).
+REPORT_DRAFTS = (
+    "docs/ops/contest-report-draft.md",
+    "docs/ops/contest-report-form-draft.md",
+    "README.md",
+)
 # 「성적 수치」로 보는 두 모양만 좁게 잡는다.
 #   ① 이름에 **붙은** 값 — acc=0.8500 · 정확도 0.8500 · macro_f1 0.8344 · f1 0.8344
 #   ② 실측 표의 행 — 줄이 `|` 로 시작하고 `dummy=false` 가 있는 것
