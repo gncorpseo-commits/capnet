@@ -29,7 +29,8 @@ from app.tiny_cnn import LABELS, build_model
 
 # --- 자원 한도 -------------------------------------------------------------
 MAX_INPUT_PIXELS = int(os.environ.get("NODE_MAX_INPUT_PIXELS", 8_000_000))
-MAX_PARAMS_DEFAULT = int(os.environ.get("NODE_MAX_PARAMS", 20_000_000))
+# torch 없이 읽혀야 해서 `app.limits` 로 옮겼다 (D-maxp). 이름만 다시 내보낸다.
+from app.limits import MAX_PARAMS_DEFAULT  # noqa: E402,F401
 TORCH_THREADS = int(os.environ.get("NODE_TORCH_THREADS", 1))
 
 # 디코드 폭탄 방어 — PIL 전역 상한. 초과하면 PIL 이 예외를 던진다.

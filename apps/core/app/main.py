@@ -21,6 +21,7 @@ from app.apikey import (
     looks_like_api_key,
     verify_key,
 )
+from app.arch import create_arch, list_arches
 from app.capability import create_capability, get_capability, list_capabilities
 from app.claim import claim_next, fail_assignment, fail_exhausted_tasks, reclaim_expired
 from app.complete import (
@@ -117,6 +118,14 @@ class TaskCreate(BaseModel):
     input_id: uuid.UUID | None = Field(default=None, alias="inputId")
 
     model_config = {"populate_by_name": True}
+
+
+class ArchCreate(BaseModel):
+    """허용 아키텍처 등록 (D-arch). **추가만** — 갱신·삭제 없음."""
+
+    arch: str
+    max_params: int
+    note: str | None = None
 
 
 class AgentCreate(BaseModel):
@@ -463,6 +472,41 @@ def openapi_yaml() -> FileResponse:
     if not _OPENAPI_YAML.is_file():
         raise HTTPException(status_code=404, detail="openapi.yaml missing")
     return FileResponse(_OPENAPI_YAML, media_type="application/yaml", filename="openapi.yaml")
+
+
+@app.get("/v1/arches")
+def arches_list(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """허용 아키텍처 목록 (D-arch).
+
+    공개하지 않는다 — 「이 플랫폼이 어떤 모델 구조를 받는가」는 운영 정보다.
+    등록하려는 사람이 **먼저 확인**할 수 있어야 해서 `developer` 로 열었다.
+    """
+    _require("developer", authorization)
+    with get_conn() as conn:
+        return {"items": list_arches(conn)}
+
+
+@app.post("/v1/arches")
+def arches_create(body: ArchCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+    """허용 아키텍처를 **추가**한다 (D-arch · admin 전용).
+
+    `agent.arch` 는 이 표를 FK 로 참조한다(`0008` · I1). 즉 여기 없는 arch 로는
+    Agent 등록이 막힌다 — 그 동작은 **그대로 둔다.** 없던 것은 행을 넣는 경로였다.
+
+    **갱신·삭제가 없는 것이 설계다.** `max_params` 는 계약 게이트의 상한이라
+    사후에 바꾸면 **이미 통과한 증서의 근거가 바뀐다**(D15). 상한을 바꿔야 하면
+    새 arch 이름으로 등록한다.
+    """
+    _require("admin", authorization)
+    try:
+        with get_conn() as conn:
+            return create_arch(
+                conn, arch=body.arch, max_params=body.max_params, note=body.note,
+            )
+    except ValueError as exc:
+        detail = str(exc)
+        code = 409 if "already exists" in detail else 400
+        raise HTTPException(status_code=code, detail=detail) from exc
 
 
 @app.get("/v1/capabilities")

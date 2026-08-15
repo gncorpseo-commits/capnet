@@ -15,6 +15,49 @@ paths:
       responses:
         "200":
           description: OK
+  /v1/arches:
+    get:
+      summary: 허용 아키텍처 목록 (developer 이상)
+      description: >
+        `agent.arch` 가 FK 로 참조하는 허용 목록 (0008 · I1).
+        공개하지 않는다 — 어떤 모델 구조를 받는가는 운영 정보다.
+      responses:
+        "200":
+          description: arch · max_params · note · added_at 목록
+        "401":
+          description: 인증 필요 (강제 모드)
+    post:
+      summary: 허용 아키텍처 추가 (admin · 추가만)
+      description: >
+        갱신·삭제가 없는 것이 설계다. max_params 는 계약 게이트의 상한이라
+        사후에 바꾸면 이미 통과한 증서의 근거가 바뀐다 (D15).
+        상한을 바꿔야 하면 새 arch 이름으로 등록한다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [arch, max_params]
+              properties:
+                arch:
+                  type: string
+                  description: 영문으로 시작 · 영숫자·_·.·- · 64자 이하
+                max_params:
+                  type: integer
+                  minimum: 1
+                note: { type: string, nullable: true }
+      responses:
+        "200":
+          description: 등록됨
+        "400":
+          description: 이름 형식 또는 max_params 위반
+        "401":
+          description: 인증 필요 (강제 모드)
+        "403":
+          description: admin 아님
+        "409":
+          description: 이미 있는 arch — 갱신하지 않는다
   /v1/capabilities:
     get:
       summary: Capability 목록

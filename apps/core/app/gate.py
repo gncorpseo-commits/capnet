@@ -43,11 +43,15 @@ RETURNING id, agent_id, capability_id, runner_node_id, runner_is_gate_runner,
 # 러너가 **그 값을 적용해** 확인할 수 있게 됐다. 0013 에서 뺐던 이유(검증 없는 불린)가 사라졌다.
 CONTRACT_CHECKS_COMMON = (
     "input_schema", "output_schema", "preprocess", "weights_fingerprint",
+    # D-maxp: 비참조에도 파라미터 상한을 요구한다. 지문이 shape 만으로 셀 수 있으므로
+    # torch 없이도 판정 가능하다 — 「실행해야만 셀 수 있는 값」이 아니었다.
+    # 이게 빠져 있는 동안 비참조 모델에는 **상한이 없었다.**
+    "max_params",
 )
 
-# 참조 구현(우리가 빌더를 가진 arch)일 때만 추가로 요구하는 둘.
+# 참조 구현(우리가 빌더를 가진 arch)일 때만 추가로 요구하는 것.
 # **실행해서** 판정할 수 있는 유일한 경우이므로 여기서는 원칙을 낮추지 않는다.
-CONTRACT_CHECKS_REFERENCE = ("arch", "max_params")
+CONTRACT_CHECKS_REFERENCE = ("arch",)
 
 # Core 가 아는 「참조 구현」 arch 이름. 이것은 정책이 아니라 **코드 사실**이다 —
 # 「우리 러너에 빌더가 있는가」이므로 DB 행(`agent_arch`)이 아니라 상수로 둔다.

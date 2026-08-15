@@ -10,7 +10,8 @@ C2 가 그것을 갈랐다. 여기서 고정하는 것은 셋이다.
 
 1. **`image.classify` 경로 무회귀** — 참조 구현(`TinyEuroSAT`)은 **종전 6종 전부**를 요구한다.
    촬영이 이 경로 위에 있으므로 여기가 느슨해지면 안 된다.
-2. **비참조 arch 는 공통 4종** — 실행할 수 없는 것을 요구하지도, 했다고 보고하지도 않는다.
+2. **비참조 arch 는 공통 5종** — 실행할 수 없는 것(`arch`)은 요구하지도 보고하지도 않지만,
+   **`max_params` 는 지문으로 실제로 잰다** (D-maxp). 상한 없는 모델이 들어오지 못한다.
 3. **두 목록이 어긋나지 않는가** — Core 의 `REFERENCE_ARCHS`(실행 가능 목록)와
    Node 의 `ARCH_REGISTRY`(빌더 목록)는 같아야 한다. 한쪽만 늘면 조용히 깨진다.
 
@@ -169,28 +170,46 @@ class TestDeclarationOnlyPath(AppPathMixin, unittest.TestCase):
         kwargs.update(over)
         return run(**kwargs)
 
-    def test_reports_common_four_only(self) -> None:
+    def test_reports_common_five_only(self) -> None:
         out = self._run()
         reported = {k for k in out if not k.startswith("_")}
         self.assertEqual(
             reported,
-            {"input_schema", "output_schema", "preprocess", "weights_fingerprint"},
+            {"input_schema", "output_schema", "preprocess",
+             "weights_fingerprint", "max_params"},
         )
 
-    def test_does_not_claim_arch_or_max_params(self) -> None:
-        """실행하지 않았으므로 `arch`·`max_params` 를 **보고하지 않는다.**
+    def test_does_not_claim_arch(self) -> None:
+        """모델을 세우지 않았으므로 `arch` 를 **보고하지 않는다.**
 
         `False` 로 보내는 것도 안 된다 — 그러면 「검사했는데 떨어졌다」로 읽힌다.
         아예 없는 것이 「검사하지 않았다」의 정직한 표현이다.
+
+        `max_params` 는 다르다 — 지문의 shape 합계로 **실제로 잰다** (D-maxp).
         """
         out = self._run()
         self.assertNotIn("arch", out)
-        self.assertNotIn("max_params", out)
+        self.assertIn("max_params", out)
 
     def test_all_common_checks_pass_on_good_contract(self) -> None:
-        out = self._run()
-        for k in ("input_schema", "output_schema", "preprocess", "weights_fingerprint"):
+        out = self._run(max_params=10_000_000)
+        for k in ("input_schema", "output_schema", "preprocess",
+                  "weights_fingerprint", "max_params"):
             self.assertIs(out[k], True, f"{k} 가 통과하지 않았다: {out['_notes'].get(k)}")
+
+    def test_max_params_is_enforced_without_torch(self) -> None:
+        """**상한을 넘으면 떨어진다** — 이게 D-maxp 의 요점이다.
+
+        eurosat_scratch 는 94,538 파라미터다. 상한을 그 아래로 주면 실패해야 한다.
+        비참조 경로라 모델을 세우지 않고 **지문의 shape 합계**로만 판정한다.
+        """
+        out = self._run(max_params=1000)
+        self.assertIs(out["max_params"], False)
+        self.assertIn("94538", out["_notes"]["max_params"])
+
+    def test_max_params_passes_under_cap(self) -> None:
+        out = self._run(max_params=94_538)
+        self.assertIs(out["max_params"], True, out["_notes"]["max_params"])
 
     def test_missing_media_types_fails(self) -> None:
         """`mediaTypes` 미선언은 업로드 자체가 400 이다(B1). 계약 게이트도 거절한다."""
@@ -236,12 +255,14 @@ class TestRequiredSet(AppPathMixin, unittest.TestCase):
              "weights_fingerprint", "arch", "max_params"},
         )
 
-    def test_unknown_arch_requires_common_four(self) -> None:
+    def test_unknown_arch_requires_common_five(self) -> None:
+        """비참조도 `max_params` 를 요구한다 (D-maxp) — 상한 없는 모델을 막는다."""
         required_contract_checks = self._core_fn()
 
         self.assertEqual(
             set(required_contract_checks("SomeTextModel")),
-            {"input_schema", "output_schema", "preprocess", "weights_fingerprint"},
+            {"input_schema", "output_schema", "preprocess",
+             "weights_fingerprint", "max_params"},
         )
 
     def test_null_arch_requires_common_four(self) -> None:
@@ -249,6 +270,31 @@ class TestRequiredSet(AppPathMixin, unittest.TestCase):
         required_contract_checks = self._core_fn()
 
         self.assertNotIn("arch", required_contract_checks(None))
+
+
+class TestCommonSetSource(unittest.TestCase):
+    """`CONTRACT_CHECKS_COMMON` 을 **소스로** 본다 — psycopg 없이도 도는 가드.
+
+    `required_contract_checks` 를 직접 부르는 검사는 psycopg 가 있어야 해서 skip 된다.
+    그 상태에서 `max_params` 를 공통 집합에서 빼는 변이가 **아무 검사에도 안 걸렸다** —
+    비참조 모델의 파라미터 상한이 조용히 사라지는 회귀다 (D-maxp).
+    """
+
+    def test_common_set_includes_max_params(self) -> None:
+        src = (ROOT / "apps" / "core" / "app" / "gate.py").read_text(encoding="utf-8")
+        block = src.split("CONTRACT_CHECKS_COMMON")[1].split(")")[0]
+        names = set(re.findall(r'"(\w+)"', block))
+        self.assertEqual(
+            names,
+            {"input_schema", "output_schema", "preprocess",
+             "weights_fingerprint", "max_params"},
+            "공통 검사 집합이 바뀌었다 — 비참조 모델의 상한이 사라졌을 수 있다",
+        )
+
+    def test_reference_only_set_is_arch(self) -> None:
+        src = (ROOT / "apps" / "core" / "app" / "gate.py").read_text(encoding="utf-8")
+        block = src.split("CONTRACT_CHECKS_REFERENCE")[1].split(")")[0]
+        self.assertEqual(set(re.findall(r'"(\w+)"', block)), {"arch"})
 
 
 class TestRegistryDrift(unittest.TestCase):
