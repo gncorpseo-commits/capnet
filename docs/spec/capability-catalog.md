@@ -360,14 +360,41 @@ OK   output_schema — label='email' 이 계약을 만족한다
 gate_run PASSED
 ```
 
-**⚠️ 작업 접수는 아직 막혀 있다.** `POST /v1/tasks` 가 `datasetId` 를 **무조건**
-allowlist 와 대조한다 (`ALLOWED_DATASET_IDS = {"eurosat-rgb"}`). 텍스트 작업에는 맞는
-`datasetId` 가 없고, `eurosat-rgb` 를 적으면 통과하지만 **증적에 거짓 데이터셋이 남는다.**
+### 작업 접수 — `inputId` 가 있으면 allowlist 를 건너뛴다 (D8′ · **Decision A**)
 
-D8′ 는 allowlist 를 「데모·카탈로그 **보조** 경로」로 남긴다고 했는데 코드에서는 아직
-**필수**다. Core 중개 입력(`inputId`)이 있으면 바이트는 이미 계약에 묶여 있고(복합 FK)
-해시·크기·MIME 도 검증됐으므로 그 경우 대조는 뜻이 없다. **정책이라 임의로 바꾸지 않았다** —
-Decision 이 필요하다.
+전에는 `POST /v1/tasks` 가 `datasetId` 를 **무조건** allowlist 와 대조해서, 이미지 밖
+모든 작업이 막혔다. 텍스트에는 맞는 `datasetId` 가 없어 통과시키려면 `eurosat-rgb` 를
+적어야 했고, 그러면 **증적에 없던 데이터셋이 남는다** — 제품 주장을 스스로 깨는 관문이었다.
+
+**allowlist 는 비통제 수집을 막으려고 있다.** `inputId` 가 있으면 바이트는 이미 Core 를
+거쳐 왔고, **수집 시점에 능력에 묶였으며**(복합 FK) 해시·크기·MIME 이 계약과 대조됐다.
+그 경로에서 datasetId 를 다시 묻는 것은 통제를 더하지 않는다.
+
+지금은 요청자가 `text-demo` 처럼 **참인 이름**을 적고 그대로 증적에 남는다.
+
+실측 (2026-08-16 · 격리 스택):
+
+| 요청 | 결과 |
+|---|---|
+| `inputId` 없음 + allowlist 밖 | **400** — 종전대로 막힌다 |
+| `inputId` 없음 + `eurosat-rgb` | 200 — 데모 경로 무회귀 |
+| 없는 `inputId` | **404** — 건너뛰기가 무검증이 아니다 |
+| `inputId` 있음 + `text-demo` | **200 → COMPLETED** |
+
+**바이트를 받는 문(`POST /v1/inputs`)은 건드리지 않았다** — 계약·해시·크기·MIME 대조 그대로.
+「자유 업로드 경로를 만들지 않는다」는 유지된다 (절대규칙 7).
+
+### 종단 실측 — 텍스트가 **완주했다** (2026-08-16)
+
+```text
+text demo OK — 텍스트가 계약 게이트와 실행 경로를 완주했다
+label= url  confidence= 0.3115…
+증적: assignment=… node=…-030 agent=… status=SUCCEEDED
+경계: 신뢰도메인 task=team -> node=team · 티어 capability=M <= node_max=M
+```
+
+입력은 URL 문자열이었고 라벨도 `url` 이 나왔다. **다만 그 정확도를 주장하지 않는다** —
+`quality_profile='none'` 이라 골든셋도 채점도 없다.
 
 ### 허용 아키텍처 등록 (D-arch)
 
