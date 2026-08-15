@@ -57,7 +57,9 @@ CONTRACT_CHECKS_REFERENCE = ("arch",)
 # 「우리 러너에 빌더가 있는가」이므로 DB 행(`agent_arch`)이 아니라 상수로 둔다.
 # `agent_arch` 는 **등록 허용 목록**이고(FK 로 막는다), 이쪽은 **실행 가능 목록**이다.
 # 둘이 어긋나면 `test_contract_checks_by_arch` 가 잡는다.
-REFERENCE_ARCHS = frozenset({"TinyEuroSAT", "TinyEuroSATB", "TinyTextClassifier"})
+REFERENCE_ARCHS = frozenset({
+    "TinyEuroSAT", "TinyEuroSATB", "TinyTextClassifier", "TinyTextEmbedder",
+})
 
 # 하위 호환 별칭 — 참조 구현일 때의 전체 집합. 기존 문서·스크립트가 이 이름을 쓴다.
 CONTRACT_CHECKS = CONTRACT_CHECKS_COMMON + CONTRACT_CHECKS_REFERENCE

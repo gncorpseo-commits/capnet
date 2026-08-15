@@ -77,10 +77,17 @@ def _text_classifier() -> type[nn.Module]:
     return TinyTextClassifier
 
 
+def _text_embedder() -> type[nn.Module]:
+    from app.tiny_embed import TinyTextEmbedder
+
+    return TinyTextEmbedder
+
+
 ARCH_REGISTRY: dict[str, type[nn.Module]] = {
     "TinyEuroSAT": TinyEuroSAT,
     "TinyEuroSATB": TinyEuroSATB,
     "TinyTextClassifier": _text_classifier(),
+    "TinyTextEmbedder": _text_embedder(),
 }
 
 # arch → 모달리티. **실행기 디스패치의 정본이다** (단계 5).
@@ -92,6 +99,8 @@ ARCH_MODALITY: dict[str, str] = {
     "TinyEuroSAT": "image",
     "TinyEuroSATB": "image",
     "TinyTextClassifier": "text",
+    # 임베딩도 텍스트를 읽는다. 다른 것은 **출력**이다 — 라벨이 아니라 벡터.
+    "TinyTextEmbedder": "text_embed",
 }
 
 

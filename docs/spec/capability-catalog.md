@@ -88,7 +88,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 | 13 | `text.classify` | text | `closed_set_labels` | none | v제품-1 |
 | 14 | `text.extract` | text | `structured` | none | v제품-1 |
 | 15 | `text.ner` | text | `structured` | none | v제품-1 |
-| 16 | `text.embed` | text | `structured` | none | v제품-1 |
+| 16 | `text.embed` | text | `structured` | none | v제품-1 ✅ **구현됨** |
 | 17 | `text.summarize` | text | `freeform` | none | v제품-1 |
 | 18 | `text.generate` | text | `freeform` | none | v제품-1 |
 | 19 | `text.translate` | text | `freeform` | none | v제품-1 |
@@ -395,6 +395,36 @@ label= url  confidence= 0.3115…
 
 입력은 URL 문자열이었고 라벨도 `url` 이 나왔다. **다만 그 정확도를 주장하지 않는다** —
 `quality_profile='none'` 이라 골든셋도 채점도 없다.
+
+### `text.embed` — `structured` 의 첫 사례 (단계 6 ①)
+
+`text.classify` 와 **같은 특징 추출·전처리**를 쓴다(두 벌을 만들지 않는다 · D3).
+다른 것은 **출력**이다 — 라벨이 아니라 64차원 벡터.
+
+**의미적 유사도를 주장하지 않는다.** 이 사영은 라벨로 학습한 것이 아니라 **고정 시드
+초기화**다. 같은 입력이 같은 벡터를, 다른 입력이 다른 벡터를 낸다 — 그 이상은 말하지 않는다.
+「임베딩이니까 검색이 잘 된다」로 읽히면 안 되므로 meta·소스·여기에 같은 문장을 적어 둔다.
+
+**라벨 칸을 지어내지 않는다.** 결과 증적에 `label` 키가 **아예 없다** — 빈 문자열로 채우면
+「라벨이 있었다」고 거짓말한다. 대신 `label`·`vector` 가 **둘 다 비면 Core 가 거절**한다
+(아무것도 안 낸 실행이 COMPLETED 로 기록되면 안 된다 · dummy 는 예외).
+
+종단 실측 (2026-08-16 · 격리 스택 · `scripts/embed_demo.sh`):
+
+```text
+OK   weights_fingerprint — 텐서 1개 · 파라미터 262144
+OK   max_params — 262144 <= 500000
+OK   preprocess — 선언 적용: encoding=utf-8 normalize=NFC max_chars=8000
+OK   input_schema — 선언 전처리로 샘플 추론 성공 (27 bytes · text_embed)
+OK   output_schema — **벡터 64차원이 계약을 만족한다**
+gate_run PASSED → 바인딩 → 작업 COMPLETED (증적에 64차원 벡터, label 키 없음)
+```
+
+**`output_schema` 줄이 D-out 이 실제로 무는 첫 증거다.** 전에는 차원이 틀려도 통과했다.
+
+> **곁다리로 확인된 것:** 이 사영은 262,144 파라미터라, 상한을 100,000 으로 등록했을 때
+> 계약 게이트가 `max_params` 에서 떨어졌다. **D-maxp 가 실제로 무는 것도 같이 보였다** —
+> 그리고 D-arch 에 갱신 경로가 없으므로 빈 볼륨에서 다시 등록해야 했다(설계대로).
 
 ### 허용 아키텍처 등록 (D-arch)
 

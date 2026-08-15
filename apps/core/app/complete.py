@@ -138,7 +138,8 @@ def complete_assignment(
     *,
     assignment_id: uuid.UUID,
     weights_sha256: str,
-    label: str,
+    label: str | None,
+    vector: list[float] | None = None,
     confidence: float | None,
     dummy: bool,
     duration_ms: int | None,
@@ -154,13 +155,15 @@ def complete_assignment(
     if row is None:
         return None
 
-    result = {
-        "label": label,
-        "dummy": dummy,
-        "weights_sha256": weights_sha256,
-    }
+    # 낸 것만 적는다. 라벨이 없는 능력(임베딩)에 빈 라벨을 넣으면
+    # 증적이 「라벨이 있었다」고 거짓말한다.
+    result: dict[str, Any] = {"dummy": dummy, "weights_sha256": weights_sha256}
+    if label is not None:
+        result["label"] = label
     if confidence is not None:
         result["confidence"] = confidence
+    if vector is not None:
+        result["vector"] = vector
 
     task = conn.execute(
         MARK_TASK_SQL,

@@ -335,7 +335,7 @@ def run(
     try:
         if declared is None:
             raise ValueError("계약이 preprocess 를 선언하지 않았다")
-        if modality == "text":
+        if modality in ("text", "text_embed"):
             enc, form, max_chars = resolve_text_preprocess(declared)
             applied = f"encoding={enc} normalize={form} max_chars={max_chars}"
         else:
@@ -351,9 +351,18 @@ def run(
     #    여기서 도는 것이 input_schema 를 만족한다는 증거다.
     label: str | None = None
     confidence: float | None = None
+    vector: list[float] | None = None
     if checks.get("arch") and checks.get("preprocess"):
         try:
-            if modality == "text":
+            if modality == "text_embed":
+                # 출력이 라벨이 아니라 **벡터**다. 계약 검증도 enum 이 아니라
+                # 차원·원소 타입을 본다 (D-out 이 실제로 무는 첫 사례).
+                from app.infer_embed import embed_text
+
+                vector = embed_text(
+                    weights, sample, arch=arch, max_params=max_params, preprocess=declared
+                )
+            elif modality == "text":
                 from app.infer_text import predict_text
 
                 label, confidence = predict_text(
@@ -378,12 +387,21 @@ def run(
 
     # 4. 그 출력이 계약을 만족하는가.
     if checks.get("input_schema"):
-        out: dict[str, Any] = {"label": label}
-        if confidence is not None:
-            out["confidence"] = confidence
+        if vector is not None:
+            out: dict[str, Any] = {"vector": vector}
+        else:
+            out = {"label": label}
+            if confidence is not None:
+                out["confidence"] = confidence
         ok, why = check_output_schema(out, contract.get("output_schema") or {})
         checks["output_schema"] = ok
-        notes["output_schema"] = why if not ok else f"label={label!r} 이 계약을 만족한다"
+        if ok:
+            notes["output_schema"] = (
+                f"벡터 {len(vector)}차원이 계약을 만족한다" if vector is not None
+                else f"label={label!r} 이 계약을 만족한다"
+            )
+        else:
+            notes["output_schema"] = why
     else:
         checks["output_schema"] = False
         notes["output_schema"] = "추론 실패로 출력을 검사할 수 없다"
