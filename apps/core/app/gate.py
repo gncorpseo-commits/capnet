@@ -41,7 +41,41 @@ RETURNING id, agent_id, capability_id, runner_node_id, runner_is_gate_runner,
 #
 # `preprocess` 가 돌아왔다 (0014) — 계약이 `input_schema.preprocess` 로 값을 선언하게 되면서
 # 러너가 **그 값을 적용해** 확인할 수 있게 됐다. 0013 에서 뺐던 이유(검증 없는 불린)가 사라졌다.
-CONTRACT_CHECKS = ("input_schema", "output_schema", "preprocess", "arch", "max_params")
+CONTRACT_CHECKS_COMMON = (
+    "input_schema", "output_schema", "preprocess", "weights_fingerprint",
+)
+
+# 참조 구현(우리가 빌더를 가진 arch)일 때만 추가로 요구하는 둘.
+# **실행해서** 판정할 수 있는 유일한 경우이므로 여기서는 원칙을 낮추지 않는다.
+CONTRACT_CHECKS_REFERENCE = ("arch", "max_params")
+
+# Core 가 아는 「참조 구현」 arch 이름. 이것은 정책이 아니라 **코드 사실**이다 —
+# 「우리 러너에 빌더가 있는가」이므로 DB 행(`agent_arch`)이 아니라 상수로 둔다.
+# `agent_arch` 는 **등록 허용 목록**이고(FK 로 막는다), 이쪽은 **실행 가능 목록**이다.
+# 둘이 어긋나면 `test_contract_checks_by_arch` 가 잡는다.
+REFERENCE_ARCHS = frozenset({"TinyEuroSAT", "TinyEuroSATB"})
+
+# 하위 호환 별칭 — 참조 구현일 때의 전체 집합. 기존 문서·스크립트가 이 이름을 쓴다.
+CONTRACT_CHECKS = CONTRACT_CHECKS_COMMON + CONTRACT_CHECKS_REFERENCE
+
+
+def required_contract_checks(arch: str | None) -> tuple[str, ...]:
+    """이 Agent 의 계약 게이트런이 만족해야 하는 검사 집합 (Decision 2-C · C2).
+
+    **왜 갈라지는가.** B2 의 원칙은 「계약을 말로 받지 않는다 — 러너가 실행해서 판정한다」였다.
+    그 원칙은 **우리 코드가 그 모달리티를 실행할 수 있을 때만** 성립한다.
+    `text.generate` 를 실행하려면 제출자 코드가 필요하고, 그건 절대규칙 5 와 정면으로 닿는다.
+
+    그래서 참조 구현이 있으면 **종전 그대로 6종 전부**(무회귀), 없으면 **공통 4종**만 요구한다.
+    공통 4종은 실행이 아니라 **선언 정합과 파일 구조**를 본다 — 그 한계는 문서에 적는다
+    (`docs/spec/capability-catalog.md` §5).
+
+    `arch` 가 NULL 인 legacy Agent 도 공통 4종으로 떨어진다. 그쪽은 애초에 Core 가
+    arch 를 모르므로 참조 구현이라고 말할 근거가 없다.
+    """
+    if arch in REFERENCE_ARCHS:
+        return CONTRACT_CHECKS_COMMON + CONTRACT_CHECKS_REFERENCE
+    return CONTRACT_CHECKS_COMMON
 
 FINISH_SQL = """
 UPDATE gate_run
@@ -184,9 +218,12 @@ def _load_cap_metrics(conn: psycopg.Connection, gate_run_id: uuid.UUID) -> dict[
         """
         SELECT c.golden_metrics, c.golden_set_size, c.golden_set_sha256 AS capability_sha256,
                gr.golden_set_sha256 AS gate_run_sha256,
-               gr.kind
+               gr.kind,
+               -- 계약 게이트런의 필수 검사 집합이 arch 로 갈린다 (Decision 2-C · C2).
+               a.arch AS agent_arch
           FROM gate_run gr
           JOIN capability c ON c.id = gr.capability_id
+          JOIN agent a ON a.id = gr.agent_id
          WHERE gr.id = %s
         """,
         (str(gate_run_id),),
@@ -279,11 +316,15 @@ def assert_contract_finish(
     cases_total: int | None,
     cases_passed: int | None,
     contract_checks: dict[str, Any] | None,
+    arch: str | None = None,
 ) -> None:
     """계약 게이트런은 **채점하지 않는다.** 대신 러너가 무엇을 확인했는지를 요구한다.
 
     골든 통계는 애초에 오면 안 된다 — `ck_gate_run_contract_no_golden_stats` 가 DB 에서도
     막지만, 여기서 먼저 거절해야 「점수를 보냈는데 조용히 사라졌다」가 안 된다.
+
+    요구 집합은 `arch` 가 참조 구현인지에 따라 갈린다 (`required_contract_checks`).
+    러너가 **더** 보내는 것은 막지 않는다 — 증적이 늘어나는 것은 손해가 아니다.
     """
     given = [
         n for n, v in (
@@ -298,15 +339,16 @@ def assert_contract_finish(
         )
     if status != "PASSED":
         return
+    required = required_contract_checks(arch)
     if not contract_checks:
         raise ValueError(
             "contract PASSED requires contract_checks "
-            f"({', '.join(CONTRACT_CHECKS)})"
+            f"({', '.join(required)})"
         )
-    missing = [k for k in CONTRACT_CHECKS if k not in contract_checks]
+    missing = [k for k in required if k not in contract_checks]
     if missing:
         raise ValueError(f"contract_checks missing: {', '.join(missing)}")
-    failed = [k for k in CONTRACT_CHECKS if contract_checks[k] is not True]
+    failed = [k for k in required if contract_checks[k] is not True]
     if failed:
         raise ValueError(f"contract check not satisfied: {', '.join(failed)}")
 
@@ -342,6 +384,7 @@ def finish_gate_run(
             cases_total=cases_total,
             cases_passed=cases_passed,
             contract_checks=contract_checks,
+            arch=cap.get("agent_arch"),
         )
     else:
         if contract_checks is not None:

@@ -56,22 +56,9 @@ def _arch_for_weights(weights_path: str) -> str:
     return "TinyEuroSAT"
 
 
-# 계약이 전처리를 선언하기 전의 값 (D3 · 32×32 RGB). `image.classify` 의 선언값과 같다 —
-# 0014 가 계약에 적어 넣은 것이 바로 이 값이라, 골든 경로의 픽셀 처리는 바뀌지 않는다.
-DEFAULT_PREPROCESS: dict[str, Any] = {"resize": [32, 32], "colorspace": "RGB"}
-
-
-def resolve_preprocess(declared: dict[str, Any] | None) -> tuple[tuple[int, int], str]:
-    """계약 선언을 (resize, colorspace) 로 푼다. 없으면 종전 기본값."""
-    spec = declared or DEFAULT_PREPROCESS
-    size = spec.get("resize") or DEFAULT_PREPROCESS["resize"]
-    if not (isinstance(size, (list, tuple)) and len(size) == 2):
-        raise ValueError(f"preprocess.resize 형식이 아니다: {size!r}")
-    w, h = int(size[0]), int(size[1])
-    if w < 1 or h < 1:
-        raise ValueError(f"preprocess.resize 가 양수가 아니다: {size!r}")
-    space = str(spec.get("colorspace") or DEFAULT_PREPROCESS["colorspace"])
-    return (w, h), space
+# 전처리 선언 해석은 `app.preprocess` 로 옮겼다 — **torch 없이** 돌아야 하기 때문이다
+# (계약 게이트의 선언 검사 경로 · C2). 여기서는 이름만 다시 내보낸다.
+from app.preprocess import DEFAULT_PREPROCESS, resolve_preprocess  # noqa: E402,F401
 
 
 def predict_image(

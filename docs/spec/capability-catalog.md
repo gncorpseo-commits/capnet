@@ -227,16 +227,44 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 
 **이 절은 현재 코드의 사실이다.** 바뀌면 여기를 고친다.
 
-`CONTRACT_CHECKS` (`apps/core/app/gate.py`) 5종을 **전부 present + 전부 true** 여야 통과한다.
-하나라도 빠지면 거절 → `agent_capability_passed` 미발급 → `assignment` FK 위반 → 라우팅 불가.
+계약 게이트런의 필수 검사는 **arch 로 갈린다** (`required_contract_checks`).
 
-| 검사 | 구현 | 이미지 밖에서 |
+| 집합 | 항목 | 언제 |
 |---|---|---|
-| `arch` | `ARCH_REGISTRY` = `TinyEuroSAT` · `TinyEuroSATB` **둘뿐** | allowlist 밖 → `False` |
-| `max_params` | torch `p.numel()` | `arch` 실패 시 자동 `False` |
-| `preprocess` | `{resize, colorspace}` 해석 | 다른 어휘는 못 읽는다 |
-| `input_schema` | 샘플로 `predict_image` **실추론** | 이미지가 아니면 못 돈다 |
-| `output_schema` | 라벨 검증 | `freeform` 에 뜻이 약하다 |
+| **공통 4** | `input_schema` · `output_schema` · `preprocess` · `weights_fingerprint` | **항상** |
+| **참조 구현 +2** | `arch` · `max_params` | Core 의 `REFERENCE_ARCHS` 에 있을 때 |
+
+`REFERENCE_ARCHS` 는 **우리 러너에 빌더가 있는 arch** 다 (현재 `TinyEuroSAT`·`TinyEuroSATB`).
+이것은 정책이 아니라 **코드 사실**이라 DB 행(`agent_arch`)이 아니라 상수로 둔다 —
+`agent_arch` 는 「등록해도 되는가」(FK 로 막는다)이고, 이쪽은 「실행할 수 있는가」다.
+둘이 어긋나면 `test_contract_checks_by_arch` 가 잡는다.
+
+**`image.classify@1` 은 6종 전부를 요구한다 — 무회귀다.**
+
+### 무엇을 실제로 확인하는가
+
+| 검사 | 참조 구현일 때 | 비참조일 때 |
+|---|---|---|
+| `weights_fingerprint` | safetensors 헤더의 텐서 이름·shape·dtype → 구조 sha256 | **같다** |
+| `preprocess` | 선언을 **적용해** 추론 | 선언이 **읽히는지**만 |
+| `input_schema` | 계약 샘플로 **실추론** | `mediaTypes` **선언 정합**만 |
+| `output_schema` | 실제 출력을 계약과 대조 | 스키마 **선언 정합**만 |
+| `arch`·`max_params` | 모델을 세워 로드하고 파라미터를 셈 | **보고하지 않는다** |
+
+비참조 경로가 `arch` 를 `false` 로 보내지 않는 것은 의도다 — `false` 는
+「검사했는데 떨어졌다」로 읽힌다. **아예 없는 것이 「검사하지 않았다」의 정직한 표현**이다.
+
+### 지문은 왜 torch 도 safetensors 라이브러리도 안 쓰는가
+
+safetensors 는 맨 앞 8바이트가 헤더 길이이고 그다음이 JSON 헤더다. **그 JSON 만 읽는다.**
+
+1. `s-public` Node 에는 **torch 가 없다**(`Dockerfile` 이 조건부 설치). 요구하면 돌릴 수 있는 기기가 좁아진다
+2. 10GB 가중치여도 **헤더만** 읽는다 — 텐서 본문을 메모리에 올리지 않는다
+3. **역직렬화가 아니다.** JSON 파싱과 정수 읽기뿐 — 절대규칙 5 가 pickle 을 막는 이유가 여기서도 지켜진다
+
+실측: `eurosat_scratch` 텐서 8개 · 파라미터 **94,538** (`0008` 의 「~93k」와 일치) ·
+`eurosat_scratch_b` 텐서 23개 · **24,685** · `placeholder` 텐서 1개 · **1**.
+셋의 지문이 전부 다르다.
 
 ### Decision 2-C — C2 를 지금, C3 를 목표로
 
@@ -244,17 +272,46 @@ B2 가 세운 **「계약을 말로 받지 않는다 — 러너가 실행해서 
 **우리 코드가 그 모달리티를 실행할 수 있을 때만** 성립한다. `text.generate` 를 실행하려면
 제출자의 코드가 필요하고, 그건 절대규칙 5 와 유통 세대에 정면으로 닿는다.
 
-**채택 = C2 — 가중치 지문 검증.** safetensors 를 로드해 **텐서 키 · shape · dtype 집합**을
-계약 선언과 대조한다. safetensors 로드는 역직렬화가 아니라 텐서 읽기이므로
-**임의 코드 실행이 아니다** — 절대규칙 5 안에 있다.
-
 > **그래서 무엇을 보장하지 않는가 (명시).**
-> C2 는 **「그 파일이 그 구조다」**까지만 말한다. **「그 계약대로 동작한다」는 보장하지 않는다.**
+> 지문은 **「그 파일이 그 구조다」**까지만 말한다. **「그 계약대로 동작한다」는 보장하지 않는다.**
 > 실행해서 판정하는 것은 참조 구현이 있는 모달리티(현재 image/torch)뿐이며,
-> 그 밖에서는 **선언과 파일의 정합**까지가 게이트가 아는 전부다.
+> 그 밖에서는 **선언과 파일 구조의 정합**까지가 게이트가 아는 전부다.
 > 실행 기반 판정을 임의 모델로 넓히려면 **격리 러너(C3 · v제품-2)가 선행**한다.
 
 이 문장을 제품 문구에서 빼지 않는다. 없는 보장을 파는 것보다 못 하는 것을 적는 편이 낫다.
+러너도 같은 말을 **증적에 남긴다**(`_notes._limits`) — 통과 사실만 보고 동작 보장으로 읽지 않게.
+
+### 종단 실측 (2026-08-15 · 격리 스택)
+
+`text.classify@1`(`quality_profile='none'`)을 등록하고 계약 게이트를 **끝까지** 돌렸다.
+
+| arch | 결과 |
+|---|---|
+| `TinyTextCNN` (**비참조**) | `weights_fingerprint` · `preprocess` · `input_schema` · `output_schema` **4종 통과** → `gate_run PASSED` → 바인딩. **이미지 밖 능력이 계약 게이트를 통과한 첫 사례다** |
+| `TinyEuroSAT` (**참조**) | 위 4종 + `arch`(로드 성공) + `max_params`(94538 ≤ 2000000) + **샘플 실추론**(`label='annual_crop'`) **6종 통과** — 무회귀 |
+
+비참조 쪽 증적에는 한계가 그대로 적힌다:
+`선언 정합 (mediaTypes=['image/jpeg']) — **샘플 추론은 하지 않았다**`.
+
+### 새 모달리티를 붙이려면 `agent_arch` 행이 먼저다
+
+비참조 arch 로 Agent 를 등록하려다 **HTTP 400** 을 받았다:
+
+```text
+unknown arch 'TinyTextCNN' — agent_arch 에 없는 아키텍처다
+```
+
+`agent.arch` → `agent_arch` FK 가 막는다(`0008` · I1). **설계대로다** — 허용 목록이 코드가 아니라
+DB 행이므로 아무 arch 나 들어오지 못한다. 다만 **`agent_arch` 에 행을 넣는 API 가 없다.**
+지금은 운영자가 DB 에 직접 넣어야 한다. 52개로 넓히려면 이 등록 경로가 필요하고,
+그건 **관리 API 이므로 별 Decision** 이다 (아무나 arch 를 늘리면 allowlist 가 무의미해진다).
+
+### 아직 하지 않은 것
+
+파라미터 수는 지문의 shape 만으로 셀 수 있고 **실제로 세어 증적에 남긴다**(`_params`).
+그런데 비참조 경로에서는 **필수 검사가 아니다** — Decision 2-C 가 `max_params` 를
+참조 구현 쪽에 두었기 때문이다. 즉 **비참조 모델에는 지금 파라미터 상한이 없다.**
+필수로 올리려면 별 Decision 이 필요하다. 값은 이미 있으므로 한 줄이면 된다.
 
 ---
 

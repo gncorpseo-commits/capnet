@@ -1,5 +1,80 @@
 # Changelog
 
+## C2 가중치 지문 — 계약 게이트가 이미지를 벗어났다 (단계 4) — 2026-08-15
+
+Decision 2-C. **DDL 0.** `text.summarize` 같은 능력은 계약 게이트를 통과할 **방법이 없었다** —
+`CONTRACT_CHECKS` 5종이 전부 이미지·torch 전용이었기 때문이다.
+
+### 원칙이 어디까지 성립하는지 먼저 적는다
+
+B2 가 세운 **「계약을 말로 받지 않는다 — 러너가 실행해서 판정한다」**는
+**우리 코드가 그 모달리티를 실행할 수 있을 때만** 성립한다. `text.generate` 를 실행하려면
+제출자의 코드가 필요하고, 그건 절대규칙 5 와 유통 세대에 정면으로 닿는다.
+
+그래서 필수 검사를 **arch 로 갈랐다**:
+
+| 집합 | 항목 | 언제 |
+|---|---|---|
+| 공통 4 | `input_schema` · `output_schema` · `preprocess` · **`weights_fingerprint`** | 항상 |
+| 참조 +2 | `arch` · `max_params` | `REFERENCE_ARCHS` 에 있을 때 |
+
+### 지문은 파일을 **열되 실행하지 않는다**
+
+safetensors 는 맨 앞 8바이트가 헤더 길이이고 그다음이 JSON 헤더다. **그 JSON 만 읽는다.**
+torch 도 safetensors 라이브러리도 쓰지 않는다 — `s-public` Node 에는 **torch 가 없고**
+(`Dockerfile` 이 조건부 설치), 10GB 가중치여도 헤더는 수십 KB 이며, JSON 파싱과 정수 읽기뿐이라
+**역직렬화가 아니다**(절대규칙 5 가 pickle 을 막는 이유가 여기서도 지켜진다).
+
+실측: `eurosat_scratch` 텐서 8개 · **94,538** 파라미터 — `0008` 이 적어 둔 「TinyEuroSAT ~93k」와 맞는다.
+`eurosat_scratch_b` 23개 · 24,685 · `placeholder` 1개 · 1. **셋의 지문이 전부 다르다.**
+
+### 「검사 안 했다」를 `false` 로 적지 않는다
+
+비참조 경로는 `arch`·`max_params` 를 **아예 보고하지 않는다.** `false` 로 보내면
+「검사했는데 떨어졌다」로 읽히기 때문이다. 없는 것이 정직한 표현이고, Core 도 요구하지 않는다.
+
+한계는 **증적에 남긴다** — `_notes._limits` 에 「지문은 «그 파일이 그 구조다»까지만 말하며
+«계약대로 동작한다»는 보장하지 않는다」. 통과 사실만 보고 동작 보장으로 읽지 않게.
+
+### 종단 실측 — 이미지 밖 능력이 처음으로 통과했다
+
+격리 스택에 `text.classify@1`(`quality_profile='none'`)을 등록하고 계약 게이트를 끝까지 돌렸다.
+
+| arch | 결과 |
+|---|---|
+| `TinyTextCNN` (비참조) | 공통 4종 통과 → `gate_run PASSED` → 바인딩 |
+| `TinyEuroSAT` (참조) | 6종 전부 — `arch` 로드 · `max_params` 94538≤2000000 · **샘플 실추론** `label='annual_crop'` |
+
+**전자가 이번 작업의 요점이다.** 그동안 불가능했던 경로다.
+
+### 새 모달리티에는 `agent_arch` 행이 먼저 필요하다 (남은 구멍)
+
+비참조 arch 로 Agent 를 등록하려다 **HTTP 400** 을 받았다 —
+`unknown arch 'TinyTextCNN' — agent_arch 에 없는 아키텍처다`. FK 가 막은 것이고 **설계대로다.**
+다만 **`agent_arch` 에 행을 넣는 API 가 없다.** 52개로 넓히려면 그 등록 경로가 필요하고,
+아무나 arch 를 늘리면 allowlist 가 무의미해지므로 **별 Decision** 이다.
+
+### 전처리 해석을 torch 밖으로 꺼냈다
+
+`resolve_preprocess` 가 `infer.py` 에 있었는데 그 파일은 최상단에서 `import torch` 를 한다.
+그대로 두면 「torch 없는 Node 에서도 돈다」가 거짓이 된다. `app/preprocess.py` 로 옮기고
+`infer.py` 는 다시 내보낸다.
+
+### 테스트가 **혼자 돌면 통과하고 전체로 돌면 깨졌다**
+
+`apps/node` 와 `apps/core` 는 **둘 다 `app` 패키지**를 갖는다. sys.path 에 올려 두는 방식이라
+다른 테스트 모듈이 core 를 먼저 꽂으면 node import 가 조용히 core 로 갔다.
+검사가 도는 **동안만** 경로를 바꾸고 `tearDown` 에서 되돌리게 고쳤다 —
+import 직후에 되돌리면 안 된다(러너가 **호출 시점에** 지연 import 를 한다).
+단독·역순·전체 세 가지로 확인했다.
+
+`safetensors` 문자열 검사가 또 **문서 문구**를 잡을 뻔했다 — import 문만 보게 고쳤다.
+
+### 실측
+
+`run_tests` 79 → **95** · `clean_room` **9/9** · `prod_room` **27/27** · 골든 `acc=0.8500` 불변.
+통합 검사(`run_integration.sh`)는 **이 호스트에서 못 돌렸다** — `psql`·`psycopg` 가 없다. CI 몫이다.
+
 ## 능력 카탈로그 52 — 계약 표면 · freeform 골든 금지 — 2026-08-15
 
 Decision 2 의 단계 1–3. **이미지 분류 하나만 도는 것은 제품이 아니다**는 지시를 표면부터 넓혔다.

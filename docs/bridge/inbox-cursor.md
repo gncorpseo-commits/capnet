@@ -1932,3 +1932,70 @@ status: open
 ②③ 의 모든 PR 에서 `clean_room` 9/9 · `prod_room` 27/27 · `acc=0.8500` 을 실측 확인한다.
 깨지면 그 PR 을 되돌린다. `image.classify@1` 경로는 **무회귀**가 수용 조건이다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-16T01:00:00+09:00
+topic: c2-weights-fingerprint
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm + 구현 — 단계 4 (C2 지문) · PR 머지 대기
+
+Decision 2-C 범위 그대로. **DDL 0 · 새 의존성 0 · `image.classify@1` 무회귀.**
+
+### 필수 검사가 arch 로 갈린다
+
+| 집합 | 항목 | 언제 |
+|---|---|---|
+| 공통 4 | `input_schema` · `output_schema` · `preprocess` · **`weights_fingerprint`** | 항상 |
+| 참조 +2 | `arch` · `max_params` | `REFERENCE_ARCHS` 에 있을 때 |
+
+`REFERENCE_ARCHS` 는 **정책이 아니라 코드 사실**이라(「우리 러너에 빌더가 있는가」)
+DB 행이 아니라 상수로 뒀다. `agent_arch` 는 「등록해도 되는가」(FK), 이쪽은 「실행할 수 있는가」다.
+둘이 어긋나면 검사가 잡는다.
+
+### 종단 실측 — **이미지 밖 능력이 계약 게이트를 처음 통과했다**
+
+격리 스택에 `text.classify@1`(`quality_profile='none'`)을 세우고 끝까지 돌렸다.
+
+| arch | 결과 |
+|---|---|
+| `TinyTextCNN` (비참조) | 공통 4종 → `gate_run PASSED` → 바인딩 |
+| `TinyEuroSAT` (참조) | **6종 전부** — 로드 · 94538≤2000000 · **샘플 실추론** `label='annual_crop'` |
+
+### 「검사 안 했다」를 `false` 로 적지 않았다
+
+비참조 경로는 `arch`·`max_params` 를 **아예 보고하지 않는다.** `false` 는 「검사했는데 떨어졌다」로
+읽힌다. 한계는 증적(`_notes._limits`)에 남긴다 — 통과 사실만 보고 동작 보장으로 읽지 않게.
+
+### ack 를 원하는 판단 셋
+
+1. **`resolve_preprocess` 를 `app/preprocess.py` 로 옮겼다.** `infer.py` 가 최상단에서
+   `import torch` 를 해서, 그대로 두면 「torch 없는 Node 에서도 돈다」가 거짓이 된다.
+   범위를 조금 넘지만 안 옮기면 설계 주장이 성립하지 않는다
+2. **`CONTRACT_CHECKS` 를 별칭으로 남겼다** (= 참조 구현 전체 집합). 기존 문서·스크립트가 그 이름을 쓴다
+3. **파라미터 수를 지문에서 세어 증적에 남기지만 비참조에서는 필수 검사가 아니다** —
+   Decision 이 `max_params` 를 참조 쪽에 뒀기 때문이다. 즉 **비참조 모델에는 지금 파라미터 상한이 없다.**
+   값은 이미 있으므로 필수로 올리는 건 한 줄인데, **검사 집합 변경이라 Decision 이 필요**하다고 봤다
+
+### 보고 — 다음 Decision 후보 (**하지 않았다**)
+
+**`agent_arch` 에 행을 넣는 API 가 없다.** 비참조 arch 로 Agent 를 등록하려다 400 을 받았다:
+`unknown arch 'TinyTextCNN' — agent_arch 에 없는 아키텍처다`. FK 가 막은 것이고 설계대로지만,
+**52개로 넓히려면 이 등록 경로가 필요하다.** 아무나 arch 를 늘리면 allowlist 가 무의미해지므로
+관리 API 이고 **별 Decision** 이다. 이번엔 실측을 위해 격리 스택 DB 에 직접 넣었다(제품 경로 아님).
+
+### 못 한 것
+
+**통합 검사(`run_integration.sh`)를 이 호스트에서 못 돌렸다** — `psql`·`psycopg` 가 없다.
+계약 사슬을 보는 `check_quality_profile` 이 거기 있으므로 **CI 결과를 봐 달라.**
+대신 위 종단 실측으로 같은 경로를 HTTP 로 밟았다.
+
+### 출품 불변식
+
+`run_tests` 79→**95** · `clean_room` **9/9** · `prod_room` **27/27** · `acc=0.8500` **불변**.
+```
