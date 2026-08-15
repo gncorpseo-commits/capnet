@@ -80,3 +80,38 @@ def is_text_preprocess(declared: dict[str, Any] | None) -> bool:
     if not declared:
         return False
     return any(k in declared for k in ("encoding", "max_chars")) and "resize" not in declared
+
+
+# ── 표/시계열 (단계 6 ②) ───────────────────────────────────────────────────
+#
+# 카탈로그 §4 의 table 어휘 + 시계열이 실제로 쓰는 `window`.
+# `window` 를 계약에 두는 이유: 모델이 보는 과거 길이가 바뀌면 **같은 가중치가
+# 다른 것을 보게 된다.** 러너가 그대로 셀 수 있는 값이라 계약이 검증할 수 있다
+# (토크나이저를 안 넣은 것과 같은 기준).
+DEFAULT_TABLE_PREPROCESS: dict[str, Any] = {
+    "encoding": "utf-8",
+    "max_rows": 10000,
+    "window": 24,
+}
+
+
+def resolve_table_preprocess(
+    declared: dict[str, Any] | None,
+) -> tuple[str, int | None, int]:
+    """표/시계열 전처리 선언을 (encoding, max_rows, window) 로 푼다.
+
+    이미지·텍스트와 같은 규약이다 — 형식이 망가져 있으면 **던진다.**
+    조용히 기본값으로 떨어지면 「선언한 대로 돌았다」가 거짓이 된다.
+    """
+    spec = declared or DEFAULT_TABLE_PREPROCESS
+    encoding = str(spec.get("encoding") or DEFAULT_TABLE_PREPROCESS["encoding"])
+
+    raw_rows = spec.get("max_rows", DEFAULT_TABLE_PREPROCESS["max_rows"])
+    max_rows = None if raw_rows is None else int(raw_rows)
+    if max_rows is not None and max_rows < 1:
+        raise ValueError(f"preprocess.max_rows 가 양수가 아니다: {raw_rows!r}")
+
+    window = int(spec.get("window") or DEFAULT_TABLE_PREPROCESS["window"])
+    if window < 2:
+        raise ValueError(f"preprocess.window 는 2 이상이어야 한다: {window}")
+    return encoding, max_rows, window

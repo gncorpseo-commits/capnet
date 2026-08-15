@@ -344,8 +344,8 @@ def _run(
         if meta is not None:
             fetched = _fetch_input(*meta)
             image_path = fetched
-        elif modality == "text":
-            # 텍스트에는 로컬 골든셋 폴백이 없다 — 입력은 Core 중개로만 온다 (D8′).
+        elif modality in ("text", "text_embed", "series"):
+            # 이미지 밖 모달리티에는 로컬 골든셋 폴백이 없다 — 입력은 Core 중개로만 온다 (D8′).
             raise HTTPException(
                 status_code=400,
                 detail="text 실행에는 Core 가 중개한 입력이 필요하다 (inputSha)",
@@ -361,7 +361,18 @@ def _run(
         from app.infer import ResourceLimitExceeded
 
         try:
-            if modality in ("text", "text_embed"):
+            if modality == "series":
+                from app.infer_series import forecast_series
+                from app.infer_text import TextResourceLimitExceeded
+
+                try:
+                    vector = forecast_series(
+                        path, image_path, arch=arch, max_params=max_params,
+                        preprocess=preprocess,
+                    )
+                except TextResourceLimitExceeded as exc:
+                    raise ResourceLimitExceeded(str(exc)) from exc
+            elif modality in ("text", "text_embed"):
                 from app.infer_text import TextResourceLimitExceeded
 
                 try:

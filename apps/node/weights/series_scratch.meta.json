@@ -1,0 +1,17 @@
+{
+  "weights": "series_scratch.safetensors",
+  "weights_sha256": "1859c7f5de5b207eca12a2d71811ad6a298e36005cdfda7cf7fcca4af0065dfa",
+  "arch": "TinySeriesForecaster",
+  "pretrained": false,
+  "dataset": "synthetic-series (규칙 생성: 추세+계절성+잡음 · 외부 데이터 없음)",
+  "window": 24,
+  "horizon": 4,
+  "train_samples": 4000,
+  "holdout_samples": 800,
+  "epochs": 400,
+  "seed": 20260816,
+  "final_train_mse": 0.21141819655895233,
+  "holdout_mse": 0.1971535086631775,
+  "holdout_mse_naive_baseline": 0.9546411037445068,
+  "note": "timeseries.forecast 는 quality_profile='none' 이다 — 이 오차는 기록일 뿐 제품의 품질 보장이 아니다. 합성 데이터로 학습했고 실제 시계열 성능을 주장하지 않는다."
+}

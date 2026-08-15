@@ -130,7 +130,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 | 36 | `doc.classify` | doc | `closed_set_labels` | none | v제품-1 |
 | 37 | `doc.summarize` | doc | `freeform` | none | v제품-1 |
 | 38 | `doc.qa` | doc | `freeform` | none | v제품-1 |
-| 39 | `timeseries.forecast` | table | `structured` | none | v제품-1 |
+| 39 | `timeseries.forecast` | table | `structured` | none | v제품-1 ✅ **구현됨** |
 | 40 | `timeseries.anomaly` | table | `structured` | none | v제품-1 |
 
 ### Code / Tools (7)
@@ -192,7 +192,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 | `audio` | `sample_rate_hz` · `channels` · `max_seconds` | `{"sample_rate_hz":16000,"channels":1,"max_seconds":30}` |
 | `text` | `encoding` · `normalize` · `max_chars` | `{"encoding":"utf-8","normalize":"NFC","max_chars":8000}` |
 | `doc` | `encoding` · `max_pages` | |
-| `table` | `encoding` · `max_rows` · `max_cols` | |
+| `table` | `encoding` · `max_rows` · **`window`**(시계열) | `{"encoding":"utf-8","max_rows":10000,"window":24}` |
 | `code` | `encoding` · `max_bytes` · `language` | |
 | `multimodal` | 위 어휘를 **파트별로** 선언 | `{"parts":{"image":{…},"text":{…}}}` |
 
@@ -425,6 +425,37 @@ gate_run PASSED → 바인딩 → 작업 COMPLETED (증적에 64차원 벡터, l
 > **곁다리로 확인된 것:** 이 사영은 262,144 파라미터라, 상한을 100,000 으로 등록했을 때
 > 계약 게이트가 `max_params` 에서 떨어졌다. **D-maxp 가 실제로 무는 것도 같이 보였다** —
 > 그리고 D-arch 에 갱신 경로가 없으므로 빈 볼륨에서 다시 등록해야 했다(설계대로).
+
+### `timeseries.forecast` — 세 번째 모달리티 어휘 (단계 6 ②)
+
+텍스트·이미지가 아닌 입력이 **같은 계약 형판**으로 도는지를 이 능력이 보인다.
+입력은 CSV 한 열 또는 JSON 숫자 배열, 출력은 **수치 배열 4개**.
+
+`window` 를 계약에 둔 이유: 모델이 보는 과거 길이가 바뀌면 **같은 가중치가 다른 것을 본다.**
+러너가 그대로 셀 수 있는 값이라 계약이 검증할 수 있다(토크나이저를 안 넣은 것과 같은 기준).
+
+**표본이 모자라면 던진다.** 0 으로 채우면 모델이 **없는 과거**를 본 것이 되고,
+터지지 않고 조용히 틀린 예측이 나온다.
+
+**학습 데이터는 규칙 생성**(추세+계절성+잡음). 외부 데이터가 0 이라 라이선스 검증에
+얹을 것이 없다. **실제 시계열 성능을 주장하지 않는다** — `quality_profile='none'` 이다.
+
+### 출력 이름은 **계약이 정한다**
+
+Node 가 보낸 필드명을 그대로 쓰면, 게이트가 검증한 출력(`forecast`)과 증적에 남는
+출력(`vector`)이 갈라진다 — **실제로 그랬다.** 지금은 Core 가 `capability.output_schema`
+의 `required` 첫 항목을 읽어 붙인다. Node 는 **값만 보내고 이름은 주장하지 못한다.**
+
+종단 실측 (2026-08-16 · 격리 스택 · `scripts/series_demo.sh`):
+
+```text
+OK   weights_fingerprint — 텐서 2개 · 파라미터 100
+OK   max_params — 100 <= 500000
+OK   preprocess — 선언 적용: encoding=utf-8 max_rows=10000 window=24
+OK   input_schema — 선언 전처리로 샘플 추론 성공 (280 bytes · series)
+OK   output_schema — 배열 4개가 계약을 만족한다
+gate_run PASSED → 바인딩 → 작업 COMPLETED · forecast=[3.624, 5.161, 5.987, 5.739]
+```
 
 ### 허용 아키텍처 등록 (D-arch)
 
