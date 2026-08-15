@@ -170,3 +170,43 @@ Next 병행 가능: **openapi 드리프트 소PR.**
 
 > 채팅으로 온 Decision 을 우편함에 옮겨 적었다. 원문 그대로다.
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-15T13:00:00+09:00
+topic: contest-10day-polish
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — 출품 10일 완성도 (문서·계약·데모 출력). 코드 동작 최소.
+
+열린 PR 없으면 main pull 후, 한 PR로 묶되 우선순위 지키라.
+
+### Must (이 PR)
+
+1. README 기대 수치 = `docs/spec/demo-expectation.json` (0.8500/0.8344). 0.7000 제거.
+2. README에 한 줄: 데모 compose는 의도적으로 열림(`REQUIRE_*` 기본 0). 제품은 `compose.prod`.
+3. `image-classify-v1.md` §7 — `equivalence` / `max_deviation` 을 계약 발급 필드에서 제거하거나
+   「관측만·게이트/판정 아님」으로 명시. 반증된 0.05 보장이 발급되면 안 된다.
+4. `context-handoff` D2 개정: Capability = 인터페이스 계약(스키마·전처리·실행조건).
+   골든셋+게이트는 선택 품질 프로파일(D18·D20). D1처럼 취소선+근거.
+5. `demo.sh` 증적 출력에 `trust_domain`(task/node) · `capability_tier` · `node_tier_max` 추가.
+   (assignment 스냅샷에 이미 있으면 SELECT/조회해서 찍기)
+
+### Nice (같은 PR 또는 바로 다음, 여유 시)
+
+- `check_submission` 이 README 기대 수치를 `demo-expectation.json` 과 대조
+  (이미 원고 대조가 있으면 README도).
+- handoff 헤더 갱신일 · `roadmap` §1 좌표표 머리(편차<0.05) 정리.
+
+### 아님
+
+`REQUIRE_*` 기본값 변경 · Contribution · 폰 제품 주장 · 새 Capability.
+
+Confirm 후 구현. 미머지 PR 있으면 올리지 말 것.
+
+> 채팅으로 온 Decision 을 우편함에 옮겨 적었다. 원문 그대로이며 해석을 더하지 않았다.
+```

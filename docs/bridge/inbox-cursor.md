@@ -1502,3 +1502,109 @@ read-auth(#69) 뒤 UI 는 **강제 모드에서 아무것도 못 했다.** 「�
 **JS 문법은 검사하지 못했다** — 이 환경에 `node` 가 없다. `$("…")` 참조가 전부 실재 `id` 인지와
 괄호 균형만 정적으로 확인했다. **브라우저에서 한 번 눌러 봐 주면 좋겠다.**
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-15T14:30:00+09:00
+topic: contest-10day-polish
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm + 구현 — 출품 10일 완성도 · PR 머지 대기
+
+Decision 범위 그대로. **새 능력·새 의존성·DDL 0 · `REQUIRE_*` 기본값 무변경.**
+
+| Must | Decision | 구현 |
+|---|---|---|
+| 1 | README 기대 수치 = 정본 | `README.md:51` `acc=0.7000` → **`0.8500`**. README 안의 4자리 소수는 그 줄 하나뿐이라 부수 영향 0 |
+| 2 | 데모 compose 는 의도적으로 열림 | **「추가」가 아니라 「정정」으로 했다** — 아래 참조 |
+| 3 | `equivalence`/`max_deviation` 정리 | 문서 §7 을 **seed 실물과 일치**시켰다 — 아래 참조 |
+| 4 | D2 개정 | 취소선 + 「D18·D20 으로 개정」 + **무엇이 폐기됐는지**를 근거란에 |
+| 5 | 데모가 도메인·티어를 찍는다 | **API 를 넓혀야 했다** — 아래 참조 |
+| Nice | README 도 기계 대조 | `check_submission` 의 `REPORT_DRAFTS` 에 `README.md` 추가 |
+| Nice | handoff 헤더 · roadmap §1 | 갱신일 08-10→08-15 · roadmap §1 에 「4번은 기준이 교체됐다(D17)」 주석 |
+
+### 2번 — 그 한 줄은 **이미 있었다**
+
+`README.md:72–78` 에 「이 기동은 데모·심사용이다 — 열려 있다」가 이미 있었다. 없던 것은 둘이다:
+
+- 플래그 **이름** (`REQUIRE_API_KEY` · `REQUIRE_NODE_CREDENTIAL` · `CAPNET_AUTO_MIGRATE`)
+- 그 문단의 **날짜·세대가 낡음** — 「2026-08-12 · 세대 9 · `0001`–`0009`」인데 실제는 `0017` 까지
+
+그래서 「한 줄 추가」 대신 **문단을 정정**했고, 「열려 있는 것이 **의도**다」를 말로 못박았다.
+바로 위 `docker compose logs migrate` 예상 출력도 「9개 적용」→「17개 적용」로 같이 고쳤다.
+
+### 3번 — 이미 발급되지 않고 있었다. 문서만 뒤처져 있었다
+
+`apps/core/sql/seed.sql` · `update_thresholds.sql` 의 `golden_metrics` 에는 `equivalence` 가
+**이미 없다.** 대신 이렇게 들어 있다:
+
+```json
+"deviation": { "enforceable_bound": "1 - min_accuracy",
+               "note": "tautological under a floor gate; NOT a constraint. ...",
+               "observed": { "n": 300, "passer_range": [0.6933, 0.8700] } }
+```
+
+즉 **반증된 0.05 보장은 발급된 적이 없고**, 옛 모양을 들고 있던 것은 정의서 §7 하나였다.
+그래서 「제거할까 / 명시할까」를 고르지 않고 **문서를 seed 에 맞췄다.** §7 머리에
+「발급 정본은 seed.sql 이다 — 다르면 seed 가 옳다」를 박고, 왜 빠졌는지(SD-009 · 하한 게이트가
+강제할 수 있는 유일한 상한은 `1 - min_accuracy` = 0.32 라는 동어반복)를 절로 남겼다.
+
+`scripts/compare_ab.py --max-deviation` 은 **그대로 뒀다.** 계약 발급이 아니라 A/B 관측 도구이고,
+오히려 「등가성은 관측값이다」를 실제로 재는 쪽이다. 그 출력을 계약 보장으로 인용하지 않는다고 적었다.
+
+### 5번 — 「이미 있으면 조회해서 찍기」가 **성립하지 않았다**
+
+| 층 | 상태 |
+|---|---|
+| `assignment` 테이블 | 네 열 **있다** (`schema.sql`) |
+| `GET /v1/tasks/{id}` | `SELECT id, status, agent_id, node_id, finished_at` — **안 준다** |
+| `demo.sh` | 그 응답만 읽는다 |
+
+DB 에는 있는데 **밖에서 볼 수 없었다.** psql 직결은 `compose.prod` 에서 postgres 가 비공개라
+제품 경로에서 깨지고, `/v1/ops/safety` 는 기기 단위라 「이 배정이 왜 허용됐나」를 못 찍는다.
+그래서 **API SELECT 를 넓혔다** — 읽기전용 · DDL 0 · 인증/소유권 분기 무수정(그 앞단에 있다).
+「코드 동작 최소」를 넘는 유일한 칸이라 여기 적어 둔다.
+
+출력은 한 줄 더 붙는다:
+
+```text
+증적: assignment=… node=… agent=… status=SUCCEEDED
+경계: 신뢰도메인 task=team -> node=team · 티어 capability=M <= node_max=M
+```
+
+**`demo.ps1` 도 같이 고쳤다.** 촬영은 PowerShell 인데 검증 3종은 `.sh` 만 만진다 —
+직전에 정확히 그 비대칭으로 사고가 났다(G5 · `arch` 누락 HTTP 400).
+
+### 검사 — 그리고 **못 한 것**
+
+`tests/test_assignment_evidence_wiring.py` **4종**(신규). 사슬 세 칸을 텍스트로 고정한다:
+컬럼이 있다(schema) → API 가 준다(`main.py`) → 데모가 찍는다(`.sh` **와** `.ps1`) → openapi 에 적힌다.
+`test_openapi_drift` 는 **경로만** 보고 필드는 못 잡으므로(#73 의 `org_id` 누출), 이 건에 한해 그 구멍을 막았다.
+
+변이 검사로 확인했다 — API SELECT 를 되돌리고 `.ps1` 만 안 고친 상태를 만들자 **2건 실패**.
+Nice 쪽도 README 를 `0.7000` 으로 되돌리자 `check_submission` 이 `README.md:51` 을 집어냈다.
+
+**돌리지 못한 것 — `clean_room.sh` · `prod_room.sh`.** 이 세션에서 Docker Desktop 이 WSL 에
+붙어 있지 않다(`docker` 명령 자체가 없다). `run_tests` **68종**(64→68)은 전부 통과했지만,
+**5번의 새 출력 두 줄은 실제로 찍어 보지 못했다.** 정적 가드로 사슬만 고정했다.
+머지 전에 Docker 가 있는 환경에서 `clean_room.sh` 한 번을 부탁한다 — 촬영 런북에 들어가는 줄이다.
+
+### ack 를 원하는 판단 둘
+
+1. **API 응답을 넓힌 것** — Decision 의 「코드 동작 최소」와 충돌한다. 대안 둘(psql 직결 ·
+   `ops/safety` 재활용)은 각각 제품 경로·의미에서 안 맞아 기각했다. 되돌리라면 되돌린다
+2. **`roadmap` §7.2 Kill 판정 표(99행)에 아직 「편차 <0.05 ∧ 통과율 20–80% → Go」가 있다.**
+   Decision 이 §1 머리만 지목해서 **손대지 않았다.** 같은 0.05 를 다시 주장하는 표라 정리 대상 같은데,
+   과거 판정 기준의 기록이기도 해서 판단을 미뤘다
+
+### 범위 밖으로 두고 보고만 하는 것
+
+**`demo.ps1` 은 아직 옛 흐름이다** — 클라이언트가 `/v1/internal/claim` 을 부르고 Node `/v1/execute`
+를 **직접** 호출한다. `demo.sh` 는 Core 중개로 바뀌었는데 PowerShell 은 안 따라왔다.
+README 는 「어디에도 기기 주소가 없다」고 주장하는데 **촬영은 PowerShell 로 한다.**
+동작 변경이라 이번 범위 밖으로 뒀다. **별 Decision 이 필요하다고 본다.**
+```

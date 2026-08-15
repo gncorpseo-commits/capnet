@@ -25,7 +25,7 @@ docker compose up --build -d          # 1~3분
 그 뒤 세대는 `migrations/`에 있으므로, `migrate`가 끝나야 `core`가 뜬다. 적용 결과를 보려면:
 
 ```bash
-docker compose logs migrate           # "완료 — 9개 적용" (재실행 시 "적용할 것 없음")
+docker compose logs migrate           # "완료 — 17개 적용" (재실행 시 "적용할 것 없음")
 ```
 
 **Linux / macOS**
@@ -48,7 +48,7 @@ powershell -ExecutionPolicy Bypass -File scripts/demo_violations.ps1
 
 | 스크립트 | 성공 신호 |
 |----------|-----------|
-| `demo` | `score status=PASSED acc=0.7000` · `demo OK` · **증적 한 줄** (assignment·node·agent·status) |
+| `demo` | `score status=PASSED acc=0.8500` · `demo OK` · **증적 두 줄** (assignment·node·agent·status + 신뢰 도메인·티어) |
 | `sanity` | 3종 전부 `FAILED` |
 | `demo_violations` | `NOTICE ... REJECTED` **6건** (각 줄에 거절한 제약 이름) |
 
@@ -67,10 +67,12 @@ curl -X POST localhost:8001/v1/execute -H 'content-type: application/json' \
 # -> HTTP 403  "assignment not leased to this node"
 ```
 
-> 빈 볼륨에서 clone → compose up → 위 세 스크립트가 통과하는 것을 **2026-08-12**에 확인했다 (스키마 세대 9 · 마이그레이션 `0001`–`0009`).
+> 빈 볼륨에서 clone → compose up → 위 세 스크립트가 통과하는 것을 **2026-08-15**에 확인했다 (스키마 세대 17 · 마이그레이션 `0001`–`0017`).
 >
-> **이 기동은 데모·심사용이다 — 열려 있다.** 관리 API 인증이 꺼져 있고, postgres가 호스트로 공개되고,
-> 마이그레이션이 자동으로 돈다. 제품으로 올릴 때는 오버레이로 그 셋을 뒤집는다:
+> **이 기동은 데모·심사용이며, 열려 있는 것이 의도다.** 강제 플래그가 **기본 0**이라 관리 API 인증
+> (`REQUIRE_API_KEY`)과 Node 증서 검증(`REQUIRE_NODE_CREDENTIAL`)이 꺼져 있고, postgres가 호스트로
+> 공개되고, 마이그레이션이 자동으로 돈다(`CAPNET_AUTO_MIGRATE=1`). 심사위원이 키 발급 없이 한 번에
+> 재현할 수 있게 한 선택이지, 강제 경로가 없어서가 아니다 — 제품은 오버레이로 그 넷을 뒤집는다:
 >
 > ```bash
 > docker compose -f compose.yaml -f compose.prod.yaml up -d

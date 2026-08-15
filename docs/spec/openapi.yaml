@@ -138,6 +138,11 @@ paths:
   /v1/tasks/{task_id}:
     get:
       summary: Task·현재 assignment·result_ref
+      description: >
+        자기 작업만 본다 (developer 이상은 자기 조직 안). 남의 것도 없는 것도 404.
+        `assignment` 에는 배정 시점 스냅샷 네 개가 함께 온다 —
+        `task_trust_domain`·`node_trust_domain`·`capability_tier`·`node_tier_max`.
+        DB 가 복합 FK 로 검증한 값이며, 「승인 도메인 안으로만 갔다」의 증적이다.
       parameters:
         - $ref: "#/components/parameters/TaskId"
       responses:

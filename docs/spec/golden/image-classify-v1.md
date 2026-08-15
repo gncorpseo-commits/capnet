@@ -170,17 +170,22 @@ EuroSAT 원본은 강한 모델이 **98%+** 를 낸다 → 통과율·편차 판
 
 ## 7. `golden_metrics`
 
+> **발급되는 값의 정본은 `apps/core/sql/seed.sql`** (와 `apps/core/sql/update_thresholds.sql`) 이다.
+> 아래는 그 값에서 **판정에 쓰이는 부분**을 옮긴 것이며, `guarantee`·`threshold_basis`·`dataset`
+> 블록은 길어서 생략했다 — 다르면 seed 가 옳다.
+
 ```json
 {
   "primary_metric": "accuracy",
   "min_accuracy": 0.68,
   "min_macro_f1": 0.65,
   "max_invalid_rate": 0.02,
+  "min_per_class_recall": 0.10,
   "combine": "AND",
-  "equivalence": {
-    "metric": "accuracy",
-    "max_deviation": 0.05,
-    "comparison": "paired_same_cases"
+  "deviation": {
+    "enforceable_bound": "1 - min_accuracy",
+    "note": "tautological under a floor gate; NOT a constraint. bounding pairwise deviation requires a banded pass criterion",
+    "observed": { "n": 300, "passer_range": [0.6933, 0.8700] }
   },
   "scoring_version": 1
 }
@@ -190,6 +195,20 @@ EuroSAT 원본은 강한 모델이 **98%+** 를 낸다 → 통과율·편차 판
 초기 가정은 0.75/0.72였다. TinyEuroSAT scratch N=40 실측은 acc≈0.70–0.725라 가정값이 위였고, 통과율 20–80% 조준으로 **0.68/0.65**로 보정했다.  
 seed / dummy plumbing PASSED와 혼동하지 않는다.  
 `scoring_version` 변경 시 해당 계약 Agent 전원 재게이트.
+
+### `equivalence`(`max_deviation: 0.05`)는 계약에서 **빠졌다**
+
+이 문서는 한때 `equivalence.max_deviation = 0.05` 를 발급 필드로 적고 있었다. **그 보장은 반증됐다** —
+하한형(floor) 게이트는 통과자 쌍의 편차를 유계로 만들지 못한다(SD-009). 홀드아웃 n=300 에서 통과자
+정확도가 0.6933–0.8700 으로 벌어졌고, 하한 게이트가 강제할 수 있는 유일한 상한은 `1 - min_accuracy`
+= 0.32 라는 **동어반복**이다. 편차를 실제로 묶으려면 하한이 아니라 **밴드형 통과 기준**이 필요하다.
+
+그래서 **D17** 이 등가성을 계약 조건에서 **관측값**으로 내렸고, **D18** 이 골든셋 게이트 자체를 선택적
+품질 프로파일로 내렸다. 발급되는 `golden_metrics` 에는 `equivalence` 가 **이미 없다**(seed 확인) —
+뒤처져 있던 것은 이 문서뿐이었고, 이번에 맞췄다.
+
+`scripts/compare_ab.py --max-deviation` 은 **그대로 둔다.** 그것은 계약 발급이 아니라 A/B **관측 도구**이며,
+「등가성은 관측값이다」를 실제로 재는 쪽이다. 그 출력(`proof_ab`)을 계약의 보장으로 인용하지 않는다.
 
 ---
 

@@ -97,3 +97,8 @@ $got = Invoke-RestMethod "$core/v1/tasks/$($t.id)"
 if ($got.status -ne "COMPLETED") { throw "task $($got.status)" }
 Write-Host "demo OK - real gate PASSED + scratch task COMPLETED"
 Write-Host ("label={0} assignment={1}" -f $e.label, $got.assignment.status)
+# 배정 시점 스냅샷 — .sh 와 같은 줄을 찍는다. 촬영은 PowerShell 이고,
+# 검증 3종은 .sh 만 만지므로 여기가 뒤처지면 촬영일에야 드러난다 (G5 회귀 전례).
+Write-Host ("경계: 신뢰도메인 task={0} -> node={1} · 티어 capability={2} <= node_max={3}" -f `
+    $got.assignment.task_trust_domain, $got.assignment.node_trust_domain, `
+    $got.assignment.capability_tier, $got.assignment.node_tier_max)
