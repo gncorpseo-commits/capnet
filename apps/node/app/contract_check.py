@@ -91,6 +91,22 @@ def _is_reference_arch(arch: str | None) -> bool:
     return arch in ARCH_REGISTRY
 
 
+def _modality_of(arch: str | None) -> str:
+    """arch 가 어느 모달리티인가 (단계 5).
+
+    `ARCH_MODALITY` 가 정본이다 — arch 는 Core 가 말한 값이고 게이트가 그 값으로
+    승인했으므로, 「승인한 것과 실행한 것이 같다」를 지키려면 여기서 갈라야 한다 (I1).
+    모르면 `image` 로 둔다 — 종전 동작이고, 이 함수는 참조 구현 경로에서만 불린다.
+    """
+    if not arch:
+        return "image"
+    try:
+        from app.tiny_cnn import ARCH_MODALITY
+    except ModuleNotFoundError:
+        return "image"
+    return ARCH_MODALITY.get(arch, "image")
+
+
 def _declaration_only(
     *, arch: str | None, max_params: int | None, contract: dict[str, Any],
     checks: dict[str, bool], notes: dict[str, str], fp: dict[str, Any] | None,
@@ -244,15 +260,21 @@ def run(
     # 3'. 계약이 전처리를 선언했는가. 선언이 없으면 애초에 게이트런이 시작되지 않지만
     #      (ck_gate_run_contract_needs_preprocess), 러너도 형식을 본다 — 값이 망가져 있으면
     #      적용 자체가 안 된다.
-    from app.preprocess import resolve_preprocess
+    from app.preprocess import resolve_preprocess, resolve_text_preprocess
 
+    modality = _modality_of(arch)
     declared = (contract.get("input_schema") or {}).get("preprocess")
     try:
-        size, space = resolve_preprocess(declared)
         if declared is None:
             raise ValueError("계약이 preprocess 를 선언하지 않았다")
+        if modality == "text":
+            enc, form, max_chars = resolve_text_preprocess(declared)
+            applied = f"encoding={enc} normalize={form} max_chars={max_chars}"
+        else:
+            size, space = resolve_preprocess(declared)
+            applied = f"resize={list(size)} colorspace={space}"
         checks["preprocess"] = True
-        notes["preprocess"] = f"선언 적용: resize={list(size)} colorspace={space}"
+        notes["preprocess"] = f"선언 적용: {applied}"
     except Exception as exc:
         checks["preprocess"] = False
         notes["preprocess"] = f"{type(exc).__name__}: {exc}"
@@ -263,14 +285,21 @@ def run(
     confidence: float | None = None
     if checks.get("arch") and checks.get("preprocess"):
         try:
-            from app.infer import predict_image
+            if modality == "text":
+                from app.infer_text import predict_text
 
-            label, confidence = predict_image(
-                weights, sample, arch=arch, max_params=max_params, preprocess=declared
-            )
+                label, confidence = predict_text(
+                    weights, sample, arch=arch, max_params=max_params, preprocess=declared
+                )
+            else:
+                from app.infer import predict_image
+
+                label, confidence = predict_image(
+                    weights, sample, arch=arch, max_params=max_params, preprocess=declared
+                )
             checks["input_schema"] = True
             notes["input_schema"] = (
-                f"선언 전처리로 샘플 추론 성공 ({Path(sample).stat().st_size} bytes)"
+                f"선언 전처리로 샘플 추론 성공 ({Path(sample).stat().st_size} bytes · {modality})"
             )
         except Exception as exc:
             checks["input_schema"] = False

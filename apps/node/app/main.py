@@ -286,6 +286,18 @@ def _my_assignment(assignment_id: uuid.UUID) -> dict[str, Any] | None:
     return None
 
 
+def _modality_of(arch: str | None) -> str:
+    """arch → 모달리티. 정본은 `ARCH_MODALITY` 다 (단계 5).
+
+    모르면 `image` — 종전 동작이고, legacy Agent(arch NULL)도 그쪽으로 간다.
+    """
+    if not arch:
+        return "image"
+    from app.tiny_cnn import ARCH_MODALITY
+
+    return ARCH_MODALITY.get(arch, "image")
+
+
 def _run(
     assignment_id: uuid.UUID,
     weights_sha256: str,
@@ -313,6 +325,10 @@ def _run(
     else:
         from app.infer import case_path, predict_image
 
+        # 어느 실행기로 갈지는 **arch** 가 정한다 (단계 5). Core 가 말한 값이고
+        # 게이트가 그 값으로 승인했으므로, 「승인한 것과 실행한 것이 같다」를 지킨다 (I1).
+        modality = _modality_of(arch)
+
         # D22: Core 가 받아 둔 입력이 있으면 그 바이트로 돈다. 없으면 종전 데모 경로
         # (caseId → Node 로컬 골든셋)로 그대로 떨어진다.
         meta = _input_meta(input_ref)
@@ -320,6 +336,12 @@ def _run(
         if meta is not None:
             fetched = _fetch_input(*meta)
             image_path = fetched
+        elif modality == "text":
+            # 텍스트에는 로컬 골든셋 폴백이 없다 — 입력은 Core 중개로만 온다 (D8′).
+            raise HTTPException(
+                status_code=400,
+                detail="text 실행에는 Core 가 중개한 입력이 필요하다 (inputSha)",
+            )
         else:
             cid = _case_id(input_ref)
             if not cid:
@@ -331,10 +353,21 @@ def _run(
         from app.infer import ResourceLimitExceeded
 
         try:
-            label, confidence = predict_image(
-                path, image_path, arch=arch, max_params=max_params,
-                preprocess=preprocess,
-            )
+            if modality == "text":
+                from app.infer_text import TextResourceLimitExceeded, predict_text
+
+                try:
+                    label, confidence = predict_text(
+                        path, image_path, arch=arch, max_params=max_params,
+                        preprocess=preprocess,
+                    )
+                except TextResourceLimitExceeded as exc:
+                    raise ResourceLimitExceeded(str(exc)) from exc
+            else:
+                label, confidence = predict_image(
+                    path, image_path, arch=arch, max_params=max_params,
+                    preprocess=preprocess,
+                )
         except ResourceLimitExceeded as exc:
             # 조용히 도는 것보다 터뜨리는 편이 낫다 — Core 가 FAILED 로 기록한다.
             raise HTTPException(status_code=422, detail=f"resource limit: {exc}") from exc

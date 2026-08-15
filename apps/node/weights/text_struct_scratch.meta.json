@@ -1,0 +1,22 @@
+{
+  "weights": "text_struct_scratch.safetensors",
+  "weights_sha256": "2437287ae2250eac74993e2640dac5847994f5e97b60637dd3dd88abbb681f25",
+  "arch": "TinyTextClassifier",
+  "pretrained": false,
+  "dataset": "synthetic-structural (규칙 생성 · 외부 말뭉치 없음)",
+  "labels": [
+    "email",
+    "url",
+    "ipv4",
+    "uuid",
+    "iso_date",
+    "plain"
+  ],
+  "train_samples": 6000,
+  "holdout_samples": 1200,
+  "epochs": 60,
+  "seed": 20260815,
+  "final_train_loss": 1.2699337005615234,
+  "holdout_accuracy": 0.9975000023841858,
+  "note": "text.classify 는 quality_profile='none' 이다 — 이 정확도는 기록일 뿐 제품의 품질 보장이 아니다. 골든셋도 채점 게이트도 없다."
+}

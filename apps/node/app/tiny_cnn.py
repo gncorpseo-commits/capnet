@@ -70,9 +70,28 @@ class TinyEuroSATB(nn.Module):
         return self.head(x)
 
 
+def _text_classifier() -> type[nn.Module]:
+    # 지연 import — 이미지 경로만 쓰는 곳에서 텍스트 모듈을 끌고 오지 않는다.
+    from app.tiny_text import TinyTextClassifier
+
+    return TinyTextClassifier
+
+
 ARCH_REGISTRY: dict[str, type[nn.Module]] = {
     "TinyEuroSAT": TinyEuroSAT,
     "TinyEuroSATB": TinyEuroSATB,
+    "TinyTextClassifier": _text_classifier(),
+}
+
+# arch → 모달리티. **실행기 디스패치의 정본이다** (단계 5).
+#
+# 전처리 어휘로도 짐작할 수 있지만(`is_text_preprocess`), 그건 계약만 있고 arch 를
+# 모를 때의 차선책이다. arch 는 Core 가 말한 값이고 게이트가 그 값으로 승인했으므로,
+# 「승인한 것과 실행한 것이 같다」를 지키려면 여기서 갈라야 한다 (I1).
+ARCH_MODALITY: dict[str, str] = {
+    "TinyEuroSAT": "image",
+    "TinyEuroSATB": "image",
+    "TinyTextClassifier": "text",
 }
 
 

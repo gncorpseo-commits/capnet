@@ -311,6 +311,64 @@ DB 행이므로 아무 arch 나 들어오지 못한다. 다만 **`agent_arch` �
 지금은 운영자가 DB 에 직접 넣어야 한다. 52개로 넓히려면 이 등록 경로가 필요하고,
 그건 **관리 API 이므로 별 Decision** 이다 (아무나 arch 를 늘리면 allowlist 가 무의미해진다).
 
+### 실행기 — 모달리티 디스패치 (단계 5)
+
+**`arch` 가 어느 실행기로 갈지 정한다** (`ARCH_MODALITY`). 전처리 어휘로 짐작할 수도 있지만
+(`is_text_preprocess`), 그건 계약만 있고 arch 를 모를 때의 차선책이다. `arch` 는 Core 가
+말한 값이고 게이트가 **그 값으로 승인**했으므로, 「승인한 것과 실행한 것이 같다」를
+지키려면 그쪽으로 갈라야 한다 (I1).
+
+| arch | 모달리티 | 실행기 |
+|---|---|---|
+| `TinyEuroSAT` · `TinyEuroSATB` | image | `app.infer.predict_image` |
+| `TinyTextClassifier` | text | `app.infer_text.predict_text` |
+
+**텍스트에는 `caseId` → 로컬 골든 폴백이 없다.** 입력은 Core 중개로만 온다 (D8′) —
+없으면 400 이다. 이미지 데모 경로(로컬 골든셋 40장)는 그대로 남는다.
+
+### `text.classify` 참조 구현 — 무엇을 주장하지 않는가
+
+`text.classify` 는 `quality_profile='none'` 이다. **골든셋도 채점도 없다 — 품질을 주장하지 않는다.**
+참조 모델(`text_struct_scratch.safetensors`)이 있는 이유는 「텍스트 모달리티가 계약 게이트와
+실행 경로를 통과한다」를 보이기 위해서지 분류 성능을 파는 것이 아니다.
+
+| | |
+|---|---|
+| 과제 | 짧은 문자열의 **구조** 6종 (`email`·`url`·`ipv4`·`uuid`·`iso_date`·`plain`) |
+| 학습 데이터 | **규칙으로 생성** — 외부 말뭉치 없음 (절대규칙 6 · 2차 라이선스 검증에 얹을 것이 없다) |
+| 구조 | 해시 문자 n-gram 가방 → `Linear`. **24,582 파라미터** |
+| 학습 | scratch · `scripts/train_text_scratch.sh` (CPU 수 초) |
+
+홀드아웃 정확도는 `.meta.json` 에만 남긴다. **제품 문구로 쓰지 않는다** —
+SD-008 의 교훈(학습셋으로 잰 값을 성능으로 말하지 않는다)과 같은 규율이다.
+
+해시는 `blake2b` 로 고정한다. 파이썬 `hash()` 는 **실행마다 값이 달라져서**
+(`PYTHONHASHSEED`) 학습한 모델을 다음 실행에서 못 쓴다 — 조용히 정확도만 떨어지는 종류의
+고장이라 `test_text_modality` 가 기준값으로 못박는다.
+
+### 종단 실측 — 계약 게이트까지 (2026-08-15 · 격리 스택)
+
+`scripts/text_demo.sh` 로 arch 등록 → 능력 등록 → 계약 샘플 → 계약 게이트 → 바인딩을 돌렸다.
+
+```text
+OK   weights_fingerprint — 텐서 2개 · 파라미터 24582
+OK   arch — TinyTextClassifier 로 로드 성공
+OK   max_params — 24582 <= 100000
+OK   preprocess — 선언 적용: encoding=utf-8 normalize=NFC max_chars=8000
+OK   input_schema — 선언 전처리로 샘플 추론 성공 (27 bytes · text)
+OK   output_schema — label='email' 이 계약을 만족한다
+gate_run PASSED
+```
+
+**⚠️ 작업 접수는 아직 막혀 있다.** `POST /v1/tasks` 가 `datasetId` 를 **무조건**
+allowlist 와 대조한다 (`ALLOWED_DATASET_IDS = {"eurosat-rgb"}`). 텍스트 작업에는 맞는
+`datasetId` 가 없고, `eurosat-rgb` 를 적으면 통과하지만 **증적에 거짓 데이터셋이 남는다.**
+
+D8′ 는 allowlist 를 「데모·카탈로그 **보조** 경로」로 남긴다고 했는데 코드에서는 아직
+**필수**다. Core 중개 입력(`inputId`)이 있으면 바이트는 이미 계약에 묶여 있고(복합 FK)
+해시·크기·MIME 도 검증됐으므로 그 경우 대조는 뜻이 없다. **정책이라 임의로 바꾸지 않았다** —
+Decision 이 필요하다.
+
 ### 허용 아키텍처 등록 (D-arch)
 
 `agent.arch` 는 `agent_arch` 를 FK 로 참조한다(`0008` · I1) — **허용 목록이 DB 행**이다.
