@@ -66,6 +66,7 @@
 
 ### spec
 - [schema.sql v4.4](./spec/schema.sql)
+- [능력 카탈로그 52](./spec/capability-catalog.md) — **제품 정본.** `code`·`output_kind`·기본 `quality_profile`·모달리티 `preprocess` 어휘·유통 세대. `test_capability_catalog` 가 정합을 고정한다
 - [OpenAPI YAML 초안 (S4)](./spec/openapi.yaml) — 런타임 `GET /openapi.yaml` · `/openapi.json`
 - [골든셋 image.classify@1](./spec/golden/image-classify-v1.md) (v0.4)
 - [데모 manifest N=40](./spec/golden/manifest-image-classify-v1.json)
