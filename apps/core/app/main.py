@@ -257,9 +257,20 @@ class ClaimBody(BaseModel):
 
 
 class CompleteBody(BaseModel):
+    """결과 보고.
+
+    `label` 이 선택인 것은 **모든 능력이 라벨을 내지 않기 때문**이다 (단계 6 ①).
+    임베딩은 벡터를 내고, 라벨 칸은 비어 있는 것이 사실이다 —
+    빈 문자열로 채우면 증적이 「라벨이 있었다」고 거짓말한다.
+
+    Node 는 둘 중 하나만 채운다. **둘 다 비면** Core 가 거절한다 —
+    아무것도 안 낸 실행이 COMPLETED 로 기록되면 안 된다.
+    """
+
     weights_sha256: str
-    label: str
+    label: str | None = None
     confidence: float | None = None
+    vector: list[float] | None = None
     dummy: bool = True
     duration_ms: int | None = None
 
@@ -1370,6 +1381,13 @@ def complete(
 
     heartbeat·assignments 와 달리 URL 에 node_id 가 없다 — assignment 를 통해 소유권을 확인한다.
     """
+    # 아무것도 안 낸 실행이 COMPLETED 로 기록되면 안 된다. dummy 는 예외 —
+    # 그쪽은 「placeholder 라 답을 못 낸다」가 이미 증적에 남는다.
+    if not body.dummy and body.label is None and body.vector is None:
+        raise HTTPException(
+            status_code=422, detail="label 또는 vector 중 하나는 있어야 한다",
+        )
+
     node = _authenticated_node(authorization)
     if node is not None:
         with get_conn() as conn:
@@ -1390,6 +1408,7 @@ def complete(
             weights_sha256=body.weights_sha256,
             label=body.label,
             confidence=body.confidence,
+            vector=body.vector,
             dummy=body.dummy,
             duration_ms=body.duration_ms,
         )

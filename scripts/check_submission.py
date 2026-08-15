@@ -39,6 +39,8 @@ REQUIRED_WEIGHTS = [
     "apps/node/weights/eurosat_scratch_b.safetensors",
     # text.classify 참조 모델 (단계 5). 학습 데이터는 규칙 생성 — 외부 말뭉치 없음.
     "apps/node/weights/text_struct_scratch.safetensors",
+    # text.embed 참조 사영 (단계 6 ①). 라벨 학습 없음 — 고정 시드 초기화.
+    "apps/node/weights/text_embed_scratch.safetensors",
 ]
 
 REQUIRED_FILES = ["LICENSE", "NOTICE", "THIRD-PARTY-LICENSES.md", "sbom.json"]

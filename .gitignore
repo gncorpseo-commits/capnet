@@ -11,11 +11,14 @@ artifacts/
 !apps/node/weights/eurosat_scratch_b.safetensors
 # text.classify 참조 모델 (단계 5) — 학습 데이터는 규칙 생성, 외부 말뭉치 없음
 !apps/node/weights/text_struct_scratch.safetensors
+# text.embed 참조 사영 (단계 6 ①) — 라벨 학습 없음
+!apps/node/weights/text_embed_scratch.safetensors
 # 실험 가중치의 meta 는 본체가 없으므로 커밋하지 않는다 (공개 2종만 예외)
 apps/node/weights/*.meta.json
 !apps/node/weights/eurosat_scratch.meta.json
 !apps/node/weights/eurosat_scratch_b.meta.json
 !apps/node/weights/text_struct_scratch.meta.json
+!apps/node/weights/text_embed_scratch.meta.json
 data/golden-n300-*/
 data/golden-G2/
 data/golden-V/

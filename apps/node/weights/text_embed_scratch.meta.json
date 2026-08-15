@@ -1,0 +1,12 @@
+{
+  "weights": "text_embed_scratch.safetensors",
+  "weights_sha256": "50e1e4128a1d74681d65a97ead0a842f00489d461a58c61b772632c754c023f2",
+  "arch": "TinyTextEmbedder",
+  "pretrained": false,
+  "dataset": "없음 — 라벨 학습을 하지 않는다 (고정 시드 초기화 사영)",
+  "embed_dim": 64,
+  "seed": 20260816,
+  "deterministic_same_input": true,
+  "differs_on_different_input": true,
+  "note": "이것은 학습된 임베딩이 아니다. 고정 시드 선형 사영이며 의미적 유사도를 주장하지 않는다. text.embed 는 quality_profile='none' 이라 골든셋도 채점도 없다."
+}

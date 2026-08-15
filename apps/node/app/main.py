@@ -316,6 +316,14 @@ def _run(
     """
     path = _resolve_weights(weights_sha256)
     dummy = _is_placeholder(path)
+    # 임베딩 능력은 라벨 대신 벡터를 돌려준다 (단계 6 ①).
+    #
+    # 셋 다 **여기서** 초기화한다. 임베딩 분기는 `label`·`confidence` 를 채우지 않는데,
+    # 아래 결과 보고가 그 이름들을 무조건 읽는다 — 초기화가 없으면
+    # `cannot access local variable 'label'` 로 배정이 전부 FAILED 가 된다 (실측했다).
+    label: str | None = None
+    confidence: float | None = None
+    vector: list[float] | None = None
     started = time.perf_counter()
     if dummy:
         with safe_open(path, framework="np") as fh:
@@ -353,14 +361,24 @@ def _run(
         from app.infer import ResourceLimitExceeded
 
         try:
-            if modality == "text":
-                from app.infer_text import TextResourceLimitExceeded, predict_text
+            if modality in ("text", "text_embed"):
+                from app.infer_text import TextResourceLimitExceeded
 
                 try:
-                    label, confidence = predict_text(
-                        path, image_path, arch=arch, max_params=max_params,
-                        preprocess=preprocess,
-                    )
+                    if modality == "text_embed":
+                        from app.infer_embed import embed_text
+
+                        vector = embed_text(
+                            path, image_path, arch=arch, max_params=max_params,
+                            preprocess=preprocess,
+                        )
+                    else:
+                        from app.infer_text import predict_text
+
+                        label, confidence = predict_text(
+                            path, image_path, arch=arch, max_params=max_params,
+                            preprocess=preprocess,
+                        )
                 except TextResourceLimitExceeded as exc:
                     raise ResourceLimitExceeded(str(exc)) from exc
             else:
@@ -388,6 +406,7 @@ def _run(
             "weights_sha256": weights_sha256,
             "label": label,
             "confidence": confidence,
+            "vector": vector,
             "dummy": dummy,
             "duration_ms": duration_ms,
         },
