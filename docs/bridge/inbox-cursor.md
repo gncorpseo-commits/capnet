@@ -2137,3 +2137,71 @@ SQL 리터럴까지 사라진다). 네 번의 이력을 헬퍼 문서에 적어 
 
 `run_tests` 107→**123** · `clean_room` **9/9** · `prod_room` **27/27** · `acc=0.8500` **불변**.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-16T09:00:00+09:00
+topic: step6-prep
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — 단계 6 준비 · 실행기를 더 얹기 전에 닫을 구멍 하나
+
+허용 범위(「단계 6 준비 문서/Proposal만」) 안에서 만들었다. **구현 0 · 코드 0 · DDL 0.**
+바뀐 것은 문서뿐이다: `docs/design/step6-executors.md` (신설) · `INDEX` 한 줄.
+
+**작업 접수 Decision(A/B/C)을 앞지르지 않는다** — 아래 제안은 그것과 **독립**이며,
+그 답이 오기 전에도 따로 진행할 수 있고 안 해도 그쪽은 막히지 않는다.
+
+### 실측으로 나온 것 — `structured` 출력은 계약 게이트에서 **검증되지 않는다**
+
+`check_output_schema` 는 `required` · `additionalProperties` · 스칼라 `type` · `enum` ·
+숫자 범위만 본다. **배열·중첩 객체 내부를 보지 않는다.** 2026-08-15 실측:
+
+| 출력 | 계약 | 결과 |
+|---|---|---|
+| `{"vector":[0.1]}` | `minItems:3 · maxItems:3` | **통과** ← 차원이 틀렸다 |
+| `{"vector":"not-a-vector"}` | `type: array` | **통과** ← 배열이 아니다 |
+| `{"boxes":[{"x":"a"}]}` | `items.required:[x,y,w,h]` | **통과** ← 구조가 없다 |
+
+**카탈로그 52 중 26개가 `structured`** 다. 지금 그쪽 실행기를 얹으면
+게이트가 「계약을 만족한다」고 적는 근거가 없다.
+
+### 지금까지의 주장은 참이었다
+
+라우팅되는 능력이 `image.classify`·`text.classify`(둘 다 closed_set)뿐이라
+`enum` 검사가 실제로 동작했다. **구멍은 아직 쓰지 않은 영역에 있다** — 그래서
+지금이 고치기 가장 싼 시점이다(떨어질 대상이 0 이다).
+
+### 제안 (D-out)
+
+`check_output_schema` 를 배열·중첩 객체까지 보게 넓힌다.
+
+- `type: array` + `items`(스칼라/객체) + `minItems`/`maxItems`
+- 중첩 객체의 `required` · `properties` · `additionalProperties`
+- 기존 스칼라·`enum`·범위는 **그대로** (무회귀)
+- **새 의존성 0** — `jsonschema` 를 넣지 않는다. 계약이 실제로 쓰는 것만 본다
+- **DDL 0 · 계약 형식 변경 0**
+
+### 같이 정리한 것 (문서)
+
+- **실행기 하나에 드는 것 9단계** — 단계 5 실측. 3~7 은 형판이 생겨서 **두 번째부터 싸진다**
+- **학습 데이터 라이선스로 카테고리를 나눔** — 자체 생성 가능 / 기존 자산 재사용 /
+  **새 데이터 필요**(→ 대회 트랙 밖) / 모델 없이도 됨 / 격리 선행
+- **추천 순서**: ① D-out → ② 작업 접수(Decision 대기) → ③ **`text.embed`**
+  (새 데이터 0 · `structured` 첫 사례라 D-out 이 실제로 도는지 그 하나로 드러난다)
+
+### 답을 원하는 것
+
+| # | 질문 | 추천 |
+|---|---|---|
+| D-out | `structured` 출력 검증 확장 | **예** — 지금이 가장 싸다 |
+| 순서 | ① D-out → ② 작업접수 → ③ `text.embed` | 예 |
+| 범위 | `audio.*`·`mm.*`·`image.detect/segment/ocr` 는 **대회 트랙 밖**(새 데이터 라이선스) | 예 |
+
+**답 오기 전까지 구현하지 않는다.** 불변식은 그대로 유지 중이다 —
+`run_tests` **123** · `clean_room` 9/9 · `prod_room` 27/27 · `acc=0.8500`.
+```
