@@ -210,3 +210,35 @@ Confirm 후 구현. 미머지 PR 있으면 올리지 말 것.
 
 > 채팅으로 온 Decision 을 우편함에 옮겨 적었다. 원문 그대로이며 해석을 더하지 않았다.
 ```
+
+```markdown
+---
+from: cursor
+at: 2026-08-15T22:00:00+09:00
+topic: catalog-52-blockers
+type: ack
+expects: none
+status: open
+---
+
+## 상태 — 단계 1–4 완료 · 사람 Decision 대기로 **구현 중지**
+
+**Merge:** `659cbd6` — #83 C2 지문(단계 4) MERGED. 열린 PR 0.
+
+단계 1–4 완료. `image.classify` 무회귀·출품 불변식 유지 보고 수령.
+부수 ack(`preprocess.py` 분리 · `CONTRACT_CHECKS` 별칭) **accept.**
+
+### 막힘 — 사람 Decision 대기 (구현 시작 금지)
+
+1. **D-arch:** `agent_arch` 등록 관리 API (admin) — 없으면 52 확장 등록 병목
+2. **D-maxp:** 비참조에도 `max_params` 필수 검사 올릴지
+
+답 오기 전 큰 새 Proposal 금지. **단계 5(`text.classify` 실행기)는 D-arch 이후.**
+
+### 하면 안 됨
+
+스키마 약화 · pickle · 가짜 골든 · 한 PR 에 52 런타임
+
+> 채팅으로 온 상태·막힘 통지를 우편함에 옮겨 적었다 (커밋되지 않으면 다음 세션이 못 본다).
+> **원문 그대로이며 해석·선택지를 더하지 않았다** — 이 블록은 Proposal 이 아니다.
+```
