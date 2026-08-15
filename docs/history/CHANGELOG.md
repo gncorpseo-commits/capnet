@@ -1,5 +1,50 @@
 # Changelog
 
+## 작업 접수 — 거짓말을 시키던 관문을 닫았다 (D8′ · Decision A) — 2026-08-16
+
+**DDL 0 · 새 의존성 0 · 데모 경로 무회귀.** 바뀐 것은 조건 한 줄이다.
+
+`POST /v1/tasks` 가 `datasetId` 를 **무조건** allowlist 와 대조했다. 텍스트 작업에는 맞는
+값이 없어서, 통과시키려면 `eurosat-rgb` 를 적어야 했다 — **증적에 없던 데이터셋이 남는다.**
+「내 데이터가 어디로 갔는지 답한다」가 제품 주장인데 그 답을 거짓으로 만드는 관문이었다.
+
+### 왜 건너뛰어도 되는가
+
+allowlist 는 **비통제 수집**을 막으려고 있다(D8′). `inputId` 가 있으면 바이트는 이미
+Core 를 거쳐 왔고, **수집 시점에 능력에 묶였으며**(`task_input.capability_id` 복합 FK)
+해시·크기·MIME 이 계약과 대조됐다. 그 경로에서 datasetId 를 다시 묻는 것은
+통제를 더하지 않는다 — **거짓말을 시킬 뿐이다.**
+
+### 무엇을 안 건드렸나
+
+**바이트를 받는 문(`POST /v1/inputs`)** — 계약·해시·크기·MIME 대조 그대로.
+「자유 업로드 경로를 만들지 않는다」(절대규칙 7)는 유지된다. 건너뛴 것은
+**작업 접수의 datasetId 대조** 하나뿐이고, 그것도 `inputId` 가 있을 때만이다.
+
+### 실측 (격리 스택)
+
+| 요청 | 결과 |
+|---|---|
+| `inputId` 없음 + allowlist 밖 | **400** — 종전대로 막힌다 |
+| `inputId` 없음 + `eurosat-rgb` | 200 — 데모 경로 무회귀 |
+| 없는 `inputId` | **404** — 건너뛰기가 무검증이 아니다 |
+| `inputId` 있음 + `text-demo` | **200 → COMPLETED** |
+
+### 텍스트가 완주했다
+
+```text
+label= url  confidence= 0.3115…
+증적: assignment=… node=…-030 agent=… status=SUCCEEDED
+경계: 신뢰도메인 task=team -> node=team · 티어 capability=M <= node_max=M
+```
+
+단계 5 에서 계약 게이트까지 갔던 경로가 **작업 완주까지** 이어졌다.
+정확도는 주장하지 않는다 — `quality_profile='none'` 이다.
+
+### 실측
+
+`run_tests` 141 → **147** · `clean_room` **9/9** · `prod_room` **27/27** · `acc=0.8500` 불변.
+
 ## structured 출력 검증 — 통과하던 넷이 떨어진다 (D-out) — 2026-08-16
 
 **새 의존성 0 · DDL 0 · 계약 형식 변경 0 · `closed_set` 판정 무회귀.**

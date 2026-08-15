@@ -80,26 +80,36 @@ echo "== 5) 계약 게이트 (team gate-runner 가 실행해서 판정) =="
 CORE_URL="$core" bash "$root/scripts/contract_bind.sh" \
   --agent "$agentId" --capability text.classify@1 --weights "$weights"
 
-cat <<'NOTE'
-
-== 6) 작업 실행은 여기서 막힌다 (보고) ==
-
-  POST /v1/tasks 는 datasetId 를 **무조건** allowlist 와 대조한다
-  (`apps/core/app/allowlist.py` · `ALLOWED_DATASET_IDS = {"eurosat-rgb"}`).
-
-    {"detail":"datasetId not allowlisted: text-demo"}   HTTP 400
-
-  텍스트 작업에는 맞는 datasetId 가 없다. `eurosat-rgb` 를 적으면 통과하지만
-  **증적에 거짓 데이터셋이 남는다** — 그래서 그렇게 하지 않았다.
-
-  D8′ 는 allowlist 를 「데모·카탈로그 **보조** 경로」로 남긴다고 했는데, 코드에서는
-  아직 **필수**다. Core 중개 입력(inputId)이 있으면 바이트는 이미 계약에 묶여 있고
-  (복합 FK) 해시·크기·MIME 도 검증됐으므로, 그 경우 datasetId 대조는 뜻이 없다.
-
-  **정책이라 임의로 바꾸지 않았다.** Decision 이 필요하다 — docs/bridge/inbox-cursor.md
-
-  여기까지: arch 등록 → 능력 등록 → 계약 샘플 → **계약 게이트 PASSED(실추론)** → 바인딩.
-  즉 「텍스트 모달리티가 계약 사슬을 탄다」는 성립하고, 남은 것은 작업 접수 한 칸이다.
-
-NOTE
+echo "== 6) 능력만 요구한다 — 기기 주소 없음 =="
+task_in="$(mktemp -t capnet-task-XXXXXX.txt)"
+printf 'https://capnet.example.org/docs/spec' > "$task_in"
+tin=$(ccurl -sf -X POST "$core/v1/inputs?capability=text.classify&version=1" \
+  -H 'content-type: text/plain' --data-binary @"$task_in")
+tid=$(printf '%s' "$tin" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+# datasetId 는 **참인 이름**을 적는다. inputId 가 있으므로 allowlist 는 건너뛴다
+# (D8′ · Decision A) — 통제는 수집 문에 걸려 있고, 여기서 또 물으면 거짓말을 시킨다.
+task=$(ccurl -sf -X POST "$core/v1/tasks" -H 'content-type: application/json' \
+  -d "{\"datasetId\":\"text-demo\",\"caseId\":\"url-1\",\"capability_code\":\"text.classify\",\"capability_version\":1,\"inputId\":\"$tid\"}")
+taskId=$(printf '%s' "$task" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+for _ in $(seq 1 60); do
+  tr="$(ccurl -sf "$core/v1/tasks/$taskId")"
+  st="$(printf '%s' "$tr" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
+  [[ "$st" == "COMPLETED" || "$st" == "FAILED" ]] && break
+  sleep 1
+done
+printf '%s' "$tr" | python3 -c 'import json,sys
+d=json.load(sys.stdin)
+if d["status"] != "COMPLETED":
+    raise SystemExit("task not completed: %s" % d["status"])
+res=json.loads(d["result_ref"]) if isinstance(d["result_ref"],str) else (d["result_ref"] or {})
+if res.get("dummy"):
+    raise SystemExit("execute was dummy")
+a=d["assignment"]
+print("text demo OK — 텍스트가 계약 게이트와 실행 경로를 완주했다")
+print("label=", res.get("label"), " confidence=", res.get("confidence"))
+print("증적: assignment=%s node=%s agent=%s status=%s" % (a["id"], a["node_id"], a["agent_id"], a["status"]))
+print("경계: 신뢰도메인 task=%s -> node=%s · 티어 capability=%s <= node_max=%s"
+      % (a["task_trust_domain"], a["node_trust_domain"], a["capability_tier"], a["node_tier_max"]))'
+rm -f "$sample" "$task_in"
+echo
 echo "품질은 주장하지 않는다 — quality_profile='none' 이라 골든셋도 채점도 없다."

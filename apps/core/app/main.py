@@ -909,10 +909,24 @@ def capability_revoke(body: RevokeBody, authorization: str | None = Header(defau
 @app.post("/v1/tasks")
 def create_task(body: TaskCreate, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     actor = _require("user", authorization)
-    try:
-        assert_dataset_id(body.dataset_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    # D8′ · Decision A — **Core 가 중개한 입력이면 allowlist 를 건너뛴다.**
+    #
+    # allowlist 는 「비통제 수집」을 막으려고 있다. `inputId` 가 있으면 바이트는 이미
+    # Core 를 거쳐 왔고, **수집 시점에 능력에 묶였으며**(`task_input.capability_id` 복합 FK)
+    # 해시·크기·MIME 이 계약과 대조됐다. 그 경로에서 datasetId 를 다시 묻는 것은
+    # 통제를 더하지 않는다 — 오히려 **거짓말을 시킨다.**
+    #
+    # 실제로 그랬다: 텍스트 작업에는 맞는 datasetId 가 없어서, 통과시키려면
+    # `eurosat-rgb` 를 적어야 했다. 그러면 증적에 **없던 데이터셋**이 남는다 —
+    # 「내 데이터가 어디로 갔는지 답한다」를 스스로 깨는 것이다.
+    #
+    # 지금은 요청자가 `text-demo` 처럼 **참인 이름**을 적고 그대로 증적에 남는다.
+    # 「비통제 수집 금지」는 그대로다 — 바이트를 받는 문(`POST /v1/inputs`)은 안 건드렸다.
+    if body.input_id is None:
+        try:
+            assert_dataset_id(body.dataset_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     ref: dict[str, Any] = {"datasetId": body.dataset_id, "caseId": body.case_id}
     with get_conn() as conn:
