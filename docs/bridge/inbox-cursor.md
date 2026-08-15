@@ -1698,3 +1698,187 @@ status: open
 - `roadmap` §7.2 Kill 표(99행)의 「편차 <0.05 → Go」는 **여전히 안 건드렸다**(#75 때와 같음).
   ② 가 정해지면 같이 정리하는 게 맞다고 본다
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-15T21:00:00+09:00
+topic: capability-catalog-52
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — 능력 카탈로그 52 확장 (등록·계약·집행)
+
+> **PROTOCOL 예외를 먼저 밝힌다.** PR #77 이 미머지인데 큰 새 제안을 올린다 —
+> 「일정 브레이크만 해제 · Decision 부터」라는 **사람의 명시 지시**가 있었기 때문이다.
+> 규칙을 내가 풀지 않았다. 구현은 여전히 Confirm 일치 후에만 한다.
+
+**절대규칙은 하나도 건드리지 않는다.** 아래 어디에도 스키마 약화·pickle 허용·비통제 수집·
+Node 자가등급·제출자 Node 채점은 없다. **이 블록에는 DDL·정책 숫자 구현이 없다** — 제안뿐이다.
+
+---
+
+### 0. 먼저 — 코드를 읽고 확인한 사실 둘
+
+**① 52개 「등록」은 지금도 된다. DDL 이 필요 없다.**
+
+`capability` 는 이미 `output_kind ∈ {closed_set_labels, structured, freeform}` 를 갖고 있고,
+D20(`0010`)이 `quality_profile='none'` + 센티널을 깔아 뒀다. `text.summarize@1` 을
+`quality_profile='none'` · `output_kind='freeform'` 으로 **오늘 INSERT 할 수 있다.**
+
+**② 그런데 그 능력은 라우팅되지 않는다. 계약 게이트를 통과할 방법이 없다.**
+
+이게 진짜 병목이고, 이 Proposal 의 중심이다.
+
+| 검사 (`gate.py:44` `CONTRACT_CHECKS`) | 지금 구현 | 이미지 밖에서 |
+|---|---|---|
+| `arch` | `ARCH_REGISTRY` = **`TinyEuroSAT`·`TinyEuroSATB` 둘뿐** | allowlist 밖 → `False` |
+| `max_params` | torch `p.numel()` | arch 실패 시 자동 `False` |
+| `preprocess` | `{resize:[w,h], colorspace}` — **이미지 어휘** | 오디오·텍스트에 뜻이 없다 |
+| `input_schema` | `predict_image(샘플)` **실추론** | 이미지가 아니면 못 돈다 |
+| `output_schema` | 라벨 enum 검증 | freeform 에 뜻이 약함 |
+
+그리고 `gate.py:306` 이 **5종 전부 present + 전부 true** 를 요구한다. 하나라도 빠지면 거절.
+→ `agent_capability_passed` 미발급 → `assignment` FK 위반 → **라우팅 불가.**
+
+**결론: 「52개 확장」은 카탈로그 작업이 아니라 「계약 게이트를 모달리티에 일반화하는」 작업이다.**
+
+---
+
+### 1. Decision A — 카탈로그 52를 제품 정본으로 채택
+
+`docs/spec/capability-catalog.md` 를 **문서 정본**으로 신설. 코드·DDL 0.
+각 항목에 `code · 분류 · output_kind · 기본 quality_profile · 유통 세대`.
+
+`output_kind` 배정안 (전부 나열 — 분기 생략하지 말라는 지시대로):
+
+| output_kind | 개수 | 능력 |
+|---|---|---|
+| `closed_set_labels` | **10** | `image.classify` · `video.classify` · `text.classify` · `text.moderate` · `audio.classify` · `mm.classify` · `doc.classify` · `agent.route` · `safety.classify` · `safety.malware_hint` |
+| `structured` | **26** | `image.detect` · `image.segment` · `image.embed` · `image.ocr` · `image.quality` · `video.detect` · `video.embed` · `video.transcribe` · `text.extract` · `text.ner` · `text.embed` · `text.rank` · `audio.transcribe` · `audio.embed` · `audio.diarize` · `speech.synthesize` · `mm.embed` · `table.extract` · `timeseries.forecast` · `timeseries.anomaly` · `code.embed` · `tool.plan` · `tool.action` · `safety.pii` · `retrieve.dense` · `retrieve.rerank` |
+| `freeform` | **16** | `image.caption` · `video.summarize` · `text.summarize` · `text.generate` · `text.translate` · `text.rewrite` · `text.qa` · `text.chat` · `speech.translate` · `mm.qa` · `mm.generate` · `doc.summarize` · `doc.qa` · `code.complete` · `code.generate` · `code.review` |
+
+**기본은 `quality_profile='none'` + 계약 게이트.** 골든은 `closed_set_labels` 10개에만 **선택**.
+`agent.route` 가 closed-set 인 것은 우연이 아니다 — 후보 집합이 선언돼 있으면 채점 가능하다.
+
+**`safety.malware_hint` 의 이름을 그대로 둔다.** `_hint` 는 「탐지」가 아니라 「참고」다.
+AV 가 아니며 그렇게 팔지 않는다 (§5).
+
+### 2. Decision B — 카테고리별 계약 템플릿 (`preprocess` 어휘)
+
+`preprocess` 는 **러너가 적용할 수 있는 선언**이어야 한다(0014 · B2 가 세운 규율).
+모달리티마다 어휘가 다르므로 축을 **모달리티 × output_kind** 로 나눈다.
+
+| 모달리티 | `preprocess` 키 | 비고 |
+|---|---|---|
+| image | `resize:[w,h]` · `colorspace` | **기존 그대로** — `image.classify@1` 무변경 |
+| video | `fps` · `max_frames` · `resize` · `colorspace` | 프레임 추출 후 image 규칙 재사용 |
+| audio | `sample_rate_hz` · `channels` · `max_seconds` | |
+| text | `encoding` · `normalize`(NFC) · `max_chars` | **토크나이저는 계약에 넣지 않는다** — 모델별이라 검증 불가 |
+| doc/table | `encoding` · `max_pages` \| `max_rows`·`max_cols` | |
+| code | `encoding` · `max_bytes` · `language` | |
+| multimodal | 위 어휘의 **합집합**, 파트별 선언 | |
+
+**`mediaTypes` 는 이미 `input_schema` 에 있고 강제된다**(B1 핫픽스 — 미선언이면 업로드 400).
+모달리티별 MIME allowlist 를 카탈로그에 못박는다.
+
+### 3. Decision C — **여기가 진짜 결정이다.** 계약 게이트의 실행 가능 범위
+
+B2 가 세운 원칙은 **「계약을 말로 받지 않는다 — 러너가 실행해서 판정한다」** 였다.
+그런데 그 원칙은 **우리 코드가 그 모달리티를 실행할 수 있을 때만** 성립한다.
+`text.generate` 를 실행하려면 **제출자의 코드**가 필요하고, 그건 절대규칙 5·유통 세대와 정면으로 만난다.
+
+| 안 | 내용 | 얻는 것 | 잃는 것 |
+|---|---|---|---|
+| **C1** | `ARCH_REGISTRY` 를 모달리티별 **참조 구현**으로 확장 (팀이 등록) | B2 원칙 100% 유지 · 코드 실행 위험 0 | **52개를 못 따라간다.** 사실상 우리가 만든 arch 만 유통 |
+| **C2** | `arch` 실추론을 **가중치 지문 검증**으로 대체 — safetensors 를 로드해 **텐서 키·shape·dtype 집합**을 계약 선언과 대조. 코드 실행 없음 | 임의 모델을 **격리 없이** 검증 가능 · 절대규칙 5 안에 있다(safetensors 로드는 코드 실행이 아니다) | **「실행해서 판정」이 약해진다.** 「그 파일이 그 구조다」까지만 말할 수 있고 「그 계약대로 동작한다」는 못 말한다 |
+| **C3** | 격리 러너(v제품-2)에서 제출자 코드 실행 | B2 원칙 유지 + 임의 모델 | **격리가 선행**이다. 유통 문서 §67 이 이미 v제품-2 전제로 못박아 뒀다 |
+
+**추천: C2 를 지금, C3 를 목표로.** 근거 —
+
+- C2 는 **격리 없이 갈 수 있는 최대치**다. 「무엇이 로드되는지」는 검증하고, 「어떻게 동작하는지」는
+  **보장하지 않는다고 문서에 적는다.** 없는 보장을 파는 것보다 낫다
+- C1 은 정직하지만 지시(「52 전부」)를 못 지킨다
+- C3 는 옳지만 격리가 없다 — **격리 없이 열면 유통 주장 자체가 거짓**이 된다
+
+**C2 를 고르면 `CONTRACT_CHECKS` 가 모달리티별로 달라진다.** 지금은 5종 고정 튜플이라
+**여기에 DDL/코드 변경이 필요하다 → 별 Decision.** 초안:
+
+- **공통 4** — `input_schema`(선언 정합) · `output_schema` · `preprocess`(선언 적용 가능) · `weights_fingerprint`(C2)
+- **torch 참조 구현일 때만 +2** — `arch` · `max_params` (기존 `image.classify` 는 **6종 전부**라 무변경)
+
+### 4. Decision D — 등록 → 계약 → 라우팅 경로 (변경 없음을 확인)
+
+`POST /v1/capabilities` → `POST /v1/agents`(`arch` 필수 · G5) → `bindings` →
+**team gate-runner** 가 `kind='contract'` 게이트런 → `agent_capability_passed` → `claim` 배정.
+
+**이 경로는 바꾸지 않는다.** 절대규칙 8(게이트는 team gate-runner 만) 유지.
+늘어나는 것은 **러너가 무엇을 검사하는가**(§3)뿐이다.
+
+### 5. Decision E — 보안 기준선 (지시대로 **사실만**)
+
+**「AV 필수 스캔」은 지금 없다. 있다고 주장하지 않는다.**
+
+| 있는 것 | 근거 |
+|---|---|
+| safetensors 형식 봉쇄 (`.pt`/`.pth`/pickle 거부) | 절대규칙 5 · `assert_safetensors` |
+| `weights_sha256` 바인딩 + Node 로컬 재해싱 | 안전 사슬 6·7 |
+| placeholder 감지 | SD-015 · `0005` |
+| 입력 MIME·크기·해시 | B1 · D8′ |
+
+**제안 (별 Decision):**
+
+1. **형식 allowlist 를 카탈로그에 명시** — 모달리티별 허용 MIME. 지금은 능력별로 흩어져 있다
+2. **AV 스캔은 「선택 · 미구현」으로 문서에 박는다.** 넣을지 말지는 Decision.
+   넣는다면 **업로드 시점 Core 중개 경로**(D8′)에 붙는 게 맞다 — Node 가 아니라
+3. **`tool.action` 은 카탈로그에 올리되 유통 잠금.** `code.generate`·`tool.plan` 도 산출물이
+   실행되는 순간 같은 문제다. **v제품-2(격리) 전에는 등록만 가능·라우팅 불가**로 두자는 제안 —
+   집행 방법은 `trust_domain_min='team'` 고정이 가장 싸다(DDL 0)
+
+### 6. Decision F — freeform 에 골든을 못 붙이게 (**구멍 발견**)
+
+`ck_capability_mvp_scoreable` 은 `mvp_eligible` 만 묶는다. **`quality_profile='golden'` +
+`output_kind='freeform'` 은 지금 통과한다** — `capability.py` 에도 막는 곳이 없다.
+즉 **요약 능력에 가짜 골든을 달고 「품질 보장」이라 쓸 수 있다.** 지시가 금지한 바로 그것이다.
+
+**제안:** `CHECK (quality_profile <> 'golden' OR output_kind <> 'freeform')` **추가**.
+제약 **추가**는 절대규칙 1 이 허용한다. **DDL 이므로 Decision 후에만.**
+
+### 7. Decision G — 구현 순서 (한 PR 에 52 런타임 금지 — 지시 반영)
+
+| 단계 | 내용 | DDL |
+|---|---|---|
+| **1** | 카탈로그 문서 정본 + `output_kind` 배정 52 | 0 |
+| **2** | §6 CHECK 추가 + `capability.py` 검증 | **DDL 1** |
+| **3** | 모달리티별 `preprocess` 어휘 + 계약 템플릿 (문서 + 검증기) | 0 |
+| **4** | `CONTRACT_CHECKS` 를 모달리티별로 (C2 지문 검사 신설) | 0~1 |
+| **5** | 카테고리별 실행기 — **텍스트 1종부터**(`text.classify`, closed-set 이라 골든도 가능) | 0 |
+| **6** | 나머지 카테고리 실행기 순차 | 0 |
+
+**1–3 은 출품 트랙과 경합이 거의 없다**(문서·검증기). **4–6 은 경합한다** — 트랙 분리는 §8.
+
+### 8. 출품 트랙과의 관계 (지시 5 반영 — **중지하지 않는다**)
+
+이 확장은 **멈추지 않는다.** 다만 `image.classify@1` 경로에 손대면 촬영이 깨진다.
+그래서 **불변식**을 건다: 이 확장의 어느 PR 도 **`clean_room` 9/9 · `prod_room` 27/27 ·
+골든 `acc=0.8500` 을 깨지 않는다.** 깨지면 그 PR 을 되돌린다. 문서상 트랙은 나누되
+코드 게이트는 **하나**로 둔다 — 두 벌로 나누면 한쪽이 조용히 썩는다.
+
+---
+
+### 답을 원하는 것
+
+| # | 질문 | 내 추천 |
+|---|---|---|
+| A | 카탈로그 52 정본 채택 | **채택** (DDL 0) |
+| B | 모달리티별 `preprocess` 어휘 | **채택** (image 무변경) |
+| **C** | **계약 게이트 실행 범위 C1/C2/C3** | **C2 지금 · C3 목표** ← 가장 중요 |
+| E | AV = 「선택 · 미구현」 명시 · `tool.action` 유통 잠금 | **둘 다 예** |
+| F | freeform+golden 금지 CHECK 추가 | **예** (제약 추가) |
+| G | 단계 1→6 순서 | **예**, 1–3 먼저 |
+
+**C 가 정해지기 전에는 4단계 이후를 시작하지 않는다.** 1–3 은 C 와 무관하므로
+ack 만 주면 먼저 깔 수 있다. 지시하면 그렇게 한다.
+```
