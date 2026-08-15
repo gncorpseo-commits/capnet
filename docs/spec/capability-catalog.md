@@ -248,7 +248,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 | `weights_fingerprint` | safetensors 헤더의 텐서 이름·shape·dtype → 구조 sha256 | **같다** |
 | `preprocess` | 선언을 **적용해** 추론 | 선언이 **읽히는지**만 |
 | `input_schema` | 계약 샘플로 **실추론** | `mediaTypes` **선언 정합**만 |
-| `output_schema` | 실제 출력을 계약과 대조 | 스키마 **선언 정합**만 |
+| `output_schema` | 실제 출력을 계약과 대조 (**배열·중첩 객체까지** · D-out) | 스키마 **선언 정합**만 |
 | `max_params` | 로드 후 torch 로 셈 | **지문의 shape 합계로 셈** (D-maxp) |
 | `arch` | 모델을 세워 로드 | **보고하지 않는다** |
 
