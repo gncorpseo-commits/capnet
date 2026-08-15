@@ -40,39 +40,107 @@ from pathlib import Path
 from typing import Any
 
 
-def check_output_schema(out: dict[str, Any], schema: dict[str, Any]) -> tuple[bool, str]:
-    """출력이 계약을 만족하는가. jsonschema 를 쓰지 않는다 — 새 의존성 0.
+# 계약이 실제로 쓰는 JSON Schema 어휘만 손으로 본다. `jsonschema` 를 넣지 않는다 —
+# 이 리포는 새 의존성을 늘리지 않는다(THIRD-PARTY 한 줄이 늘 따라붙는다).
+_TYPE_CHECKS: dict[str, Any] = {
+    # bool 은 파이썬에서 int 의 하위형이라 number/integer 에서 먼저 걸러야 한다.
+    "boolean": lambda v: isinstance(v, bool),
+    "integer": lambda v: isinstance(v, int) and not isinstance(v, bool),
+    "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+    "string": lambda v: isinstance(v, str),
+    "array": lambda v: isinstance(v, list),
+    "object": lambda v: isinstance(v, dict),
+}
 
-    계약이 실제로 쓰는 것만 본다: `required` · `properties.enum` · 숫자 범위 ·
-    `additionalProperties: false`. 계약에 없는 규칙은 검사하지 않는다.
+
+def _validate(value: Any, spec: dict[str, Any], path: str) -> str | None:
+    """계약 조각 하나를 검사한다. 통과면 None, 아니면 **사유 문자열.**
+
+    사유에 경로(`boxes[0].x`)를 넣는 이유: `structured` 출력은 중첩이라
+    「어디가 틀렸는지」가 없으면 제출자가 고칠 수 없다.
     """
+    kind = spec.get("type")
+    if kind in _TYPE_CHECKS and not _TYPE_CHECKS[kind](value):
+        return f"{path} 는 {kind} 이어야 한다 (받은 값: {type(value).__name__})"
+
+    allowed = spec.get("enum")
+    if allowed is not None and value not in allowed:
+        return f"{path}={value!r} 은 enum 밖이다"
+
+    # 숫자 범위. bool 은 위에서 걸렀지만 type 선언이 없을 수도 있어 여기서도 뺀다.
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        lo, hi = spec.get("minimum"), spec.get("maximum")
+        if lo is not None and value < lo:
+            return f"{path}={value} < minimum {lo}"
+        if hi is not None and value > hi:
+            return f"{path}={value} > maximum {hi}"
+
+    if isinstance(value, list):
+        lo, hi = spec.get("minItems"), spec.get("maxItems")
+        if lo is not None and len(value) < lo:
+            return f"{path} 원소 {len(value)}개 < minItems {lo}"
+        if hi is not None and len(value) > hi:
+            return f"{path} 원소 {len(value)}개 > maxItems {hi}"
+        items = spec.get("items")
+        if isinstance(items, dict):
+            for i, item in enumerate(value):
+                why = _validate(item, items, f"{path}[{i}]")
+                if why:
+                    return why
+
+    if isinstance(value, dict) and (spec.get("properties") or spec.get("required")
+                                    or spec.get("additionalProperties") is False):
+        why = _check_object(value, spec, path)
+        if why:
+            return why
+    return None
+
+
+def _check_object(obj: dict[str, Any], schema: dict[str, Any], path: str) -> str | None:
     props = schema.get("properties") or {}
+    prefix = f"{path}." if path else ""
     for key in schema.get("required") or []:
-        if key not in out:
-            return False, f"required 누락: {key}"
+        if key not in obj:
+            return f"required 누락: {prefix}{key}"
     if schema.get("additionalProperties") is False:
-        extra = [k for k in out if k not in props]
+        extra = [k for k in obj if k not in props]
         if extra:
-            return False, f"허용되지 않은 필드: {', '.join(extra)}"
-    for key, value in out.items():
+            return f"허용되지 않은 필드: {', '.join(prefix + e for e in extra)}"
+    for key, value in obj.items():
         spec = props.get(key)
         if not isinstance(spec, dict):
             continue
-        kind = spec.get("type")
-        if kind == "string" and not isinstance(value, str):
-            return False, f"{key} 는 string 이어야 한다"
-        if kind == "number" and not isinstance(value, (int, float)):
-            return False, f"{key} 는 number 이어야 한다"
-        allowed = spec.get("enum")
-        if allowed is not None and value not in allowed:
-            return False, f"{key}={value!r} 은 enum 밖이다"
-        if isinstance(value, (int, float)):
-            lo, hi = spec.get("minimum"), spec.get("maximum")
-            if lo is not None and value < lo:
-                return False, f"{key}={value} < minimum {lo}"
-            if hi is not None and value > hi:
-                return False, f"{key}={value} > maximum {hi}"
-    return True, "ok"
+        why = _validate(value, spec, f"{prefix}{key}")
+        if why:
+            return why
+    return None
+
+
+def check_output_schema(out: dict[str, Any], schema: dict[str, Any]) -> tuple[bool, str]:
+    """출력이 계약을 만족하는가. `jsonschema` 를 쓰지 않는다 — 새 의존성 0.
+
+    ## 무엇을 보나
+
+    `required` · `additionalProperties` · `type` · `enum` · 숫자 범위(`minimum`/`maximum`) ·
+    **배열**(`items` · `minItems` · `maxItems`) · **중첩 객체**(재귀).
+
+    ## 왜 넓혔나 (D-out)
+
+    전에는 스칼라만 봤다. 그래서 `structured` 출력에서 **차원이 틀린 벡터 · 배열이 아닌 값 ·
+    구조가 없는 박스 목록이 전부 통과**했다(2026-08-15 실측). 카탈로그 52 중 **26개**가
+    `structured` 라, 그쪽 실행기를 얹기 전에 닫아야 했다.
+
+    닫기 가장 싼 시점이었다 — 그때 `structured` 로 라우팅되는 능력이 **하나도 없어서**
+    떨어질 대상이 없었다. `closed_set_labels` 두 능력의 판정은 **바뀌지 않는다**(무회귀).
+
+    ## 무엇을 보지 않나
+
+    계약에 없는 규칙은 검사하지 않는다. `$ref` · `oneOf` · `pattern` · `format` 은
+    지금 어느 계약도 쓰지 않으므로 **모르는 채로 통과시킨다** — 아는 척하지 않는다.
+    쓰기 시작하면 그때 넓힌다.
+    """
+    why = _check_object(out, schema, "")
+    return (False, why) if why else (True, "ok")
 
 
 def _is_reference_arch(arch: str | None) -> bool:
