@@ -2065,3 +2065,75 @@ status: open
 
 `run_tests` 95→**107** · `clean_room` **9/9** · `prod_room` **27/27** · `acc=0.8500` **불변**.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-16T06:00:00+09:00
+topic: step5-text-executor
+type: confirm
+expects: decision
+status: open
+---
+
+## 단계 5 구현 — text.classify 실행기 · **막힌 칸 하나는 Decision 필요**
+
+**DDL 0 · 새 의존성 0 · 무회귀 · 52 런타임 없음.**
+
+### 된 것 — 이미지 밖 모달리티가 계약 사슬을 탄다
+
+실행기 디스패치는 **`arch → ARCH_MODALITY`** 다. 전처리 어휘로 짐작하지 않는다 —
+`arch` 는 Core 가 말한 값이고 게이트가 **그 값으로 승인**했기 때문이다 (I1).
+
+종단 실측(`scripts/text_demo.sh`): arch 등록 → 능력 등록(`quality_profile='none'`) →
+계약 샘플(Core 중개) → **계약 게이트 6종 전부 PASSED**(실추론 `label='email'`) → 바인딩.
+
+### 학습 데이터를 **생성**했다 (라이선스 0)
+
+구조 분류 6종(`email`·`url`·`ipv4`·`uuid`·`iso_date`·`plain`). **규칙으로 만든다** —
+외부 말뭉치가 0 이라 절대규칙 6·2차 라이선스 검증에 새로 얹을 것이 없다.
+해시 n-gram → `Linear` · **24,582 파라미터** · scratch.
+
+**품질을 주장하지 않는다** — `quality_profile='none'` 이라 골든셋도 채점도 없다.
+홀드아웃 정확도는 `.meta.json` 에만 남기고 제품 문구로 쓰지 않는다.
+
+## Decision 요청 — `POST /v1/tasks` 의 `datasetId` allowlist
+
+**여기서 막힌다.** `assert_dataset_id` 가 **무조건** 돈다
+(`ALLOWED_DATASET_IDS = {"eurosat-rgb"}`). 텍스트 작업에는 맞는 `datasetId` 가 없다.
+
+`eurosat-rgb` 를 적으면 통과하지만 **증적에 거짓 데이터셋이 남는다.** 그건 「내 데이터가
+어디로 갔는지 답한다」를 스스로 깨는 것이라 하지 않았다.
+
+**D8′ 와 코드가 어긋나 있다.** D8′ 는 allowlist 를 「데모·카탈로그 **보조** 경로」로
+남긴다고 했는데, 코드에서는 **모든 task 의 필수 관문**이다.
+
+| 안 | 내용 | 위험 |
+|---|---|---|
+| **A** | `inputId` 가 있으면 `datasetId` 대조를 **건너뛴다** | 낮음. 바이트가 이미 계약에 묶여 있고(복합 FK) 해시·크기·MIME 이 검증됐다. 「비통제 수집 금지」는 그대로 |
+| **B** | `datasetId` 를 **선택 필드**로 (없으면 대조 안 함) | A 와 비슷하나 `TaskCreate` 계약이 바뀐다 |
+| **C** | allowlist 에 값을 추가 (`text-demo` 등) | **반대.** 모달리티마다 가짜 데이터셋 이름이 늘고, allowlist 가 뜻을 잃는다 |
+
+**추천은 A.** 「입력이 Core 중개로 왔으면 그 경로의 통제가 이미 걸려 있다」가 D8′ 의 논리
+그대로다. 정책 변경이라 **혼자 정하지 않았다.**
+
+### ack 를 원하는 판단 셋
+
+1. **과제를 「구조 분류」로 골랐다** — 외부 말뭉치가 필요 없는 과제여야 라이선스가 안 붙는다
+2. **`blake2b` 로 해시를 고정하고 기준값으로 못박았다** — `hash()` 는 실행마다 달라져
+   학습한 모델을 못 쓰게 만든다(터지지 않고 정확도만 떨어진다)
+3. **가중치를 커밋했다** (96KB) — `.gitignore` 예외와 `REQUIRED_WEIGHTS` 에 추가했다.
+   안 커밋하면 `text_demo.sh` 가 아무 데서나 안 돈다
+
+### 검사가 설명을 잡는 사고 — 네 번째. **한 곳으로 모았다**
+
+`tests/_srcguard.py` 신설. `ast` 로 주석·docstring 만 비운다(삼중따옴표를 통째로 지우면
+SQL 리터럴까지 사라진다). 네 번의 이력을 헬퍼 문서에 적어 뒀다.
+
+**그리고 변이 검사가 내 검사를 또 잡았다** — 「`PYTHONHASHSEED` 를 바꿔 하위 프로세스로
+확인」이 변이를 넣어도 통과했다(낡은 `__pycache__`). 기준값 고정으로 바꿔 **3/3** 잡힌다.
+
+### 출품 불변식
+
+`run_tests` 107→**123** · `clean_room` **9/9** · `prod_room` **27/27** · `acc=0.8500` **불변**.
+```

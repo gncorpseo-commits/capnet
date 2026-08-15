@@ -37,6 +37,8 @@ FORBIDDEN_TRACKED = [
 REQUIRED_WEIGHTS = [
     "apps/node/weights/eurosat_scratch.safetensors",
     "apps/node/weights/eurosat_scratch_b.safetensors",
+    # text.classify 참조 모델 (단계 5). 학습 데이터는 규칙 생성 — 외부 말뭉치 없음.
+    "apps/node/weights/text_struct_scratch.safetensors",
 ]
 
 REQUIRED_FILES = ["LICENSE", "NOTICE", "THIRD-PARTY-LICENSES.md", "sbom.json"]

@@ -24,7 +24,6 @@
 
 from __future__ import annotations
 
-import ast
 import importlib
 import re
 import sys
@@ -32,6 +31,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _srcguard import code_only as _code_only  # noqa: E402
 MAIN = ROOT / "apps" / "core" / "app" / "main.py"
 ARCH = ROOT / "apps" / "core" / "app" / "arch.py"
 
@@ -40,37 +41,6 @@ try:
     _HAS_PSYCOPG = True
 except ModuleNotFoundError:
     _HAS_PSYCOPG = False
-
-
-def _code_only(path: Path) -> str:
-    """**주석과 docstring 을 걷어낸** 소스.
-
-    설명 문구가 검사를 만족시키면 안 된다. 이 리포에서 그 사고가 세 번 났다 —
-    `test_ui_invariants` 의 `localStorage`, `0018` 의 `NOT VALID`, 그리고 여기의
-    `ON CONFLICT`(「ON CONFLICT DO NOTHING 으로 넘기지 않는다」는 설명이 잡혔다).
-
-    삼중따옴표를 통째로 지우지는 **않는다** — SQL 이 삼중따옴표 리터럴이라
-    같이 지우면 `UPDATE`·`DELETE` 검사가 무력해진다. `ast` 로 **docstring 만** 고른다.
-    """
-    src = path.read_text(encoding="utf-8")
-    lines = src.splitlines()
-    tree = ast.parse(src)
-    doc_lines: set[int] = set()
-    for node in ast.walk(tree):
-        if not isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
-            continue
-        body = getattr(node, "body", None)
-        if not body:
-            continue
-        first = body[0]
-        if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) \
-                and isinstance(first.value.value, str):
-            doc_lines.update(range(first.lineno, (first.end_lineno or first.lineno) + 1))
-    kept = [
-        "" if (i + 1) in doc_lines else ln.split("#", 1)[0]
-        for i, ln in enumerate(lines)
-    ]
-    return "\n".join(kept)
 
 
 class TestEndpointDiscipline(unittest.TestCase):
