@@ -28,6 +28,11 @@ docker compose up --build -d          # 1~3분
 docker compose logs migrate           # "완료 — 17개 적용" (재실행 시 "적용할 것 없음")
 ```
 
+> **이 저장소를 이미 한 번 띄운 적이 있다면 `docker compose down -v` 로 볼륨까지 지우고 시작한다.**
+> `-v` 없는 `down` 은 postgres 볼륨을 남기고, 그러면 초기화 스크립트가 **아예 돌지 않아**
+> `migrate` 가 `0005` 에서 멈춘다 (`placeholder 가중치 Agent 에 라우팅 증서가 아직 … 남아 있다`).
+> 처음 clone 한 경우에는 해당 없다.
+
 **Linux / macOS**
 
 ```bash
