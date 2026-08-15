@@ -1,5 +1,79 @@
 # Changelog
 
+## 능력 카탈로그 52 — 계약 표면 · freeform 골든 금지 — 2026-08-15
+
+Decision 2 의 단계 1–3. **이미지 분류 하나만 도는 것은 제품이 아니다**는 지시를 표면부터 넓혔다.
+
+### 카탈로그는 병목이 아니었다
+
+먼저 확인한 사실 — **52개 「등록」은 지금도 된다. DDL 이 필요 없다.** D20(`0010`)이
+`output_kind` 3종과 `quality_profile='none'` + 센티널을 이미 깔아 뒀기 때문이다.
+
+**막히는 곳은 라우팅이다.** 계약 게이트가 이미지·torch 전용이라(`ARCH_REGISTRY` 는
+`TinyEuroSAT`·`TinyEuroSATB` 둘뿐, `preprocess` 어휘는 `{resize, colorspace}`,
+`input_schema` 검사는 `predict_image` 실추론) `text.summarize` 는 게이트를 통과할 방법이 없다.
+그건 단계 4 에서 다룬다. 이번 PR 은 **표면과 규율**이다.
+
+### 잴 수 없는 것에 점수를 붙일 수 있었다
+
+`ck_capability_mvp_scoreable` 은 **`mvp_eligible` 만** 묶는다. 그래서
+`output_kind='freeform'` + `quality_profile='golden'` 이 **DB 에서도 앱에서도 통과했다.**
+요약 능력에 골든셋 40건과 `min_accuracy` 를 달고 「품질 하한을 보장한다」고 쓸 수 있었다는 뜻이다.
+
+**골든셋의 알려진 세 구멍과는 다른 종류의 문제다.** 그 셋(표본·분포·게이밍)은
+「측정이 약하다」이고, 이건 **「측정이 아예 없는데 있는 척한다」**이다. 요약문은 맞다/틀리다로
+갈리지 않으므로 골든셋 정의서 §6 의 채점 규칙이 애초에 성립하지 않는다.
+
+`0018` 이 `ck_capability_golden_scoreable` 을 **추가**한다(절대규칙 1 — 추가만).
+**`structured` 는 막지 않는다** — 임베딩·검출·랭킹은 원리적으로 잴 수 있다(코사인·IoU·nDCG).
+채점기가 없다는 것과 못 잰다는 것은 다르다.
+
+DB 실측:
+
+| 시도 | 결과 |
+|---|---|
+| `freeform` + `golden` | **REJECTED** — `ck_capability_golden_scoreable` |
+| `structured` + `golden` | **통과** (막힌 것이 freeform 뿐임을 확인) |
+
+### 산출물이 실행되는 셋은 격리 전에 열지 않는다
+
+`code.generate` · `tool.plan` · `tool.action` — 모델이 위험한 게 아니라 **출력의 용도**가 그렇다.
+격리 없이 열면 실행이 Node 밖으로 나가므로 「승인 도메인 안에서만 돈다」가 무의미해진다.
+
+**집행에 새 제약을 만들지 않았다.** `trust_domain_min='team'` 으로만 등록하면
+`domain_compatible` 이 이미 tenant·public 배정을 막는다 — **있는 축을 쓴다.**
+
+`code.complete`·`code.review` 는 잠그지 않았다. 산출물이 사람에게 보여지는 텍스트이고
+자동 실행 경로가 없기 때문이다. 그 구분이 흐려지면 그때 다시 잠근다.
+
+### AV 는 없다 — 있다고 쓰지 않는다
+
+카탈로그 §7 에 **「바이러스 검사(AV)는 없다」**를 박고, 있는 것(safetensors 봉쇄 ·
+`weights_sha256` 바인딩 · placeholder 감지 · 입력 MIME/크기/해시)만 나열했다.
+`safety.malware_hint` 능력이 카탈로그에 있는 것은 **AV 가 있다는 뜻이 아니다** — 그건
+사용자가 호출하는 능력이지 플랫폼의 통제가 아니다.
+
+### 토크나이저를 계약에 넣지 않았다
+
+텍스트 `preprocess` 에서 `max_tokens` 를 쓰고 싶어지지만 넣지 않았다. 토큰화는 모델마다
+다르고, **계약이 검증할 수 없는 값을 계약에 적으면 「선언은 있는데 아무도 확인 안 하는 칸」**이
+된다 — `preprocess` 가 `0013` 에서 정확히 그 상태였고 그래서 필수 검사에서 빠졌었다.
+길이는 러너가 그대로 셀 수 있는 `max_chars` 로 선언한다.
+
+### 검사가 또 주석을 잡을 뻔했다
+
+`assertNotIn("NOT VALID", …)` 가 「NOT VALID 로 우회하지 않는다」라고 적어 둔 **주석**을 잡았다.
+`test_ui_invariants` 에서 겪은 것과 같은 모양이라 `strip_sql_comments` 로 고쳤다.
+
+**반대 방향도 났다.** 앱 소스 가드가 「왜 막는지」 설명한 **주석에 만족해**, 정작 `raise` 를
+지워도 통과했다 — 변이 검사에서 드러났다. 주석을 걷어내고 `output_kind == "freeform"` 분기
+자체를 보게 고쳤다. **변이 4종 전부 잡히는 것을 확인했다.**
+
+### 실측
+
+`run_tests` 68 → **79** · `clean_room` **9/9** · `prod_room` **27/27** ·
+마이그레이션 **18개 적용 · 체크섬 일치** · 골든 `acc=0.8500` 불변.
+
 ## A/B 자막 확정 · README 재실행 함정 — 2026-08-15
 
 Decision 1(안 **B**)과 ack 를 그대로 구현했다. **코드 변경 0.**

@@ -123,6 +123,19 @@ def create_capability(
         if mvp_eligible:
             raise ValueError("quality_profile='none' cannot be mvp_eligible")
     else:
+        # ck_capability_golden_scoreable (0018): 골든은 **채점 가능한 출력**에만.
+        #
+        # freeform 은 정답 집합을 정의할 수 없다 — 요약문이 「맞다/틀리다」로 갈리지 않으므로
+        # 골든셋 정의서 §6 의 채점 규칙(결정적·부분점수 없음·퍼지 매칭 금지)이 성립하지 않는다.
+        # 잴 수 없는 것에 점수를 붙이고 그 점수로 품질 보장을 파는 경로를 여기서 끊는다.
+        #
+        # DB 도 같은 것을 막지만 여기서 먼저 거절해 **어느 제약인지** 말해 준다.
+        # structured 는 막지 않는다 — 채점기가 아직 없을 뿐 원리적으로는 잴 수 있다.
+        if output_kind == "freeform":
+            raise ValueError(
+                "quality_profile='golden' requires a scoreable output_kind "
+                "(freeform has no answer set) — ck_capability_golden_scoreable"
+            )
         missing = [
             n for n, v in (
                 ("golden_set_ref", golden_set_ref),
