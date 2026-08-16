@@ -133,6 +133,24 @@ def lease_detail(conn: psycopg.Connection, assignment_id: uuid.UUID) -> dict[str
     return dict(row) if row else None
 
 
+# 계약이 요구하는 출력 키. `required` 의 첫 항목을 쓴다 — 배열 하나를 내는 능력들이
+# 실제로 그 모양이다(`vector` · `forecast`). 못 읽으면 `vector` 로 떨어진다.
+OUTPUT_KEY_SQL = """
+SELECT c.output_schema -> 'required' AS required
+  FROM assignment a
+  JOIN capability c ON c.id = a.capability_id
+ WHERE a.id = %(assignment_id)s
+"""
+
+
+def _output_key(conn: psycopg.Connection, assignment_id: uuid.UUID) -> str:
+    row = conn.execute(OUTPUT_KEY_SQL, {"assignment_id": str(assignment_id)}).fetchone()
+    required = row["required"] if row else None
+    if isinstance(required, list) and required and isinstance(required[0], str):
+        return required[0]
+    return "vector"
+
+
 def complete_assignment(
     conn: psycopg.Connection,
     *,
@@ -163,7 +181,10 @@ def complete_assignment(
     if confidence is not None:
         result["confidence"] = confidence
     if vector is not None:
-        result["vector"] = vector
+        # **이름은 계약이 정한다.** Node 가 보낸 필드명을 그대로 쓰면, 게이트가
+        # 검증한 출력(`forecast`)과 증적에 남는 출력(`vector`)이 갈라진다 —
+        # 「승인한 것과 실행한 것이 같다」가 깨진다. Node 는 값만 보내고 이름은 여기서 붙인다.
+        result[_output_key(conn, assignment_id)] = vector
 
     task = conn.execute(
         MARK_TASK_SQL,

@@ -328,14 +328,21 @@ def run(
     # 3'. 계약이 전처리를 선언했는가. 선언이 없으면 애초에 게이트런이 시작되지 않지만
     #      (ck_gate_run_contract_needs_preprocess), 러너도 형식을 본다 — 값이 망가져 있으면
     #      적용 자체가 안 된다.
-    from app.preprocess import resolve_preprocess, resolve_text_preprocess
+    from app.preprocess import (
+        resolve_preprocess,
+        resolve_table_preprocess,
+        resolve_text_preprocess,
+    )
 
     modality = _modality_of(arch)
     declared = (contract.get("input_schema") or {}).get("preprocess")
     try:
         if declared is None:
             raise ValueError("계약이 preprocess 를 선언하지 않았다")
-        if modality in ("text", "text_embed"):
+        if modality == "series":
+            enc, max_rows, window = resolve_table_preprocess(declared)
+            applied = f"encoding={enc} max_rows={max_rows} window={window}"
+        elif modality in ("text", "text_embed"):
             enc, form, max_chars = resolve_text_preprocess(declared)
             applied = f"encoding={enc} normalize={form} max_chars={max_chars}"
         else:
@@ -354,7 +361,13 @@ def run(
     vector: list[float] | None = None
     if checks.get("arch") and checks.get("preprocess"):
         try:
-            if modality == "text_embed":
+            if modality == "series":
+                from app.infer_series import forecast_series
+
+                vector = forecast_series(
+                    weights, sample, arch=arch, max_params=max_params, preprocess=declared
+                )
+            elif modality == "text_embed":
                 # 출력이 라벨이 아니라 **벡터**다. 계약 검증도 enum 이 아니라
                 # 차원·원소 타입을 본다 (D-out 이 실제로 무는 첫 사례).
                 from app.infer_embed import embed_text
@@ -388,7 +401,9 @@ def run(
     # 4. 그 출력이 계약을 만족하는가.
     if checks.get("input_schema"):
         if vector is not None:
-            out: dict[str, Any] = {"vector": vector}
+            # 임베딩은 `vector`, 예측은 `forecast` — 계약이 부르는 이름으로 담는다.
+            key = "forecast" if _modality_of(arch) == "series" else "vector"
+            out: dict[str, Any] = {key: vector}
         else:
             out = {"label": label}
             if confidence is not None:
@@ -397,7 +412,7 @@ def run(
         checks["output_schema"] = ok
         if ok:
             notes["output_schema"] = (
-                f"벡터 {len(vector)}차원이 계약을 만족한다" if vector is not None
+                f"배열 {len(vector)}개가 계약을 만족한다" if vector is not None
                 else f"label={label!r} 이 계약을 만족한다"
             )
         else:

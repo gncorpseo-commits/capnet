@@ -121,7 +121,7 @@ D8′ 는 allowlist 를 「보조 경로」라 했는데 코드는 **필수 관�
 | **2** | **G-task** (Decision 후) | 이미지 밖 작업이 완주하려면 필수 |
 | ~~**3**~~ | ~~**`text.embed`**~~ → **완료 (2026-08-16)** | `structured` 첫 사례. `output_schema — 벡터 64차원이 계약을 만족한다` 로 G-out 이 실제로 무는 것을 확인 |
 | **4** | `image.embed` | 기존 EuroSAT 자산 재사용. 이미지 형판 그대로 |
-| **5** | `table.extract` · `timeseries.forecast` | 자체 생성 가능 · 새 모달리티 어휘를 두 번째로 시험 |
+| ~~**5**~~ | ~~`timeseries.forecast`~~ → **완료 (2026-08-16)** · `table.extract` 는 남음 | 세 번째 모달리티 어휘(`table`)가 같은 형판으로 돌았다 |
 | — | `audio.*` · `mm.*` · `image.detect/segment/ocr` | **대회 트랙 밖.** 새 데이터 라이선스가 필요하다 |
 | — | `code.generate` · `tool.*` | **v제품-2 격리 전 금지** |
 
