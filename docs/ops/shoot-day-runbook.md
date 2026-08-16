@@ -20,7 +20,7 @@
 cd C:\Users\wjsto\pjt\capnet
 docker compose down -v          # ← -v 가 없으면 촬영 30분 전에 막힌다. 아래 참조
 docker compose up --build -d
-docker compose logs migrate --tail 5    # "완료 — 17개 적용" 을 눈으로 확인하고 넘어간다
+docker compose logs migrate --tail 5    # "완료 — 18개 적용" 을 눈으로 확인하고 넘어간다
 # health
 Invoke-RestMethod http://127.0.0.1:8000/health
 Invoke-RestMethod http://127.0.0.1:8001/health
@@ -80,6 +80,26 @@ Invoke-RestMethod http://127.0.0.1:8001/health
 **둘째 줄이 제품 주장 그 자체다.** 첫 줄은 「무엇이 돌았나」이고, 둘째 줄은 「**왜 거기서 돌아도
 되는가**」다 — 그 네 값은 앱이 계산한 게 아니라 배정 시점에 DB 가 복합 FK 로 검증해 박아 둔
 스냅샷이다. 자막 3번(「DB 가 라우팅을 거절합니다」)의 **긍정형 증거**이므로 같이 잡는다.
+
+---
+
+## 1-A. 촬영에 **넣지 않는** 것 (2026-08-16 추가)
+
+단계 5–6 으로 실행기가 늘었다. `scripts/` 에 데모가 넷 더 있다 —
+`text_demo.sh` · `embed_demo.sh` · `series_demo.sh` · `image_embed_demo.sh`.
+
+**넷 다 촬영에 넣지 않는다.** 이유는 셋이다.
+
+1. **3분에 안 들어간다.** 지금 타임라인이 이미 180초를 다 쓴다
+2. **전부 `.sh` 다.** 촬영은 PowerShell 이고, 이 넷은 PowerShell 판이 없다
+3. **품질을 주장하지 않는 능력들이다** (`quality_profile='none'`). 화면에 띄우면
+   시청자는 성능을 본 것으로 읽는다 — 자막으로 막기 어려운 오해다
+
+영상의 주장은 그대로다: **능력만 요구 · 승인 도메인 안 라우팅 · 실행 증적.**
+「능력이 여럿이다」는 보고서에서 글로 말하고, 영상은 한 능력으로 사슬을 보인다.
+
+> 심사위원이 저장소를 열면 이 데모들이 보인다. 그건 문제가 아니다 —
+> 각 스크립트가 **스스로 「무엇을 주장하지 않는지」를 마지막 줄에 출력**한다.
 
 ---
 
@@ -150,16 +170,22 @@ Invoke-RestMethod http://127.0.0.1:8001/health
 ## 촬영 전 기계 점검
 
 ```bash
-bash scripts/run_tests.sh                 # 단위 68 + 골든셋 정합 + 출품 점검 21
+bash scripts/run_tests.sh                 # 단위 191 + 골든셋 정합 + 출품 점검 24
 bash scripts/clean_room.sh                # 빈 볼륨 9종 — 촬영 환경과 같은 조건
 bash scripts/prod_room.sh                 # 강제 프로파일 27종
 python3 scripts/check_submission.py       # 패키징 직전 (워킹트리 깨끗함 포함)
-bash scripts/migrate.sh status            # 스키마 세대 확인 (17)
+bash scripts/migrate.sh status            # 스키마 세대 확인 (18)
 ```
 
-**2026-08-15 실측 (`main` = `ec9db6b`):** `run_tests` **68** · `check_submission` **21/21** ·
-`clean_room` **9/9** · `prod_room` **27/27** · 골든 `acc=0.8500` `f1=0.8344`.
+**2026-08-16 실측 (`main` = `b1cecc5`):** `run_tests` **191** · `check_submission` **24/24** ·
+`clean_room` **9/9** · `prod_room` **27/27** · 마이그레이션 **18개 적용 · 체크섬 일치** ·
+골든 `acc=0.8500` `f1=0.8344` · 패키지 **2.2 MB / 상한 50 MB**.
 `clean_room`·`prod_room` 은 `.sh` 라 **WSL 에서** 돌린다 — 촬영 전날 한 번이면 된다.
+
+> **검사 수는 계속 늘어난다.** 단계 6 실행기를 하나 얹을 때마다 단위 검사가 붙기 때문이다
+> (68 → 191). **숫자가 위와 달라도 그 자체는 이상이 아니다** — 봐야 할 것은
+> 「전부 통과」와 `clean_room` 9/9 · `prod_room` 27/27 · `acc=0.8500` 이다.
+> 이 표를 「같아야 하는 값」으로 읽지 않는다.
 
 `check_submission.py` 가 보는 것: 금지 산출물 미동봉 · 필수 가중치 유지 · 라이선스 4종 ·
 사전학습 미사용 선언(meta) · 의존성 THIRD-PARTY 등재 · 시크릿 · 상대 링크 · 골든셋 정본 1개 ·
