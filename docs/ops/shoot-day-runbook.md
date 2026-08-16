@@ -1,7 +1,7 @@
 # 촬영일 런북 (3분 영상)
 
 **목적:** 스토리보드([`demo-video-storyboard.md`](./demo-video-storyboard.md))를 **명령 순서**로 고정.  
-**갱신:** 2026-08-15  
+**갱신:** 2026-08-17  
 > **리허설 1회 완료 (2026-08-14).** 아래 타임라인 명령을 순서대로 돌려 전부 재현했다 —
 > `demo.sh` PASSED `acc=0.8500` · sanity 3종 FAILED · 위반 **6종 REJECTED** ·
 > `proof_ab.sh` A/B 둘 다 완결 · 증적 줄 출력. 그 과정에서 **`demo.ps1`·`smoke_w1.ps1` 이
