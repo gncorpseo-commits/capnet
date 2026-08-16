@@ -71,7 +71,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 | 1 | `image.classify` | image | `closed_set_labels` | **golden** | v제품-1 ✅ **구현됨** |
 | 2 | `image.detect` | image | `structured` | none | v제품-1 |
 | 3 | `image.segment` | image | `structured` | none | v제품-1 |
-| 4 | `image.embed` | image | `structured` | none | v제품-1 |
+| 4 | `image.embed` | image | `structured` | none | v제품-1 ✅ **구현됨** |
 | 5 | `image.caption` | image | `freeform` | none | v제품-1 |
 | 6 | `image.ocr` | image | `structured` | none | v제품-1 |
 | 7 | `image.quality` | image | `structured` | none | v제품-1 |
@@ -456,6 +456,44 @@ OK   input_schema — 선언 전처리로 샘플 추론 성공 (280 bytes · ser
 OK   output_schema — 배열 4개가 계약을 만족한다
 gate_run PASSED → 바인딩 → 작업 COMPLETED · forecast=[3.624, 5.161, 5.987, 5.739]
 ```
+
+### `image.embed` — 이미지가 `structured` 를 낸다 · **새 가중치 0** (단계 6 ③)
+
+그동안 **이미지 모달리티는 `closed_set_labels` 만** 냈다. 「이미지 × structured」는
+검증된 적이 없는 조합이었고, 미검증 조합에서 형판이 깨지는 것을 이미 두 번 봤다.
+
+**기존 `eurosat_scratch.safetensors` 를 그대로 쓴다.** 임베딩은 그 파일의 **앞부분**
+(합성곱 트렁크)이므로 새로 학습할 것도 커밋할 것도 없다 — G-data 의 「기존 자산 재사용」이
+실제로 무엇인지 보이는 사례다. **패키지가 커지지 않는다.**
+
+**`strict=False` 를 쓰지 않는다.** 분류기 머리를 버려야 하니 손쉬운 길이지만,
+그러면 **트렁크 키가 하나 빠져 있어도 조용히 통과한다** — 랜덤 초기화된 층으로 추론하면서
+벡터는 그럴듯하게 나온다. 키를 명시적으로 걸러 내고 **기대한 키가 전부 있는지 확인한 뒤**
+strict 로 넣는다.
+
+**계약 게이트가 실행기와 같은 로더를 쓴다.** 처음엔 게이트가 `load_state_dict` 를 그대로
+불러 머리 텐서에서 떨어졌다 — **통과할 수 있는 Agent 를 게이트가 떨어뜨린 것**이다.
+검증과 실행이 갈리면 어느 쪽이든 틀린다.
+
+**전처리는 분류와 같은 함수**(`load_image_tensor`)를 쓴다. 픽셀 상한도 그 안에 있다 —
+임베딩만 상한이 없으면 그쪽으로 큰 이미지가 들어온다.
+
+**유사도를 주장하지 않는다.** 이 트렁크는 10개 라벨 분류로 학습됐고, 그 표현이 다른
+목적에 좋다는 근거는 없다. `quality_profile='none'` 이다.
+
+종단 실측 (2026-08-16 · 격리 스택 · `scripts/image_embed_demo.sh`):
+
+```text
+OK   arch — TinyEuroSATEmbed 로 로드 성공
+OK   max_params — 93248 <= 500000
+OK   preprocess — 선언 적용: resize=[32, 32] colorspace=RGB
+OK   input_schema — 선언 전처리로 샘플 추론 성공 (2977 bytes · image_embed)
+OK   output_schema — 배열 128개가 계약을 만족한다
+gate_run PASSED → 바인딩 → COMPLETED · vector 128차원
+```
+
+지문 경고(`shape 합계(94538) ≠ 로드 후 파라미터(93248)`)는 **정상이다** —
+파일에는 분류기 머리가 들어 있고 트렁크만 로드했기 때문이다. 그 차이가 증적에 남는다.
 
 ### 허용 아키텍처 등록 (D-arch)
 

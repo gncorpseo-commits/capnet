@@ -62,6 +62,22 @@ def _arch_for_weights(weights_path: str) -> str:
 from app.preprocess import DEFAULT_PREPROCESS, resolve_preprocess  # noqa: E402,F401
 
 
+def load_image_tensor(image_path: str, *, preprocess: dict[str, Any] | None = None):
+    """계약이 선언한 전처리로 이미지를 텐서 하나로 만든다.
+
+    **분류와 임베딩이 같은 함수를 쓴다** (단계 6 ③). 두 벌이면 한쪽만 고쳐지고,
+    그 순간 「게이트가 승인한 전처리」와 「실행한 전처리」가 갈라진다 (D3).
+
+    픽셀 상한도 여기 있다 — 임베딩 경로만 상한이 없으면 그쪽으로 큰 이미지가 들어온다.
+    """
+    img = Image.open(image_path)
+    w, h = img.size
+    if w * h > MAX_INPUT_PIXELS:
+        raise ResourceLimitExceeded(f"입력 {w}x{h} 픽셀 > 상한 {MAX_INPUT_PIXELS}")
+    size, space = resolve_preprocess(preprocess)
+    return to_tensor(img.convert(space).resize(size)).unsqueeze(0)
+
+
 def predict_image(
     weights_path: str,
     image_path: str,
@@ -97,13 +113,7 @@ def predict_image(
         raise ResourceLimitExceeded(
             f"파라미터 {_loaded_params} > 상한 {cap} (arch={resolved})"
         )
-    img = Image.open(image_path)
-    w, h = img.size
-    if w * h > MAX_INPUT_PIXELS:
-        raise ResourceLimitExceeded(f"입력 {w}x{h} 픽셀 > 상한 {MAX_INPUT_PIXELS}")
-    size, space = resolve_preprocess(preprocess)
-    img = img.convert(space).resize(size)
-    xb = to_tensor(img).unsqueeze(0)
+    xb = load_image_tensor(image_path, preprocess=preprocess)
     with torch.no_grad():
         logits = _model(xb)
         prob = torch.softmax(logits, dim=1)[0]

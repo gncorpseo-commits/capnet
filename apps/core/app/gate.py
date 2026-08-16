@@ -59,7 +59,7 @@ CONTRACT_CHECKS_REFERENCE = ("arch",)
 # 둘이 어긋나면 `test_contract_checks_by_arch` 가 잡는다.
 REFERENCE_ARCHS = frozenset({
     "TinyEuroSAT", "TinyEuroSATB", "TinyTextClassifier", "TinyTextEmbedder",
-    "TinySeriesForecaster",
+    "TinySeriesForecaster", "TinyEuroSATEmbed",
 })
 
 # 하위 호환 별칭 — 참조 구현일 때의 전체 집합. 기존 문서·스크립트가 이 이름을 쓴다.

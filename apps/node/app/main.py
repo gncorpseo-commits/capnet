@@ -361,7 +361,18 @@ def _run(
         from app.infer import ResourceLimitExceeded
 
         try:
-            if modality == "series":
+            if modality == "image_embed":
+                from app.infer_image_embed import embed_image
+                from app.infer_text import TextResourceLimitExceeded
+
+                try:
+                    vector = embed_image(
+                        path, image_path, arch=arch, max_params=max_params,
+                        preprocess=preprocess,
+                    )
+                except TextResourceLimitExceeded as exc:
+                    raise ResourceLimitExceeded(str(exc)) from exc
+            elif modality == "series":
                 from app.infer_series import forecast_series
                 from app.infer_text import TextResourceLimitExceeded
 
