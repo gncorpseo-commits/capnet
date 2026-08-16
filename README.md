@@ -25,7 +25,7 @@ docker compose up --build -d          # 1~3분
 그 뒤 세대는 `migrations/`에 있으므로, `migrate`가 끝나야 `core`가 뜬다. 적용 결과를 보려면:
 
 ```bash
-docker compose logs migrate           # "완료 — 17개 적용" (재실행 시 "적용할 것 없음")
+docker compose logs migrate           # "완료 — 18개 적용" (재실행 시 "적용할 것 없음")
 ```
 
 > **이 저장소를 이미 한 번 띄운 적이 있다면 `docker compose down -v` 로 볼륨까지 지우고 시작한다.**
@@ -72,7 +72,7 @@ curl -X POST localhost:8001/v1/execute -H 'content-type: application/json' \
 # -> HTTP 403  "assignment not leased to this node"
 ```
 
-> 빈 볼륨에서 clone → compose up → 위 세 스크립트가 통과하는 것을 **2026-08-15**에 확인했다 (스키마 세대 17 · 마이그레이션 `0001`–`0017`).
+> 빈 볼륨에서 clone → compose up → 위 세 스크립트가 통과하는 것을 **2026-08-16**에 확인했다 (스키마 세대 18 · 마이그레이션 `0001`–`0018`).
 >
 > **이 기동은 데모·심사용이며, 열려 있는 것이 의도다.** 강제 플래그가 **기본 0**이라 관리 API 인증
 > (`REQUIRE_API_KEY`)과 Node 증서 검증(`REQUIRE_NODE_CREDENTIAL`)이 꺼져 있고, postgres가 호스트로
