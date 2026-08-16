@@ -17,6 +17,11 @@ echo "== 골든셋 sha 정합 =="
 python3 scripts/check_golden_sha.py || fail=1
 
 echo
+echo "== 제출 zip 검증 (G9) =="
+# 포털 패킹은 8/25–26 이다. 그날 처음 돌려 보면 늦다 — 매번 같이 본다.
+bash "$root/scripts/check_release.sh" || fail=1
+
+echo
 echo "== 출품 패키지 기계 점검 =="
 # 작업 중에도 돌 수 있게 워킹트리 검사는 뺀다. 패키징 직전에는 --skip-tree 없이 돌린다.
 python3 scripts/check_submission.py --skip-tree || fail=1
