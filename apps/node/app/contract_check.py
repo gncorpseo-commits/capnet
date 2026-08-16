@@ -296,6 +296,9 @@ def run(
             checks=checks, notes=notes, fp=fp,
         )
 
+    # 어느 실행기의 계약인지 — arch 가 정본이다 (I1). 아래 로드·추론이 이 값으로 갈린다.
+    modality = _modality_of(arch)
+
     # 1·2. arch 로 세우고 로드한 뒤 파라미터를 센다.
     #      predict_image 가 둘 다 하지만, 무엇이 깨졌는지 구분해서 보고해야 한다.
     from app.limits import MAX_PARAMS_DEFAULT
@@ -309,7 +312,15 @@ def run(
             checks["arch"] = False
             notes["arch"] = "Core 가 arch 를 말하지 않았다 (legacy Agent) — 계약 검증 불가"
         else:
-            model.load_state_dict(load_file(weights))
+            # **실행기와 같은 방식으로 넣는다.** 여기서만 다르게 로드하면
+            # 「검증한 것」과 「실행한 것」이 갈라진다 — image_embed 는 분류기 머리를
+            # 걸러 내고 트렁크만 쓰는데, 이 검사가 그걸 모르면 통과할 수 있는 Agent 를 떨어뜨린다.
+            if modality == "image_embed":
+                from app.tiny_image_embed import load_trunk
+
+                load_trunk(model, load_file(weights))
+            else:
+                model.load_state_dict(load_file(weights))
             params = sum(p.numel() for p in model.parameters())
             checks["arch"] = True
             notes["arch"] = f"{arch} 로 로드 성공"
@@ -334,7 +345,6 @@ def run(
         resolve_text_preprocess,
     )
 
-    modality = _modality_of(arch)
     declared = (contract.get("input_schema") or {}).get("preprocess")
     try:
         if declared is None:
@@ -361,7 +371,13 @@ def run(
     vector: list[float] | None = None
     if checks.get("arch") and checks.get("preprocess"):
         try:
-            if modality == "series":
+            if modality == "image_embed":
+                from app.infer_image_embed import embed_image
+
+                vector = embed_image(
+                    weights, sample, arch=arch, max_params=max_params, preprocess=declared
+                )
+            elif modality == "series":
                 from app.infer_series import forecast_series
 
                 vector = forecast_series(

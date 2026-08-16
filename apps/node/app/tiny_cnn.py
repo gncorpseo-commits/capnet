@@ -89,12 +89,19 @@ def _series_forecaster() -> type[nn.Module]:
     return TinySeriesForecaster
 
 
+def _image_embedder() -> type[nn.Module]:
+    from app.tiny_image_embed import TinyEuroSATEmbed
+
+    return TinyEuroSATEmbed
+
+
 ARCH_REGISTRY: dict[str, type[nn.Module]] = {
     "TinyEuroSAT": TinyEuroSAT,
     "TinyEuroSATB": TinyEuroSATB,
     "TinyTextClassifier": _text_classifier(),
     "TinyTextEmbedder": _text_embedder(),
     "TinySeriesForecaster": _series_forecaster(),
+    "TinyEuroSATEmbed": _image_embedder(),
 }
 
 # arch → 모달리티. **실행기 디스패치의 정본이다** (단계 5).
@@ -110,6 +117,8 @@ ARCH_MODALITY: dict[str, str] = {
     "TinyTextEmbedder": "text_embed",
     # 세 번째 모달리티 어휘 — 표/시계열 (단계 6 ②).
     "TinySeriesForecaster": "series",
+    # 이미지가 structured 를 내는 첫 사례 (단계 6 ③). 전처리는 image 와 같다.
+    "TinyEuroSATEmbed": "image_embed",
 }
 
 
