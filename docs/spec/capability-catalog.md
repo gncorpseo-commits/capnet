@@ -85,7 +85,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 
 | # | `code` | 모달리티 | `output_kind` | P | 세대 |
 |---|--------|---------|---------------|---|------|
-| 13 | `text.classify` | text | `closed_set_labels` | none | v제품-1 |
+| 13 | `text.classify` | text | `closed_set_labels` | none | v제품-1 ✅ **구현됨** |
 | 14 | `text.extract` | text | `structured` | none | v제품-1 |
 | 15 | `text.ner` | text | `structured` | none | v제품-1 |
 | 16 | `text.embed` | text | `structured` | none | v제품-1 ✅ **구현됨** |
