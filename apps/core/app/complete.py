@@ -143,12 +143,21 @@ SELECT c.output_schema -> 'required' AS required
 """
 
 
-def _output_key(conn: psycopg.Connection, assignment_id: uuid.UUID) -> str:
+class OutputKeysMismatch(ValueError):
+    """Node 가 계약과 다른 칸을 보고했다. 받아 적지 않는다."""
+
+
+def _required_keys(conn: psycopg.Connection, assignment_id: uuid.UUID) -> list[str]:
     row = conn.execute(OUTPUT_KEY_SQL, {"assignment_id": str(assignment_id)}).fetchone()
     required = row["required"] if row else None
-    if isinstance(required, list) and required and isinstance(required[0], str):
-        return required[0]
-    return "vector"
+    if isinstance(required, list) and all(isinstance(k, str) for k in required):
+        return required
+    return []
+
+
+def _output_key(conn: psycopg.Connection, assignment_id: uuid.UUID) -> str:
+    keys = _required_keys(conn, assignment_id)
+    return keys[0] if keys else "vector"
 
 
 def complete_assignment(
@@ -158,6 +167,7 @@ def complete_assignment(
     weights_sha256: str,
     label: str | None,
     vector: list[float] | None = None,
+    output: dict[str, Any] | None = None,
     confidence: float | None,
     dummy: bool,
     duration_ms: int | None,
@@ -185,6 +195,16 @@ def complete_assignment(
         # 검증한 출력(`forecast`)과 증적에 남는 출력(`vector`)이 갈라진다 —
         # 「승인한 것과 실행한 것이 같다」가 깨진다. Node 는 값만 보내고 이름은 여기서 붙인다.
         result[_output_key(conn, assignment_id)] = vector
+    if output is not None:
+        # **키 이름을 Node 가 주장하지 못한다.** 계약이 요구한 칸과 정확히 같아야
+        # 받는다 — 다르면 게이트가 검증한 모양과 증적이 갈린다.
+        required = set(_required_keys(conn, assignment_id))
+        given = set(output)
+        if required and given != required:
+            raise OutputKeysMismatch(
+                f"출력 칸이 계약과 다르다: 계약 {sorted(required)} · 보고 {sorted(given)}"
+            )
+        result.update(output)
 
     task = conn.execute(
         MARK_TASK_SQL,

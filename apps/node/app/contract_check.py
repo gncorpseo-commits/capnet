@@ -340,6 +340,7 @@ def run(
     #      (ck_gate_run_contract_needs_preprocess), 러너도 형식을 본다 — 값이 망가져 있으면
     #      적용 자체가 안 된다.
     from app.preprocess import (
+        resolve_extract_preprocess,
         resolve_preprocess,
         resolve_table_preprocess,
         resolve_text_preprocess,
@@ -349,7 +350,10 @@ def run(
     try:
         if declared is None:
             raise ValueError("계약이 preprocess 를 선언하지 않았다")
-        if modality == "series":
+        if modality == "table_extract":
+            enc, max_rows, max_cols = resolve_extract_preprocess(declared)
+            applied = f"encoding={enc} max_rows={max_rows} max_cols={max_cols}"
+        elif modality == "series":
             enc, max_rows, window = resolve_table_preprocess(declared)
             applied = f"encoding={enc} max_rows={max_rows} window={window}"
         elif modality in ("text", "text_embed"):
@@ -369,9 +373,16 @@ def run(
     label: str | None = None
     confidence: float | None = None
     vector: list[float] | None = None
+    table_out: dict[str, Any] | None = None
     if checks.get("arch") and checks.get("preprocess"):
         try:
-            if modality == "image_embed":
+            if modality == "table_extract":
+                from app.infer_table import extract_table
+
+                table_out = extract_table(
+                    weights, sample, arch=arch, max_params=max_params, preprocess=declared
+                )
+            elif modality == "image_embed":
                 from app.infer_image_embed import embed_image
 
                 vector = embed_image(
@@ -416,10 +427,13 @@ def run(
 
     # 4. 그 출력이 계약을 만족하는가.
     if checks.get("input_schema"):
-        if vector is not None:
+        if table_out is not None:
+            # 여러 칸을 내는 능력. 계약이 요구한 모양 그대로 대조한다.
+            out: dict[str, Any] = dict(table_out)
+        elif vector is not None:
             # 임베딩은 `vector`, 예측은 `forecast` — 계약이 부르는 이름으로 담는다.
             key = "forecast" if _modality_of(arch) == "series" else "vector"
-            out: dict[str, Any] = {key: vector}
+            out = {key: vector}
         else:
             out = {"label": label}
             if confidence is not None:
@@ -428,7 +442,9 @@ def run(
         checks["output_schema"] = ok
         if ok:
             notes["output_schema"] = (
-                f"배열 {len(vector)}개가 계약을 만족한다" if vector is not None
+                (f"칸 {len(table_out)}개({', '.join(sorted(table_out))})가 계약을 만족한다"
+                 if table_out is not None else
+                 f"배열 {len(vector)}개가 계약을 만족한다") if (table_out or vector) is not None
                 else f"label={label!r} 이 계약을 만족한다"
             )
         else:

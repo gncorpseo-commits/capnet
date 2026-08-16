@@ -271,6 +271,9 @@ class CompleteBody(BaseModel):
     label: str | None = None
     confidence: float | None = None
     vector: list[float] | None = None
+    # 여러 칸을 내는 능력(예: 표 추출)용. **키 이름은 Core 가 계약과 대조한다** —
+    # 그러지 않으면 게이트가 검증한 모양과 증적에 남는 모양이 갈린다.
+    output: dict[str, Any] | None = None
     dummy: bool = True
     duration_ms: int | None = None
 
@@ -1383,9 +1386,9 @@ def complete(
     """
     # 아무것도 안 낸 실행이 COMPLETED 로 기록되면 안 된다. dummy 는 예외 —
     # 그쪽은 「placeholder 라 답을 못 낸다」가 이미 증적에 남는다.
-    if not body.dummy and body.label is None and body.vector is None:
+    if not body.dummy and body.label is None and body.vector is None and body.output is None:
         raise HTTPException(
-            status_code=422, detail="label 또는 vector 중 하나는 있어야 한다",
+            status_code=422, detail="label · vector · output 중 하나는 있어야 한다",
         )
 
     node = _authenticated_node(authorization)
@@ -1401,17 +1404,24 @@ def complete(
                 status_code=403, detail="credential does not own this assignment"
             )
 
-    with get_conn() as conn:
-        row = complete_assignment(
-            conn,
-            assignment_id=assignment_id,
-            weights_sha256=body.weights_sha256,
-            label=body.label,
-            confidence=body.confidence,
-            vector=body.vector,
-            dummy=body.dummy,
-            duration_ms=body.duration_ms,
-        )
+    from app.complete import OutputKeysMismatch
+
+    try:
+        with get_conn() as conn:
+            row = complete_assignment(
+                conn,
+                assignment_id=assignment_id,
+                weights_sha256=body.weights_sha256,
+                label=body.label,
+                confidence=body.confidence,
+                vector=body.vector,
+                output=body.output,
+                dummy=body.dummy,
+                duration_ms=body.duration_ms,
+            )
+    except OutputKeysMismatch as exc:
+        # 계약과 다른 칸을 받아 적지 않는다. Node 는 값만 내고 모양은 계약이 정한다.
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     if row is None:
         raise HTTPException(
             status_code=409,

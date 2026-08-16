@@ -126,7 +126,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 
 | # | `code` | 모달리티 | `output_kind` | P | 세대 |
 |---|--------|---------|---------------|---|------|
-| 35 | `table.extract` | doc | `structured` | none | v제품-1 |
+| 35 | `table.extract` | doc | `structured` | none | v제품-1 ✅ **구현됨** |
 | 36 | `doc.classify` | doc | `closed_set_labels` | none | v제품-1 |
 | 37 | `doc.summarize` | doc | `freeform` | none | v제품-1 |
 | 38 | `doc.qa` | doc | `freeform` | none | v제품-1 |
@@ -217,7 +217,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 | `video` | `video/mp4` · `video/webm` |
 | `audio` | `audio/wav` · `audio/flac` · `audio/mpeg` |
 | `text` | `text/plain` · `application/json` |
-| `doc` | `application/pdf` · `text/plain` |
+| `doc` | `text/plain` **만** — `application/pdf` 는 새 의존성이라 받지 않는다 (§`table.extract`) |
 | `table` | `text/csv` · `application/json` |
 | `code` | `text/plain` |
 
@@ -494,6 +494,42 @@ gate_run PASSED → 바인딩 → COMPLETED · vector 128차원
 
 지문 경고(`shape 합계(94538) ≠ 로드 후 파라미터(93248)`)는 **정상이다** —
 파일에는 분류기 머리가 들어 있고 트렁크만 로드했기 때문이다. 그 차이가 증적에 남는다.
+
+### `table.extract` — 여러 칸을 내는 출력 · **새 가중치 0** (단계 6 ④)
+
+지금까지 출력은 **한 칸**이었다(`label` 하나 · `vector` 하나 · `forecast` 하나).
+이 능력은 `columns`·`rows`·`header_detected` **셋**을 낸다 — 그래서 「출력 이름은 계약이
+정한다」를 **집합으로** 지켜야 했다.
+
+**Core 가 계약의 `required` 와 보고된 칸 집합을 대조한다.** 다르면 **422** 이고 받아 적지
+않는다. Node 는 값만 내고 모양은 계약이 정한다 — 등급을 주장 못 하는 것과 같은 규율이다.
+
+**새 가중치가 없다.** 열 타입 추론(`email`·`url`·`ipv4`·`uuid`·`iso_date`·`plain`)은
+`text.classify` 가 이미 하는 일이라 **`text_struct_scratch.safetensors` 를 그대로 쓴다.**
+같은 아키텍처를 다른 능력에 붙였을 뿐이고, 증적에는 `arch` 와 `weights_sha256` 이 사실대로 남는다.
+
+**PDF 를 받지 않는다.** 이 리포는 새 의존성을 늘리지 않는데 PDF 파싱에는 라이브러리가 필요하다.
+계약의 `mediaTypes` 는 **`text/plain` 만**이고, CSV 와 마크다운 파이프 표를 읽는다.
+**못 하는 것을 할 수 있다고 하지 않는다.**
+
+**자르지 않고 던진다.** 행·열 상한을 넘으면 잘라서 돌려주는 대신 실패한다 —
+자르면 「표를 다 읽었다」가 거짓이 되고, 사용자는 뒤가 잘린 줄 모른 채 결과를 쓴다.
+
+**주장하지 않는 것:** 표 이해도. 머리글 판별은 「숫자가 하나도 없으면 머리글」이라는
+느슨한 규칙이라 결과에 `header_detected` 로 **그대로 노출**하고, 열 타입은 다수결이라
+얼마나 우세했는지를 `support` 로 같이 낸다 — 3/3 과 2/3 을 같게 보이지 않게.
+
+종단 실측 (2026-08-16 · 격리 스택 · `scripts/table_demo.sh`):
+
+```text
+OK   preprocess — 선언 적용: encoding=utf-8 max_rows=1000 max_cols=64
+OK   input_schema — 선언 전처리로 샘플 추론 성공 (table_extract)
+OK   output_schema — 칸 3개(columns, header_detected, rows)가 계약을 만족한다
+gate_run PASSED → COMPLETED
+columns= [(0, 'ipv4', 1.0), (1, 'uuid', 1.0)] · rows= 2행 · header_detected= True
+```
+
+증적에 `label`·`vector` 는 **없다** — 계약이 요구한 칸 셋만 남는다.
 
 ### 허용 아키텍처 등록 (D-arch)
 

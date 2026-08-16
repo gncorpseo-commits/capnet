@@ -31,7 +31,10 @@ DETAIL = ROOT / "docs" / "ops" / "contest-report-draft.md"
 CATALOG = ROOT / "docs" / "spec" / "capability-catalog.md"
 
 # 원고가 1-1) 에서 이름을 부르는 능력들.
-CLAIMED = ("image.classify", "text.classify", "image.embed", "text.embed", "timeseries.forecast")
+CLAIMED = (
+    "image.classify", "text.classify", "image.embed", "text.embed",
+    "timeseries.forecast", "table.extract",
+)
 
 _ROW = re.compile(
     r"^\|\s*\d+\s*\|\s*`([a-z][a-z0-9_.]*)`\s*\|\s*[a-z]+\s*\|\s*`\w+`\s*\|"
@@ -66,8 +69,8 @@ class TestClaimedCapabilitiesExist(unittest.TestCase):
             "구현된 능력 목록이 원고 주장과 다르다 — 원고를 갱신하거나 이 목록을 고친다",
         )
         for draft in (FORM, DETAIL):
-            self.assertIn("5종", draft.read_text(encoding="utf-8"),
-                          f"{draft.name} 이 「5종」이라고 적지 않았다")
+            self.assertIn("6종", draft.read_text(encoding="utf-8"),
+                          f"{draft.name} 이 「6종」이라고 적지 않았다")
 
     def test_only_one_claims_quality(self) -> None:
         """「다섯 중 넷은 품질을 주장하지 않는다」가 사실인가."""
@@ -75,13 +78,13 @@ class TestClaimedCapabilitiesExist(unittest.TestCase):
         self.assertEqual(golden, ["image.classify"],
                          "품질 프로파일을 쓰는 능력이 image.classify 하나가 아니다")
         for draft in (FORM, DETAIL):
-            self.assertIn("넷은 품질을 주장하지 않는다", draft.read_text(encoding="utf-8"))
+            self.assertIn("다섯은 품질을 주장하지 않는다", draft.read_text(encoding="utf-8"))
 
 
 class TestClaimIsReproducible(unittest.TestCase):
     """원고가 「재현된다」고 적었으면 그 명령이 실재해야 한다."""
 
-    DEMOS = ("text_demo", "embed_demo", "series_demo", "image_embed_demo")
+    DEMOS = ("text_demo", "embed_demo", "series_demo", "image_embed_demo", "table_demo")
 
     def test_demo_scripts_exist(self) -> None:
         for d in self.DEMOS:

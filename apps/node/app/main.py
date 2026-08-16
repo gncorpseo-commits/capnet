@@ -324,6 +324,7 @@ def _run(
     label: str | None = None
     confidence: float | None = None
     vector: list[float] | None = None
+    output: dict[str, Any] | None = None
     started = time.perf_counter()
     if dummy:
         with safe_open(path, framework="np") as fh:
@@ -344,7 +345,7 @@ def _run(
         if meta is not None:
             fetched = _fetch_input(*meta)
             image_path = fetched
-        elif modality in ("text", "text_embed", "series"):
+        elif modality in ("text", "text_embed", "series", "table_extract"):
             # 이미지 밖 모달리티에는 로컬 골든셋 폴백이 없다 — 입력은 Core 중개로만 온다 (D8′).
             raise HTTPException(
                 status_code=400,
@@ -361,7 +362,18 @@ def _run(
         from app.infer import ResourceLimitExceeded
 
         try:
-            if modality == "image_embed":
+            if modality == "table_extract":
+                from app.infer_table import extract_table
+                from app.infer_text import TextResourceLimitExceeded
+
+                try:
+                    output = extract_table(
+                        path, image_path, arch=arch, max_params=max_params,
+                        preprocess=preprocess,
+                    )
+                except TextResourceLimitExceeded as exc:
+                    raise ResourceLimitExceeded(str(exc)) from exc
+            elif modality == "image_embed":
                 from app.infer_image_embed import embed_image
                 from app.infer_text import TextResourceLimitExceeded
 
@@ -429,6 +441,7 @@ def _run(
             "label": label,
             "confidence": confidence,
             "vector": vector,
+            "output": output,
             "dummy": dummy,
             "duration_ms": duration_ms,
         },

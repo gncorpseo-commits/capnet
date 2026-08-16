@@ -115,3 +115,34 @@ def resolve_table_preprocess(
     if window < 2:
         raise ValueError(f"preprocess.window 는 2 이상이어야 한다: {window}")
     return encoding, max_rows, window
+
+
+# ── 문서 표 추출 (단계 6 ④) ────────────────────────────────────────────────
+#
+# 카탈로그 §4 의 table 어휘에서 `max_cols` 까지 쓴다. 시계열(`resolve_table_preprocess`)과
+# 나눈 이유는 그쪽이 `window` 를 쓰고 이쪽은 안 쓰기 때문이다 — 한 함수가 두 계약의
+# 필드를 다 받으면 「선언했는데 안 쓰이는 칸」이 생긴다.
+DEFAULT_EXTRACT_PREPROCESS: dict[str, Any] = {
+    "encoding": "utf-8",
+    "max_rows": 1000,
+    "max_cols": 64,
+}
+
+
+def resolve_extract_preprocess(
+    declared: dict[str, Any] | None,
+) -> tuple[str, int | None, int | None]:
+    """표 추출 전처리를 (encoding, max_rows, max_cols) 로 푼다."""
+    spec = declared or DEFAULT_EXTRACT_PREPROCESS
+    encoding = str(spec.get("encoding") or DEFAULT_EXTRACT_PREPROCESS["encoding"])
+
+    def _limit(key: str) -> int | None:
+        raw = spec.get(key, DEFAULT_EXTRACT_PREPROCESS[key])
+        if raw is None:
+            return None
+        value = int(raw)
+        if value < 1:
+            raise ValueError(f"preprocess.{key} 가 양수가 아니다: {raw!r}")
+        return value
+
+    return encoding, _limit("max_rows"), _limit("max_cols")
