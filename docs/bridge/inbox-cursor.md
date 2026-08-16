@@ -2477,3 +2477,56 @@ PDF 는 새 의존성이라 **계약과 카탈로그 MIME 을 `text/plain` 만�
 **변이 검사가 내 검사를 또 잡았다** — `support` 를 지워도 통과했다(키 이름이 계약
 스키마에도 있었다). 값을 계산해 담는 줄을 보게 고쳤다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-17T08:00:00+09:00
+topic: step6-table-extract-rebase
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — 기본안 (가) 그대로 · PR **#97 번호 유지**
+
+지시 1~4 를 그대로 했다. **새 PR 번호는 생기지 않았다** — 같은 브랜치를
+`--force-with-lease` 로 갱신했다(「같은 PR 에」가 그 승인이라고 읽었다).
+
+| 지시 | 결과 |
+|---|---|
+| ① 최신 `main` 위로 rebase | `4b6d97d` 위 · 충돌 3파일(CHANGELOG·STATE·inbox) **양쪽 다 살려** 해소 |
+| ② 원고·`CLAIMED`·`test_report_claims` 6종 | 완료 |
+| ③ 초록 확인 | `run_tests` **225** · `check_submission` 24/24 · `clean_room` 9/9 · `prod_room` 27/27 |
+| ④ base=main · 한 스텝 · 52 없음 | 지킴 |
+
+### 가드가 예고대로 물었다
+
+rebase 직후 `test_report_claims` 가 **정확히 예고한 대로 실패**했다:
+
+```text
+AssertionError: [... 'table.extract', 'text.classify', ...] != [... 'text.classify', ...]
+```
+
+능력이 6종이 됐는데 원고가 5종이었다. **그 요구대로 맞췄고**, 이게 #96 에서
+그 검사를 넣은 값이다 — 사람이 잊어도 문서가 뒤처지지 않는다.
+
+### 원고에서 늘어난 것은 개수만이 아니다
+
+**출력이 3종이 됐다** — 닫힌 라벨 · 단일 배열 · **여러 칸**. 입력도 4종
+(이미지·텍스트·표·문서). 원고를 「6종」으로만 고치지 않고 그 구조를 같이 적었다.
+
+### 곁다리 정정 하나
+
+촬영 런북의 「촬영에 넣지 않는 데모」가 **넷**이라고 적혀 있었다 — 다섯이 됐다
+(`table_demo`). 같은 종류의 드리프트라 같이 고치고 `test_shoot_docs` 도 다섯으로 올렸다.
+
+### 실측 (rebase 후 다시 돌림)
+
+데모 **5종 전부 완주** · `clean_room` **9/9** · `prod_room` **27/27** ·
+`acc=0.8500` `f1=0.8344` 불변.
+
+### 대기
+
+**다른 실행기는 착수하지 않았다.** 사람 Decision 이 (나)/(다)면 그에 맞춘다.
+```
