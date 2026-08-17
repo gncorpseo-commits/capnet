@@ -54,12 +54,17 @@
 
 | 검사 | CI | 무엇을 보나 |
 |------|----|-------------|
-| `check_api_key` (23) · `check_node_credential` (17) | ✅ | **DB 계층** 키·증서 로직 |
-| `check_enforcement` (20) | ✅ **S1 로 추가** | **앱의 강제 분기** — `_actor`·`_require`·`_authenticated_node`·`_assert_node_matches` 의 401/403 |
-| `prod_room.sh` (14) | ❌ 수동 | HTTP 계층 종단 확인 (그대로 둔다) |
+| `check_api_key` · `check_node_credential` | ✅ | **DB 계층** 키·증서 로직 |
+| `check_enforcement` | ✅ **S1 로 추가** | **앱의 강제 분기** — `_actor`·`_require`·`_authenticated_node`·`_assert_node_matches` 의 401/403 |
+| `prod_room.sh` | ❌ 수동 | HTTP 계층 종단 확인 (그대로 둔다) |
+
+> **개수를 적지 않는다.** 이 검사들은 능력·강제 경로를 더할 때마다 는다 —
+> 표에 못박아 두면 **다음 사람이 숫자만 고치게** 되고, 실제로 넷 다 어긋나 있었다
+> (`23→22` · `17→18` · `20→30` · `14→27`). 봐야 할 것은 **「전부 통과」**이고,
+> 개수는 `scripts/run_tests.sh` 와 `prod_room.sh` 출력이 그때그때 말한다.
 
 **회귀는 이제 CI 가 잡는다.** 강제 우회를 일부러 주입해 `20/20 → 17/20` 으로 떨어지는 것을
-확인했다 (변이 검사). 남은 것은 **기본값 자체** — `compose.yaml` 단독은 여전히 열려 있고,
+확인했다 (변이 검사 — 당시 20종 기준). 남은 것은 **기본값 자체** — `compose.yaml` 단독은 여전히 열려 있고,
 닫으려면 `compose.prod.yaml` 을 써야 한다. 그건 운영 선택이지 코드 결함이 아니다.
 
 ### G2 — 초대 경로가 없다 (**닫힘** · 2026-08-14) ✅
