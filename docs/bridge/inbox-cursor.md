@@ -2696,3 +2696,75 @@ G7 양식·PDF · **G8 촬영 (8/23 · D-6)** · G9 태그/Release/포털 · 붙
 전부 훑었고(갱신일 · 개수 · 지도 등록), 각각을 검사로 고정해 재발 경로도 닫았다.
 **다음 정비 거리는 촬영 뒤에 생긴다**(YouTube URL · Release 태그 · PDF 산출물).
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-17T21:00:00+09:00
+topic: session-close-before-shoot
+type: next
+expects: none
+status: open
+---
+
+## 세션 종료 정리 — 촬영(8/23) 전까지
+
+### 1. HEAD
+
+`main` = **`a527906`** (#99 머지). 열린 PR 없음 · 워킹트리 clean.
+`run_tests` **240** · `check_submission` **24/24** · `check_release` 통과.
+
+### 2. 이 세션에서 닫힌 것 — **출품 정비만 · 제품 코드 0**
+
+| PR | 내용 |
+|---|---|
+| **#98** | `scripts/check_release.sh`(제출 zip 사전 검증) + 체크리스트 **S4/S4-1 실포함** |
+| **#99** | 자라는 숫자를 문서에서 제거 · `INDEX` 등록 · `test_doc_counts` |
+
+**#98 은 한 번 실패했다가 고쳤다.** 첫 커밋에 체크리스트가 빠져 있었고
+(`git reset --hard` 가 미커밋 편집을 지웠다), **문서를 보는 검사가 없어서** 아무도 못 잡았다.
+그래서 `test_checklist_claims` · `test_doc_counts` 를 만들었다 — 같은 유실을 재현하면 실패한다.
+
+### 3. 하지 않은 것
+
+새 실행기 · DDL · 의존성 추가 · 한 PR 에 52 런타임 · 「C shipped」류 문구.
+
+### 4. 사람 몫 (Claude 가 **못 하는** 것) — 촬영 전·당일
+
+| 항목 | 왜 못 하나 |
+|---|---|
+| **G7** `hwp/docx` + PDF | **양식 파일이 저장소에 없다.** 이 환경에 한글·Office 도 없다 |
+| **G8** 촬영 **8/23** · 편집 8/24 · YouTube URL | 사람·장비 |
+| **붙임2 §4** 상용 AI 보조도구 **비율** | 측정이 아니라 **신고값** — 팀이 정한다 (근거 줄 수는 재측정해 뒀다) |
+
+**촬영 정본:** [`docs/ops/shoot-day-runbook.md`](../ops/shoot-day-runbook.md)
+
+- **촬영에 넣지 않는 데모 다섯:** `text` · `embed` · `series` · `image_embed` · `table`
+  — 전부 `.sh`(PowerShell 판 없음) · `quality_profile='none'`(품질 주장 없음) · 3분에 안 들어간다
+- **A/B 구간:** 「교체 배정이 사슬 위에서 둘 다 완결된다」는 **사실이라 촬영 가능**.
+  **편차 숫자를 자막·화면에 쓰지 않는다** — 「Within」·「0.05 이내」·「|Δacc|≈0.047」은
+  누출된 골든셋 값이고, 홀드아웃 재측정은 **0.0967 · EXCEEDS** 다 (런북 §2-A)
+
+### 5. 촬영 후 새 세션이 할 일 (**그때 Decision 받고 착수**)
+
+1. YouTube URL → `docs/ops/contest-report-form-draft.md` 의 `[TODO: YouTube URL]`
+2. **G9** — 태그 `v0.1.0-contest` · Release · `bash scripts/check_release.sh` · 포털 zip
+   (**내부마감 8/26 12:00**)
+3. **촬영으로 생긴 문서 드리프트만** (URL · 태그 · PDF 산출물). **실행기 재개가 아니다**
+
+### 6. 불변식 (다음 세션도 동일)
+
+`base=main` · 한 스텝 · 스키마 약화 금지 · `assignment`/`gate_run` 은 `INSERT … SELECT` ·
+safetensors only · **절대규칙 7 (D8′)** · 게이트는 **team gate-runner 만** ·
+Decision 급은 채팅에 두지 말고 **inbox** 로.
+
+### 7. 참고 — 지금 상태에서 바로 쓸 수 있는 것
+
+- 제출 zip: `bash scripts/check_release.sh` (태그 없이 `HEAD` 로도 · 현재 **2.3MB / 50MB**)
+- 재현: `bash scripts/clean_room.sh` **9/9** · `bash scripts/prod_room.sh` **27/27** ·
+  골든 `acc=0.8500` `f1=0.8344` · 마이그레이션 **18개 체크섬 일치**
+- 능력 **6종**이 계약 사슬을 통과한다 (원고 §주요기능 1-1 에 실측으로 적혀 있다)
+
+> **`STATE.md` · `CHANGELOG` 는 #99 까지 반영돼 있다.** 새 구현이 없으면 더 고치지 않는다.
+> `inbox-claude.md` 의 미커밋 Decision 블록은 건드리지 않았다.
+```
