@@ -38,6 +38,7 @@
 ## A/B — 자막 **확정 (안 B)**
 
 150–160초: **UC-7** — Agent A→B 교체 후에도 같은 Capability로 Task 가능.
+**명령:** `pwsh -File scripts/proof_ab.ps1` (본편 PowerShell). `.sh` 는 Linux·사전 클립용.
 **자막은 런북 §2-A 두 줄을 그대로 쓴다:**
 
 > 같은 능력으로 **다른 에이전트에 교체 배정**됩니다. 계약을 통과한 것만 후보가 됩니다.  
