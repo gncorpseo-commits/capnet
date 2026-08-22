@@ -195,8 +195,21 @@ A·B 각각 실게이트 PASSED → 동일 `caseId`를 `requestedAgentId`로 교
 
 ## 1-A. 촬영에 **넣지 않는** 것 (2026-08-16)
 
-`text_demo` · `embed_demo` · `series_demo` · `image_embed_demo` — 3분 밖 · `.ps1` 없음 ·
-`quality_profile='none'`(품질 오해). 영상 주장: **능력만 요구 · 승인 도메인 안 라우팅 · 실행 증적.**
+단계 5–6 으로 실행기가 늘었다. `scripts/` 에 데모가 넷 더 있다 —
+`text_demo.sh` · `embed_demo.sh` · `series_demo.sh` · `image_embed_demo.sh`.
+
+**넷 다 촬영에 넣지 않는다.** 이유는 셋이다.
+
+1. **3분에 안 들어간다.** 지금 타임라인이 이미 180초를 다 쓴다
+2. **전부 `.sh` 다.** 촬영은 PowerShell 이고, 이 넷은 PowerShell 판이 없다
+3. **품질을 주장하지 않는 능력들이다** (`quality_profile='none'`). 화면에 띄우면
+   시청자는 성능을 본 것으로 읽는다 — 자막으로 막기 어려운 오해다
+
+영상의 주장은 그대로다: **능력만 요구 · 승인 도메인 안 라우팅 · 실행 증적.**
+「능력이 여럿이다」는 보고서에서 글로 말하고, 영상은 한 능력으로 사슬을 보인다.
+
+> 심사위원이 저장소를 열면 이 데모들이 보인다. 그건 문제가 아니다 —
+> 각 스크립트가 **스스로 「무엇을 주장하지 않는지」를 마지막 줄에 출력**한다.
 
 ---
 
@@ -255,15 +268,19 @@ A·B 각각 실게이트 PASSED → 동일 `caseId`를 `requestedAgentId`로 교
 ## 촬영 전 기계 점검
 
 ```bash
-bash scripts/run_tests.sh
-bash scripts/clean_room.sh
-bash scripts/prod_room.sh
-python3 scripts/check_submission.py
-bash scripts/migrate.sh status
+bash scripts/run_tests.sh                 # 단위 + 골든셋 정합 + 출품 점검
+bash scripts/clean_room.sh                # 빈 볼륨 — 촬영 환경과 같은 조건
+bash scripts/prod_room.sh                 # 강제 프로파일
+python3 scripts/check_submission.py       # 패키징 직전 (워킹트리 깨끗함 포함)
+bash scripts/migrate.sh status            # 스키마 세대 확인 (18)
 ```
 
-`clean_room`·`prod_room` 은 WSL. 촬영 전날 한 번.  
-고정해 볼 것: 전부 통과 · `clean_room` 9/9 · `prod_room` 27/27 · `acc=0.8500`.  
-검사 **개수**는 실행기마다 늘어나므로 표의 숫자와 달라도 그 자체는 이상이 아니다.
+`clean_room`·`prod_room` 은 `.sh` 라 **WSL 에서** 돌린다 — 촬영 전날 한 번이면 된다.
 
-`check_submission.py`: 금지 산출물·가중치·라이선스·SBOM·시크릿·골든셋 등. **영상·포털은 검사 밖.**
+> **검사 수는 계속 늘어난다.** 단계 6 실행기를 하나 얹을 때마다 단위 검사가 붙기 때문이다.
+> **숫자가 위와 달라도 그 자체는 이상이 아니다** — 봐야 할 것은
+> 「전부 통과」와 `clean_room` 9/9 · `prod_room` 27/27 · `acc=0.8500` 이다.
+> 이 표를 「같아야 하는 값」으로 읽지 않는다.
+
+`check_submission.py` 가 보는 것: 금지 산출물·필수 가중치·라이선스·SBOM·시크릿·골든셋 등.
+**영상·촬영·포털은 이 검사 밖이다.**
