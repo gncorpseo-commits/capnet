@@ -1,5 +1,16 @@
 # Changelog
 
+## 촬영 런북 리허설 보강 + proof_ab.ps1 — 2026-08-21
+
+**제품 코드 0 · DDL 0.**
+
+- `scripts/proof_ab.ps1` — `proof_ab.sh` PowerShell 포팅. 본편에서 WSL 없이 A/B.
+  실측: A·B 실게이트 PASSED · 교차 Task COMPLETED.
+- `docs/ops/shoot-day-runbook.md` — 리허설 Q&A 반영: `pwsh`·한글·UI URL·생존 API·
+  Docker/`down -v` 해설·EuroSAT 라벨·골든셋·sanity/violations/A/B 용어·
+  160–170=demo 끝 재강조·GitHub README 컷. 스토리보드 150–160 한 줄.
+- 자막 §2-A(같은 답·편차 수치 금지)는 그대로.
+
 ## 자라는 숫자를 문서에서 뺐다 — 넷 다 어긋나 있었다 (출품 위생) — 2026-08-17
 
 **제품 코드 0 · DDL 0 · 새 실행기 없음.**
