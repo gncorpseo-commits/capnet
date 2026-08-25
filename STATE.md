@@ -21,6 +21,10 @@
 > 사용: `cd capreq && pip install -e .` → `python -m capreq route "분류해줘" --core http://127.0.0.1:8000`
 > (Ollama `qwen2.5:3b` 필요).
 
+> **동기화 (2026-08-25).** PR [#102](https://github.com/gncorpseo-commits/capnet/pull/102) —
+> 보고서 PDF/docx · capreq · 제출팩 · `inbox-claude` Next(Release). **main 머지 = master.**
+> 다음 Claude: 태그 `v0.1.0-contest` · zip · 포털 패킹 문서.
+
 > **사람 개입 정리 (2026-08-25).** 붙임2「팀이 설계」근거를 문서에서 재구성 —
 > [`docs/retrospective/human-intervention.md`](docs/retrospective/human-intervention.md)
 > (D-결정·반증·절대규칙 vs AI 구현 보조). 기억과 다르면 해당 파일 §4 체크 후 수정.
