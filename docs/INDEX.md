@@ -85,15 +85,21 @@
 - [Phase 1 판정 리포트](./ops/phase1-verdict.md) — 기획서 §7.2 의무 판정 (**Phase 2 착수 관문**)
 - [시연 영상 스토리보드](./ops/demo-video-storyboard.md)
 - [촬영일 런북](./ops/shoot-day-runbook.md) — 명령·자막 복붙
+- [CapCut 자르기·자막](./ops/capcut-edit-guide.md) — PC 편집 초보 가이드
+- [**출품 제출 패킷**](./ops/contest-submission-pack.md) — 영상·보고서·Release 한눈에
 - [게이트 사슬 1장](./ops/gate-chain-slide.md) — 영상 150–170초용
 
 ### retrospective
 - [README · 분류 정의](./retrospective/README.md)
 - [register](./retrospective/register.md) — TD / SD / EA
 - [lessons-learned](./retrospective/lessons-learned.md)
+- [사람 개입 · AI 보조](./retrospective/human-intervention.md) — 붙임2·설계 기여 재구성
 
 ### research
 - [README](./research/README.md)
+
+### 독립 모듈 (Core 밖 · 연결/해제)
+- [`../capreq/README.md`](../capreq/README.md) — **capreq**: 로컬 LLM(Qwen2.5) → 등록 능력 라우터
 
 ---
 

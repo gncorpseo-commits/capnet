@@ -15,9 +15,11 @@
 | [`../context-handoff.md`](../context-handoff.md) §1 | 바꾸려면 반박할 **규범 결정** (D1–) | 규범 ≠ 과정 기록 |
 | [`../history/CHANGELOG.md`](../history/CHANGELOG.md) | 무엇이 언제 들어왔는지 | 왜/대안/기한은 여기 |
 | [`../error/`](../error/) | 재발 방지 함정 | debt와 다름 |
+| [`human-intervention.md`](./human-intervention.md) | 사람 개입 vs AI 보조 (붙임2 근거) | 기여 % 측정 아님 |
 
 확정 규범이 바뀌면 **handoff §1만**.  
 “왜 / 대안 / 언제 갚지”는 **이 폴더**.
+“내가 뭘 결정했지?”는 **human-intervention**.
 
 ---
 

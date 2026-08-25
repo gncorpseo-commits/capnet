@@ -17,3 +17,5 @@
 | Pillow | MIT-CMU (HPND-derived) | 골든셋 JPEG 로드 |
 | torch | BSD-3-Clause | EuroSAT scratch 학습·추론 (CPU 휠, node-m-team만) |
 | torchvision | BSD-3-Clause | 32×32 텐서 변환 |
+| httpx (optional `capreq/`) | BSD-3-Clause | capreq → Ollama·Core HTTP |
+| FastAPI/Uvicorn (optional `capreq[server]`) | MIT / BSD-3-Clause | capreq 웹 챗봇 |

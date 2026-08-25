@@ -1,7 +1,7 @@
 # 촬영일 런북 (3분 영상)
 
 **목적:** 스토리보드([`demo-video-storyboard.md`](./demo-video-storyboard.md))를 **명령 순서**로 고정.  
-**갱신:** 2026-08-21  
+**갱신:** 2026-08-24  
 > **리허설 1회 완료 (2026-08-14).** 명령 순서 재현 · `demo` PASSED `acc=0.8500` · sanity 3종 FAILED ·
 > 위반 6종 REJECTED · A/B 완결 · 증적 줄.  
 > **리허설 보강 (2026-08-21).** Windows 본편은 **`pwsh`(PowerShell 7)** 로 통일 · `proof_ab.ps1` 포팅 ·
@@ -213,6 +213,8 @@ A·B 각각 실게이트 PASSED → 동일 `caseId`를 `requestedAgentId`로 교
 
 ---
 
+> CapCut에서 자르기·텍스트 넣는 법: [`capcut-edit-guide.md`](./capcut-edit-guide.md)
+
 ## 2. 자막 번인 문장 (복붙)
 
 1. 능력만 요구하면 됩니다. 어떤 AI가, 어느 기계에서 도는지는 몰라도 됩니다.  
@@ -251,7 +253,7 @@ A·B 각각 실게이트 PASSED → 동일 `caseId`를 `requestedAgentId`로 교
 
 - [ ] mp4 H.264 1080p · ≤200MB · ≤3분  
 - [ ] 음소거로 1회 재생해 자막만으로 이해되는지 확인  
-- [ ] YouTube **비공개** 업로드 → URL을 `contest-report-form-draft.md` `[TODO: YouTube URL]`에 기입  
+- [x] YouTube **일부 공개** 업로드 → https://youtu.be/RjFiGpmLTbk  
 - [ ] 원본 파일도 로컬 보관
 
 ---

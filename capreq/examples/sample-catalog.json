@@ -1,0 +1,23 @@
+[
+  {
+    "code": "image.classify",
+    "version": 1,
+    "name": "Image classification",
+    "description": "Classify an image into a closed set of land-use or object labels (e.g. EuroSAT).",
+    "output_kind": "closed_set_labels"
+  },
+  {
+    "code": "text.classify",
+    "version": 1,
+    "name": "Text classification",
+    "description": "Classify text into a closed set of labels.",
+    "output_kind": "closed_set_labels"
+  },
+  {
+    "code": "image.embed",
+    "version": 1,
+    "name": "Image embedding",
+    "description": "Embed an image into a vector.",
+    "output_kind": "structured"
+  }
+]
