@@ -242,3 +242,76 @@ status: open
 > 채팅으로 온 상태·막힘 통지를 우편함에 옮겨 적었다 (커밋되지 않으면 다음 세션이 못 본다).
 > **원문 그대로이며 해석·선택지를 더하지 않았다** — 이 블록은 Proposal 이 아니다.
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-16T17:01:00+09:00
+topic: contest-release-prep
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — #98 은 (가)로 진행
+
+**선택: (가).** `#98` 머지하지 않은 채, 같은 PR에 체크리스트를 실제로 고친다.
+
+1. `docs/ops/contest-submission-checklist.md` 를 PR 파일에 **포함**한다.
+   - S4: 넣지 않는 것 = EuroSAT 원본 · 실험 가중치(`*_ho*`·`*_hob*`) · `.env` · 캐시
+   - S4-1: 반드시 넣는 데모 가중치 5종 + `placeholder` (`check_release` must 와 동일)
+   - D-2 재현 확인 → **2026-08-16 · `6609ce1`**
+   - 「scratch 2종」 등 개수 드리프트를 실물과 맞춤
+2. 가능하면 검사로 고정 (체크리스트 문구 ↔ `check_release` must / 가중치 실재)
+3. CI 초록 후 머지 대기. base=main · 새 실행기 금지 · 제품 코드 0 유지
+4. 고친 뒤 inbox Confirm 에 **「체크리스트 파일 포함」**을 명시
+
+(나)/(다) 아님.
+
+> 채팅 Decision「가로 진행」을 우편함에 옮겼다.
+```
+```markdown
+---
+from: cursor
+at: 2026-08-25T13:55:00+09:00
+topic: contest-submit-d2
+type: next
+expects: implement
+status: open
+---
+
+## Next — 출품 D-2: Release · zip · 포털 패킹 (마감 8/27 · 내부 8/26 12:00)
+
+**전제 (이미 완료 — 건드리지 말 것)**
+- 시연 YouTube: https://youtu.be/RjFiGpmLTbk · mp4 `…/CapCut/Videos/GN_2026오픈소스개발자대회_출품작_CAPNET.mp4`
+- 결과보고서: `docs/ops/contest-report-915-gn.{docx,pdf}` (포털명은 `_915(지엔)`)
+- 정본 체크: `docs/ops/contest-submission-pack.md` · `contest-submission-checklist.md`
+
+**해야 할 일 (제품 코드 0 · DDL 0 · 스키마 금지)**
+
+1. `main` 최신 기준 (또는 이 PR 머지 후) 워킹트리 깨끗할 때:
+   ```bash
+   bash scripts/run_tests.sh
+   bash scripts/clean_room.sh
+   bash scripts/prod_room.sh
+   python3 scripts/check_submission.py
+   bash scripts/check_release.sh   # HEAD로도 가능
+   ```
+2. 태그 + Release:
+   ```bash
+   git tag v0.1.0-contest
+   git push origin v0.1.0-contest
+   git archive --format=zip --prefix=capnet/ v0.1.0-contest -o capnet-v0.1.0-contest.zip
+   ```
+   GitHub Release `v0.1.0-contest`에 zip 첨부. zip ≤50MB · 가중치 5종+placeholder · `.env`/EuroSAT 원본 없음.
+3. `STATE.md` · `contest-submission-pack.md` G9 ✅ · CHANGELOG 한 줄.
+4. 포털 zip 안내만 문서화 (실제 포털 클릭은 사람): PDF + (요구 시) docx + YouTube URL + Release URL.
+
+**하지 말 것**
+- 스키마 약화 · 새 실행기 · capreq를 Contest Must로 승격 · 보고서 PDF 본문 재작성(이미 최종)
+- `git add -A` · force push · main 직접 머지 (master/사람)
+
+**참고**
+- 사람 개입 정리: `docs/retrospective/human-intervention.md`
+- capreq는 독립 모듈 — Release에 넣어도 되나 Must 아님. CI 깨면 제외 검토.
+```

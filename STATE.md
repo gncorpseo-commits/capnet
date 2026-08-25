@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-08-21** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · README는 상태 비보유(링크만)
+> **갱신: 2026-08-25** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · README는 상태 비보유(링크만)
 
 ---
 
@@ -13,7 +13,39 @@
 
 ## 지금 어디인가
 
-**서사 전환 완료 (기획서 v4.7) · 사이클 폐쇄 완료.** 촬영 8/23.
+**서사 전환 완료 (기획서 v4.7) · 사이클 폐쇄 완료.** **시연 영상 편집 완료 (8/23).**
+
+> **capreq (2026-08-24).** 독립 모듈 `capreq/` — 로컬 LLM **Qwen2.5**(기본; Gemma 대안)가
+> 자연어 → Core `GET /v1/capabilities` allowlist 능력으로 라우팅. CapNet Core와 **연결/해제**
+> 가능 (`CatalogSource` / `ExecutionBackend`). 실행 불완전해도 챗봇 레이어는 필수 전제.
+> 사용: `cd capreq && pip install -e .` → `python -m capreq route "분류해줘" --core http://127.0.0.1:8000`
+> (Ollama `qwen2.5:3b` 필요).
+
+> **동기화 (2026-08-25).** PR [#102](https://github.com/gncorpseo-commits/capnet/pull/102) —
+> 보고서 PDF/docx · capreq · 제출팩 · `inbox-claude` Next(Release). **main 머지 = master.**
+> 다음 Claude: 태그 `v0.1.0-contest` · zip · 포털 패킹 문서.
+
+> **사람 개입 정리 (2026-08-25).** 붙임2「팀이 설계」근거를 문서에서 재구성 —
+> [`docs/retrospective/human-intervention.md`](docs/retrospective/human-intervention.md)
+> (D-결정·반증·절대규칙 vs AI 구현 보조). 기억과 다르면 해당 파일 §4 체크 후 수정.
+
+> **결과보고서 docx (2026-08-25).** 공식 양식에 본문·붙임1(SBOM 10행)·붙임2(유형3·AI 보조 약 30%) 이식.
+> [`docs/ops/contest-report-915-gn.docx`](docs/ops/contest-report-915-gn.docx) · PDF 동명.
+> 포털 업로드 시 파일명은 공식형 `…_915(지엔).pdf`로 바꿔도 됨. **Release · 포털** 남음.
+
+> **출품 영상 (2026-08-23).** CapCut 내보내기 **172.9s · 1080p · ~38MB**.
+> YouTube 일부 공개: **https://youtu.be/RjFiGpmLTbk**
+> 제출 패킷: [`contest-submission-pack.md`](docs/ops/contest-submission-pack.md).
+
+> **촬영 A/B PowerShell (2026-08-21).** `scripts/proof_ab.ps1` 포팅 — 본편에서 WSL 없이
+> `pwsh -File scripts\proof_ab.ps1`. 실측: A·B 실게이트 PASSED · 교차 Task COMPLETED
+> (case `ic1-0001`). 자막은 런북 §2-A 유지.
+>
+> **런북 리허설 보강 (2026-08-21).** `shoot-day-runbook.md` 에 pwsh·UI·생존 API·Docker 해설·
+> EuroSAT/골든셋·sanity/violations/A/B 용어·증적=demo 끝 재강조를 모음.
+>
+> **CapCut 편집 가이드 (2026-08-22).** `docs/ops/capcut-edit-guide.md` — 분할(`Ctrl+B`)·텍스트/
+> 자동캡션·런북 §2 복붙·내보내기 체크. 영상 편집은 사람, 문장 정본은 런북.
 
 > **촬영 A/B PowerShell (2026-08-21).** `scripts/proof_ab.ps1` 포팅 — 본편에서 WSL 없이
 > `pwsh -File scripts\proof_ab.ps1`. 실측: A·B 실게이트 PASSED · 교차 Task COMPLETED
@@ -43,7 +75,7 @@
 
 | 트랙 | 상태 |
 |------|------|
-| **출품 (1순위)** | 양식 이식 ✅ · **촬영 2026-08-23 확정** · 편집·업로드 8/24 · Release/포털 미완 |
+| **출품 (1순위)** | 영상·YouTube ✅ · **docx 이식 ✅** · PDF·Release·포털 미완 |
 | **Phase 1** | ✅ 완주 · 판정 **Go** (v4.6) |
 | **Phase 2** | 사이클 폐쇄 완료. 유휴 판정은 스키마 필요 → SD-007 **해소** |
 | **제품 유통 (D19)** | 문서 정본 [`product-distribution.md`](docs/design/product-distribution.md). 1호 = 초대 team/tenant · 경제 비기초. **코드 유통 세대 = v제품-0 직전** |

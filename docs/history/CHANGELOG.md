@@ -1,5 +1,46 @@
 # Changelog
 
+## 결과보고서 최종본 + 사람 개입 정리 — 2026-08-25
+
+**제품 코드 0 · DDL 0 · 출품 트랙.**
+
+- `docs/ops/contest-report-915-gn.{docx,pdf}` — 공식 양식 이식 최종 (저장소 ASCII명 · 포털은 `_915(지엔)`).
+- `docs/ops/contest-submission-pack.md` · checklist G7: docx/PDF ✅ · Release·포털 남음.
+- `docs/retrospective/human-intervention.md` — 팀 설계(D-결정·반증) vs AI 구현 보조 재구성.
+- 시연 mp4 경로: `…CAPNET.mp4` (파일명 끝 공백 제거 반영).
+
+## capreq — 로컬 LLM 능력 라우터 (독립 모듈) — 2026-08-24
+
+**DDL 0 · Core 스키마 비변경.**
+
+- 신규 `capreq/` — 자연어 → 등록 capability 코드. 기본 모델 **Qwen2.5** (`qwen2.5:3b`, Ollama).
+  Gemma는 `CAPREQ_OLLAMA_MODEL`로 전환.
+- 어댑터: CapNet (`GET /v1/capabilities` · 선택 `POST /v1/tasks`) / 정적 JSON / 실행 없음.
+- CLI: `route` · `chat` · `serve`(선택 FastAPI). 단위 검사 4.
+- CapNet 제품 주장과 분리: capreq = 입구 라우터, Core = 실행·통제·증적.
+
+## YouTube 시연 URL 확정 — 2026-08-23
+
+**제품 코드 0 · DDL 0.**
+
+- 시연 영상 일부 공개: https://youtu.be/RjFiGpmLTbk
+- `contest-report-form-draft.md` · `contest-submission-pack.md` · checklist G8 반영.
+
+## 출품 제출 패킷 + 시연 영상 완료 — 2026-08-23
+
+**제품 코드 0 · DDL 0.**
+
+- `docs/ops/contest-submission-pack.md` — 영상·보고서·Release·포털 체크리스트 한 파일.
+- 시연 mp4: CapCut 내보내기 **172.9s · 1080p · ~38MB** (≤3분·≤200MB 충족).
+- 남음: YouTube URL · 양식 PDF · `v0.1.0-contest` Release.
+
+## CapCut 편집 가이드 — 2026-08-22
+
+**제품 코드 0 · DDL 0.**
+
+- `docs/ops/capcut-edit-guide.md` — PC 자르기(`Ctrl+B`)·텍스트/자동캡션·런북 §2 복붙·내보내기.
+- `docs/INDEX.md` · `shoot-day-runbook.md` 링크.
+
 ## 촬영 런북 리허설 보강 + proof_ab.ps1 — 2026-08-21
 
 **제품 코드 0 · DDL 0.**

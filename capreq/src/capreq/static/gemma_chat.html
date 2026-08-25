@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gemma 대화 테스트</title>
+<style>
+  :root { --bg:#0f1419; --panel:#1a2332; --text:#e7ecf3; --muted:#8b9bb4; --acc:#7c9cff; --bad:#f07178; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: "Segoe UI", system-ui, sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
+  header { padding:12px 16px; border-bottom:1px solid #243044; }
+  header h1 { font-size:1.15rem; margin:0 0 4px; }
+  header .sub { color:var(--muted); font-size:0.85rem; }
+  #meta { padding:8px 16px; color:var(--muted); font-size:0.8rem; }
+  #log { flex:1; overflow:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .bubble { max-width:720px; padding:10px 12px; border-radius:10px; line-height:1.5; white-space:pre-wrap; }
+  .user { align-self:flex-end; background:#243044; }
+  .bot { align-self:flex-start; background:var(--panel); border:1px solid #2c3a50; }
+  .bot.bad { border-color:#6b2a32; color:#ffb4b4; }
+  form { display:flex; gap:8px; padding:12px 16px; border-top:1px solid #243044; }
+  input[type=text] { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #2c3a50; background:#121a24; color:var(--text); }
+  button { padding:10px 14px; border:0; border-radius:8px; background:var(--acc); color:#111; font-weight:600; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--muted); border:1px solid #2c3a50; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Gemma 대화 테스트</h1>
+  <div class="sub">CapNet·능력 라우팅 없음 · Ollama Gemma만 · 대화되는지 확인용</div>
+</header>
+<div id="meta">연결 중…</div>
+<div id="log"></div>
+<form id="f">
+  <button type="button" class="ghost" id="reset">초기화</button>
+  <input id="msg" type="text" placeholder="아무 말이나 입력…" autocomplete="off" autofocus>
+  <button type="submit">보내기</button>
+</form>
+<script>
+const log = document.getElementById("log");
+const meta = document.getElementById("meta");
+function add(role, text, bad) {
+  const d = document.createElement("div");
+  d.className = "bubble " + role + (bad ? " bad" : "");
+  d.textContent = text;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+  return d;
+}
+async function refreshMeta() {
+  try {
+    const h = await fetch("/api/health").then(r => r.json());
+    meta.textContent = `model=${h.model} · mode=${h.mode}`;
+  } catch {
+    meta.textContent = "health 실패 — serve / ollama 확인";
+  }
+}
+document.getElementById("reset").onclick = async () => {
+  await fetch("/api/chat", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ message: "", reset: true }),
+  });
+  log.innerHTML = "";
+  add("bot", "대화를 초기화했습니다.");
+};
+document.getElementById("f").onsubmit = async (ev) => {
+  ev.preventDefault();
+  const msg = document.getElementById("msg").value.trim();
+  if (!msg) return;
+  document.getElementById("msg").value = "";
+  add("user", msg);
+  const pending = add("bot", "생각 중…");
+  try {
+    const r = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message: msg }),
+    });
+    const res = await r.json();
+    if (!r.ok) {
+      const d = res.detail;
+      pending.textContent = "(오류) " + (typeof d === "string" ? d : JSON.stringify(d));
+      pending.classList.add("bad");
+      return;
+    }
+    if (!res.ok) {
+      pending.textContent = "(오류) " + (res.error || "실패");
+      pending.classList.add("bad");
+      return;
+    }
+    pending.textContent = res.reply;
+  } catch (e) {
+    pending.textContent = String(e);
+    pending.classList.add("bad");
+  }
+};
+refreshMeta();
+</script>
+</body>
+</html>

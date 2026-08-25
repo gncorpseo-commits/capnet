@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>capreq — 능력 요청 챗봇</title>
+<style>
+  :root { --bg:#0f1419; --panel:#1a2332; --text:#e7ecf3; --muted:#8b9bb4; --acc:#3d8bfd; --ok:#3dd68c; --bad:#f07178; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: "Segoe UI", system-ui, sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
+  header { padding:12px 16px; border-bottom:1px solid #243044; display:flex; gap:12px; align-items:baseline; }
+  header h1 { font-size:1.1rem; margin:0; }
+  header .sub { color:var(--muted); font-size:0.85rem; }
+  #meta { padding:8px 16px; color:var(--muted); font-size:0.8rem; }
+  #log { flex:1; overflow:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .bubble { max-width:720px; padding:10px 12px; border-radius:10px; line-height:1.45; white-space:pre-wrap; }
+  .user { align-self:flex-end; background:#243044; }
+  .bot { align-self:flex-start; background:var(--panel); border:1px solid #2c3a50; }
+  .bot.ok { border-color:#2a6b4f; }
+  .bot.bad { border-color:#6b2a32; }
+  form { display:flex; gap:8px; padding:12px 16px; border-top:1px solid #243044; }
+  input[type=text] { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #2c3a50; background:#121a24; color:var(--text); }
+  button { padding:10px 16px; border:0; border-radius:8px; background:var(--acc); color:#fff; font-weight:600; cursor:pointer; }
+  label.exec { display:flex; align-items:center; gap:6px; color:var(--muted); font-size:0.85rem; white-space:nowrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>capreq</h1>
+  <span class="sub">로컬 LLM → 등록된 능력 · CapNet 등은 어댑터로 연결</span>
+</header>
+<div id="meta">불러오는 중…</div>
+<div id="log"></div>
+<form id="f">
+  <label class="exec"><input type="checkbox" id="ex"> 실행(Task)</label>
+  <input id="msg" type="text" placeholder="예: 이 위성 사진 분류해줘" autocomplete="off" autofocus>
+  <button type="submit">보내기</button>
+</form>
+<script>
+const log = document.getElementById("log");
+const meta = document.getElementById("meta");
+function add(role, text, cls) {
+  const d = document.createElement("div");
+  d.className = "bubble " + role + (cls ? " " + cls : "");
+  d.textContent = text;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+async function refreshMeta() {
+  try {
+    const h = await fetch("/api/health").then(r => r.json());
+    meta.textContent = `model=${h.model} · capabilities=${h.capabilities} · executor=${h.executor}`;
+  } catch (e) {
+    meta.textContent = "health 실패 — Ollama/Core 확인";
+  }
+}
+document.getElementById("f").onsubmit = async (ev) => {
+  ev.preventDefault();
+  const msg = document.getElementById("msg").value.trim();
+  if (!msg) return;
+  document.getElementById("msg").value = "";
+  add("user", msg);
+  add("bot", "라우팅 중…");
+  const pending = log.lastChild;
+  try {
+    const r = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message: msg, execute: document.getElementById("ex").checked }),
+    });
+    const res = await r.json();
+    let t;
+    if (!r.ok) {
+      const detail = res.detail;
+      t = typeof detail === "string" ? detail
+        : (Array.isArray(detail) ? JSON.stringify(detail) : (res.reason || r.statusText || "요청 실패"));
+      pending.textContent = `(오류) ${t}`;
+      pending.className = "bubble bot bad";
+      return;
+    }
+    if (res.ok) {
+      t = `${res.capability_code}@${res.capability_version} (conf=${Number(res.confidence).toFixed(2)})\n${res.reason || ""}`;
+    } else {
+      t = `(미매칭) ${res.reason || "(reason 없음)"}`;
+    }
+    if (res.execution_message != null) {
+      t += `\n실행: ${res.execution_ok ? "OK" : "FAIL"} — ${res.execution_message}`;
+    }
+    pending.textContent = t;
+    pending.className = "bubble bot " + (res.ok ? "ok" : "bad");
+  } catch (e) {
+    pending.textContent = String(e);
+    pending.className = "bubble bot bad";
+  }
+};
+refreshMeta();
+</script>
+</body>
+</html>

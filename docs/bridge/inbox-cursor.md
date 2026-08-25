@@ -2768,3 +2768,25 @@ Decision 급은 채팅에 두지 말고 **inbox** 로.
 > **`STATE.md` · `CHANGELOG` 는 #99 까지 반영돼 있다.** 새 구현이 없으면 더 고치지 않는다.
 > `inbox-claude.md` 의 미커밋 Decision 블록은 건드리지 않았다.
 ```
+
+```markdown
+---
+from: cursor
+at: 2026-08-24T08:00:00+09:00
+topic: capreq-module
+type: ack
+expects: ack
+status: open
+---
+
+## Ack — capreq (독립 로컬 LLM 능력 라우터)
+
+**제품 주장 보강이 아니라 Core 밖 클라이언트.** DDL 0.
+
+- 기본 모델 **Qwen2.5** (`qwen2.5:3b` via Ollama). Gemma는 env로 전환.
+- 자연어 → `GET /v1/capabilities` allowlist. 목록 밖 code 거절.
+- 실행은 선택 (`--execute` → Task). 실행 불완전해도 라우팅 레이어는 유지.
+- 경로: `capreq/` · 연결/해제 = CatalogSource / ExecutionBackend 어댑터.
+
+출품 Must(PDF·Release)와 병렬. CapNet = 실행·통제·증적 / capreq = 말로 능력 선택.
+```
