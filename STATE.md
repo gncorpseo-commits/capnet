@@ -47,6 +47,13 @@
 > **CapCut 편집 가이드 (2026-08-22).** `docs/ops/capcut-edit-guide.md` — 분할(`Ctrl+B`)·텍스트/
 > 자동캡션·런북 §2 복붙·내보내기 체크. 영상 편집은 사람, 문장 정본은 런북.
 
+> **촬영 A/B PowerShell (2026-08-21).** `scripts/proof_ab.ps1` 포팅 — 본편에서 WSL 없이
+> `pwsh -File scripts\proof_ab.ps1`. 실측: A·B 실게이트 PASSED · 교차 Task COMPLETED
+> (case `ic1-0001`). 자막은 런북 §2-A 유지.
+>
+> **런북 리허설 보강 (2026-08-21).** `shoot-day-runbook.md` 에 pwsh·UI·생존 API·Docker 해설·
+> EuroSAT/골든셋·sanity/violations/A/B 용어·증적=demo 끝 재강조를 모음.
+
 > **제품 주장이 바뀌었다.** 「채점 가능한 계약」 → **「능력만 요구 · 승인 도메인 안 라우팅 · 실행 증적」** (D18)
 > 근거는 실패가 아니라 기획서 §1 원래 취지다. 골든셋 게이트는 **선택적 품질 프로파일**로 내려갔고,
 > 그래서 골든셋의 세 구멍(표본·분포·게이밍)이 계약 핵심에서 부속 기능의 한계가 됐다.
