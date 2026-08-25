@@ -30,8 +30,8 @@
 > (D-결정·반증·절대규칙 vs AI 구현 보조). 기억과 다르면 해당 파일 §4 체크 후 수정.
 
 > **결과보고서 docx (2026-08-25).** 공식 양식에 본문·붙임1(SBOM 10행)·붙임2(유형3·AI 보조 약 30%) 이식.
-> [`docs/ops/2026 오픈소스 개발자대회 결과보고서_915(지엔).docx`](docs/ops/2026%20오픈소스%20개발자대회%20결과보고서_915(지엔).docx)
-> **PDF · Release · 포털** 남음. 팀 인원/참가부문은 접수와 Word에서 한 번 대조.
+> [`docs/ops/contest-report-915-gn.docx`](docs/ops/contest-report-915-gn.docx) · PDF 동명.
+> 포털 업로드 시 파일명은 공식형 `…_915(지엔).pdf`로 바꿔도 됨. **Release · 포털** 남음.
 
 > **출품 영상 (2026-08-23).** CapCut 내보내기 **172.9s · 1080p · ~38MB**.
 > YouTube 일부 공개: **https://youtu.be/RjFiGpmLTbk**

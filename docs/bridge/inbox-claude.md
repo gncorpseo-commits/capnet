@@ -284,7 +284,7 @@ status: open
 
 **전제 (이미 완료 — 건드리지 말 것)**
 - 시연 YouTube: https://youtu.be/RjFiGpmLTbk · mp4 `…/CapCut/Videos/GN_2026오픈소스개발자대회_출품작_CAPNET.mp4`
-- 결과보고서: `docs/ops/2026 오픈소스 개발자대회 결과보고서_915(지엔).{docx,pdf}`
+- 결과보고서: `docs/ops/contest-report-915-gn.{docx,pdf}` (포털명은 `_915(지엔)`)
 - 정본 체크: `docs/ops/contest-submission-pack.md` · `contest-submission-checklist.md`
 
 **해야 할 일 (제품 코드 0 · DDL 0 · 스키마 금지)**

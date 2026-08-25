@@ -87,6 +87,7 @@
 - [촬영일 런북](./ops/shoot-day-runbook.md) — 명령·자막 복붙
 - [CapCut 자르기·자막](./ops/capcut-edit-guide.md) — PC 편집 초보 가이드
 - [**출품 제출 패킷**](./ops/contest-submission-pack.md) — 영상·보고서·Release 한눈에
+- [결과보고서 최종 PDF/docx](./ops/contest-report-915-gn.pdf) — `contest-report-915-gn.docx` 동봉
 - [게이트 사슬 1장](./ops/gate-chain-slide.md) — 영상 150–170초용
 
 ### retrospective

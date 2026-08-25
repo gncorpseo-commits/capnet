@@ -78,7 +78,8 @@
 
 | 항목 | 경로 |
 |------|------|
-| docx (제출용) | [`2026 오픈소스 개발자대회 결과보고서_915(지엔).docx`](./2026%20오픈소스%20개발자대회%20결과보고서_915(지엔).docx) · Downloads 동명 파일도 갱신됨 |
+| docx/PDF (저장소) | [`contest-report-915-gn.docx`](./contest-report-915-gn.docx) · [`contest-report-915-gn.pdf`](./contest-report-915-gn.pdf) |
+| 포털 업로드명 | `2026 오픈소스 개발자대회 결과보고서_915(지엔).pdf` (공식 양식 파일명) |
 | 빈 양식 백업 | Downloads `…_빈양식백업.docx` |
 
 ### 체크리스트

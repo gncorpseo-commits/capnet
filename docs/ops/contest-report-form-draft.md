@@ -362,7 +362,7 @@ n=300 paired `|Δacc| = 0.0467 ≤ 0.05` — 단 학습셋 위 측정(한계점 
 - [ ] 붙임1은 **가로 쪽** · 최대 10행 · LGPL 계열(psycopg)을 1번에 유지
 - [x] 붙임2 §4 상용 AI 보조도구 **비율 확정** (약 30%)
 - [x] 촬영: [`shoot-day-runbook.md`](./shoot-day-runbook.md) → YouTube URL 기입 ✅ `https://youtu.be/RjFiGpmLTbk`
-- [x] docx 이식 ✅ [`2026 오픈소스 개발자대회 결과보고서_915(지엔).docx`](./2026%20오픈소스%20개발자대회%20결과보고서_915(지엔).docx) (2026-08-25)
+- [x] docx 이식 ✅ [`contest-report-915-gn.docx`](./contest-report-915-gn.docx) / PDF 동명 (2026-08-25)
 - [ ] PDF 저장 · 포털 zip (docx → PDF는 Word/한컴에서)
 - [x] 시연 URL · 붙임1·2 채움
 - [ ] 포털 zip 제출 · 제출 완료·메일

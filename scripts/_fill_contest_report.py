@@ -16,8 +16,7 @@ SRC = Path(
 )
 BACKUP = SRC.with_name(SRC.stem + "_빈양식백업.docx")
 REPO_OUT = Path(
-    r"C:\Users\wjsto\pjt\capnet\docs\ops"
-    r"\2026 오픈소스 개발자대회 결과보고서_915(지엔).docx"
+    r"C:\Users\wjsto\pjt\capnet\docs\ops\contest-report-915-gn.docx"
 )
 
 

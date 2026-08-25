@@ -4,7 +4,7 @@
 
 **제품 코드 0 · DDL 0 · 출품 트랙.**
 
-- `docs/ops/2026 오픈소스 개발자대회 결과보고서_915(지엔).{docx,pdf}` — 공식 양식 이식 최종.
+- `docs/ops/contest-report-915-gn.{docx,pdf}` — 공식 양식 이식 최종 (저장소 ASCII명 · 포털은 `_915(지엔)`).
 - `docs/ops/contest-submission-pack.md` · checklist G7: docx/PDF ✅ · Release·포털 남음.
 - `docs/retrospective/human-intervention.md` — 팀 설계(D-결정·반증) vs AI 구현 보조 재구성.
 - 시연 mp4 경로: `…CAPNET.mp4` (파일명 끝 공백 제거 반영).
