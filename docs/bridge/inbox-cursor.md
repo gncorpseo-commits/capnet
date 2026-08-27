@@ -2790,3 +2790,61 @@ status: open
 
 출품 Must(PDF·Release)와 병렬. CapNet = 실행·통제·증적 / capreq = 말로 능력 선택.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-27T12:10:00+09:00
+topic: contest-submit-d2
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — D-2 Next 실행 완료 (Release ✅ · 포털만 사람 몫)
+
+**base:** `main` = **`238427d`** (#102 머지) · 워킹트리 clean 에서 시작.
+
+### 1. 검증 — 5종 중 3종 실행 · 2종 **못 돌림**
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests.sh` | **240 통과** (skip 7) · 골든셋 sha 정합 OK |
+| `check_submission.py` | **24/24 통과** |
+| `check_release.sh v0.1.0-contest` | 통과 — **2.5MB / 50MB** · 파일 335 · prefix `capnet/` |
+| `clean_room.sh` | **미실행** — 이 WSL 배포판에 Docker 없음 |
+| `prod_room.sh` | **미실행** — 같은 이유 |
+
+`docker` 명령 자체가 없다 (Docker Desktop WSL 통합 꺼짐). **돌렸다고 적지 않았다** —
+직전 기록 9/9 · 27/27 을 그대로 두고 CHANGELOG·STATE 에 미실행이라고 썼다.
+마감이 오늘이라 이 둘을 기다리지 않고 Release 를 냈다. **재현 검사는 사람이 한 번 돌려주면 좋다.**
+
+### 2. Release
+
+- 태그 **`v0.1.0-contest`** = `238427d` (lightweight · Next 문구 그대로)
+- https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest
+- 첨부 `capnet-v0.1.0-contest.zip` · 2,610,903 B ·
+  `sha256:4d7fe0855bda8d8f5f0032cbca10d5a39fc8b3a007debd25729dc09c07db9ecc`
+- zip 실내용 확인: `safetensors` **5종 + `placeholder`** · `.env` 없음 · EuroSAT 원본 없음
+  (`download_eurosat.{sh,ps1}` 스크립트만)
+
+### 3. 문서 (이 PR)
+
+`STATE.md` · `CHANGELOG` · `contest-submission-pack.md` §3·§10 · checklist **G9**.
+**G9 는 ✅ 가 아니라 🔶 로 뒀다** — Release 는 끝났지만 포털 업로드는 사람이 한다.
+갱신일 3건(runbook · catalog · checklist)은 `test_doc_counts` 가 CHANGELOG 최신일과
+대조해서 실패하기에 함께 올렸다.
+
+### 4. 짚어둘 것 두 가지
+
+1. **zip 안의 문서는 태그 시점이라 G9 를 아직 ❌ 로 말한다.** 이 PR 은 태그 뒤 커밋이다.
+   신경 쓰이면 **머지 후 태그를 다시 잘라 Release 자산을 교체**하면 된다 (사람 판단 · 나는 안 건드림).
+2. **G7 은 🔶 그대로 뒀다.** `contest-report-915-gn.pdf` 는 저장소에 실재하지만
+   체크리스트에 남은 「팀 인원·참가부문 Word 대조」를 내가 확인할 수 없다. 범위 밖이라 손대지 않았다.
+
+### 5. 하지 않은 것
+
+제품 코드 · DDL · 스키마 · 새 실행기 · 보고서 본문 재작성 · `git add -A` · force push · main 직접 머지.
+
+**남은 것:** 포털 업로드 (PDF `_915(지엔)` · 요구 시 docx · 시연 URL · Release URL) — **사람**.
+```
