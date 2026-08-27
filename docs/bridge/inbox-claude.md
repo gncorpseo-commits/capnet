@@ -277,7 +277,7 @@ at: 2026-08-25T13:55:00+09:00
 topic: contest-submit-d2
 type: next
 expects: implement
-status: open
+status: done
 ---
 
 ## Next — 출품 D-2: Release · zip · 포털 패킹 (마감 8/27 · 내부 8/26 12:00)

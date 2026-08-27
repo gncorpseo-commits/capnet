@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-08-27** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · README는 상태 비보유(링크만)
+> **갱신: 2026-08-27** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
 
 ---
 
@@ -13,20 +13,20 @@
 
 ## 지금 어디인가
 
-**서사 전환 완료 (기획서 v4.7) · 사이클 폐쇄 완료.** **시연 영상 편집 완료 (8/23).**
+**서사 전환 완료 (기획서 v4.7) · 사이클 폐쇄 완료.** **2026 대회 출품 제출 완료 (8/27).**
 
-> **capreq (2026-08-24).** 독립 모듈 `capreq/` — 로컬 LLM **Qwen2.5**(기본; Gemma 대안)가
-> 자연어 → Core `GET /v1/capabilities` allowlist 능력으로 라우팅. CapNet Core와 **연결/해제**
-> 가능 (`CatalogSource` / `ExecutionBackend`). 실행 불완전해도 챗봇 레이어는 필수 전제.
-> 사용: `cd capreq && pip install -e .` → `python -m capreq route "분류해줘" --core http://127.0.0.1:8000`
-> (Ollama `qwen2.5:3b` 필요).
+> **출품 이후 트랙 A · D25 (2026-08-27).** 같은 공개 저장소에서 계속 개발한다.
+> 출품 재현본 = 태그 [`v0.1.0-contest`](https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest) 고정.
+> 새 저장소 분기 없음. 이후 작업 = `finn|toma|pl/<topic>` → PR → main.
+
+> **포털 제출 완료 (2026-08-27).** 결과보고서 · 시연(YouTube) · 소스(Release) 포털 업로드 완료.
+> G7–G9 ✅. PR [#103](https://github.com/gncorpseo-commits/capnet/pull/103) 머지됨.
 
 > **Release 발행 (2026-08-27).** 태그 **`v0.1.0-contest`** = `238427d` ·
 > [Release](https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest) ·
 > `capnet-v0.1.0-contest.zip` **2.5MB / 335파일** 첨부. 태그 기준 `run_tests` **240** ·
 > `check_submission` **24/24** · `check_release v0.1.0-contest` 통과.
-> `clean_room`·`prod_room` 은 **이 환경에 Docker 가 없어 미실행** (직전 기록 9/9 · 27/27).
-> **남은 것은 포털 업로드 — 사람이 한다** (PDF `_915(지엔)` · 시연 URL · Release URL).
+> `clean_room`·`prod_room` 은 Release 환경에 Docker 없어 미실행 (직전 기록 9/9 · 27/27).
 
 > **동기화 (2026-08-25).** PR [#102](https://github.com/gncorpseo-commits/capnet/pull/102) —
 > 보고서 PDF/docx · capreq · 제출팩 · `inbox-claude` Next(Release). **main 머지 = master.**
@@ -81,7 +81,7 @@
 
 | 트랙 | 상태 |
 |------|------|
-| **출품 (1순위)** | 영상·YouTube ✅ · **docx 이식 ✅** · PDF·Release·포털 미완 |
+| **출품 (1순위)** | ✅ **포털 제출 완료 (8/27)** · Release `v0.1.0-contest` · **이후 = D25 트랙 A** |
 | **Phase 1** | ✅ 완주 · 판정 **Go** (v4.6) |
 | **Phase 2** | 사이클 폐쇄 완료. 유휴 판정은 스키마 필요 → SD-007 **해소** |
 | **제품 유통 (D19)** | 문서 정본 [`product-distribution.md`](docs/design/product-distribution.md). 1호 = 초대 team/tenant · 경제 비기초. **코드 유통 세대 = v제품-0 직전** |
