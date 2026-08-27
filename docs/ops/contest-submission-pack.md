@@ -2,7 +2,7 @@
 
 > **한 파일에 모은 제출 체크리스트.** 정본 일정·규칙은 [`contest-submission-checklist.md`](./contest-submission-checklist.md).  
 > **최종 마감 2026-08-27** · 내부 마감 **2026-08-26 12:00**  
-> 갱신: 2026-08-25
+> 갱신: 2026-08-27 · **포털 제출 완료** · 이후 **D25 트랙 A**
 
 ---
 
@@ -201,10 +201,10 @@ bash scripts/check_release.sh
 
 ## 8. 포털 zip에 넣을 것 (확인 후 체크)
 
-- [ ] 결과보고서 PDF (`_915(지엔)`)
-- [ ] (요구 시) hwp/docx 원본
-- [ ] 시연 mp4 **또는** URL만 (주최 안내에 따름 — **둘 다 준비**)
-- [ ] (요구 시) 소스 zip 또는 repo URL
+- [x] 결과보고서 PDF (`_915(지엔)`) — 포털 제출 완료 2026-08-27
+- [x] (요구 시) hwp/docx 원본
+- [x] 시연 mp4 **또는** URL — YouTube https://youtu.be/RjFiGpmLTbk
+- [x] 소스 zip 또는 repo URL — Release `v0.1.0-contest`
 
 ---
 
@@ -220,12 +220,12 @@ bash scripts/check_release.sh
 
 ---
 
-## 10. 한 페이지 요약 — 남은 것은 **포털 업로드**
+## 10. 한 페이지 요약 — **출품 제출 완료**
 
 | # | 항목 | 상태 |
 |---|------|------|
-| G7 | 보고서 PDF/hwp | 🔶 | docx ✅ · **PDF만** 남음 |
-| G8 | YouTube ≤3분 | ✅ | https://youtu.be/RjFiGpmLTbk · mp4 로컬 보관 |
-| G9 | Release + 포털 zip | 🔶 | Release ✅ ([`v0.1.0-contest`](https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest)) · **포털 업로드**만 남음 (사람) |
+| G7 | 보고서 PDF | ✅ | `contest-report-915-gn.pdf` · 포털명 `_915(지엔)` |
+| G8 | YouTube ≤3분 | ✅ | https://youtu.be/RjFiGpmLTbk |
+| G9 | Release + 포털 | ✅ | [`v0.1.0-contest`](https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest) · 포털 제출 2026-08-27 |
 
-**다음 액션:** 포털 업로드 — PDF(`_915(지엔)`) · (요구 시) docx · 시연 URL · Release URL.
+**이후:** D25 트랙 A — 같은 repo · 출품 태그는 고정 · Phase/제품 작업은 feature 브랜치.

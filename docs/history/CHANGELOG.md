@@ -1,5 +1,14 @@
 # Changelog
 
+## 출품 포털 제출 완료 · 이후 트랙 A — 2026-08-27
+
+**제품 코드 0 · DDL 0.**
+
+- 대회 포털 제출 완료 (결과보고서 · 시연 · 소스). G7–G9 ✅.
+- **D25 (트랙 A):** 공개 저장소 `capnet`에서 계속 개발. 출품 재현본은 태그
+  [`v0.1.0-contest`](https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest)
+  로만 고정(이동·재작성 금지). 새 저장소 분기 없음.
+
 ## Release `v0.1.0-contest` — 2026-08-27
 
 **제품 코드 0 · DDL 0 · 출품 트랙.**

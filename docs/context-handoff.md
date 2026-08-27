@@ -4,7 +4,7 @@
 > 자동 로드되지 않는다. 필요할 때 `@docs/context-handoff.md`로 부른다.
 >
 > 문서 지도: [`INDEX.md`](./INDEX.md) · 주간 상태: [`../STATE.md`](../STATE.md)  
-> 최종 갱신: 2026-08-15 · 일정 정본은 checklist (이 파일에 날짜 표 두지 않음)
+> 최종 갱신: 2026-08-27 · 일정 정본은 checklist (이 파일에 날짜 표 두지 않음)
 
 ---
 
@@ -38,6 +38,7 @@
 | D16 | **프로젝트 종착점 = Phase 3+ 로드맵 전체** (기획서 §9). Contest MVP는 Phase 1의 슬라이스이며 **종료 지점이 아니다**. 8/27은 그 슬라이스의 외부 마감일 | 2026-08-08 결정. 실행 계단·진입조건은 [`design/roadmap.md`](./design/roadmap.md). 단 §7.2 Go 없이 Phase 2 코드 금지(§13)는 그대로 |
 | D20 | **품질 프로파일 — 게이트 없는 Capability 도 라우팅된다.** `capability.quality_profile`(`golden`\|`none`) 추가. `none` 이면 `golden_set_*` 는 **센티널**(`'(none)'` · `repeat('0',64)` · `1` · `{}`)이며 CHECK 로 강제한다. 계약 바인딩도 **게이트런**이다 — `gate_run.kind='contract'` 를 **team gate-runner 가** 실행하고, 통과하면 기존과 같은 경로로 `agent_capability_passed` 가 발급된다 | 2026-08-12. D18 을 코드에 반영한 것. 스키마가 게이트를 6층으로 강제하고 있어 (`assignment` FK → acp → `agent_capability`(PASSED ⇒ `gate_run_id` NOT NULL) → `gate_run_passed` → `gate_run`, 그리고 `capability.golden_set_*` NOT NULL ×4) 새 능력마다 골든셋 40장이 필요했다. **NOT NULL·FK·CHECK 를 하나도 약화하지 않고** 추가만으로 풀었다(`0010`). Core 가 판정을 만들지 않는다 — 「실행과 판정의 분리」 유지. 전제: **온프레/VPN + 초대 team/tenant MVP**. `image.classify@1` 은 `golden` 유지 |
 | D19 | **제품 유통 목표** = Open Agent + (선택) Open Compute + **User-defined Trust Domain**. 경제는 **선택·비기초**. 1호 유통 = 초대 team/tenant · 저민감 public만. Private Community ≠ 데이터 안전. 세대·금지는 [`design/product-distribution.md`](./design/product-distribution.md) | 2026-08-10. 기획서 §8·스키마 `trust_domain`과 정합. “아무 데이터·아무 Node” 공개 SaaS는 이 세대 밖 |
+| **D25** | **출품 이후 = 같은 공개 저장소에서 계속 (트랙 A).** 출품 재현본은 태그 `v0.1.0-contest`로만 고정(태그 이동·강제 재작성 금지 · 필요 시 `v0.1.1-…` 신설). 진행용 별도 repo는 만들지 않는다. 수상 시 공개 유지 의무와 심사 재현을 같은 origin에 둔다 | 2026-08-27. 사람 결정(채팅). Contest는 D16 슬라이스이지 저장소 분기가 아님 |
 
 ---
 

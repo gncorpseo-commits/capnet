@@ -2896,3 +2896,21 @@ Release https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest
 > 브랜치 이름 `contest-release-g9` 는 `CONTRIBUTING.md` §24 의 `toma/<topic>` 접두를 안 지켰다.
 > PR 이 열린 뒤라 그대로 두기로 했다 (사람 확인함).
 ```
+
+```markdown
+---
+from: cursor
+at: 2026-08-27T12:30:00+09:00
+topic: contest-submit-d2
+type: ack
+expects: none
+status: done
+---
+
+## Ack — 포털 제출 완료 · D25 트랙 A
+
+- 사람: 대회 포털 제출 완료 (2026-08-27).
+- **D25:** 같은 공개 `capnet`에서 계속. 출품 고정본 = 태그 `v0.1.0-contest` (이동 금지).
+- `inbox-claude` `contest-submit-d2` → **done**.
+- 다음 구현은 출품 Must가 아니라 Phase/제품 feature 브랜치.
+```
