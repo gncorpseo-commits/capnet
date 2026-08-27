@@ -5,7 +5,7 @@
 > **전제:** 참가접수 완료 · 배점 비공개 · 회신 없어도 준비 완결.  
 > **최종 마감 = 8.27** (내부 마감 8/26 12:00).  
 > 시나리오·UC 정본: [`Contest_MVP_2026.md`](./Contest_MVP_2026.md) · 결정: [`../context-handoff.md`](../context-handoff.md)  
-> 갱신: 2026-08-25
+> 갱신: 2026-08-27
 
 ---
 
@@ -119,7 +119,7 @@
 | G6 | 코드 MVP | ✅ | Contest 기술 슬라이스 |
 | G7 | 공식 양식 파일·PDF | 🔶 | docx 이식 ✅ (2026-08-25). **PDF 저장**만 남음 |
 | G8 | YouTube ≤3분 | ✅ | https://youtu.be/RjFiGpmLTbk · 172.9s · 일부 공개 · [`contest-submission-pack.md`](./contest-submission-pack.md) |
-| G9 | 포털 zip · Release `v0.1.0-contest` | ❌ | 내부마감 8/26 12:00 |
+| G9 | 포털 zip · Release `v0.1.0-contest` | 🔶 | Release ✅ 2026-08-27 ([태그 `238427d`](https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest) · zip 2.5MB) · **포털 업로드**만 남음 |
 | G10 | A/B Must | 보류 | E1 골격만 · SD-001 · **제출 Must 아님** |
 
 ---

@@ -1,5 +1,14 @@
 # Changelog
 
+## Release `v0.1.0-contest` — 2026-08-27
+
+**제품 코드 0 · DDL 0 · 출품 트랙.**
+
+- 태그 `v0.1.0-contest` = `238427d` · GitHub Release 발행 · `capnet-v0.1.0-contest.zip` 첨부 (2.5MB · 335파일).
+- 태그 기준 재검증: `run_tests` 240 · `check_submission` 24/24 · `check_release v0.1.0-contest` 통과.
+  (`clean_room`·`prod_room` 은 이 환경에 Docker 가 없어 미실행 — 직전 기록 9/9 · 27/27.)
+- `contest-submission-pack.md` §3·§10 · checklist G9 = 🔶 (**포털 업로드**만 사람 몫으로 남음).
+
 ## 결과보고서 최종본 + 사람 개입 정리 — 2026-08-25
 
 **제품 코드 0 · DDL 0 · 출품 트랙.**

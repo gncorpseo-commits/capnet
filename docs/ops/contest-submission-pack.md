@@ -88,7 +88,8 @@
 - [x] 시연 영상 URL 기입
 - [x] 붙임2 §4 상용 AI 보조 **약 30%**
 - [ ] **팀 인원·참가부문** Word에서 접수와 대조 (현재 초안: 3명 · 일반)
-- [ ] PDF 저장 · 포털 zip
+- [x] PDF 저장 ([`contest-report-915-gn.pdf`](./contest-report-915-gn.pdf))
+- [ ] 포털 zip 업로드 (사람)
 
 ### 표지 필수 칸
 
@@ -99,9 +100,12 @@
 
 ---
 
-## 3. 소스코드 — ❌ Release·zip 미발행
+## 3. 소스코드 — ✅ Release 발행 (2026-08-27)
 
-### Release (8/25–26)
+**Release:** https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest
+**첨부 zip:** `capnet-v0.1.0-contest.zip` · **2.5 MB** · 파일 335개 · 태그 `v0.1.0-contest` = `238427d`
+
+### Release (발행 절차 — 실행됨)
 
 ```bash
 # 태그 (main 머지·검증 후)
@@ -112,9 +116,9 @@ git push origin v0.1.0-contest
 git archive --format=zip --prefix=capnet/ v0.1.0-contest -o capnet-v0.1.0-contest.zip
 ```
 
-- [ ] GitHub **Release** `v0.1.0-contest` 발행 (URL + zip)
-- [ ] zip **≤50MB** · 압축 해제 후 파일 확인
-- [ ] `bash scripts/check_release.sh` (태그 또는 HEAD)
+- [x] GitHub **Release** `v0.1.0-contest` 발행 (URL + zip) — 2026-08-27
+- [x] zip **≤50MB** · 내용 확인 — 2.5 MB · 가중치 5종 + `placeholder` · `.env`/EuroSAT 원본 없음
+- [x] `bash scripts/check_release.sh v0.1.0-contest` 통과
 
 ### 저장소에 있어야 함
 
@@ -216,12 +220,12 @@ bash scripts/check_release.sh
 
 ---
 
-## 10. 한 페이지 요약 — 아직 ❌
+## 10. 한 페이지 요약 — 남은 것은 **포털 업로드**
 
 | # | 항목 | 상태 |
 |---|------|------|
 | G7 | 보고서 PDF/hwp | 🔶 | docx ✅ · **PDF만** 남음 |
 | G8 | YouTube ≤3분 | ✅ | https://youtu.be/RjFiGpmLTbk · mp4 로컬 보관 |
-| G9 | Release + 포털 zip | ❌ |
+| G9 | Release + 포털 zip | 🔶 | Release ✅ ([`v0.1.0-contest`](https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest)) · **포털 업로드**만 남음 (사람) |
 
-**다음 액션:** Word에서 PDF 저장 · `v0.1.0-contest` Release · 포털.
+**다음 액션:** 포털 업로드 — PDF(`_915(지엔)`) · (요구 시) docx · 시연 URL · Release URL.

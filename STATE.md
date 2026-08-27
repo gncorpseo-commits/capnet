@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-08-25** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · README는 상태 비보유(링크만)
+> **갱신: 2026-08-27** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · README는 상태 비보유(링크만)
 
 ---
 
@@ -21,9 +21,15 @@
 > 사용: `cd capreq && pip install -e .` → `python -m capreq route "분류해줘" --core http://127.0.0.1:8000`
 > (Ollama `qwen2.5:3b` 필요).
 
+> **Release 발행 (2026-08-27).** 태그 **`v0.1.0-contest`** = `238427d` ·
+> [Release](https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest) ·
+> `capnet-v0.1.0-contest.zip` **2.5MB / 335파일** 첨부. 태그 기준 `run_tests` **240** ·
+> `check_submission` **24/24** · `check_release v0.1.0-contest` 통과.
+> `clean_room`·`prod_room` 은 **이 환경에 Docker 가 없어 미실행** (직전 기록 9/9 · 27/27).
+> **남은 것은 포털 업로드 — 사람이 한다** (PDF `_915(지엔)` · 시연 URL · Release URL).
+
 > **동기화 (2026-08-25).** PR [#102](https://github.com/gncorpseo-commits/capnet/pull/102) —
 > 보고서 PDF/docx · capreq · 제출팩 · `inbox-claude` Next(Release). **main 머지 = master.**
-> 다음 Claude: 태그 `v0.1.0-contest` · zip · 포털 패킹 문서.
 
 > **사람 개입 정리 (2026-08-25).** 붙임2「팀이 설계」근거를 문서에서 재구성 —
 > [`docs/retrospective/human-intervention.md`](docs/retrospective/human-intervention.md)
