@@ -1,5 +1,21 @@
 # Changelog
 
+## capreq 입력 챗봇 + text.ner (제품 1호) — 2026-08-27
+
+**capreq:** 웹 UI 파일 첨부 → `POST /v1/inputs` → Task `{ inputId }` · `CapNet-Key` · MIME 선검사.
+
+**text.ner (PR-B):** `RuleTextNer` · 규칙 span(`email`·`url`·`ipv4`·`uuid`·`iso_date`) ·
+`rule_ner.safetensors`(0 param) · `scripts/ner_demo.sh` · 카탈로그 **7번째 구현**.
+
+## capreq 입력 챗봇 (제품 1호 PR-A) — 2026-08-27
+
+**CapNet Core 변경 0 · capreq 독립 모듈.**
+
+- 웹 UI: 파일 첨부(+·드래그) + 자연어 → Qwen 라우팅 → `POST /v1/inputs` → `/v1/tasks` `{ inputId }`.
+- `CapNetAdapter`: `CapNet-Key` 인증 · `upload_input()` · `inputId` 실행 경로.
+- MIME 선검사(`capreq/media.py`) · `python-multipart` server 의존.
+- 브리지 Proposal `product-v1-input-chatbot` (PR-B 카테고리 +1 대기).
+
 ## 출품 포털 제출 완료 · 이후 트랙 A — 2026-08-27
 
 **제품 코드 0 · DDL 0.**

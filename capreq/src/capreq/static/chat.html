@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>capreq — 능력 요청 챗봇</title>
 <style>
-  :root { --bg:#0f1419; --panel:#1a2332; --text:#e7ecf3; --muted:#8b9bb4; --acc:#3d8bfd; --ok:#3dd68c; --bad:#f07178; }
+  :root { --bg:#0f1419; --panel:#1a2332; --text:#e7ecf3; --muted:#8b9bb4; --acc:#3d8bfd; --ok:#3dd68c; --bad:#f07178; --drop:#243044; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: "Segoe UI", system-ui, sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
-  header { padding:12px 16px; border-bottom:1px solid #243044; display:flex; gap:12px; align-items:baseline; }
+  header { padding:12px 16px; border-bottom:1px solid #243044; display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
   header h1 { font-size:1.1rem; margin:0; }
   header .sub { color:var(--muted); font-size:0.85rem; }
   #meta { padding:8px 16px; color:var(--muted); font-size:0.8rem; }
@@ -18,76 +18,149 @@
   .bot { align-self:flex-start; background:var(--panel); border:1px solid #2c3a50; }
   .bot.ok { border-color:#2a6b4f; }
   .bot.bad { border-color:#6b2a32; }
-  form { display:flex; gap:8px; padding:12px 16px; border-top:1px solid #243044; }
-  input[type=text] { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #2c3a50; background:#121a24; color:var(--text); }
-  button { padding:10px 16px; border:0; border-radius:8px; background:var(--acc); color:#fff; font-weight:600; cursor:pointer; }
+  #dropzone { margin:0 16px 8px; padding:10px 12px; border:1px dashed #3d4f66; border-radius:8px; color:var(--muted); font-size:0.85rem; text-align:center; }
+  #dropzone.over { border-color:var(--acc); background:var(--drop); color:var(--text); }
+  #attachRow { display:flex; align-items:center; gap:8px; padding:0 16px 8px; flex-wrap:wrap; }
+  #attachName { color:var(--muted); font-size:0.85rem; }
+  #attachName.has { color:var(--ok); }
+  form { display:flex; gap:8px; padding:12px 16px; border-top:1px solid #243044; flex-wrap:wrap; align-items:center; }
+  input[type=text] { flex:1; min-width:200px; padding:10px 12px; border-radius:8px; border:1px solid #2c3a50; background:#121a24; color:var(--text); }
+  button, .btn { padding:10px 16px; border:0; border-radius:8px; background:var(--acc); color:#fff; font-weight:600; cursor:pointer; font-size:0.9rem; }
+  .btn.secondary { background:#2c3a50; color:var(--text); font-weight:500; }
   label.exec { display:flex; align-items:center; gap:6px; color:var(--muted); font-size:0.85rem; white-space:nowrap; }
+  input[type=file] { display:none; }
 </style>
 </head>
 <body>
 <header>
   <h1>capreq</h1>
-  <span class="sub">로컬 LLM → 등록된 능력 · CapNet 등은 어댑터로 연결</span>
+  <span class="sub">로컬 LLM → 능력 라우팅 · 파일은 Core 중개 업로드(D22)</span>
 </header>
 <div id="meta">불러오는 중…</div>
+<div id="dropzone">사진·파일을 여기에 놓거나 + 버튼으로 고른다</div>
+<div id="attachRow">
+  <label class="btn secondary" for="file">+ 파일</label>
+  <input id="file" type="file" accept="image/jpeg,image/png,image/webp,text/plain">
+  <span id="attachName">첨부 없음</span>
+  <button type="button" class="btn secondary" id="clearFile" hidden>첨부 해제</button>
+</div>
 <div id="log"></div>
 <form id="f">
-  <label class="exec"><input type="checkbox" id="ex"> 실행(Task)</label>
-  <input id="msg" type="text" placeholder="예: 이 위성 사진 분류해줘" autocomplete="off" autofocus>
+  <label class="exec"><input type="checkbox" id="ex" checked> 실행(Task)</label>
+  <input id="msg" type="text" placeholder="예: 이 사진 분류해줘" autocomplete="off" autofocus>
   <button type="submit">보내기</button>
 </form>
 <script>
 const log = document.getElementById("log");
 const meta = document.getElementById("meta");
+const fileInput = document.getElementById("file");
+const attachName = document.getElementById("attachName");
+const clearFile = document.getElementById("clearFile");
+const dropzone = document.getElementById("dropzone");
+let pendingFile = null;
+
+function setFile(f) {
+  pendingFile = f || null;
+  if (pendingFile) {
+    attachName.textContent = pendingFile.name + " (" + (pendingFile.type || "?") + ")";
+    attachName.classList.add("has");
+    clearFile.hidden = false;
+  } else {
+    attachName.textContent = "첨부 없음";
+    attachName.classList.remove("has");
+    clearFile.hidden = true;
+    fileInput.value = "";
+  }
+}
+
+fileInput.onchange = () => setFile(fileInput.files[0] || null);
+clearFile.onclick = () => setFile(null);
+
+["dragenter","dragover"].forEach(ev => dropzone.addEventListener(ev, e => {
+  e.preventDefault();
+  dropzone.classList.add("over");
+}));
+["dragleave","drop"].forEach(ev => dropzone.addEventListener(ev, e => {
+  e.preventDefault();
+  dropzone.classList.remove("over");
+}));
+dropzone.addEventListener("drop", e => {
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+
 function add(role, text, cls) {
   const d = document.createElement("div");
   d.className = "bubble " + role + (cls ? " " + cls : "");
   d.textContent = text;
   log.appendChild(d);
   log.scrollTop = log.scrollHeight;
+  return d;
 }
+
 async function refreshMeta() {
   try {
     const h = await fetch("/api/health").then(r => r.json());
-    meta.textContent = `model=${h.model} · capabilities=${h.capabilities} · executor=${h.executor}`;
+    meta.textContent =
+      `model=${h.model} · capabilities=${h.capabilities} · executor=${h.executor} · input_upload=${h.input_upload}`;
   } catch (e) {
     meta.textContent = "health 실패 — Ollama/Core 확인";
   }
 }
+
+function formatResult(res) {
+  let t;
+  if (res.ok) {
+    t = `${res.capability_code}@${res.capability_version} (conf=${Number(res.confidence).toFixed(2)})\n${res.reason || ""}`;
+  } else {
+    t = `(미매칭) ${res.reason || "(reason 없음)"}`;
+  }
+  if (res.input_id) t += `\ninputId=${res.input_id}`;
+  if (res.execution_message != null) {
+    t += `\n실행: ${res.execution_ok ? "OK" : "FAIL"} — ${res.execution_message}`;
+  }
+  if (res.result_label) t += `\n결과 label=${res.result_label}`;
+  if (res.task_id) t += `\ntask=${res.task_id}`;
+  return t;
+}
+
 document.getElementById("f").onsubmit = async (ev) => {
   ev.preventDefault();
   const msg = document.getElementById("msg").value.trim();
-  if (!msg) return;
+  if (!msg && !pendingFile) return;
   document.getElementById("msg").value = "";
-  add("user", msg);
-  add("bot", "라우팅 중…");
-  const pending = log.lastChild;
+  const userLine = msg || "(파일만 첨부)";
+  add("user", pendingFile ? userLine + "\n📎 " + pendingFile.name : userLine);
+  const pending = add("bot", "라우팅 중…");
   try {
-    const r = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ message: msg, execute: document.getElementById("ex").checked }),
-    });
-    const res = await r.json();
-    let t;
+    let r, res;
+    if (pendingFile) {
+      const fd = new FormData();
+      fd.append("message", msg);
+      fd.append("execute", document.getElementById("ex").checked ? "true" : "false");
+      fd.append("file", pendingFile);
+      r = await fetch("/api/chat", { method: "POST", body: fd });
+    } else {
+      r = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message: msg, execute: document.getElementById("ex").checked }),
+      });
+    }
+    res = await r.json();
     if (!r.ok) {
       const detail = res.detail;
-      t = typeof detail === "string" ? detail
+      const t = typeof detail === "string" ? detail
         : (Array.isArray(detail) ? JSON.stringify(detail) : (res.reason || r.statusText || "요청 실패"));
       pending.textContent = `(오류) ${t}`;
       pending.className = "bubble bot bad";
       return;
     }
-    if (res.ok) {
-      t = `${res.capability_code}@${res.capability_version} (conf=${Number(res.confidence).toFixed(2)})\n${res.reason || ""}`;
-    } else {
-      t = `(미매칭) ${res.reason || "(reason 없음)"}`;
-    }
-    if (res.execution_message != null) {
-      t += `\n실행: ${res.execution_ok ? "OK" : "FAIL"} — ${res.execution_message}`;
-    }
-    pending.textContent = t;
+    pending.textContent = formatResult(res);
     pending.className = "bubble bot " + (res.ok ? "ok" : "bad");
+    if (pendingFile && document.getElementById("ex").checked && res.execution_ok) {
+      setFile(null);
+    }
   } catch (e) {
     pending.textContent = String(e);
     pending.className = "bubble bot bad";

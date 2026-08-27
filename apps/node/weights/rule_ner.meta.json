@@ -1,0 +1,15 @@
+{
+  "weights": "rule_ner.safetensors",
+  "weights_sha256": "15458b002abc515dd7be607fe79766d8d1eae5e5e1fbdd3ebc70b11828f1ee58",
+  "arch": "RuleTextNer",
+  "pretrained": false,
+  "dataset": "none (규칙 기반 · 학습 없음 · 파라미터 0 · 버퍼 1칸은 지문용)",
+  "labels": [
+    "email",
+    "url",
+    "ipv4",
+    "uuid",
+    "iso_date"
+  ],
+  "note": "text.ner 는 quality_profile='none' 이다 — 규칙 span 만. 사람·조직 NER 을 주장하지 않는다."
+}

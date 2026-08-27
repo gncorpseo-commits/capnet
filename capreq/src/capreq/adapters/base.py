@@ -65,6 +65,7 @@ class ExecutionBackend(Protocol):
         capability_version: int,
         dataset_id: str | None = None,
         case_id: str | None = None,
+        input_id: str | None = None,
         extra: dict[str, Any] | None = None,
     ) -> ExecutionResult:
         ...

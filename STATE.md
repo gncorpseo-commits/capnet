@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-08-27** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
+> **갱신: 2026-08-28** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
 
 ---
 
@@ -21,6 +21,14 @@
 
 > **포털 제출 완료 (2026-08-27).** 결과보고서 · 시연(YouTube) · 소스(Release) 포털 업로드 완료.
 > G7–G9 ✅. PR [#103](https://github.com/gncorpseo-commits/capnet/pull/103) 머지됨.
+
+> **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
+> 브리지 Next: `product-handoff-to-claude`. 브랜치 `toma/post-contest-track-a` dirty.
+
+> **제품 1호 착수 (2026-08-27).** capreq **입력 챗봇** — 파일 첨부 → Core `POST /v1/inputs`
+> → Task `{ inputId }` (D22). `CapNet-Key` 인증 수정 · 브리지 Proposal `product-v1-input-chatbot`.
+> **PR-B `text.ner`** — RuleTextNer · `scripts/ner_demo.sh` · 카탈로그 7번째 구현.
+> **미커밋** — Claude가 정리·gitignore 예외(`rule_ner.*`)·PR.
 
 > **Release 발행 (2026-08-27).** 태그 **`v0.1.0-contest`** = `238427d` ·
 > [Release](https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest) ·

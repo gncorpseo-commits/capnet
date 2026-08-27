@@ -77,6 +77,12 @@ def _text_classifier() -> type[nn.Module]:
     return TinyTextClassifier
 
 
+def _rule_ner() -> type[nn.Module]:
+    from app.tiny_ner import RuleTextNer
+
+    return RuleTextNer
+
+
 def _text_embedder() -> type[nn.Module]:
     from app.tiny_embed import TinyTextEmbedder
 
@@ -105,6 +111,8 @@ ARCH_REGISTRY: dict[str, type[nn.Module]] = {
     # 표 열 타입 추론은 text.classify 와 **같은 모델**이다 (단계 6 ④).
     # 새 가중치를 만들지 않고 이름만 달리 붙였다 — 증적엔 arch·sha 가 사실대로 남는다.
     "TinyTableTyper": _text_classifier(),
+    # 규칙 NER — 가중치 0 · 추론은 정규식 (PR-B · text.ner).
+    "RuleTextNer": _rule_ner(),
 }
 
 # arch → 모달리티. **실행기 디스패치의 정본이다** (단계 5).
@@ -123,6 +131,7 @@ ARCH_MODALITY: dict[str, str] = {
     # 이미지가 structured 를 내는 첫 사례 (단계 6 ③). 전처리는 image 와 같다.
     "TinyEuroSATEmbed": "image_embed",
     "TinyTableTyper": "table_extract",
+    "RuleTextNer": "text_ner",
 }
 
 

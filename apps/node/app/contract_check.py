@@ -359,6 +359,9 @@ def run(
         elif modality in ("text", "text_embed"):
             enc, form, max_chars = resolve_text_preprocess(declared)
             applied = f"encoding={enc} normalize={form} max_chars={max_chars}"
+        elif modality == "text_ner":
+            enc, form, max_chars = resolve_text_preprocess(declared)
+            applied = f"encoding={enc} normalize={form} max_chars={max_chars}"
         else:
             size, space = resolve_preprocess(declared)
             applied = f"resize={list(size)} colorspace={space}"
@@ -380,6 +383,12 @@ def run(
                 from app.infer_table import extract_table
 
                 table_out = extract_table(
+                    weights, sample, arch=arch, max_params=max_params, preprocess=declared
+                )
+            elif modality == "text_ner":
+                from app.infer_ner import extract_ner
+
+                table_out = extract_ner(
                     weights, sample, arch=arch, max_params=max_params, preprocess=declared
                 )
             elif modality == "image_embed":

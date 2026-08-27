@@ -138,6 +138,7 @@ class CapabilityRouter:
         *,
         dataset_id: str | None = None,
         case_id: str | None = None,
+        input_id: str | None = None,
         execute: bool = False,
         extra: dict[str, Any] | None = None,
     ) -> tuple[RouteDecision, ExecutionResult | None]:
@@ -161,6 +162,7 @@ class CapabilityRouter:
             capability_version=int(decision.capability_version or 1),
             dataset_id=dataset_id,
             case_id=case_id,
+            input_id=input_id,
             extra=extra,
         )
         return decision, result

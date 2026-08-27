@@ -19,3 +19,4 @@
 | torchvision | BSD-3-Clause | 32×32 텐서 변환 |
 | httpx (optional `capreq/`) | BSD-3-Clause | capreq → Ollama·Core HTTP |
 | FastAPI/Uvicorn (optional `capreq[server]`) | MIT / BSD-3-Clause | capreq 웹 챗봇 |
+| python-multipart (optional `capreq[server]`) | Apache-2.0 | capreq 챗봇 파일 첨부 multipart 파싱 |
