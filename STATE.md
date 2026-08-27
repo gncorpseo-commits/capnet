@@ -23,12 +23,21 @@
 > G7–G9 ✅. PR [#103](https://github.com/gncorpseo-commits/capnet/pull/103) 머지됨.
 
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
-> 브리지 Next: `product-handoff-to-claude`. 브랜치 `toma/post-contest-track-a` dirty.
+> 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **제품 1호 착수 (2026-08-27).** capreq **입력 챗봇** — 파일 첨부 → Core `POST /v1/inputs`
-> → Task `{ inputId }` (D22). `CapNet-Key` 인증 수정 · 브리지 Proposal `product-v1-input-chatbot`.
-> **PR-B `text.ner`** — RuleTextNer · `scripts/ner_demo.sh` · 카탈로그 7번째 구현.
-> **미커밋** — Claude가 정리·gitignore 예외(`rule_ner.*`)·PR.
+> **제품 1호 — 커밋 완료 (2026-08-28).** Cursor 가 Windows 클론에 써 둔 두 묶음을 WSL 작업
+> 리포로 옮겨 심고 PR 을 올렸다. 브랜치는 **`toma/track-a-text-ner-and-inputs`** —
+> `toma/post-contest-track-a` 는 원격에 이미 있고 squash 머지된 커밋을 가리켜서
+> 같은 이름으로 밀면 force 가 된다(금지). 이름만 다르고 내용은 그 Next 그대로다.
+>
+> - capreq **입력 챗봇**: 첨부 → Core `POST /v1/inputs` → Task `{ inputId }` (D22) ·
+>   `CapNet-Key` 인증 수정 · MIME 선검사. 자유 업로드 경로 없음.
+> - **`text.ner`**: RuleTextNer · 규칙 span · 카탈로그 7번째 구현 ·
+>   `scripts/ner_demo.sh` **종단 PASSED** (entities 3건 · assignment SUCCEEDED).
+> - **게이트가 실제로 걸렸다** — 텐서 0개라 `weights_fingerprint` FAIL. 검사를 약화시키지
+>   않고 버퍼 한 칸을 뒀다 (파라미터는 여전히 0 · 가중치 sha 갱신).
+> - 재현 검사 복구: 이 세션은 Docker 가 살아 있어 `clean_room` **9/9** ·
+>   `prod_room` **27/27** 을 실제로 돌렸다 (직전 세션은 Docker 없어 미실행이었다).
 
 > **Release 발행 (2026-08-27).** 태그 **`v0.1.0-contest`** = `238427d` ·
 > [Release](https://github.com/gncorpseo-commits/capnet/releases/tag/v0.1.0-contest) ·

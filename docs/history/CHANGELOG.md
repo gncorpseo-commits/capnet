@@ -1,20 +1,35 @@
 # Changelog
 
-## capreq 입력 챗봇 + text.ner (제품 1호) — 2026-08-27
+## capreq 입력 챗봇 + text.ner (제품 1호) — 2026-08-28
 
-**capreq:** 웹 UI 파일 첨부 → `POST /v1/inputs` → Task `{ inputId }` · `CapNet-Key` · MIME 선검사.
+**Core 스키마·DDL 변경 0.** 설계·초안은 Cursor, 정리·수정·검증은 Claude.
+
+**capreq 입력 챗봇 (PR-A):** 웹 UI 파일 첨부(+·드래그) + 자연어 → Qwen 라우팅 →
+`POST /v1/inputs` → `/v1/tasks` `{ inputId }`.
+
+- `CapNetAdapter`: 인증 헤더를 `CapNet-Key` 로 수정(Core `apikey.SCHEME` 과 일치) ·
+  `upload_input()` · `inputId` 실행 경로.
+- MIME 선검사(`capreq/media.py`) · `python-multipart`(Apache-2.0) server 의존 ·
+  `THIRD-PARTY-LICENSES.md` 한 줄 추가.
+- **자유 업로드 경로 없음** — 바이트는 Core 가 받는다(D8′ · 해시·크기·MIME·보존).
 
 **text.ner (PR-B):** `RuleTextNer` · 규칙 span(`email`·`url`·`ipv4`·`uuid`·`iso_date`) ·
-`rule_ner.safetensors`(0 param) · `scripts/ner_demo.sh` · 카탈로그 **7번째 구현**.
+`quality_profile='none'` · `scripts/ner_demo.sh` · 카탈로그 **7번째 구현**.
 
-## capreq 입력 챗봇 (제품 1호 PR-A) — 2026-08-27
+- **게이트가 걸렸다:** 텐서 0개면 `weights_fingerprint` 가 「텐서가 하나도 없다」로 FAIL.
+  검사를 약화시키지 않고 버퍼 `rule_marker` 한 칸을 뒀다 — `parameters()` 밖이라
+  파라미터 수는 여전히 **0**. 가중치 재생성 (16B → 76B · sha `15458b00…`).
+- 데모 실측: 계약 게이트 PASSED · Task COMPLETED · `entities` 3건(email·ipv4·iso_date) ·
+  assignment SUCCEEDED · team→team · M ≤ M.
+- 필수 가중치 **5종 → 6종** (`check_submission` · `check_release` · 체크리스트 S4-1).
+  `v0.1.0-contest` zip 은 5종 그대로 — 그 기록은 고치지 않았다.
 
-**CapNet Core 변경 0 · capreq 독립 모듈.**
+**검사 둘을 실물에 맞췄다 (의도 불변):** `test_series_modality` 의 D8′ 폴백 금지 목록에
+`text_ner` 추가 · `test_report_claims` 는 제출 원고(6종)를 얼린 채 `POST_CONTEST` 에
+이름을 적어야 늘 수 있게 했다.
 
-- 웹 UI: 파일 첨부(+·드래그) + 자연어 → Qwen 라우팅 → `POST /v1/inputs` → `/v1/tasks` `{ inputId }`.
-- `CapNetAdapter`: `CapNet-Key` 인증 · `upload_input()` · `inputId` 실행 경로.
-- MIME 선검사(`capreq/media.py`) · `python-multipart` server 의존.
-- 브리지 Proposal `product-v1-input-chatbot` (PR-B 카테고리 +1 대기).
+**검증:** `run_tests` **247** · `check_submission` **25/25** · `check_release` 통과 ·
+`clean_room` **9/9** · `prod_room` **27/27** · `ner_demo.sh` 종단 PASSED.
 
 ## 출품 포털 제출 완료 · 이후 트랙 A — 2026-08-27
 
