@@ -47,6 +47,7 @@ must = [
     "apps/node/weights/text_struct_scratch.safetensors",
     "apps/node/weights/text_embed_scratch.safetensors",
     "apps/node/weights/series_scratch.safetensors",
+    "apps/node/weights/rule_ner.safetensors",
     "apps/node/weights/placeholder.safetensors",
 ]
 missing = [m for m in must if m not in inner]
@@ -60,7 +61,7 @@ bad = [
     or ("weights/" in n and n.endswith(".safetensors") and n.split("/")[-1] not in {
         "eurosat_scratch.safetensors", "eurosat_scratch_b.safetensors",
         "text_struct_scratch.safetensors", "text_embed_scratch.safetensors",
-        "series_scratch.safetensors", "placeholder.safetensors",
+        "series_scratch.safetensors", "rule_ner.safetensors", "placeholder.safetensors",
     })
 ]
 print(f"  {'OK  ' if not bad else 'FAIL'} 금지 산출물 없음", end="")

@@ -33,8 +33,39 @@ class CapNetAdapter:
     def _headers(self) -> dict[str, str]:
         h = {"accept": "application/json"}
         if self.api_key:
-            h["authorization"] = f"Bearer {self.api_key}"
+            # Core apikey.py SCHEME 과 같아야 한다.
+            h["authorization"] = f"CapNet-Key {self.api_key}"
         return h
+
+    def upload_input(
+        self,
+        *,
+        capability_code: str,
+        capability_version: int,
+        data: bytes,
+        media_type: str,
+    ) -> str:
+        """Core 중개 입력 수집(D22). inputId 를 돌려준다."""
+        url = (
+            f"{self.core_url}/v1/inputs"
+            f"?capability={capability_code}&version={capability_version}"
+        )
+        with httpx.Client(timeout=self.timeout) as client:
+            r = client.post(
+                url,
+                headers={**self._headers(), "content-type": media_type},
+                content=data,
+            )
+            if r.status_code >= 400:
+                raise CapNetUploadError(
+                    r.status_code,
+                    _safe_json(r),
+                )
+            row = r.json()
+            input_id = row.get("id")
+            if not input_id:
+                raise CapNetUploadError(r.status_code, row)
+            return str(input_id)
 
     def list_capabilities(self) -> list[CapabilityInfo]:
         with httpx.Client(timeout=self.timeout) as client:
@@ -67,20 +98,34 @@ class CapNetAdapter:
         capability_version: int,
         dataset_id: str | None = None,
         case_id: str | None = None,
+        input_id: str | None = None,
         extra: dict[str, Any] | None = None,
     ) -> ExecutionResult:
-        if not dataset_id or not case_id:
+        if input_id:
+            # D8′ · Decision A — Core 가 받은 바이트면 allowlist 를 건너뛴다.
+            body: dict[str, Any] = {
+                "datasetId": dataset_id or "capreq-upload",
+                "caseId": case_id or "upload-1",
+                "capability_code": capability_code,
+                "capability_version": capability_version,
+                "inputId": input_id,
+            }
+        elif not dataset_id or not case_id:
             return ExecutionResult(
                 ok=False,
                 detail={},
-                message="CapNet 실행에는 dataset_id 와 case_id 가 필요하다 (allowlist).",
+                message=(
+                    "CapNet 실행에는 input_id 또는 "
+                    "dataset_id+case_id(allowlist) 가 필요하다."
+                ),
             )
-        body: dict[str, Any] = {
-            "datasetId": dataset_id,
-            "caseId": case_id,
-            "capability_code": capability_code,
-            "capability_version": capability_version,
-        }
+        else:
+            body = {
+                "datasetId": dataset_id,
+                "caseId": case_id,
+                "capability_code": capability_code,
+                "capability_version": capability_version,
+            }
         if extra:
             body.update(extra)
         try:
@@ -129,11 +174,24 @@ class CapNetAdapter:
                 message=f"Task 미완료 status={got.get('status')}",
             )
         label = _extract_label(got)
+        task_id = got.get("id")
+        msg = "COMPLETED"
+        if label:
+            msg = f"COMPLETED label={label}"
+        if task_id:
+            msg = f"{msg} task={task_id}"
         return ExecutionResult(
             ok=True,
             detail=got,
-            message=f"COMPLETED label={label}" if label else "COMPLETED",
+            message=msg,
         )
+
+
+class CapNetUploadError(Exception):
+    def __init__(self, status_code: int, body: Any) -> None:
+        self.status_code = status_code
+        self.body = body
+        super().__init__(f"input upload HTTP {status_code}")
 
 
 def _safe_json(r: httpx.Response) -> Any:

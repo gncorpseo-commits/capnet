@@ -123,7 +123,7 @@ git archive --format=zip --prefix=capnet/ v0.1.0-contest -o capnet-v0.1.0-contes
 ### 저장소에 있어야 함
 
 - [x] `LICENSE` · `NOTICE` · `README` · `THIRD-PARTY-LICENSES.md` · `sbom.json`
-- [x] 데모 가중치 **5종** + `placeholder` (삭제 금지)
+- [x] 데모 가중치 **6종** + `placeholder` (삭제 금지) — `rule_ner` 는 출품 후 추가(v0.1.0-contest zip 은 5종)
 
 ### 넣지 않음
 

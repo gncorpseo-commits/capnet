@@ -315,3 +315,106 @@ status: done
 - 사람 개입 정리: `docs/retrospective/human-intervention.md`
 - capreq는 독립 모듈 — Release에 넣어도 되나 Must 아님. CI 깨면 제외 검토.
 ```
+```markdown
+---
+from: cursor
+at: 2026-08-27T13:15:00+09:00
+topic: product-v1-input-chatbot
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — 출품 후 제품 1호: 입력 챗봇 + 카테고리 1종 확장
+
+**전제**
+- D25 트랙 A: 같은 repo · `v0.1.0-contest` 태그 고정
+- 절대규칙 7(D8′): Core 중개 입력만. Node 직접 업로드 금지
+
+**North Star (12–24개월)**
+「능력만 말하고, 내 파일을 붙이면, 승인된 Node에서 실행되고 증적이 남는다」
+— execution layer 입구 = capreq + Core inputs
+
+**Near-term (다음 1–3 PR)**
+
+1. **PR-A: capreq 입력 챗봇** — **Cursor 착수 (2026-08-27)**
+   - chat.html: 파일 첨부(드래그/+) + 대화
+   - Qwen 라우팅 → `POST /v1/inputs` → `/v1/tasks` { inputId }
+   - `CapNet-Key` 인증 수정 · MIME 선검사
+   - Gemma(8091)와 분리 유지
+
+2. **PR-B: 카탈로그 +1 완주** — **`text.ner` · Cursor 구현 (2026-08-27)**
+   - `RuleTextNer` · `scripts/ner_demo.sh` · `rule_ner.safetensors`(0 param)
+
+3. **PR-C (선택):** P2-2 work_units 또는 조회 인증(inbox-cursor Proposal)
+
+**Don't Do**
+- 52개 일괄 런타임화 · allowlist 우회 · contest 태그 재작성 · 스키마 제약 약화
+
+**Read**
+- `docs/spec/capability-catalog.md` §1, §5 · `capreq/README.md`
+- `apps/core/app/inputs.py` · D22, D8′ in `docs/context-handoff.md`
+
+**결정 요청**
+- PR-A/B 우선순위 OK?
+- PR-B 첫 capability = `image.detect` vs `text.ner`? → **human: `text.ner` (2026-08-27)**
+- capreq를 Core 옆 공식 입구로 승격할지(문서/README), 아니면 독립 모듈 유지?
+```
+```markdown
+---
+from: cursor
+at: 2026-08-28T00:45:00+09:00
+topic: product-handoff-to-claude
+type: next
+expects: implement
+status: open
+---
+
+## Next — 구현은 Claude · Cursor는 리뷰·설계만
+
+**역할 (지금부터 · human 확정)**
+- Claude: 구현 · PR · Confirm/Next
+- Cursor: Decision · 설계 · PR 리뷰 (코드 대량 작성 안 함)
+- main 머지 = master/사람
+
+**브랜치:** `toma/post-contest-track-a` (이미 있음 · 워킹트리 dirty)
+
+### A. Cursor가 이미 쓴 코드 — 정리·커밋·PR (먼저)
+
+워킹트리에 미커밋. **egg-info · bridge.local-backup 제외.**
+
+| 묶음 | 경로 |
+|------|------|
+| capreq 입력 챗봇 | `capreq/src/capreq/{server,media,router,adapters/*}.py` · `static/chat.html` · `README` · `pyproject.toml` · `tests/test_media_unit.py` |
+| text.ner | `apps/node/app/{infer_ner,ner_patterns,tiny_ner}.py` · `tiny_cnn.py` · `main.py` · `contract_check.py` · `apps/core/app/gate.py` · `scripts/ner_demo.sh` · `tests/test_text_ner.py` · `apps/train/gen_rule_ner_weights.py` |
+| 문서·검사 | `STATE.md` · `CHANGELOG.md` · `capability-catalog.md` · `check_submission.py` · `check_release.sh` · 이 inbox |
+
+**반드시 추가 (gitignore 예외 필요)**
+- `.gitignore`에 `!apps/node/weights/rule_ner.safetensors` · `!apps/node/weights/rule_ner.meta.json` 추가
+- 그다음 `git add`로 둘 다 추적 (다른 scratch 가중치와 같은 패턴)
+- 파일은 워킹트리에 있음: `rule_ner.safetensors` 16B · sha `9bbcbf73561f6bc5…`
+
+**검증**
+1. `python -m unittest tests.test_text_ner` · `capreq/tests`
+2. Docker up 후 `bash scripts/ner_demo.sh` — Confirm에 결과 한 줄
+3. `git add` **명시 경로만** · `git add -A` 금지
+4. PR → Cursor 리뷰 → master 머지
+
+### B. 그다음 구현 (PR 머지 후 · Proposal → Decision 후)
+
+`inbox-cursor.md`에 **Proposal 하나** 올리고 Cursor Decision 기다린다. 후보:
+
+1. **PR-C** P2-2 `work_units` (`duration_ms`·`vram_mb_peak`) **또는** 조회 인증 잔여
+2. capreq UI에 NER `entities` 표시
+3. 카탈로그 +1 (한 종만 · 일괄 52 금지)
+
+### Don't Do
+- 스키마 제약 약화 · 자유 업로드 · contest 태그 재작성
+- Cursor Decision 없이 제품 주장·DDL·정책 숫자 변경
+- force push · main 직접 머지
+
+### Read
+- `docs/bridge/PROTOCOL.md`
+- `STATE.md` 제품 1호 절
+- `capreq/README.md` · `scripts/ner_demo.sh` · `apps/node/app/infer_ner.py`
+```

@@ -2,7 +2,7 @@
 
 > **정본.** 능력 `code` · `output_kind` · 기본 `quality_profile` · 모달리티 · 유통 세대는 여기서만 읽는다.
 > 근거: 브리지 Decision 2 (2026-08-15) — A 채택 · B 채택 · C2 · E · F · G.
-> 갱신: 2026-08-27
+> 갱신: 2026-08-28
 
 ---
 
@@ -87,7 +87,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 |---|--------|---------|---------------|---|------|
 | 13 | `text.classify` | text | `closed_set_labels` | none | v제품-1 ✅ **구현됨** |
 | 14 | `text.extract` | text | `structured` | none | v제품-1 |
-| 15 | `text.ner` | text | `structured` | none | v제품-1 |
+| 15 | `text.ner` | text | `structured` | none | v제품-1 ✅ **구현됨** |
 | 16 | `text.embed` | text | `structured` | none | v제품-1 ✅ **구현됨** |
 | 17 | `text.summarize` | text | `freeform` | none | v제품-1 |
 | 18 | `text.generate` | text | `freeform` | none | v제품-1 |
@@ -395,6 +395,15 @@ label= url  confidence= 0.3115…
 
 입력은 URL 문자열이었고 라벨도 `url` 이 나왔다. **다만 그 정확도를 주장하지 않는다** —
 `quality_profile='none'` 이라 골든셋도 채점도 없다.
+
+### `text.ner` — 규칙 span · `structured` 배열+객체 (PR-B · 2026-08-27)
+
+**일반 NER 을 주장하지 않는다.** 사람·조직명은 다루지 않고, `text.classify` 와 같은
+**구조 종류**(`email`·`url`·`ipv4`·`uuid`·`iso_date`)만 **위치(span)** 와 함께 낸다.
+추론은 정규식(`app/ner_patterns.py`)이고, `RuleTextNer` arch · `rule_ner.safetensors` 는
+**파라미터 0** 자리표시자다(step6 §3 「모델 없이도 됨」).
+
+종단: `scripts/ner_demo.sh` — 계약 게이트 → Task `{ inputId }` → `entities[]` 증적.
 
 ### `text.embed` — `structured` 의 첫 사례 (단계 6 ①)
 

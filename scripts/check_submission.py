@@ -43,6 +43,8 @@ REQUIRED_WEIGHTS = [
     "apps/node/weights/text_embed_scratch.safetensors",
     # timeseries.forecast 참조 모델 (단계 6 ②). 학습 데이터는 규칙 생성.
     "apps/node/weights/series_scratch.safetensors",
+    # text.ner 규칙 기반 (PR-B). 파라미터 0 · rule_ner.safetensors.
+    "apps/node/weights/rule_ner.safetensors",
 ]
 
 REQUIRED_FILES = ["LICENSE", "NOTICE", "THIRD-PARTY-LICENSES.md", "sbom.json"]

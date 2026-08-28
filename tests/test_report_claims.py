@@ -36,6 +36,11 @@ CLAIMED = (
     "timeseries.forecast", "table.extract",
 )
 
+# 출품(`v0.1.0-contest`) **이후**에 구현된 능력. 제출한 원고는 6종에서 얼어 있고
+# 다시 쓰지 않는다 — 그래서 카탈로그가 더 많아지는 것은 정상이다. 다만 **말없이**
+# 늘어나면 안 된다: 새 능력은 여기에 이름을 적어야 이 검사가 통과한다.
+POST_CONTEST = frozenset({"text.ner"})
+
 _ROW = re.compile(
     r"^\|\s*\d+\s*\|\s*`([a-z][a-z0-9_.]*)`\s*\|\s*[a-z]+\s*\|\s*`\w+`\s*\|"
     r"\s*\*{0,2}(golden|none)\*{0,2}\s*\|\s*(.+?)\s*\|$"
@@ -62,11 +67,19 @@ class TestClaimedCapabilitiesExist(unittest.TestCase):
                           f"원고가 {code} 를 주장하는데 카탈로그는 구현됨이 아니다")
 
     def test_claim_count_matches_catalog(self) -> None:
-        """원고의 「5종」과 카탈로그의 구현됨 개수가 같아야 한다."""
-        implemented = [c for c, (_, gen) in self.rows.items() if "구현됨" in gen]
+        """원고가 부른 능력 = 카탈로그 구현됨 **빼기 출품 후 추가분**.
+
+        원고는 제출된 산출물이라 고쳐 쓰지 않는다. 대신 출품 후에 는 것은
+        `POST_CONTEST` 에 이름이 적혀야 한다 — 조용히 갈라지는 것만 막는다.
+        """
+        implemented = {c for c, (_, gen) in self.rows.items() if "구현됨" in gen}
         self.assertEqual(
-            sorted(implemented), sorted(CLAIMED),
-            "구현된 능력 목록이 원고 주장과 다르다 — 원고를 갱신하거나 이 목록을 고친다",
+            sorted(implemented - POST_CONTEST), sorted(CLAIMED),
+            "구현된 능력 목록이 원고 주장과 다르다 — 출품 후 추가라면 POST_CONTEST 에 적는다",
+        )
+        self.assertTrue(
+            POST_CONTEST <= implemented,
+            "POST_CONTEST 에 있는데 카탈로그에서 구현됨이 아니다",
         )
         for draft in (FORM, DETAIL):
             self.assertIn("6종", draft.read_text(encoding="utf-8"),

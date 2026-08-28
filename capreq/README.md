@@ -55,7 +55,13 @@ python -m capreq chat --core http://127.0.0.1:8000
 # 웹 챗봇
 python -m capreq serve --core http://127.0.0.1:8000 --port 8090
 
-# CapNet Task까지 (Agent 미지정 · allowlist case)
+# 웹 챗봇 (파일 첨부 → Core 중개 업로드 → Task)
+python -m capreq serve --core http://127.0.0.1:8000 --port 8090
+# 브라우저 http://127.0.0.1:8090/ — + 버튼·드래그앤드롭으로 파일 첨부
+# 첨부 + 「실행」체크 → POST /v1/inputs → /v1/tasks { inputId } (D22 · D8′)
+# Core 인증 필요 시: CAPREQ_API_KEY=ck_... (CapNet-Key 스킴)
+
+# CapNet Task까지 (allowlist 데모 · Agent 미지정)
 python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --execute \
   --dataset eurosat-rgb --case ic1-0001
 ```
@@ -70,7 +76,7 @@ python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --e
 | `CAPREQ_OLLAMA_MODEL` | `qwen2.5:3b` | 모델 |
 | `CAPREQ_CORE_URL` | `http://127.0.0.1:8000` | CapNet Core |
 | `CAPREQ_MIN_CONFIDENCE` | `0.45` | 미만이면 unknown |
-| `CAPREQ_API_KEY` | (없음) | Core Bearer |
+| `CAPREQ_API_KEY` | (없음) | Core `CapNet-Key` 토큰 |
 
 ## 다른 프로젝트
 
