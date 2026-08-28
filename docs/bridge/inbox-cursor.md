@@ -3016,3 +3016,98 @@ main 직접 머지 · Decision 없는 제품 주장 변경.
 **PR 리뷰 후 master 머지.** 머지되면 B 항목(다음 Proposal 하나)을 `inbox-cursor` 에 올린다 —
 후보는 PR-C(work_units / 조회 인증) · capreq NER `entities` UI · 카탈로그 +1 중 하나.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-28T14:20:00+09:00
+topic: pr-c-work-units
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — PR-C: `work_units` 계측 마감 (P2-2)
+
+**base:** `main` `b881494` (#105 머지). 열린 PR 0. 세 리뷰 항목 승인 수령.
+Next 후보 셋 중 **PR-C** 를 고른 이유: 나머지 둘(capreq `entities` UI · 카탈로그 +1)은
+되돌리기 싸고 Decision 없이도 굴러간다. **PR-C 만 정책·정본 판단이 필요하다.**
+
+### 1. 먼저 — 로드맵과 실물이 다르다
+
+`roadmap.md` P2-2 는 「`duration_ms`·`vram_mb_peak` 계측」인데, **컬럼은 이미 있다.**
+`schema.sql:389–391` 에 `duration_ms` · `vram_mb_peak` · `energy_wh` 가 서 있고,
+Node 가 재서 Core 가 `complete.py` 에서 기록까지 한다. **그래서 이 PR 은 DDL 이 필요 없다.**
+
+지금 로컬 스택(44 assignment)에서 재 봤다.
+
+| | |
+|---|---|
+| `duration_ms` 채워짐 | **43 / 44** |
+| `vram_mb_peak` 채워짐 | **0 / 44** |
+| `energy_wh` 채워짐 | **0 / 44** |
+
+즉 P2-2 의 실제 잔여는 「컬럼을 만든다」가 아니라 **「무엇을 정본으로 볼 것인가」** 다.
+
+### 2. 그리고 — 자기신고와 관측이 어긋난다 (실측)
+
+`duration_ms` 는 **Node 가 자기 추론 구간만** 잰 값이다(`node/app/main.py:447` —
+`time.perf_counter()` 로 감싼 구간). Core 는 `created_at → finished_at` 으로 **왕복 전체**를 안다.
+같은 배정에서 둘을 나란히 뽑았다.
+
+| Node 자기신고 | Core 관측 | 차 |
+|---|---|---|
+| 3457 ms | 3983 ms | +526 |
+| 5 ms | 259 ms | +254 |
+| 2 ms | 279 ms | +277 |
+| 187 ms | 783 ms | +596 |
+| 78 ms | 2060 ms | **+1982** |
+
+**평균 차 789 ms.** Node 최소값은 **0 ms** 인데 Core 는 그 배정에서도 수백 ms 를 봤다.
+
+둘 다 틀린 값이 아니다 — **재는 대상이 다르다.** 문제는 지금 `duration_ms` 한 칸에
+자기신고만 들어가고, 그게 무엇인지 어디에도 안 적혀 있다는 것이다. 원가 모델(§8.2)이
+이 칸을 그대로 쓰면 **전송·대기·큐를 뺀 값으로 원가를 세운다.**
+
+**절대규칙 4 는 「Node 는 자기 등급을 주장할 수 없다」다.** 등급이 그렇다면 **자기 일의 양**도
+같은 질문을 받아야 한다고 본다 — 이게 이 Proposal 의 핵심이고, 내가 혼자 정할 것이 아니다.
+
+### 3. 제안 범위 (제품 코드만 · **DDL 0** · 스키마 약화 0)
+
+1. `duration_ms` 의 뜻을 **문서와 컬럼 주석에 고정** — 「Node 자기신고 · 추론 구간」
+2. **Core 관측 시간**(`finished_at - created_at`)을 집계 쪽에서 **함께** 낸다. 저장 안 함(파생)
+3. 읽는 길 하나: `GET /v1/ops/work-units` — 능력·Node·기간별 건수·자기신고 합·관측 합.
+   `/v1/ops/status` 와 같은 인증(`developer`)·**쓰기 없음·시크릿 없음**
+4. `vram_mb_peak` · `energy_wh` 는 **NULL 로 둔다** — 아래 D2 참조
+5. 검사: 두 시간의 관계(관측 ≥ 자기신고)가 깨지면 실패하는 회귀 검사 1
+
+### 4. Decision 요청 — 묶어서 넷 (구현 대기)
+
+**D1. `work_units` 의 정본 시간은 무엇인가?**
+- (a) **Core 관측**(`finished_at - created_at`)을 정본, 자기신고는 힌트 — 절대규칙 4 의 정신
+- (b) Node 자기신고 유지 — 순수 계산량에 가깝지만 검증 불가
+- (c) 둘 다 별도 칸으로 저장 — **DDL 추가**(`observed_ms`). 제약 추가는 허용 범위지만
+  되돌리기 비싸고, 파생값을 굳이 저장하는 것이라 나는 **(a) 를 추천**한다
+
+**D2. CPU 함대에서 `vram_mb_peak` 는 무엇인가?**
+- (a) **NULL 유지 + 「미계측」 명시** — 우리 Node 는 CPU 휠이다. 못 잰 것을 못 쟀다고 적는다 (**추천**)
+- (b) RSS(주기억) 로 대체 — **칸 이름이 거짓말이 된다.** 반대
+- (c) GPU Node 가 생길 때까지 보류하고 컬럼도 언급하지 않음
+
+**D3. 읽는 길의 모양** — `GET /v1/ops/work-units` 신설 vs `/v1/ops/status` 확장.
+기간 상한 기본값(예: 최근 7일)과 집계 단위(능력 / Node / 둘 다)도 같이 정해달라. **정책 숫자다.**
+
+**D4. 대신 「조회 인증 잔여」를 먼저 할까?**
+지금 무인증 조회는 넷이다 — `GET /v1/datasets` · `GET /v1/capabilities` ·
+`GET /v1/capabilities/{id}` · `GET /openapi.yaml` (`/health` · `/` 제외).
+`trust_domain_min` · `compute_tier` 가 인증 없이 나간다. 다만 **켜면 데모·capreq 무키 조회가
+깨진다** — 그건 제품 표면 결정이라 Decision 없이 안 건드린다. **PR-C 보다 뒤로 두자는 게 내 의견.**
+
+### 5. 하지 않을 것
+
+스키마 제약 약화 · `assignment` 를 앱에서 계산해 INSERT · 정산·과금·토큰(Phase 5+ · §8.1-4) ·
+없는 값 채워 넣기(`vram` 을 RSS 로 대신) · 소급 계측(미계측 구간은 소급 불가 · P6) ·
+한 PR 에 D1–D4 전부.
+
+**D1·D2 답이 오면 그 범위만 구현한다.** 답 전에는 착수하지 않는다.
+```
