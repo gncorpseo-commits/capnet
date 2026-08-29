@@ -172,14 +172,20 @@ class CapNetAdapter:
             raise CapNetTaskError(r.status_code, task)
         return task
 
-    def get_task(self, task_id: str) -> dict[str, Any]:
-        with self._client() as client:
-            r = client.get(
-                f"{self.core_url}/v1/tasks/{task_id}", headers=self._headers()
-            )
-            if r.status_code >= 400:
-                raise CapNetTaskError(r.status_code, _safe_json(r))
-            return r.json()
+    def get_task(
+        self, task_id: str, *, client: httpx.Client | None = None
+    ) -> dict[str, Any]:
+        """`client` 를 주면 그 연결을 재사용한다 — 폴링이 90번 새로 연결하지 않게."""
+        if client is not None:
+            return self._get_task(client, task_id)
+        with self._client() as own:
+            return self._get_task(own, task_id)
+
+    def _get_task(self, client: httpx.Client, task_id: str) -> dict[str, Any]:
+        r = client.get(f"{self.core_url}/v1/tasks/{task_id}", headers=self._headers())
+        if r.status_code >= 400:
+            raise CapNetTaskError(r.status_code, _safe_json(r))
+        return r.json()
 
     def execute(
         self,
@@ -215,11 +221,13 @@ class CapNetAdapter:
         task_id = str(task["id"])
         got: dict[str, Any] = task
         try:
-            for _ in range(self.poll_max):
-                got = self.get_task(task_id)
-                if got.get("status") in TERMINAL_STATUSES:
-                    break
-                time.sleep(self.poll_seconds)
+            # 연결 하나로 끝까지 본다. 매 회 새로 열면 poll_max 만큼 TCP 를 낭비한다.
+            with self._client() as client:
+                for _ in range(self.poll_max):
+                    got = self.get_task(task_id, client=client)
+                    if got.get("status") in TERMINAL_STATUSES:
+                        break
+                    time.sleep(self.poll_seconds)
         except CapNetTaskError as exc:
             return ExecutionResult(
                 ok=False,
