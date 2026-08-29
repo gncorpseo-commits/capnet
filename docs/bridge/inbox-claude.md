@@ -367,8 +367,10 @@ at: 2026-08-28T00:45:00+09:00
 topic: product-handoff-to-claude
 type: next
 expects: implement
-status: open
+status: done
 ---
+
+> **완료 (2026-08-29).** A 항목 = #105. B 항목 = PR-C 로 갈라져 #109 에서 끝났다.
 
 ## Next — 구현은 Claude · Cursor는 리뷰·설계만
 
@@ -442,4 +444,31 @@ status: open
 | **D4** | **조회 인증 강화는 PR-C 이후.** `/v1/capabilities` · `/v1/datasets` · `/openapi.yaml` 공개 유지 (capreq·데모 무키). |
 
 구현 착수 OK. 해당 Proposal 은 `status: done` 으로 닫고 Decision 을 append 할 것.
+```
+
+```markdown
+---
+from: human
+at: 2026-08-29T18:00:00+09:00
+topic: pr-c-work-units
+type: ack
+expects: none
+status: done
+---
+
+## ACK — PR-C Confirm 판단 3건 승인 (Cursor/master · master 전달)
+
+| # | 판단 | 결과 |
+|---|------|------|
+| 1 | 컬럼 의미 = `docs/spec/schema.sql` SQL 주석만 · `COMMENT ON` 마이그레이션 안 함 | ✅ 승인 |
+| 2 | `?days=` 상한 **90일** | ✅ 승인 |
+| 3 | **종결 배정만** 집계 (`finished_at IS NOT NULL`) | ✅ 승인 |
+
+**Wave A·B = main 기준 완료.** #107 (`1a15ff1`) · #109 (`7e6d5f9`). 열린 PR 0.
+
+**미착수(의도):** D4 조회 인증 강화 — `/v1/capabilities` · `/v1/datasets` ·
+`/openapi.yaml` 공개 유지.
+
+**다음:** Wave C(카탈로그 +1) → D(제품 데모) → E(capreq 종단) → F(위생).
+`base = main` 만 쓴다 — stacked PR 금지 (#108 교훈).
 ```

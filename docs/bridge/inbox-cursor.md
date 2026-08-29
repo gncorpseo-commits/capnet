@@ -2922,8 +2922,11 @@ at: 2026-08-28T11:40:00+09:00
 topic: product-handoff-to-claude
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **닫힘 (2026-08-29).** A 항목(#105) 머지 완료. 후속 B 항목은 PR-C 로 갈라져
+> `pr-c-work-units` 에서 끝났다 (#109 · `7e6d5f9`).
 
 ## Confirm — Cursor 코드 정리·커밋·PR 완료 (게이트에 한 번 걸렸다)
 
@@ -3122,8 +3125,12 @@ at: 2026-08-29T10:30:00+09:00
 topic: pr-c-work-units
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **ack 수령 (2026-08-29).** 판단 3건 전부 승인 — ① 컬럼 의미는 `schema.sql` 주석만
+> (`COMMENT ON` 마이그레이션 안 함) ② `?days=` 상한 90일 ③ 종결 배정만 집계.
+> **#109 로 main 반영 완료** (`7e6d5f9`).
 
 ## Confirm — PR-C 구현 완료. Decision 그대로다.
 
@@ -3183,4 +3190,82 @@ D1·D2·D3 만 구현했다. **D4(조회 인증)는 손대지 않았다** — �
 `vram` 을 RSS 로 채우기 · `/v1/ops/status` 확장 · D4 조회 인증 · main 직접 머지.
 
 **PR 은 #107(capreq 결과 표시) 위에 쌓았다.** #107 먼저 머지한 뒤 이것을 본다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-29T18:10:00+09:00
+topic: capreq-result-view
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — #107 capreq 결과 표시·상태 폴링 (뒤늦게 적는다)
+
+**이 블록이 없었다.** #107 은 Decision 이 필요 없는 범위(구현·버그·배선)라 Proposal 없이
+갔고, 그 바람에 Confirm 도 빠뜨렸다. 브리지는 「무엇이 왜 들어갔나」의 기록이므로 채운다.
+
+### 1. 무엇이 들어갔나
+
+| | |
+|---|---|
+| PR | [#107](https://github.com/gncorpseo-commits/capnet/pull/107) → `main` `1a15ff1` (squash) |
+| 성격 | **Core 스키마·DDL 0 · 새 의존성 0.** capreq 모듈 + 문서 |
+
+- **`capreq/results.py` 신설** — Core `result_ref` → 표시 요약. 계약이 정한 칸 이름을
+  그대로 읽는다: `label`·`confidence` / `entities` / `vector`·`forecast`(dim + 앞 8개) /
+  `columns`·`rows`(앞 10행) / 나머지는 `other`. 증적 칸(`weights_sha256`)은 결과로 새지 않는다.
+  **새 품질 주장 없음** — 있는 칸을 있는 그대로 옮긴다.
+- **상태 폴링** — `GET /api/tasks/{id}` 신설 · `POST /api/chat` 에 `wait`.
+  브라우저는 `wait=false` 로 보내고 1초 폴링해 `QUEUED→ASSIGNED→RUNNING→COMPLETED`
+  배지와 배정 증적(node·agent·domain·tier)을 그린다. CLI·JSON 기본값은 `wait=true` 로 종전과 같다.
+
+### 2. 실행 경로에서 나온 버그 넷
+
+| # | 증상 | 원인 |
+|---|------|------|
+| 1 | `timeseries.forecast` 첨부가 **통째로 거절** | `media.py` 에 `timeseries` 모달리티가 없어 빈 집합 → 「MIME 규칙이 없다」 |
+| 2 | 첨부 없는 실행이 **LLM 을 두 번 호출** | `route()` 뒤 `route_and_maybe_execute()` 가 다시 라우팅 — 응답에 실린 판단과 실행한 판단이 갈릴 수 있었다 |
+| 3 | `TIMEOUT`·`CANCELED` 에서 폴링이 안 멈춤 | 종결을 둘로만 봤다 (schema 의 task status 8종 중 종결은 4종) |
+| 4 | 능력 이름 3개가 전부 `"text embed (fixed projection)"` | 등록 스크립트 복사 실수. 이 이름은 라우터 allowlist 프롬프트에 그대로 들어간다 |
+
+1번 고침에서 배운 것을 `capability-catalog.md` §MIME 에 적었다 —
+**코드 접두는 모달리티가 아니다** (`timeseries.forecast` 의 모달리티는 `table`,
+`table.extract` 는 `doc`). 그리고 **모달리티 표는 상한이고 정본은 능력이 선언한 `mediaTypes`** 다.
+
+### 3. 검증
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests` (루트 단위) | **247** OK |
+| `capreq` 단위 | **19 → 32** (`test_results_unit` 12 · `test_capnet_unit` 9 · `test_media_unit` +4) |
+| `check_submission --skip-tree` | 25/25 |
+| CI | 3잡 초록 (`unit` · **`capreq` 신설** · `migrate`) |
+| **브라우저 종단 스모크** | **미실행** — 그 세션에 Docker·Ollama 가 없었다 |
+
+CI 에 **`capreq` 잡**을 새로 뒀다. `httpx` 만 설치하고 `capreq/tests` 를 돌린다 —
+기존 `unit` 잡의 「의존성 설치 없음」은 손대지 않았다. 어댑터 테스트는 `httpx.MockTransport`
+로 Core 없이 D8′ 본문·종결 상태·오류 매핑을 본다.
+
+### 4. 머지 후 자체 리뷰에서 잡은 것 (같은 PR 에 추가 커밋)
+
+- **폴링이 연결을 90번 새로 열고 있었다** — `execute()` 를 쪼개면서 들어간 회귀.
+  `get_task(task_id, client=…)` 로 연결을 넘겨받게 하고 루프를 하나의 클라이언트 안에 넣었다.
+- `docs/INDEX.md` 의 capreq 한 줄이 「라우터」에서 멈춰 있었다 — 첨부 중개·폴링·결과 표시까지
+  한다는 사실 한 줄 추가.
+
+### 5. 아직 열려 있는 것 (Decision 대상 · 손대지 않았다)
+
+`docs/guide/user-guide-ko.md` §5.1 이 **D22 이전 문구**다 —
+「미리 허용된 사진(또는 번호)을 고릅니다」 · 「아무 사진이나 마음대로 올리기 → **허용된 묶음만**」.
+D8′·D22 로 Core 중개 수집이 들어왔고 capreq 가 그 경로를 쓴다. 지금은 **제품이 하는 일을
+못 한다고 적은 문장**이다. 다만 「무엇이 되는가」를 넓히는 문구라 **제품 주장 = Decision 급**이라
+고치지 않았다. 고칠지 말지 알려달라.
+
+### 6. 안 한 것
+
+스키마 약화 · DDL · 자유 업로드 경로 · contest 태그 재작성 · `git add -A` · force push ·
+main 직접 머지 · Decision 없는 제품 주장 변경.
 ```

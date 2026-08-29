@@ -25,8 +25,13 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **P2-2 마감 — PR 대기 (2026-08-29).** 브랜치 **`toma/ops-work-units`** (#107 위에 쌓음).
-> 브리지 `pr-c-work-units` Decision(D1-a·D2-a·D3) 구현 · **D4 는 손대지 않았다**.
+> **P2-2 마감 — 머지됨 (2026-08-29).** PR [#108](https://github.com/gncorpseo-commits/capnet/pull/108)
+> → [#109](https://github.com/gncorpseo-commits/capnet/pull/109) 로 **main `7e6d5f9`**.
+> 브리지 `pr-c-work-units` Decision(D1-a·D2-a·D3) 구현 · **D4 는 손대지 않았다** (ack 수령).
+>
+> **#108 은 stacked base(`toma/capreq-result-view`)에만 머지됐다** — #107 이 main 에
+> squash 로 들어가 이력이 갈려서, 같은 트리(`5a31f234…`)를 main 에서 딴 브랜치에 얹어
+> #109 로 반영했다. **교훈: base 는 항상 `main`.**
 >
 > - **D26 승격** — 작업량 정본 = **Core 관측**(`finished_at − created_at` · 파생 · 저장 안 함).
 >   `duration_ms` = Node 자기신고(추론 구간) **힌트로 유지**. 실측 평균 차 **789 ms**.
@@ -35,10 +40,11 @@
 >   능력별·Node 별 분해. `/v1/ops/status` 미확장. **DDL 0 · 마이그레이션 0.**
 > - 검사 둘 신설 — `test_work_units_wiring`(DB 없이 정본 뒤집힘 감지) ·
 >   `check_work_units`(claim→complete 완주 후 **관측 ≥ 자기신고**). `run_tests` 247 → **260**.
-> - 통합 검사는 로컬에 Docker 가 없어 못 돌렸고 **CI `migrate` 잡이 돌렸다 — `check_work_units` 21/21**
->   (`run 33227726388`). 관측 1500 ms ≥ 자기신고 3 ms · 뒤집으면 감지 · 조회가 쓰지 않음.
+> - 통합 검사 **`check_work_units` 21/21** (CI · `run 33227726388`) — 관측 1500 ms ≥ 자기신고 3 ms ·
+>   뒤집으면 감지 · 조회가 아무것도 쓰지 않음 · 창이 실제로 자름.
 
-> **제품 입구 마감 — PR 대기 (2026-08-29).** 브랜치 **`toma/capreq-result-view`**.
+> **제품 입구 마감 — 머지됨 (2026-08-29).** PR [#107](https://github.com/gncorpseo-commits/capnet/pull/107)
+> · main **`1a15ff1`**.
 > capreq 가 「능력을 고른다」에서 멈추지 않고 **상태와 결과를 보여 준다**.
 >
 > - `capreq/results.py` 신설 — `result_ref` → 표시 요약 (label·entities·vector/forecast·
@@ -49,8 +55,9 @@
 >   첨부 없는 실행이 LLM 을 두 번 불렀고, 폴링이 `TIMEOUT`·`CANCELED` 에서 안 멈췄고,
 >   등록 스크립트 3개의 능력 이름이 복사 실수로 전부 `text embed (fixed projection)` 였다.
 > - CI 에 **`capreq` 잡** 신설 (`httpx` 만 설치). capreq 테스트 19 → **32**.
-> - **미실행:** 이 세션은 Docker·Ollama·fastapi 가 없어 브라우저 종단 스모크를 못 돌렸다.
->   서버 라우트는 컴파일 + 순수 헬퍼 단위 테스트까지만 검증됐다. 실물 확인은 PR 본문 스모크 절차.
+> - **브라우저 종단 스모크는 아직 미실행이다** — 그 세션에 Docker·Ollama 가 없었다.
+>   서버 라우트는 컴파일 + 순수 헬퍼 단위 테스트까지만 검증됐다. 절차는 `capreq/README.md`
+>   §「눈으로 확인하기」. **Ollama 있는 환경에서 한 번 돌리면 이 문장을 지운다.**
 
 > **제품 1호 — 커밋 완료 (2026-08-28).** Cursor 가 Windows 클론에 써 둔 두 묶음을 WSL 작업
 > 리포로 옮겨 심고 PR 을 올렸다. 브랜치는 **`toma/track-a-text-ner-and-inputs`** —
