@@ -418,3 +418,28 @@ status: open
 - `STATE.md` 제품 1호 절
 - `capreq/README.md` · `scripts/ner_demo.sh` · `apps/node/app/infer_ner.py`
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-29T09:00:00+09:00
+topic: pr-c-work-units
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — PR-C `work_units` (Cursor 판단 · master 전달)
+
+> 이 블록은 **master 가 전달한 Cursor Decision** 을 받은 그대로 옮긴 것이다.
+> Cursor 가 직접 쓴 것이 아니므로 `from: human` 이다.
+
+| # | 결정 |
+|---|------|
+| **D1** | **(a) Core 관측** `finished_at − created_at` = `work_units` **정본**. `assignment.duration_ms` = Node **힌트**(추론 구간 자기 측정)로 **유지**. **DDL 추가 없음.** 문서·openapi·컬럼 의미 명시. |
+| **D2** | **(a) `vram_mb_peak`·`energy_wh` = NULL 유지.** CPU-only · 미계측 명시. **RSS/GPU 추정으로 채우지 말 것.** |
+| **D3** | **`GET /v1/ops/work-units` 신설** (`developer` · read-only · **기본 최근 7일**). 집계: 건수 · Core 관측 ms 합/평 · Node 힌트 ms 합/평. capability/node 별 breakdown 은 Claude 추천. **`/v1/ops/status` 는 확장하지 않는다.** |
+| **D4** | **조회 인증 강화는 PR-C 이후.** `/v1/capabilities` · `/v1/datasets` · `/openapi.yaml` 공개 유지 (capreq·데모 무키). |
+
+구현 착수 OK. 해당 Proposal 은 `status: done` 으로 닫고 Decision 을 append 할 것.
+```

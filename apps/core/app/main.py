@@ -75,6 +75,7 @@ from app.invite import (
     verify_invite,
 )
 from app.safety import safety_posture
+from app.work_units import DEFAULT_WINDOW_DAYS, work_units
 from app.registry import (
     bind_agent_node,
     create_agent,
@@ -479,6 +480,31 @@ def ops_safety(authorization: str | None = Header(default=None)) -> dict[str, An
             require_api_key=REQUIRE_API_KEY,
             require_credential=REQUIRE_NODE_CREDENTIAL,
         )
+
+
+@app.get("/v1/ops/work-units")
+def ops_work_units(
+    days: int = DEFAULT_WINDOW_DAYS,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """작업량 — 얼마나 돌았고 얼마나 걸렸나 (P2-2 · PR-C · D1–D3).
+
+    **정본은 Core 관측 시간**(`finished_at − created_at`)이다. Node 가 보고한
+    `assignment.duration_ms` 는 추론 구간만 잰 값이라 **힌트**로 함께 낸다 (D1).
+    절대규칙 4 의 정신이다 — Node 는 자기 등급을 주장할 수 없고, 자기 일의 양도
+    같은 질문을 받는다.
+
+    `vram_mb_peak` · `energy_wh` 는 **미계측**이다 (D2). RSS 로 대신 채우지 않는다.
+
+    **읽기 전용 · DDL 0 · 시크릿 없음.** 관측 시간은 저장하지 않는 파생값이다.
+    기본 창은 최근 7일이고 `?days=` 로 1..90 까지 넓힐 수 있다 (D3).
+    """
+    _require("developer", authorization)
+    try:
+        with get_conn() as conn:
+            return work_units(conn, days=days)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/openapi.yaml", include_in_schema=False)

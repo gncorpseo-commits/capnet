@@ -11,6 +11,10 @@
 | 2 | `migrations/0018` | 「`NOT VALID` 로 우회하지 않는다」 주석 |
 | 3 | `app/arch.py` | 「`ON CONFLICT DO NOTHING` 으로 넘기지 않는다」 docstring |
 | 4 | `app/text_features.py` | 「`hash()` 를 쓰지 않는다」 docstring |
+| 5 | `app/work_units.py` | 「RSS 로 대체하지 않는다」 **응답 문자열 상수** |
+
+5번은 이 헬퍼로도 못 막는다 — 주석도 docstring 도 아닌 **코드가 실제로 내보내는 값**이다.
+거기서 배운 것: 단어 금지 대신 **「무엇을 했나」를 본다** (`test_work_units_wiring` 참조).
 
 매번 그 자리에서 고치면 다섯 번째가 온다. 그래서 한 곳으로 모았다.
 **설명을 지워야 통과하는 검사를 만들지 않는다** — 그건 문서를 벌주는 검사다.
