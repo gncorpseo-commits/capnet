@@ -25,7 +25,18 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **카탈로그 +1 — PR 대기 (2026-08-29).** 브랜치 **`toma/text-extract`** · base `main` `7e6d5f9`.
+> **제품 데모 한 파일 — PR 대기 (2026-08-29).** 브랜치 **`toma/product-demo`** · base `main` `30a94fb`.
+> `scripts/product_demo.sh` — health → 카탈로그 → **능력만 요청**(기기 주소 없음) →
+> 결과·배정 증적 → `GET /v1/ops/work-units` 까지 한 파일. **제품 코드 0 · DDL 0.**
+>
+> - Core **공개 API 만** 부른다 (DB 직접 조회 없음) · `set -euo pipefail` · **exit 0 실측**.
+> - 능력이 없으면 `ner_demo.sh` 로 등록·게이트까지 한 번에 — 「먼저 저걸 돌리세요」로 끝나지 않게.
+> - **품질 주장 없음** — `text.ner` 은 `quality_profile='none'`. 경로와 증적만 보인다.
+> - `tests/test_product_demo.py` **10종** 신설 · `run_tests` 281 → **291**.
+> - 문서: README 빠른 시작 ★ + 스크립트 표 · `user-guide-ko.md` §1.5 「제품 체험」.
+
+> **카탈로그 +1 — 머지됨 (2026-08-29).** PR [#110](https://github.com/gncorpseo-commits/capnet/pull/110)
+> · main **`30a94fb`**.
 > **`text.extract`** = 8번째 실행기. 평문 `키: 값` 필드만 뽑는다 — **자연어 이해 주장 없음.**
 >
 > - 텍스트 능력 셋이 **무엇을 찾는지** 갈린다: `text.ner`=타입 span(키 없음) ·
