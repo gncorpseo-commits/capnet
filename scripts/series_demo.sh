@@ -42,7 +42,7 @@ fi
 
 echo "== 2) 능력 등록 (quality_profile=none · 골든셋 없음) =="
 cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/json' -d '{
- "code":"timeseries.forecast","version":1,"name":"text embed (fixed projection)",
+ "code":"timeseries.forecast","version":1,"name":"series forecast (scratch)",
  "description":"과거 24 → 앞으로 4 · 합성 데이터 scratch · 실제 시계열 성능 주장 없음",
  "input_schema":{"mediaTypes":["text/csv","application/json"],
    "preprocess":{"encoding":"utf-8","max_rows":10000,"window":24}},

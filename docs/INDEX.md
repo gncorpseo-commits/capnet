@@ -100,7 +100,8 @@
 - [README](./research/README.md)
 
 ### 독립 모듈 (Core 밖 · 연결/해제)
-- [`../capreq/README.md`](../capreq/README.md) — **capreq**: 로컬 LLM(Qwen2.5) → 등록 능력 라우터
+- [`../capreq/README.md`](../capreq/README.md) — **capreq**: 로컬 LLM(Qwen2.5) → 등록 능력 라우터.
+  첨부는 Core 중개 수집(D22·D8′) · Task 상태 폴링 · 결과 표시까지 한다. Core 번들 아님(연결/해제)
 
 ---
 

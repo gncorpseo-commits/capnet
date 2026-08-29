@@ -148,6 +148,21 @@ AI 에이전트 스토어는 이미 많다. CapNet이 다루는 건 그 앞의 �
 
 ---
 
+## 로컬 입구 — capreq (권장)
+
+말로 능력을 고르고 파일을 붙이는 **로컬 챗봇**. Core 번들이 **아니다** — 따로 띄우고
+`CatalogSource` / `ExecutionBackend` 어댑터로 붙는 별도 모듈이다 (해제 가능).
+
+```bash
+cd capreq && python -m pip install -e ".[server]"
+python -m capreq serve --core http://127.0.0.1:8000 --port 8090
+```
+
+첨부 → Core 중개 수집(`POST /v1/inputs` · D22 · D8′) → Task → **상태 폴링 · 결과 표시**.
+자유 업로드 창구가 아니다. 자세한 것은 [`capreq/README.md`](capreq/README.md).
+
+---
+
 ## 문서 (두 갈래)
 
 | 누구 | 경로 |

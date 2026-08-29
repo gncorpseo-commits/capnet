@@ -2,7 +2,7 @@
 
 > **정본.** 능력 `code` · `output_kind` · 기본 `quality_profile` · 모달리티 · 유통 세대는 여기서만 읽는다.
 > 근거: 브리지 Decision 2 (2026-08-15) — A 채택 · B 채택 · C2 · E · F · G.
-> 갱신: 2026-08-28
+> 갱신: 2026-08-29
 
 ---
 
@@ -220,6 +220,14 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 | `doc` | `text/plain` **만** — `application/pdf` 는 새 의존성이라 받지 않는다 (§`table.extract`) |
 | `table` | `text/csv` · `application/json` |
 | `code` | `text/plain` |
+
+**코드 접두는 모달리티가 아니다.** `timeseries.forecast` 의 모달리티는 `table` 이고
+`table.extract` 는 `doc` 이다. 코드 앞부분으로 모달리티를 추론하면 어긋난다 —
+capreq 가 그렇게 하다가 `timeseries.forecast` 첨부를 **통째로 거절**했다 (2026-08-29).
+
+그리고 **위 표는 상한이고, 능력이 선언한 `mediaTypes` 가 정본이다.**
+`image.classify` 는 모달리티상 3종이 허용되지만 계약은 `image/jpeg` 하나다 (`0012` ·
+측정 없이 주장 없음). 클라이언트가 선검사를 두려면 표가 아니라 **선언**을 따라야 한다.
 
 ---
 

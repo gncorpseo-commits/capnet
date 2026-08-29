@@ -1,5 +1,40 @@
 # Changelog
 
+## capreq 결과 표시 · 상태 폴링 (제품 입구 마감) — 2026-08-29
+
+**Core 스키마·DDL 변경 0 · 새 의존성 0.** capreq 가 「고르기」에서 멈추지 않고
+**실행 상태와 결과를 눈으로 보여 주는** 데까지 간다.
+
+**결과 표시:** `capreq/results.py` 신설 — Core `result_ref` 를 표시용으로 요약한다.
+계약이 정한 칸 이름을 그대로 읽는다: `label`·`confidence` · `entities` ·
+`vector`/`forecast`(dim + 앞 8개) · `columns`·`rows`(앞 10행) · 그 밖의 칸은 `other`.
+증적 칸(`weights_sha256`)은 결과로 새지 않는다. **새 품질 주장 없음.**
+
+**상태 폴링:** `POST /api/chat` 에 `wait` 추가 — `false` 면 Task 만 만들고 즉시 반환한다.
+`GET /api/tasks/{id}` 신설(Core 응답을 옮길 뿐 새로 판정하지 않는다). 브라우저는
+`wait=false` 로 보내고 1초 간격으로 폴링해 `QUEUED → ASSIGNED → RUNNING → COMPLETED`
+배지를 갱신하고, 종결되면 배정 증적(node·agent·domain·tier)을 한 줄 붙인다.
+CLI·JSON 호출은 기본값 `wait=true` 로 종전과 같다.
+
+**고친 것 (실행 경로 버그):**
+
+- `timeseries.forecast` 첨부가 **통째로 막혀 있었다** — `media.py` 에 `timeseries`
+  모달리티가 없어 「업로드 MIME 규칙이 없다」로 떨어졌다. 능력별 override 표를 두고
+  계약(`input_schema.mediaTypes`)에 맞췄다. `image.classify` 는 JPEG 만(0012),
+  `table.extract` 는 평문.
+- 첨부 없는 실행이 **LLM 을 두 번** 불렀다 — `route()` 뒤에 `route_and_maybe_execute()`
+  가 다시 라우팅했고, 응답에 실린 판단과 실제 실행한 판단이 갈릴 수 있었다.
+- 폴링이 `COMPLETED`·`FAILED` 만 종결로 봤다. `TIMEOUT`·`CANCELED` 는 poll_max 까지
+  헛돌았다 (schema.sql 의 status 8종 중 4종이 종결).
+- 카탈로그 등록 스크립트 3개의 이름이 복사 실수로 전부 `"text embed (fixed projection)"`
+  이었다 (`image.embed`·`table.extract`·`timeseries.forecast`). 이 이름은 라우터
+  allowlist 프롬프트에 그대로 들어간다.
+
+**검증:** `capreq` CI 잡 신설 — `httpx` 만 설치하고 `capreq/tests` 를 돌린다
+(위 `unit` 잡의 「의존성 설치 없음」은 그대로). 19 → **32 테스트**
+(`test_results_unit` 12 · `test_capnet_unit` 9 · `test_media_unit` +4).
+어댑터 테스트는 `httpx.MockTransport` 로 Core 없이 D8′ 본문·종결 상태·오류 매핑을 본다.
+
 ## capreq 입력 챗봇 + text.ner (제품 1호) — 2026-08-28
 
 **Core 스키마·DDL 변경 0.** 설계·초안은 Cursor, 정리·수정·검증은 Claude.

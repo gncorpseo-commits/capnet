@@ -3,21 +3,49 @@
     "code": "image.classify",
     "version": 1,
     "name": "Image classification",
-    "description": "Classify an image into a closed set of land-use or object labels (e.g. EuroSAT).",
+    "description": "Classify a 32x32 RGB image into a closed set of EuroSAT land-use labels.",
     "output_kind": "closed_set_labels"
   },
   {
     "code": "text.classify",
     "version": 1,
-    "name": "Text classification",
-    "description": "Classify text into a closed set of labels.",
+    "name": "structural text classify",
+    "description": "Classify plain text into one of email/url/ipv4/uuid/iso_date/plain. Rule-derived; no quality claim.",
     "output_kind": "closed_set_labels"
+  },
+  {
+    "code": "text.ner",
+    "version": 1,
+    "name": "structural text ner",
+    "description": "Find email/url/ipv4/uuid/iso_date spans in plain text and return start/end offsets. Rule-based; not general NER.",
+    "output_kind": "structured"
+  },
+  {
+    "code": "text.embed",
+    "version": 1,
+    "name": "text embed (fixed projection)",
+    "description": "Embed plain text into a 64-dim vector by a fixed-seed projection. No semantic similarity claim.",
+    "output_kind": "structured"
   },
   {
     "code": "image.embed",
     "version": 1,
-    "name": "Image embedding",
-    "description": "Embed an image into a vector.",
+    "name": "image embed (fixed projection)",
+    "description": "Embed an image into a 128-dim vector reusing the EuroSAT scratch trunk. No similarity claim.",
+    "output_kind": "structured"
+  },
+  {
+    "code": "table.extract",
+    "version": 1,
+    "name": "structural table extract",
+    "description": "Parse a plain-text table into columns/rows with per-column type inference. No table understanding claim.",
+    "output_kind": "structured"
+  },
+  {
+    "code": "timeseries.forecast",
+    "version": 1,
+    "name": "series forecast (scratch)",
+    "description": "Forecast the next 4 points from the last 24 of a numeric series (CSV or JSON). Trained on synthetic data; no real-series claim.",
     "output_kind": "structured"
   }
 ]

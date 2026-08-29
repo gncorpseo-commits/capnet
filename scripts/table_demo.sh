@@ -42,7 +42,7 @@ fi
 
 echo "== 2) 능력 등록 (quality_profile=none · 골든셋 없음) =="
 cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/json' -d '{
- "code":"table.extract","version":1,"name":"text embed (fixed projection)",
+ "code":"table.extract","version":1,"name":"structural table extract",
  "description":"평문 표 → 열 타입 추론 · text.classify 가중치 재사용 · 표 이해도 주장 없음",
  "input_schema":{"mediaTypes":["text/plain"],
    "preprocess":{"encoding":"utf-8","max_rows":1000,"max_cols":64}},

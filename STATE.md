@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-08-28** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
+> **갱신: 2026-08-29** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
 
 ---
 
@@ -24,6 +24,20 @@
 
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
+
+> **제품 입구 마감 — PR 대기 (2026-08-29).** 브랜치 **`toma/capreq-result-view`**.
+> capreq 가 「능력을 고른다」에서 멈추지 않고 **상태와 결과를 보여 준다**.
+>
+> - `capreq/results.py` 신설 — `result_ref` → 표시 요약 (label·entities·vector/forecast·
+>   columns/rows). 증적 칸은 결과로 새지 않는다. **새 품질 주장 없음.**
+> - `GET /api/tasks/{id}` 신설 · `POST /api/chat` 에 `wait` — 브라우저가 1초 폴링해
+>   `QUEUED → ASSIGNED → RUNNING → COMPLETED` 배지와 배정 증적(node·agent·domain·tier)을 그린다.
+> - **실행 경로 버그 4건**: `timeseries.forecast` 첨부가 MIME 규칙 부재로 통째로 막혀 있었고,
+>   첨부 없는 실행이 LLM 을 두 번 불렀고, 폴링이 `TIMEOUT`·`CANCELED` 에서 안 멈췄고,
+>   등록 스크립트 3개의 능력 이름이 복사 실수로 전부 `text embed (fixed projection)` 였다.
+> - CI 에 **`capreq` 잡** 신설 (`httpx` 만 설치). capreq 테스트 19 → **32**.
+> - **미실행:** 이 세션은 Docker·Ollama·fastapi 가 없어 브라우저 종단 스모크를 못 돌렸다.
+>   서버 라우트는 컴파일 + 순수 헬퍼 단위 테스트까지만 검증됐다. 실물 확인은 PR 본문 스모크 절차.
 
 > **제품 1호 — 커밋 완료 (2026-08-28).** Cursor 가 Windows 클론에 써 둔 두 묶음을 WSL 작업
 > 리포로 옮겨 심고 PR 을 올렸다. 브랜치는 **`toma/track-a-text-ner-and-inputs`** —

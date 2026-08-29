@@ -68,6 +68,40 @@ python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --e
 
 능력이 해석됐으나 백엔드가 못 돌리면 **해석은 남기고** 실행 실패를 명시한다.
 
+## 눈으로 확인하기
+
+띄운 뒤 세 가지만 본다. 새 창을 열 필요 없다.
+
+1. **상단 줄** — `model=… · capabilities=7 · executor=true · input_upload=true`.
+   `capabilities=0` 이면 Core 카탈로그가 비었다 (`scripts/*_demo.sh` 로 등록).
+2. **상태 배지** — 보내면 `QUEUED → ASSIGNED → RUNNING → COMPLETED` 가 1초 간격으로
+   바뀐다. 종결되면 배정 증적(`node=… · agent=… · domain=… · tier=…`)이 한 줄 붙는다.
+3. **결과 칸** — 능력이 실제로 낸 것만 그린다.
+   `text.ner` → 엔티티 표(label · start · end · text) · `text.classify` → 라벨·confidence ·
+   `text.embed`/`image.embed`/`timeseries.forecast` → `dim=N · [앞 8개]` ·
+   `table.extract` → 열 타입 + 앞 10행.
+
+터미널에서 같은 것을 보려면:
+
+```bash
+curl -s localhost:8090/api/health
+curl -s -X POST localhost:8090/api/chat -H 'content-type: application/json' \
+  -d '{"message":"이 텍스트에서 이메일 IP 날짜 찾아줘","execute":false}'
+curl -s localhost:8090/api/tasks/<taskId>     # 상태·결과·배정 증적
+```
+
+## 웹 API
+
+| 엔드포인트 | 하는 일 |
+|------------|---------|
+| `GET /api/health` | 모델·카탈로그 수·실행 백엔드 연결 |
+| `GET /api/capabilities` | allowlist (Core 카탈로그 그대로) |
+| `POST /api/chat` | 라우팅 + (`execute`) 실행. `wait=false` 면 Task 만 만들고 즉시 반환 |
+| `GET /api/tasks/{id}` | Task 상태·결과 요약·배정 증적 (Core 응답을 옮길 뿐) |
+
+브라우저 UI 는 `wait=false` 로 보내고 `/api/tasks/{id}` 를 폴링한다 — 그래서 상태가
+바뀌는 것이 보인다. CLI·JSON 호출은 기본값 `wait=true` 로 종결까지 기다린다.
+
 ## 환경 변수
 
 | 변수 | 기본 | 의미 |
@@ -95,6 +129,11 @@ print(router.route("foobar 해줘"))
 
 ## 경계
 
-- 자유 업로드 창구 아님. CapNet 연결 시 dataset/case allowlist만.
+- **자유 업로드 창구 아님.** 첨부는 Core 중개 수집만 간다 (`POST /v1/inputs` ·
+  D22 · D8′) — 서명 URL·`fileToken` 같은 비통제 경로는 만들지 않는다.
+  첨부 없는 실행은 종전대로 dataset/case allowlist 데모 경로다.
+- 첨부 MIME 은 보내기 전에 계약과 대조한다 (`capreq/media.py`). 정본은 Core 의
+  `capability.input_schema.mediaTypes` 이고 여기는 그 요약이다.
 - 목록에 없는 `code`는 거절 (allowlist).
+- 결과 표시는 Core 가 준 `result_ref` 를 옮길 뿐이다. **품질을 새로 주장하지 않는다.**
 - CapNet = 실행·통제·증적 / capreq = 말로 능력 선택.
