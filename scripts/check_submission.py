@@ -45,6 +45,9 @@ REQUIRED_WEIGHTS = [
     "apps/node/weights/series_scratch.safetensors",
     # text.ner 규칙 기반 (PR-B). 파라미터 0 · rule_ner.safetensors.
     "apps/node/weights/rule_ner.safetensors",
+    # text.extract 규칙 기반 (Wave C). 파라미터 0 — rule_ner 과 **바이트가 같다**
+    # (둘 다 버퍼 rule_marker 한 칸). 구별하는 것은 arch 다.
+    "apps/node/weights/rule_extract.safetensors",
 ]
 
 REQUIRED_FILES = ["LICENSE", "NOTICE", "THIRD-PARTY-LICENSES.md", "sbom.json"]

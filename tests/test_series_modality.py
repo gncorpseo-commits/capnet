@@ -154,7 +154,8 @@ class TestDispatch(unittest.TestCase):
         """이미지 밖 모달리티에는 로컬 골든 폴백이 없다 — 입력은 Core 중개로만 (D8′)."""
         code = code_only(ROOT / "apps" / "node" / "app" / "main.py")
         self.assertIn(
-            'modality in ("text", "text_embed", "series", "table_extract", "text_ner")', code
+            '"text", "text_embed", "series", "table_extract", "text_ner", "text_extract"',
+            code,
         )
 
 
