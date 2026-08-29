@@ -70,9 +70,12 @@
 >   첨부 없는 실행이 LLM 을 두 번 불렀고, 폴링이 `TIMEOUT`·`CANCELED` 에서 안 멈췄고,
 >   등록 스크립트 3개의 능력 이름이 복사 실수로 전부 `text embed (fixed projection)` 였다.
 > - CI 에 **`capreq` 잡** 신설 (`httpx` 만 설치). capreq 테스트 19 → **32**.
-> - **브라우저 종단 스모크는 아직 미실행이다** — 그 세션에 Docker·Ollama 가 없었다.
->   서버 라우트는 컴파일 + 순수 헬퍼 단위 테스트까지만 검증됐다. 절차는 `capreq/README.md`
->   §「눈으로 확인하기」. **Ollama 있는 환경에서 한 번 돌리면 이 문장을 지운다.**
+> - **서버 경로 실측 (2026-08-29).** 살아 있는 Core 에 붙여 처음 돌렸다 —
+>   `/api/health` · `/api/capabilities` · `/api/tasks/{id}`(실제 완주 task → **entities 3건 요약 +
+>   배정 증적**) · 없는 id 는 500 이 아니라 `ok=false` 로 내려온다. **버그 없음.**
+> - **브라우저 종단 스모크는 여전히 미실행** — **Ollama 가 없어** `/api/chat` 라우팅과
+>   `chat.html` 렌더링을 못 본다. 절차는 `capreq/README.md` §「눈으로 확인하기」.
+>   **Ollama 있는 환경에서 한 번 돌리면 이 문장을 지운다.**
 
 > **제품 1호 — 커밋 완료 (2026-08-28).** Cursor 가 Windows 클론에 써 둔 두 묶음을 WSL 작업
 > 리포로 옮겨 심고 PR 을 올렸다. 브랜치는 **`toma/track-a-text-ner-and-inputs`** —

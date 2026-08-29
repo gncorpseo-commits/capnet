@@ -3243,11 +3243,31 @@ status: open
 | `capreq` 단위 | **19 → 32** (`test_results_unit` 12 · `test_capnet_unit` 9 · `test_media_unit` +4) |
 | `check_submission --skip-tree` | 25/25 |
 | CI | 3잡 초록 (`unit` · **`capreq` 신설** · `migrate`) |
-| **브라우저 종단 스모크** | **미실행** — 그 세션에 Docker·Ollama 가 없었다 |
+| 서버 경로 **실측** (2026-08-29) | **처음 돌렸다** — 아래 §4-1 |
+| **브라우저 종단 스모크** | **여전히 미실행** — Ollama 가 없어 라우팅(`/api/chat`)을 못 돌린다 |
 
 CI 에 **`capreq` 잡**을 새로 뒀다. `httpx` 만 설치하고 `capreq/tests` 를 돌린다 —
 기존 `unit` 잡의 「의존성 설치 없음」은 손대지 않았다. 어댑터 테스트는 `httpx.MockTransport`
 로 Core 없이 D8′ 본문·종결 상태·오류 매핑을 본다.
+
+### 4-1. 서버 경로 실측 (2026-08-29 · Docker 있는 세션)
+
+#107 이 만든 서버 경로는 **한 번도 실행된 적이 없었다** (그 세션에 fastapi 가 없었다).
+이번에 살아 있는 Core 에 붙여 돌렸다 — capreq 를 컨테이너에 넣고 compose 네트워크로
+`http://core:8000` 을 봤다. Ollama 가 없어 **LLM 라우팅은 제외**다.
+
+| 경로 | 결과 |
+|---|---|
+| `GET /api/health` | 200 · `capabilities=4 · executor=true · input_upload=true` |
+| `GET /api/capabilities` | 200 · Core 카탈로그 그대로 |
+| `GET /api/tasks/{id}` (실제 완주 task) | 200 · `status=COMPLETED · done=true` · **entities 3건이 요약돼 나왔다** · 배정 증적 `node=…030 · agent=29819aab… · domain=team · tier=M` |
+| `GET /api/tasks/{없는 id}` | 200 · `ok=false · "Task 조회 실패 HTTP 404"` — **500 으로 새지 않는다** |
+
+`result_label` 은 `null` 이다 — NER 에는 라벨이 없고, 빈 문자열로 채우지 않는다는 규약대로다.
+**버그는 나오지 않았다.** 요약기(`results.summarize_result`)가 실제 `result_ref` 를 계약대로 읽는다.
+
+**아직 못 본 것:** `/api/chat` 의 라우팅(Ollama 필요) · `chat.html` 의 브라우저 렌더링.
+그 둘은 Ollama 있는 환경에서만 볼 수 있다 — **없는 것을 봤다고 하지 않는다.**
 
 ### 4. 머지 후 자체 리뷰에서 잡은 것 (같은 PR 에 추가 커밋)
 
