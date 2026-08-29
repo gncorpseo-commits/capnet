@@ -1,5 +1,45 @@
 # Changelog
 
+## work_units 계측 마감 — 정본은 Core 관측이다 (P2-2 · D26) — 2026-08-29
+
+**DDL 0 · 새 컬럼 0 · 마이그레이션 0 · 새 의존성 0.** 브리지 `pr-c-work-units`
+Decision(D1-a · D2-a · D3) 을 그대로 구현했다. **D4(조회 인증)는 손대지 않았다.**
+
+**로드맵이 실물과 달랐다.** P2-2 는 「`duration_ms`·`vram_mb_peak` 계측」이었는데
+**컬럼은 이미 있었다.** 남아 있던 것은 「무엇을 정본으로 볼 것인가」다.
+
+**정본 = Core 관측** (`assignment.finished_at − created_at`). 저장하지 않는 파생값이다.
+`assignment.duration_ms` 는 Node 가 **자기 추론 구간만** 잰 값이라 **힌트**로 함께 낸다 —
+지우지 않는 이유는 「관측 − 자기신고 = 일 밖에서 쓴 시간」이 둘이 있어야 나오기 때문이다.
+근거는 **절대규칙 4의 확장**이다: Node 가 자기 등급을 주장할 수 없다면 자기 일의 양도
+같은 질문을 받는다. 실측 평균 차 **789 ms**(최대 +1982) · 자기신고 최소 0 ms 인데 관측은 수백 ms.
+
+**`vram_mb_peak` · `energy_wh` 는 미계측이다.** CPU 함대이고 재는 장치가 없다.
+RSS 로 대신 채우면 **칸 이름이 거짓말이 된다** — 채우지 않고 **센다**
+(`vram_measured`·`energy_measured` · 완주해도 0).
+
+**읽는 길 하나:** `GET /v1/ops/work-units` — `developer` · read-only · 시크릿 없음 ·
+기본 최근 7일(`?days=` 1..90). 건수 · Core 관측 ms 합/평/최대 · Node 힌트 ms 합/평 ·
+**능력별 · Node 별 분해**. `/v1/ops/status` 는 확장하지 않았다. 종결된 배정만 센다.
+
+**컬럼의 뜻을 DDL 정본에 적었다** — `docs/spec/schema.sql` 의 `assignment` 안 주석 6줄.
+`COMMENT ON` 마이그레이션을 새로 만들지 않은 것은 Decision 이 「DDL 추가 없음」이어서다
+(세대 18→19 는 README·런북 표기까지 따라 고쳐야 한다). 살아 있는 DB 에서 보여야 하면 올린다.
+
+**검사 둘 (신설):**
+
+- `tests/test_work_units_wiring.py` — **DB 없이** 정본이 뒤집혔는지 본다. 쓰기 없음 ·
+  `canonical == "core_observed_ms"` · 미계측을 채우지 않음 · 기본 창 7일 · 라우트↔문서↔스키마.
+- `tests/integration/check_work_units.py` — claim → complete 로 배정을 실제 완주시킨 뒤
+  **관측 ≥ 자기신고**를 두 방향으로 본다 (Proposal §3-5 의 회귀 검사).
+
+`run_tests` 247 → **260**.
+
+**검사가 자기 설명에 걸렸다 (다섯 번째).** `vram` 을 RSS 로 대체하지 못하게 「`rss` 단어
+금지」로 썼더니 **「RSS 로 대체하지 않는다」고 적어 둔 응답 문자열**에 걸렸다. 이번엔 주석도
+docstring 도 아니라 코드가 내보내는 값이라 `_srcguard` 로도 못 걷어낸다. 단어 금지 대신
+**「무엇을 했나」**로 바꿨고 `tests/_srcguard.py` 표에 5번으로 적었다.
+
 ## capreq 결과 표시 · 상태 폴링 (제품 입구 마감) — 2026-08-29
 
 **Core 스키마·DDL 변경 0 · 새 의존성 0.** capreq 가 「고르기」에서 멈추지 않고

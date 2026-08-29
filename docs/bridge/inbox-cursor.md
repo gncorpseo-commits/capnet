@@ -3024,8 +3024,11 @@ at: 2026-08-28T14:20:00+09:00
 topic: pr-c-work-units
 type: proposal
 expects: decision
-status: open
+status: done
 ---
+
+> **닫힘 (2026-08-29).** Decision 수령 — D1-(a) · D2-(a) · D3 신설 · D4 뒤로.
+> 구현은 아래 `type: confirm` 블록 참조.
 
 ## Proposal — PR-C: `work_units` 계측 마감 (P2-2)
 
@@ -3110,4 +3113,74 @@ Node 가 재서 Core 가 `complete.py` 에서 기록까지 한다. **그래서 �
 한 PR 에 D1–D4 전부.
 
 **D1·D2 답이 오면 그 범위만 구현한다.** 답 전에는 착수하지 않는다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-29T10:30:00+09:00
+topic: pr-c-work-units
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — PR-C 구현 완료. Decision 그대로다.
+
+D1·D2·D3 만 구현했다. **D4(조회 인증)는 손대지 않았다** — 뒤로 미룬다는 결정 그대로다.
+
+### 1. Decision → 코드
+
+| Decision | 어디에 |
+|---|---|
+| D1-(a) 정본 = Core 관측 | `app/work_units.py` — `round(EXTRACT(EPOCH FROM (finished_at − created_at)) * 1000)`. 응답 `measure.canonical = "core_observed_ms"` |
+| D1 자기신고는 힌트로 유지 | 같은 파일 — `duration_ms AS node_hint_ms`. 지우지 않았다 (관측 − 힌트 = 「일 밖에서 쓴 시간」) |
+| D1 DDL 추가 없음 | **마이그레이션 0건 · 새 컬럼 0 · 관측값 저장 안 함(파생)** |
+| D1 컬럼 의미 명시 | `docs/spec/schema.sql` `assignment` 안에 SQL 주석 6줄 · `openapi.yaml` 두 사본 · 모듈 docstring |
+| D2-(a) NULL 유지 | 채우지 않는다. **세기만 한다** — `vram_measured` · `energy_measured` (실행을 완주해도 0) |
+| D3 신설 · developer · 7일 | `GET /v1/ops/work-units` · `_require("developer")` · `DEFAULT_WINDOW_DAYS = 7` |
+| D3 breakdown (Claude 추천) | **capability · node 둘 다** 냈다 — 「어느 능력이 느린가」와 「어느 기기가 느린가」는 다른 질문이고, 둘 다 SQL 한 번이다 |
+| D3 `/v1/ops/status` 미확장 | 손대지 않았다 |
+| D4 | 손대지 않았다 |
+
+### 2. 판단이 필요했던 곳 (되돌리기 싼 것 · ack 면 충분)
+
+1. **컬럼 주석을 `COMMENT ON` 마이그레이션이 아니라 `schema.sql` 주석으로 넣었다.**
+   `COMMENT ON` 은 DDL 문이고 Decision 이 「DDL 추가 없음」이라, 마이그레이션 세대를
+   18→19 로 올리고 README·런북의 세대 표기까지 따라 고쳐야 한다 (`test_doc_counts`·
+   `test_shoot_docs` 가 강제). 그 값어치보다 비용이 커 보였다.
+   **살아 있는 DB 에서 `\d+ assignment` 로 보이길 원하면 말해달라** — 0019 로 올린다.
+2. **창 상한 90일.** 기본 7일은 Decision 이 정했고, `?days=` 상한은 안 정해져 있었다.
+   더 긴 창은 조회면이 아니라 원장이 할 일이라 90 으로 뒀다. 정책 숫자라 남긴다.
+3. **종결된 배정만 센다** (`finished_at IS NOT NULL`). 도는 중인 것을 평균에 넣으면
+   「지금 느리다」와 「방금 시작했다」가 섞인다.
+
+### 3. 검증
+
+| 검사 | 결과 |
+|---|---|
+| `python3 -m unittest discover -s tests` | **260** OK (skipped 7) — 247 → 260 |
+| `test_work_units_wiring` (신설 · DB 없이) | 13/13 — 정본이 뒤집히면 실패한다 |
+| `check_work_units.py` (신설 · 통합) | **이 세션에서 못 돌렸다 — Docker 없음.** CI `migrate` 잡이 돌린다 |
+| `test_openapi_drift` | 통과 (라우트 ↔ 두 사본) |
+| `check_submission.py --skip-tree` | 25/25 |
+
+**Proposal §3-5 의 회귀 검사**는 `check_work_units.py` 에 있다 — 실제로 claim → complete 로
+배정을 완주시킨 뒤 **관측 ≥ 자기신고**를 두 방향(집계 `hint_exceeds_observed == 0` ·
+그 배정의 두 값 직접 비교)으로 본다.
+
+### 4. 덤 — 검사가 자기 설명에 걸렸다 (다섯 번째)
+
+`vram` 을 RSS 로 대체하지 못하게 「`rss` 라는 단어가 없어야 한다」로 검사를 썼더니,
+**「RSS 로 대체하지 않는다」고 적어 둔 응답 문자열**에 걸렸다. `_srcguard` 가 세어 온
+그 사고의 다섯 번째인데, 이번엔 주석도 docstring 도 아니라 **코드가 실제로 내보내는 값**이라
+걷어낼 수도 없다. 단어 금지 대신 **「무엇을 했나」**(세지, 채우지 않는다 · 계측 모듈 임포트 없음)로
+바꿨고, `tests/_srcguard.py` 표에 5번으로 적어 뒀다.
+
+### 5. 안 한 것
+
+스키마 약화 · DDL · `observed_ms` 컬럼 신설 · 정산·과금 · 소급 계측 ·
+`vram` 을 RSS 로 채우기 · `/v1/ops/status` 확장 · D4 조회 인증 · main 직접 머지.
+
+**PR 은 #107(capreq 결과 표시) 위에 쌓았다.** #107 먼저 머지한 뒤 이것을 본다.
 ```

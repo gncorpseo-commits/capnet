@@ -124,7 +124,7 @@
 | ID | 산출물 | 비고 |
 |----|--------|------|
 | ~~P2-1~~ | `tenant` trust_domain 실동작 | ✅ **완료 2026-08-11** — `migrations/0006` · 경계 6종 실측. 아래 §3.2 참조 |
-| P2-2 | `work_units` 계측 — `duration_ms` · `vram_mb_peak` | 정산 아님(§8.1-4). **미계측 구간은 소급 불가** — 시작 시점부터만 의미 |
+| ~~P2-2~~ | `work_units` 계측 — `duration_ms` · `vram_mb_peak` | ✅ **완료 2026-08-29** — **컬럼은 이미 있었다.** 남아 있던 것은 「무엇을 정본으로 볼 것인가」였고 **D26** 이 답했다: 정본 = Core 관측(`finished_at − created_at`) · `duration_ms` = Node 힌트 · `vram_mb_peak`·`energy_wh` = **미계측**. 읽는 길 `GET /v1/ops/work-units` (DDL 0). 정산 아님(§8.1-4). **미계측 구간은 소급 불가** |
 | ~~P2-3~~ | 최소 UI (호출면) | ✅ **완료 2026-08-11** — `/ui/nodes.html` · `/ui/call.html`. 새 의존성 0 |
 | ~~P2-4~~ | `node_credential` DDL + 발급 API | ✅ **완료 2026-08-11** — `migrations/0007`. v4.4 동결 이후 첫 스키마 변경(추가만) |
 | P2-5 | spot-check · 재할당 가동 | Proof Track |

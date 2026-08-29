@@ -349,6 +349,30 @@ paths:
           description: 강제 모드에서 키 없음
         "403":
           description: 역할 부족
+  /v1/ops/work-units:
+    get:
+      summary: 작업량 — 건수·Core 관측 시간·Node 자기신고 (P2-2)
+      description: >
+        정본은 Core 관측 시간(assignment.finished_at − created_at)이다. Node 가 보고한
+        assignment.duration_ms 는 추론 구간만 잰 값이라 힌트로 함께 낸다 (D1).
+        vram_mb_peak · energy_wh 는 미계측이다 — RSS 로 대신 채우지 않는다 (D2).
+        쓰기 없음 · DDL 0 · 시크릿 없음. 관측 시간은 저장하지 않는 파생값이다.
+        종결된 배정(finished_at IS NOT NULL)만 센다. developer 이상.
+      parameters:
+        - name: days
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 90, default: 7 }
+          description: 집계 창(일). 기본 최근 7일 (D3).
+      responses:
+        "200":
+          description: measure · totals · by_capability[] · by_node[] · warnings
+        "400":
+          description: days 가 1..90 밖
+        "401":
+          description: 강제 모드에서 키 없음
+        "403":
+          description: 역할 부족
   /v1/api-keys:
     get:
       summary: 발급된 관리 키 상태 (prefix·역할만)
