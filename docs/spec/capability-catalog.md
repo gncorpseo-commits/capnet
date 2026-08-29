@@ -86,7 +86,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 | # | `code` | 모달리티 | `output_kind` | P | 세대 |
 |---|--------|---------|---------------|---|------|
 | 13 | `text.classify` | text | `closed_set_labels` | none | v제품-1 ✅ **구현됨** |
-| 14 | `text.extract` | text | `structured` | none | v제품-1 |
+| 14 | `text.extract` | text | `structured` | none | v제품-1 ✅ **구현됨** |
 | 15 | `text.ner` | text | `structured` | none | v제품-1 ✅ **구현됨** |
 | 16 | `text.embed` | text | `structured` | none | v제품-1 ✅ **구현됨** |
 | 17 | `text.summarize` | text | `freeform` | none | v제품-1 |
@@ -412,6 +412,50 @@ label= url  confidence= 0.3115…
 **파라미터 0** 자리표시자다(step6 §3 「모델 없이도 됨」).
 
 종단: `scripts/ner_demo.sh` — 계약 게이트 → Task `{ inputId }` → `entities[]` 증적.
+
+### `text.extract` — 이름표가 붙은 필드 · **새 학습 0** (Wave C · 2026-08-29)
+
+**자연어 이해를 주장하지 않는다.** 문장에서 사실을 뽑지 못하고 값의 뜻도 모른다.
+한 줄에 `이름: 값` 꼴로 **이름표가 붙어 있는 것**만 가져오고, 「그런 줄이 있었다」까지만 말한다.
+
+세 능력이 텍스트를 읽지만 보는 것이 다르다 — 이 구별이 카탈로그가 커질 때의 관문이다.
+
+| 능력 | 무엇을 찾나 | 키가 있나 |
+|---|---|---|
+| `text.ner` | 타입 있는 span (`email`·`ipv4`·…) | ❌ 위치만 |
+| **`text.extract`** | **`키: 값` 필드** | ✅ 줄에 적힌 이름표 |
+| `table.extract` | 격자 (행 × 열) | 열 인덱스 |
+
+**규칙을 전부 적는다** (`app/extract_patterns.py`). 결과가 왜 그런지 설명할 수 없으면
+규칙 기반이라고 말할 자격이 없다 — 구분자는 첫 `:` 또는 `=` 하나 · 앞머리 글머리표는 떼고 ·
+**키에 글자가 없으면 버린다**(`12:30` 을 필드로 읽지 않는다) · 구분자 뒤가 `//` 면 버린다
+(`https://` 의 `https` 를 키로 읽지 않는다) · 같은 키가 여러 번 나오면 **전부 남긴다**.
+
+`start`·`end` 는 **값**의 위치다 — `text.ner` 과 같은 규약이라 증적을 사람이 대조할 수 있다.
+
+**새 학습이 없다.** `RuleTextExtract` 는 파라미터 0 이고 `rule_extract.safetensors` 는
+버퍼 한 칸짜리 자리표시자다 — 그래서 **`rule_ner.safetensors` 와 바이트가 같다**
+(sha `15458b00…`). 구별하는 것은 `arch` 이고, 증적에는 arch 와 sha 가 사실대로 남는다.
+
+**자르지 않고 던진다.** 필드 수가 러너 한도(`NODE_MAX_FIELDS`)를 넘으면 잘라서 돌려주는
+대신 실패한다 — 자르면 「필드를 다 읽었다」가 거짓이 되고 쓰는 쪽은 뒤가 잘린 줄 모른다.
+이것은 **계약 항목이 아니라 러너 자원 한도**다. 계약이 정하는 것은 `max_chars` 다.
+
+종단 실측 (2026-08-29 · `scripts/text_extract_demo.sh`):
+
+```text
+OK   weights_fingerprint — 텐서 1개 · 파라미터 1 · ⚠️ shape 합계(1) ≠ 로드 후 파라미터(0)
+OK   arch — RuleTextExtract 로 로드 성공
+OK   max_params — 0 <= 1000
+OK   preprocess — 선언 적용: encoding=utf-8 normalize=NFC max_chars=8000
+OK   input_schema — 선언 전처리로 샘플 추론 성공 (137 bytes · text_extract)
+OK   output_schema — 칸 1개(fields)가 계약을 만족한다
+gate_run PASSED → 바인딩 → COMPLETED · fields 3건 (Ticket·Severity·Assignee)
+증적: node=…030 · team → team · M <= M
+```
+
+지문 경고(`shape 합계(1) ≠ 로드 후 파라미터(0)`)는 **정상이다** — 파일에 있는 것은
+버퍼이고 버퍼는 `parameters()` 에 들어가지 않는다. `text.ner` 과 같은 이유다.
 
 ### `text.embed` — `structured` 의 첫 사례 (단계 6 ①)
 

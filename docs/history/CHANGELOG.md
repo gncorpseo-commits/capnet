@@ -1,5 +1,52 @@
 # Changelog
 
+## 카탈로그 +1 — `text.extract` (8번째 실행기 · Wave C) — 2026-08-29
+
+**DDL 0 · 새 의존성 0 · 새 학습 0 · 외부 말뭉치 0.** 카탈로그 구현 **7종 → 8종**.
+
+**무엇을 하나.** 평문 한 줄에 `이름: 값` 꼴로 **이름표가 붙어 있는 것**만 가져온다.
+「그런 줄이 있었다」까지만 말한다 — **자연어 이해를 주장하지 않는다.** 값의 뜻도 타입도
+판정하지 않는다(그건 `text.classify`·`text.ner` 몫이다).
+
+텍스트를 읽는 능력이 셋이 됐고, 그 셋이 **무엇을 찾는지**가 갈린다:
+`text.ner` = 타입 span(키 없음) · **`text.extract` = `키: 값` 필드** · `table.extract` = 격자.
+
+**규칙을 전부 적었다** (`app/extract_patterns.py` docstring). 결과가 왜 그런지 설명할 수
+없으면 규칙 기반이라 말할 자격이 없다 — 구분자는 첫 `:`/`=` 하나 · 글머리표는 뗀다 ·
+**키에 글자가 없으면 버린다**(`12:30` ✗) · 구분자 뒤가 `//` 면 버린다(`https://` ✗) ·
+같은 키가 여러 번 나오면 **전부 남긴다**. `start`·`end` 는 **값**의 위치라
+`text[start:end] == value` 다 — `text.ner` 과 같은 규약이라 증적을 사람이 대조할 수 있다.
+
+**새 학습이 없다.** `RuleTextExtract` 는 파라미터 0 이고 `rule_extract.safetensors` 는
+버퍼 한 칸(`rule_marker`)짜리 자리표시자다 — `text.ner` 에서 배운 패턴 그대로다
+(state dict 가 완전히 비면 `weights_fingerprint` 가 막는데, 그 검사는 약화시키지 않았다).
+그래서 **`rule_ner.safetensors` 와 바이트가 같다**(sha `15458b00…`). 숨기지 않고
+meta·카탈로그·체크리스트·PR 에 적었다 — 구별하는 것은 `arch` 이고 증적에 사실대로 남는다.
+
+**자르지 않고 던진다.** 필드 수가 러너 한도(`NODE_MAX_FIELDS`)를 넘으면 실패한다.
+자르면 「필드를 다 읽었다」가 거짓이 되고 쓰는 쪽은 뒤가 잘린 줄 모른다 (`table.extract` 규율).
+이것은 **계약 항목이 아니라 러너 자원 한도**다 — 계약이 정하는 것은 `max_chars` 다.
+
+**종단 실측** (`scripts/text_extract_demo.sh` · 로컬 스택):
+
+```text
+OK   weights_fingerprint · arch · max_params(0 <= 1000) · preprocess · input_schema
+OK   output_schema — 칸 1개(fields)가 계약을 만족한다
+gate_run PASSED → 바인딩 → COMPLETED · fields 3건 (Ticket·Severity·Assignee)
+증적: assignment SUCCEEDED · node=…030 · team → team · M <= M
+```
+
+이름표가 없는 줄(`not a field line`)은 필드로 읽지 않았다 — 데모가 그것도 검사한다.
+
+**검사:** `tests/test_text_extract.py` **21종** 신설 (규칙 11 · 배선 4 · 정직한 주장 4 · 가중치 2).
+`run_tests` 260 → **281**. 가중치 필수 목록 6종 → **7종**(`check_submission`·`check_release`·
+체크리스트 S4-1 — `test_checklist_claims` 가 셋을 대조한다).
+
+**브리지·문서 정리(같은 PR):** `pr-c-work-units`·`product-handoff-to-claude` Confirm →
+`status: done` + ack 기록 · **#107 Confirm 블록을 뒤늦게 채웠다**(Decision 이 필요 없는
+범위라 Proposal 없이 가면서 Confirm 도 같이 빠졌다) · `STATE.md` 의 「PR 대기」를
+머지됨으로 정정 · `step6-executors.md` 의 「모델 없이도 됨」을 **추정에서 실측으로**.
+
 ## work_units 계측 마감 — 정본은 Core 관측이다 (P2-2 · D26) — 2026-08-29
 
 **DDL 0 · 새 컬럼 0 · 마이그레이션 0 · 새 의존성 0.** 브리지 `pr-c-work-units`

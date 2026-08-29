@@ -25,6 +25,21 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
+> **카탈로그 +1 — PR 대기 (2026-08-29).** 브랜치 **`toma/text-extract`** · base `main` `7e6d5f9`.
+> **`text.extract`** = 8번째 실행기. 평문 `키: 값` 필드만 뽑는다 — **자연어 이해 주장 없음.**
+>
+> - 텍스트 능력 셋이 **무엇을 찾는지** 갈린다: `text.ner`=타입 span(키 없음) ·
+>   `text.extract`=`키: 값` 필드 · `table.extract`=격자.
+> - **새 학습 0 · 외부 말뭉치 0.** `RuleTextExtract` 파라미터 0 · 버퍼 한 칸.
+>   `rule_extract.safetensors` 는 **`rule_ner` 과 바이트가 같다**(sha `15458b00…`) — 숨기지 않고
+>   meta·카탈로그·체크리스트에 적었다. 구별하는 것은 `arch` 다.
+> - **종단 PASSED** — `scripts/text_extract_demo.sh` · 계약 게이트 6검사 OK ·
+>   Task COMPLETED · fields 3건 · assignment SUCCEEDED · team→team · M ≤ M.
+>   이름표 없는 줄은 필드로 읽지 않는다(데모가 검사).
+> - `tests/test_text_extract.py` **21종** 신설 · `run_tests` 260 → **281** ·
+>   가중치 필수 6종 → **7종**.
+> - 브리지 ack 반영 · **#107 Confirm 뒤늦게 채움** · STATE 「PR 대기」 정정.
+
 > **P2-2 마감 — 머지됨 (2026-08-29).** PR [#108](https://github.com/gncorpseo-commits/capnet/pull/108)
 > → [#109](https://github.com/gncorpseo-commits/capnet/pull/109) 로 **main `7e6d5f9`**.
 > 브리지 `pr-c-work-units` Decision(D1-a·D2-a·D3) 구현 · **D4 는 손대지 않았다** (ack 수령).

@@ -345,7 +345,9 @@ def _run(
         if meta is not None:
             fetched = _fetch_input(*meta)
             image_path = fetched
-        elif modality in ("text", "text_embed", "series", "table_extract", "text_ner"):
+        elif modality in (
+            "text", "text_embed", "series", "table_extract", "text_ner", "text_extract"
+        ):
             # 이미지 밖 모달리티에는 로컬 골든셋 폴백이 없다 — 입력은 Core 중개로만 온다 (D8′).
             raise HTTPException(
                 status_code=400,
@@ -379,6 +381,17 @@ def _run(
 
                 try:
                     output = extract_ner(
+                        path, image_path, arch=arch, max_params=max_params,
+                        preprocess=preprocess,
+                    )
+                except TextResourceLimitExceeded as exc:
+                    raise ResourceLimitExceeded(str(exc)) from exc
+            elif modality == "text_extract":
+                from app.infer_extract import extract_fields
+                from app.infer_text import TextResourceLimitExceeded
+
+                try:
+                    output = extract_fields(
                         path, image_path, arch=arch, max_params=max_params,
                         preprocess=preprocess,
                     )

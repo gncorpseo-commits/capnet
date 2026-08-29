@@ -83,6 +83,12 @@ def _rule_ner() -> type[nn.Module]:
     return RuleTextNer
 
 
+def _rule_extract() -> type[nn.Module]:
+    from app.tiny_extract import RuleTextExtract
+
+    return RuleTextExtract
+
+
 def _text_embedder() -> type[nn.Module]:
     from app.tiny_embed import TinyTextEmbedder
 
@@ -113,6 +119,8 @@ ARCH_REGISTRY: dict[str, type[nn.Module]] = {
     "TinyTableTyper": _text_classifier(),
     # 규칙 NER — 가중치 0 · 추론은 정규식 (PR-B · text.ner).
     "RuleTextNer": _rule_ner(),
+    # 규칙 필드 추출 — 가중치 0 · 추론은 줄 규칙 (Wave C · text.extract).
+    "RuleTextExtract": _rule_extract(),
 }
 
 # arch → 모달리티. **실행기 디스패치의 정본이다** (단계 5).
@@ -132,6 +140,9 @@ ARCH_MODALITY: dict[str, str] = {
     "TinyEuroSATEmbed": "image_embed",
     "TinyTableTyper": "table_extract",
     "RuleTextNer": "text_ner",
+    # NER 과 같은 텍스트 전처리를 쓰고, 다른 것은 **출력**이다 —
+    # 타입 span 이 아니라 이름표가 붙은 필드다.
+    "RuleTextExtract": "text_extract",
 }
 
 

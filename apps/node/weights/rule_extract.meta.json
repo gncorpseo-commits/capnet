@@ -1,0 +1,9 @@
+{
+  "weights": "rule_extract.safetensors",
+  "weights_sha256": "15458b002abc515dd7be607fe79766d8d1eae5e5e1fbdd3ebc70b11828f1ee58",
+  "arch": "RuleTextExtract",
+  "pretrained": false,
+  "dataset": "none (규칙 기반 · 학습 없음 · 파라미터 0 · 버퍼 1칸은 지문용)",
+  "labels": [],
+  "note": "text.extract 는 quality_profile='none' 이다 — 줄 규칙으로 `키: 값` 필드만 뽑는다. 자연어 이해를 주장하지 않는다. 이 파일은 rule_ner.safetensors 와 **바이트가 같다** (둘 다 파라미터 0 · 버퍼 rule_marker 한 칸). 다른 것은 arch 이고, 증적에는 arch 와 sha 가 사실대로 남는다."
+}

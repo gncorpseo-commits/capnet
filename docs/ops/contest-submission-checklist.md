@@ -87,7 +87,7 @@
 | S2 | `git archive --format=zip --prefix=capnet/ v0.1.0-contest -o capnet-v0.1.0-contest.zip` | `.git` 제외본. **`bash scripts/check_release.sh` 로 미리 검증한다** (태그 없이 `HEAD` 로도 돈다) |
 | S3 | 저장소 필수 파일: LICENSE · NOTICE · README(5분 기동) · THIRD-PARTY-LICENSES.md · sbom.json | §5 참조 |
 | S4 | **넣지 않는 것**: EuroSAT 원본 zip · **실험** 가중치(`*_ho*` · `*_hob*` 등) · `.env` · 캐시 | 용량과 라이선스 양쪽 이유. `.gitignore` 가 이미 막는다 |
-| S4-1 | **반드시 넣는 것**: 데모용 가중치 **6종** + `placeholder` | 없으면 심사위원이 재현할 수 없다. `check_submission` 의 `REQUIRED_WEIGHTS` 가 정본 · `check_release.sh` 가 압축본에서 확인한다 |
+| S4-1 | **반드시 넣는 것**: 데모용 가중치 **7종** + `placeholder` | 없으면 심사위원이 재현할 수 없다. `check_submission` 의 `REQUIRED_WEIGHTS` 가 정본 · `check_release.sh` 가 압축본에서 확인한다 |
 | S5 | 상대 링크 전부 클릭 확인 | 파일명 변경 이력이 있어 깨지기 쉽다 |
 
 ---
@@ -191,9 +191,14 @@ W2 버퍼를 코드 다듬기에 쓰지 않는다. F2에 따라 1차는 글로�
 - [ ] sbom.json
 - [ ] 사전학습 가중치 미사용 선언 (보고서 9절)
 - [ ] EuroSAT 원본·대용량 산출물 **미동봉** 확인 (골든 n300·artifacts·실험 가중치)
-- [ ] **자체 scratch 가중치 6종 + `placeholder` 는 저장소에 유지** — 삭제 금지.
-      (`eurosat_scratch` · `eurosat_scratch_b` · `text_struct_scratch` · `text_embed_scratch` · `series_scratch`)
-      「2종」은 능력이 `image.classify` 하나였을 때의 값이다 — 지금은 6종이 돌고 5개가 필요하다.
+- [ ] **자체 scratch 가중치 7종 + `placeholder` 는 저장소에 유지** — 삭제 금지.
+      (`eurosat_scratch` · `eurosat_scratch_b` · `text_struct_scratch` · `text_embed_scratch` ·
+      `series_scratch` · `rule_ner` · `rule_extract`)
+      「2종」은 능력이 `image.classify` 하나였을 때의 값이다 — 능력이 늘 때마다 이 값도 는다.
+      **정본은 `check_submission.REQUIRED_WEIGHTS` 이고 여기 숫자는 그 실물을 따라간다**
+      (`test_checklist_claims` 가 대조한다).
+      `rule_ner` 과 `rule_extract` 는 **바이트가 같다** — 둘 다 파라미터 0 · 버퍼 한 칸이고,
+      구별하는 것은 `arch` 다.
       부록2 Ⅶ "유형 2·3은 새로 만든 가중치를 공개 저장소에 올리고 접근 확인" ·
       제9조②-3 충족 근거 ([`regulation-compliance.md`](./regulation-compliance.md))
 - [ ] `.env`·시크릿 미포함 확인

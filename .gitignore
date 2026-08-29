@@ -16,6 +16,8 @@ artifacts/
 # timeseries.forecast 참조 모델 (단계 6 ②) — 데이터는 규칙 생성
 !apps/node/weights/series_scratch.safetensors
 !apps/node/weights/rule_ner.safetensors
+# text.extract 규칙 실행기 (Wave C) — 파라미터 0 · 버퍼 1칸
+!apps/node/weights/rule_extract.safetensors
 # 실험 가중치의 meta 는 본체가 없으므로 커밋하지 않는다 (공개 2종만 예외)
 apps/node/weights/*.meta.json
 !apps/node/weights/eurosat_scratch.meta.json
@@ -24,6 +26,7 @@ apps/node/weights/*.meta.json
 !apps/node/weights/text_embed_scratch.meta.json
 !apps/node/weights/series_scratch.meta.json
 !apps/node/weights/rule_ner.meta.json
+!apps/node/weights/rule_extract.meta.json
 data/golden-n300-*/
 data/golden-G2/
 data/golden-V/
