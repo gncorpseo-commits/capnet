@@ -386,6 +386,13 @@ CREATE TABLE assignment (
                                 'EXPIRED', 'SUPERSEDED'
                             )),
     attempt_no              INT NOT NULL DEFAULT 1,
+    -- 계측 세 칸 (P2-2 · Decision D1·D2 · 2026-08-29)
+    --   duration_ms  = Node **자기신고**. Node 가 자기 추론 구간만 잰 값이다.
+    --                  전송·대기·큐가 빠져 있고 검증할 수 없다 — **힌트**로만 쓴다.
+    --   정본은 저장하지 않는다: Core 관측 시간 = finished_at − created_at (파생).
+    --                  GET /v1/ops/work-units 가 그 값을 낸다.
+    --   vram_mb_peak · energy_wh = **미계측**. 우리 Node 는 CPU 휠이고 재는 장치가 없다.
+    --                  RSS 로 대신 채우지 않는다 — 칸 이름이 거짓말이 된다.
     duration_ms             INT,
     vram_mb_peak            INT,
     energy_wh               NUMERIC,
