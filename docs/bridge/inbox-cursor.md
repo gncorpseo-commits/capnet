@@ -3161,7 +3161,7 @@ D1·D2·D3 만 구현했다. **D4(조회 인증)는 손대지 않았다** — �
 |---|---|
 | `python3 -m unittest discover -s tests` | **260** OK (skipped 7) — 247 → 260 |
 | `test_work_units_wiring` (신설 · DB 없이) | 13/13 — 정본이 뒤집히면 실패한다 |
-| `check_work_units.py` (신설 · 통합) | **이 세션에서 못 돌렸다 — Docker 없음.** CI `migrate` 잡이 돌린다 |
+| `check_work_units.py` (신설 · 통합) | **21/21** — CI `migrate` 잡 (`run 33227726388`). 로컬은 Docker 없어 미실행 |
 | `test_openapi_drift` | 통과 (라우트 ↔ 두 사본) |
 | `check_submission.py --skip-tree` | 25/25 |
 
