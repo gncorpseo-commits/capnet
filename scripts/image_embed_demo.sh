@@ -42,7 +42,7 @@ fi
 
 echo "== 2) 능력 등록 (quality_profile=none · 골든셋 없음) =="
 cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/json' -d '{
- "code":"image.embed","version":1,"name":"text embed (fixed projection)",
+ "code":"image.embed","version":1,"name":"image embed (fixed projection)",
  "description":"128차원 벡터 · 기존 eurosat_scratch 트렁크 재사용 · 유사도 주장 없음",
  "input_schema":{"mediaTypes":["image/jpeg"],
    "preprocess":{"resize":[32,32],"colorspace":"RGB"}},

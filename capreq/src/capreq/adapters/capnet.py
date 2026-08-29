@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 import httpx
 
 from capreq.adapters.base import CapabilityInfo, ExecutionResult
+from capreq.results import extract_label
+
+# task.status 종결값 (schema.sql). TIMEOUT·CANCELED 도 폴링을 멈춰야 한다.
+TERMINAL_STATUSES = frozenset({"COMPLETED", "FAILED", "TIMEOUT", "CANCELED"})
 
 
 class CapNetAdapter:
@@ -23,12 +28,18 @@ class CapNetAdapter:
         timeout: float = 120.0,
         poll_seconds: float = 1.0,
         poll_max: int = 90,
+        transport: Any | None = None,
     ) -> None:
         self.core_url = core_url.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout
         self.poll_seconds = poll_seconds
         self.poll_max = poll_max
+        # 테스트 이음매 — `httpx.MockTransport` 를 꽂아 Core 없이 검증한다.
+        self.transport = transport
+
+    def _client(self) -> httpx.Client:
+        return httpx.Client(timeout=self.timeout, transport=self.transport)
 
     def _headers(self) -> dict[str, str]:
         h = {"accept": "application/json"}
@@ -50,7 +61,7 @@ class CapNetAdapter:
             f"{self.core_url}/v1/inputs"
             f"?capability={capability_code}&version={capability_version}"
         )
-        with httpx.Client(timeout=self.timeout) as client:
+        with self._client() as client:
             r = client.post(
                 url,
                 headers={**self._headers(), "content-type": media_type},
@@ -68,7 +79,7 @@ class CapNetAdapter:
             return str(input_id)
 
     def list_capabilities(self) -> list[CapabilityInfo]:
-        with httpx.Client(timeout=self.timeout) as client:
+        with self._client() as client:
             r = client.get(f"{self.core_url}/v1/capabilities", headers=self._headers())
             r.raise_for_status()
             items = r.json().get("items") or []
@@ -91,16 +102,17 @@ class CapNetAdapter:
             )
         return out
 
-    def execute(
+    def _task_body(
         self,
         *,
         capability_code: str,
         capability_version: int,
-        dataset_id: str | None = None,
-        case_id: str | None = None,
-        input_id: str | None = None,
-        extra: dict[str, Any] | None = None,
-    ) -> ExecutionResult:
+        dataset_id: str | None,
+        case_id: str | None,
+        input_id: str | None,
+        extra: dict[str, Any] | None,
+    ) -> dict[str, Any] | None:
+        """Task 본문. 입력 근거가 없으면 None (호출자가 거절 메시지를 만든다)."""
         if input_id:
             # D8′ · Decision A — Core 가 받은 바이트면 allowlist 를 건너뛴다.
             body: dict[str, Any] = {
@@ -111,14 +123,7 @@ class CapNetAdapter:
                 "inputId": input_id,
             }
         elif not dataset_id or not case_id:
-            return ExecutionResult(
-                ok=False,
-                detail={},
-                message=(
-                    "CapNet 실행에는 input_id 또는 "
-                    "dataset_id+case_id(allowlist) 가 필요하다."
-                ),
-            )
+            return None
         else:
             body = {
                 "datasetId": dataset_id,
@@ -128,63 +133,120 @@ class CapNetAdapter:
             }
         if extra:
             body.update(extra)
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                r = client.post(
-                    f"{self.core_url}/v1/tasks",
-                    headers={**self._headers(), "content-type": "application/json"},
-                    content=json.dumps(body),
-                )
-                if r.status_code >= 400:
-                    return ExecutionResult(
-                        ok=False,
-                        detail={"status_code": r.status_code, "body": _safe_json(r)},
-                        message=f"Task 생성 실패 HTTP {r.status_code}",
-                    )
-                task = r.json()
-                task_id = task.get("id")
-                if not task_id:
-                    return ExecutionResult(
-                        ok=False, detail=task, message="Task id 없음"
-                    )
-                got = None
-                for _ in range(self.poll_max):
-                    pr = client.get(
-                        f"{self.core_url}/v1/tasks/{task_id}",
-                        headers=self._headers(),
-                    )
-                    pr.raise_for_status()
-                    got = pr.json()
-                    if got.get("status") in ("COMPLETED", "FAILED"):
-                        break
-                    import time
+        return body
 
-                    time.sleep(self.poll_seconds)
-        except httpx.HTTPError as exc:
-            return ExecutionResult(
-                ok=False, detail={}, message=f"Core 통신 실패: {exc}"
+    def create_task(
+        self,
+        *,
+        capability_code: str,
+        capability_version: int,
+        dataset_id: str | None = None,
+        case_id: str | None = None,
+        input_id: str | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Task 를 만들고 **기다리지 않는다.** 상태는 `get_task` 로 따로 본다."""
+        body = self._task_body(
+            capability_code=capability_code,
+            capability_version=capability_version,
+            dataset_id=dataset_id,
+            case_id=case_id,
+            input_id=input_id,
+            extra=extra,
+        )
+        if body is None:
+            raise CapNetTaskError(
+                0,
+                "CapNet 실행에는 input_id 또는 dataset_id+case_id(allowlist) 가 필요하다.",
             )
+        with self._client() as client:
+            r = client.post(
+                f"{self.core_url}/v1/tasks",
+                headers={**self._headers(), "content-type": "application/json"},
+                content=json.dumps(body),
+            )
+            if r.status_code >= 400:
+                raise CapNetTaskError(r.status_code, _safe_json(r))
+            task = r.json()
+        if not task.get("id"):
+            raise CapNetTaskError(r.status_code, task)
+        return task
 
-        if not got:
-            return ExecutionResult(ok=False, detail={}, message="폴링 결과 없음")
+    def get_task(self, task_id: str) -> dict[str, Any]:
+        with self._client() as client:
+            r = client.get(
+                f"{self.core_url}/v1/tasks/{task_id}", headers=self._headers()
+            )
+            if r.status_code >= 400:
+                raise CapNetTaskError(r.status_code, _safe_json(r))
+            return r.json()
+
+    def execute(
+        self,
+        *,
+        capability_code: str,
+        capability_version: int,
+        dataset_id: str | None = None,
+        case_id: str | None = None,
+        input_id: str | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> ExecutionResult:
+        """Task 를 만들고 종결 상태까지 폴링한다."""
+        try:
+            task = self.create_task(
+                capability_code=capability_code,
+                capability_version=capability_version,
+                dataset_id=dataset_id,
+                case_id=case_id,
+                input_id=input_id,
+                extra=extra,
+            )
+        except CapNetTaskError as exc:
+            if exc.status_code == 0:
+                return ExecutionResult(ok=False, detail={}, message=str(exc.body))
+            return ExecutionResult(
+                ok=False,
+                detail={"status_code": exc.status_code, "body": exc.body},
+                message=f"Task 생성 실패 HTTP {exc.status_code}",
+            )
+        except httpx.HTTPError as exc:
+            return ExecutionResult(ok=False, detail={}, message=f"Core 통신 실패: {exc}")
+
+        task_id = str(task["id"])
+        got: dict[str, Any] = task
+        try:
+            for _ in range(self.poll_max):
+                got = self.get_task(task_id)
+                if got.get("status") in TERMINAL_STATUSES:
+                    break
+                time.sleep(self.poll_seconds)
+        except CapNetTaskError as exc:
+            return ExecutionResult(
+                ok=False,
+                detail={"status_code": exc.status_code, "body": exc.body},
+                message=f"Task 조회 실패 HTTP {exc.status_code}",
+            )
+        except httpx.HTTPError as exc:
+            return ExecutionResult(ok=False, detail=got, message=f"Core 통신 실패: {exc}")
+
         if got.get("status") != "COMPLETED":
             return ExecutionResult(
                 ok=False,
                 detail=got,
                 message=f"Task 미완료 status={got.get('status')}",
             )
-        label = _extract_label(got)
-        task_id = got.get("id")
+        label = extract_label(got)
         msg = "COMPLETED"
         if label:
             msg = f"COMPLETED label={label}"
-        if task_id:
-            msg = f"{msg} task={task_id}"
-        return ExecutionResult(
-            ok=True,
-            detail=got,
-            message=msg,
-        )
+        return ExecutionResult(ok=True, detail=got, message=f"{msg} task={task_id}")
+
+
+class CapNetTaskError(Exception):
+    def __init__(self, status_code: int, body: Any) -> None:
+        self.status_code = status_code
+        self.body = body
+        super().__init__(f"task HTTP {status_code}")
 
 
 class CapNetUploadError(Exception):
@@ -199,17 +261,3 @@ def _safe_json(r: httpx.Response) -> Any:
         return r.json()
     except Exception:
         return r.text[:500]
-
-
-def _extract_label(task: dict[str, Any]) -> str | None:
-    ref = task.get("result_ref")
-    if isinstance(ref, str):
-        try:
-            ref = json.loads(ref)
-        except json.JSONDecodeError:
-            return None
-    if isinstance(ref, dict):
-        lab = ref.get("label")
-        return str(lab) if lab is not None else None
-    return None
-

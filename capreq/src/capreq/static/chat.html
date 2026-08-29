@@ -29,6 +29,22 @@
   .btn.secondary { background:#2c3a50; color:var(--text); font-weight:500; }
   label.exec { display:flex; align-items:center; gap:6px; color:var(--muted); font-size:0.85rem; white-space:nowrap; }
   input[type=file] { display:none; }
+  .head { font-weight:600; }
+  .sub2 { color:var(--muted); font-size:0.85rem; margin-top:2px; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:0.75rem; font-weight:600; letter-spacing:0.02em; }
+  .badge.wait { background:#2c3a50; color:var(--muted); }
+  .badge.run { background:#1f3a5f; color:#9ec5ff; }
+  .badge.done { background:#1e4636; color:var(--ok); }
+  .badge.fail { background:#4a2129; color:var(--bad); }
+  .res { margin-top:8px; border-top:1px solid #2c3a50; padding-top:8px; }
+  .res h4 { margin:0 0 4px; font-size:0.8rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
+  table.r { border-collapse:collapse; width:100%; font-size:0.82rem; margin-bottom:6px; }
+  table.r th, table.r td { border:1px solid #2c3a50; padding:3px 6px; text-align:left; vertical-align:top; }
+  table.r th { background:#16202e; color:var(--muted); font-weight:600; }
+  table.r td.num { text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .mono { font-family:ui-monospace, "Cascadia Code", Consolas, monospace; font-size:0.8rem; word-break:break-all; }
+  .scroll { overflow-x:auto; }
+  .note { color:var(--muted); font-size:0.78rem; }
 </style>
 </head>
 <body>
@@ -40,7 +56,7 @@
 <div id="dropzone">사진·파일을 여기에 놓거나 + 버튼으로 고른다</div>
 <div id="attachRow">
   <label class="btn secondary" for="file">+ 파일</label>
-  <input id="file" type="file" accept="image/jpeg,image/png,image/webp,text/plain">
+  <input id="file" type="file" accept="image/jpeg,text/plain,text/csv,application/json">
   <span id="attachName">첨부 없음</span>
   <button type="button" class="btn secondary" id="clearFile" hidden>첨부 해제</button>
 </div>
@@ -108,20 +124,159 @@ async function refreshMeta() {
   }
 }
 
-function formatResult(res) {
-  let t;
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined && text !== null) n.textContent = String(text);
+  return n;
+}
+
+function statusBadge(status) {
+  const cls = status === "COMPLETED" ? "done"
+    : (status === "FAILED" || status === "TIMEOUT" || status === "CANCELED") ? "fail"
+    : (status === "RUNNING" || status === "ASSIGNED") ? "run" : "wait";
+  return el("span", "badge " + cls, status || "…");
+}
+
+function table(headers, rows) {
+  const wrap = el("div", "scroll");
+  const t = el("table", "r");
+  const thead = el("thead");
+  const htr = el("tr");
+  headers.forEach(h => htr.appendChild(el("th", null, h)));
+  thead.appendChild(htr);
+  t.appendChild(thead);
+  const tb = el("tbody");
+  rows.forEach(r => {
+    const tr = el("tr");
+    r.forEach(c => {
+      const td = el("td", typeof c === "number" ? "num" : null, c === null || c === undefined ? "" : c);
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+  wrap.appendChild(t);
+  return wrap;
+}
+
+// 결과 요약(서버 `results.summarize_result`)을 있는 그대로 그린다.
+// 없는 칸은 그리지 않는다 — 빈 표로 「결과가 있었다」고 말하지 않는다.
+function renderSummary(box, result) {
+  if (!result) return;
+  const sec = el("div", "res");
+
+  if (result.label !== undefined) {
+    const conf = result.confidence !== undefined
+      ? ` · confidence=${Number(result.confidence).toFixed(3)}` : "";
+    sec.appendChild(el("h4", null, "라벨"));
+    sec.appendChild(el("div", "mono", result.label + conf));
+  }
+
+  if (Array.isArray(result.entities)) {
+    sec.appendChild(el("h4", null, `엔티티 ${result.entities.length}건`));
+    if (result.entities.length === 0) {
+      sec.appendChild(el("div", "note", "찾은 span 없음"));
+    } else {
+      sec.appendChild(table(
+        ["label", "start", "end", "text"],
+        result.entities.map(e => [e.label ?? e.kind ?? "", e.start, e.end, e.text ?? ""]),
+      ));
+    }
+  }
+
+  if (result.vector) {
+    const v = result.vector;
+    const head = v.head.map(x => Number(x).toFixed(4)).join(", ");
+    sec.appendChild(el("h4", null, `${v.name} · dim=${v.dim}`));
+    sec.appendChild(el("div", "mono", `[${head}${v.truncated ? ", …" : ""}]`));
+  }
+
+  if (result.table) {
+    const tb = result.table;
+    const cols = (tb.columns || []).map(c =>
+      typeof c === "object" && c !== null
+        ? `#${c.index} ${c.type}${c.support !== undefined ? " (" + c.support + ")" : ""}`
+        : String(c));
+    sec.appendChild(el("h4", null,
+      `표 · 열 ${cols.length} · 행 ${tb.row_count}` + (tb.header_detected ? " · 헤더 감지" : "")));
+    if (cols.length) sec.appendChild(el("div", "mono", cols.join(" | ")));
+    if ((tb.rows || []).length) {
+      sec.appendChild(table(cols.length ? cols : (tb.rows[0] || []).map((_, i) => "c" + i), tb.rows));
+      if (tb.truncated) sec.appendChild(el("div", "note", `앞 ${tb.rows.length}행만 표시`));
+    }
+  }
+
+  if (result.other) {
+    sec.appendChild(el("h4", null, "그 밖의 출력"));
+    sec.appendChild(el("div", "mono", JSON.stringify(result.other)));
+  }
+
+  if (result.dummy) sec.appendChild(el("div", "note", "dummy 실행 — placeholder 가중치"));
+
+  if (sec.childElementCount) box.appendChild(sec);
+}
+
+function renderRouting(box, res) {
+  box.textContent = "";
   if (res.ok) {
-    t = `${res.capability_code}@${res.capability_version} (conf=${Number(res.confidence).toFixed(2)})\n${res.reason || ""}`;
+    box.appendChild(el("div", "head",
+      `${res.capability_code}@${res.capability_version} · conf=${Number(res.confidence).toFixed(2)}`));
   } else {
-    t = `(미매칭) ${res.reason || "(reason 없음)"}`;
+    box.appendChild(el("div", "head", "(미매칭)"));
   }
-  if (res.input_id) t += `\ninputId=${res.input_id}`;
-  if (res.execution_message != null) {
-    t += `\n실행: ${res.execution_ok ? "OK" : "FAIL"} — ${res.execution_message}`;
+  if (res.reason) box.appendChild(el("div", "sub2", res.reason));
+  if (res.input_id) box.appendChild(el("div", "sub2 mono", "inputId=" + res.input_id));
+  return box;
+}
+
+function renderExec(box, status, taskId, message, assignment) {
+  const line = el("div", "sub2");
+  line.appendChild(statusBadge(status));
+  if (taskId) {
+    const t = el("span", "mono", " task=" + taskId);
+    line.appendChild(t);
   }
-  if (res.result_label) t += `\n결과 label=${res.result_label}`;
-  if (res.task_id) t += `\ntask=${res.task_id}`;
-  return t;
+  box.appendChild(line);
+  if (message) box.appendChild(el("div", "sub2", message));
+  if (assignment) {
+    box.appendChild(el("div", "sub2 mono",
+      `node=${assignment.node_id || "-"} · agent=${assignment.agent_id || "-"}`
+      + ` · domain=${assignment.node_trust_domain || "-"} · tier=${assignment.capability_tier || "-"}`));
+  }
+}
+
+// Task 가 종결될 때까지 폴링한다. 상태 배지는 매 회 갱신된다.
+async function pollTask(box, res) {
+  const taskId = res.task_id;
+  for (let i = 0; i < 120; i++) {
+    let st;
+    try {
+      st = await fetch("/api/tasks/" + encodeURIComponent(taskId)).then(r => r.json());
+    } catch (e) {
+      renderRouting(box, res);
+      renderExec(box, "FAILED", taskId, "상태 조회 실패: " + e);
+      box.className = "bubble bot bad";
+      return;
+    }
+    renderRouting(box, res);
+    if (!st.ok) {
+      renderExec(box, "FAILED", taskId, st.error || "상태 조회 실패");
+      box.className = "bubble bot bad";
+      return;
+    }
+    renderExec(box, st.status, taskId, null, st.done ? st.assignment : null);
+    if (st.done) {
+      renderSummary(box, st.result);
+      box.className = "bubble bot " + (st.status === "COMPLETED" ? "ok" : "bad");
+      return;
+    }
+    log.scrollTop = log.scrollHeight;
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  renderRouting(box, res);
+  renderExec(box, "TIMEOUT", taskId, "폴링 한도(120초) 초과 — Core 에서 상태를 확인한다");
+  box.className = "bubble bot bad";
 }
 
 document.getElementById("f").onsubmit = async (ev) => {
@@ -129,38 +284,48 @@ document.getElementById("f").onsubmit = async (ev) => {
   const msg = document.getElementById("msg").value.trim();
   if (!msg && !pendingFile) return;
   document.getElementById("msg").value = "";
+  const doExec = document.getElementById("ex").checked;
   const userLine = msg || "(파일만 첨부)";
   add("user", pendingFile ? userLine + "\n📎 " + pendingFile.name : userLine);
   const pending = add("bot", "라우팅 중…");
+  const attached = pendingFile;
   try {
-    let r, res;
-    if (pendingFile) {
+    let r;
+    if (attached) {
       const fd = new FormData();
       fd.append("message", msg);
-      fd.append("execute", document.getElementById("ex").checked ? "true" : "false");
-      fd.append("file", pendingFile);
+      fd.append("execute", doExec ? "true" : "false");
+      fd.append("wait", "false");
+      fd.append("file", attached);
       r = await fetch("/api/chat", { method: "POST", body: fd });
     } else {
       r = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message: msg, execute: document.getElementById("ex").checked }),
+        body: JSON.stringify({ message: msg, execute: doExec, wait: false }),
       });
     }
-    res = await r.json();
+    const res = await r.json();
     if (!r.ok) {
       const detail = res.detail;
       const t = typeof detail === "string" ? detail
         : (Array.isArray(detail) ? JSON.stringify(detail) : (res.reason || r.statusText || "요청 실패"));
-      pending.textContent = `(오류) ${t}`;
+      pending.textContent = "(오류) " + t;
       pending.className = "bubble bot bad";
       return;
     }
-    pending.textContent = formatResult(res);
+    renderRouting(pending, res);
     pending.className = "bubble bot " + (res.ok ? "ok" : "bad");
-    if (pendingFile && document.getElementById("ex").checked && res.execution_ok) {
-      setFile(null);
+    if (res.execution_ok === false) {
+      renderExec(pending, res.task_status || "FAILED", res.task_id, res.execution_message);
+      renderSummary(pending, res.result);
+      pending.className = "bubble bot bad";
+    } else if (res.task_id) {
+      renderExec(pending, res.task_status, res.task_id, null);
+      if (attached && doExec) setFile(null);
+      await pollTask(pending, res);
     }
+    log.scrollTop = log.scrollHeight;
   } catch (e) {
     pending.textContent = String(e);
     pending.className = "bubble bot bad";

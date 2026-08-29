@@ -30,6 +30,13 @@ def _system_prompt(caps: list[CapabilityInfo]) -> str:
         "- capability_version MUST match the allowlist entry for that code.",
         "- confidence is 0..1.",
         "- Do not invent codes. Do not execute anything.",
+        # 아래 세 줄은 성능 주장이 아니라 카탈로그의 사실을 옮긴 것이다.
+        "- The request may be written in Korean; the allowlist is in English.",
+        "- The part of a code before '.' is the input modality"
+        " (image / text / table / timeseries). If an attachment is mentioned,"
+        " prefer a code whose modality matches that file.",
+        "- Match on the asked-for OUTPUT too: labels, spans/entities, a vector,"
+        " a parsed table, or a forecast.",
         "",
         "ALLOWLIST:",
     ]
