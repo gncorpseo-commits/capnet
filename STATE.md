@@ -25,6 +25,19 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
+> **P2-2 마감 — PR 대기 (2026-08-29).** 브랜치 **`toma/ops-work-units`** (#107 위에 쌓음).
+> 브리지 `pr-c-work-units` Decision(D1-a·D2-a·D3) 구현 · **D4 는 손대지 않았다**.
+>
+> - **D26 승격** — 작업량 정본 = **Core 관측**(`finished_at − created_at` · 파생 · 저장 안 함).
+>   `duration_ms` = Node 자기신고(추론 구간) **힌트로 유지**. 실측 평균 차 **789 ms**.
+> - `vram_mb_peak`·`energy_wh` = **미계측**. RSS 로 채우지 않고 **센다**(완주해도 0).
+> - `GET /v1/ops/work-units` 신설 — developer · read-only · 기본 7일(1..90) ·
+>   능력별·Node 별 분해. `/v1/ops/status` 미확장. **DDL 0 · 마이그레이션 0.**
+> - 검사 둘 신설 — `test_work_units_wiring`(DB 없이 정본 뒤집힘 감지) ·
+>   `check_work_units`(claim→complete 완주 후 **관측 ≥ 자기신고**). `run_tests` 247 → **260**.
+> - 통합 검사는 로컬에 Docker 가 없어 못 돌렸고 **CI `migrate` 잡이 돌렸다 — `check_work_units` 21/21**
+>   (`run 33227726388`). 관측 1500 ms ≥ 자기신고 3 ms · 뒤집으면 감지 · 조회가 쓰지 않음.
+
 > **제품 입구 마감 — PR 대기 (2026-08-29).** 브랜치 **`toma/capreq-result-view`**.
 > capreq 가 「능력을 고른다」에서 멈추지 않고 **상태와 결과를 보여 준다**.
 >

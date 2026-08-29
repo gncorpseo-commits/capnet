@@ -32,6 +32,16 @@ python3 -m unittest discover -s tests -v
 **의존성이 없다.** 표준 라이브러리 `unittest` 만 쓴다 — 이 리포에는 pip 가 없는 개발 환경이 있고,
 새 의존성은 `CLAUDE.md` 상 먼저 물어야 한다. pytest 가 필요해지면 그때 논의한다.
 
+예외는 **`capreq/tests`** 하나다. capreq 는 독립 모듈이라 자기 런타임(`httpx`)이 있고,
+그 테스트는 `tests/` 밖에 있어 위 명령에 잡히지 않는다. 따로 돌린다:
+
+```bash
+PYTHONPATH=capreq/src python3 -m unittest discover -s capreq/tests -p "test_*.py"
+```
+
+`run_tests.sh` 가 이것을 부르지 않는 것은 의도다 — `httpx` 가 없는 환경에서 전체 검증이
+통째로 실패하면 안 된다. CI 는 잡을 따로 둬서 항상 돌린다 (§4).
+
 ---
 
 ## 3. 지금 있는 것
@@ -67,8 +77,13 @@ python3 -m unittest discover -s tests -v
 
 | job | 무엇을 |
 |-----|--------|
-| **unit** | 단위 테스트 + `check_golden_sha.py`. 의존성 설치 없음 |
-| **migrate** | postgres 서비스로 **실제 적용**. 마이그레이션 6단계 + **통합 검사 5종**(검사마다 깨끗한 DB) |
+| **unit** | `tests/` 단위 테스트 + `check_golden_sha.py` + `check_submission.py`. **의존성 설치 없음** |
+| **capreq** | `capreq/tests` — `httpx` 만 설치한다. 잡을 따로 둔 이유는 위 `unit` 의 「설치 없음」을 지키기 위해서다 |
+| **migrate** | postgres 서비스로 **실제 적용**. 마이그레이션 6단계 + **통합 검사 전부**(검사마다 깨끗한 DB) |
+
+> 통합 검사 **개수를 적지 않는다.** 능력·강제 경로를 더할 때마다 느는 값이라
+> 문서에 못박으면 다음 사람이 숫자만 고치게 된다 (`test_doc_counts` 가 같은 이유로
+> `check_*` 개수를 금지한다). 몇 개인지는 `run_integration.sh` 출력이 말한다.
 
 migrate job 이 보는 것:
 
@@ -86,7 +101,8 @@ migrate job 이 보는 것:
 
 ## 4.5 통합 검사는 검사마다 깨끗한 DB 를 받는다
 
-통합 검사 5개는 `scripts/run_integration.sh` 가 돌린다.
+통합 검사는 `scripts/run_integration.sh` 가 돌린다 — `tests/integration/check_*.py` 를
+이름 순으로 **전부** 집어간다. 파일을 놓기만 하면 CI 가 돈다 (등록부가 따로 없다).
 
 ```bash
 scripts/run_integration.sh                    # 전부
@@ -95,7 +111,7 @@ scripts/run_integration.sh check_revocation   # 하나만
 
 ### 왜 러너가 필요했나
 
-넷은 SAVEPOINT + ROLLBACK 으로 스스로 격리한다. 그런데 **`check_revocation` 은 커밋해야 한다** —
+대부분은 SAVEPOINT + ROLLBACK 으로 스스로 격리한다. 그런데 **`check_revocation` 은 커밋해야 한다** —
 배정·폐기·복권은 각각 다른 트랜잭션이고, **그 경계를 넘나드는 것이 바로 그 검사가 보는 계약**이다.
 트랜잭션 안에 가둘 수 없다.
 
