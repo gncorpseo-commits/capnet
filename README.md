@@ -37,10 +37,14 @@ docker compose logs migrate           # "완료 — 18개 적용" (재실행 시
 **Linux / macOS**
 
 ```bash
+bash scripts/product_demo.sh      # ★ 제품 주장 한 파일 — 능력만 말하고 → 증적이 조회된다
 bash scripts/demo.sh              # 능력 요구 → 자동 배정 → 실행 → 결과·증적
 bash scripts/sanity.sh            # 정직하지 않은 에이전트 3종이 떨어지는지
 bash scripts/demo_violations.sh   # 규칙 위반 6종을 DB가 거절하는지
 ```
+
+`product_demo.sh` 하나만 봐도 된다 — health → 카탈로그 → 능력만 요청(기기 주소 없음) →
+결과·배정 증적 → `GET /v1/ops/work-units` 까지 순서대로 찍는다. **`.ps1` 판은 없다.**
 
 **Windows** — 동명 `.ps1`
 
@@ -137,6 +141,7 @@ AI 에이전트 스토어는 이미 많다. CapNet이 다루는 건 그 앞의 �
 
 | 스크립트 | 하는 일 |
 |----------|---------|
+| **`product_demo.sh`** | **제품 주장 한 파일** — health → 카탈로그 → 능력만 요청 → 증적 → work-units |
 | `smoke_w1.ps1` | dummy 게이트 배관 + placeholder 추론 |
 | `demo.ps1` / `.sh` | scratch 실게이트 → Task 완주 |
 | `sanity.ps1` / `.sh` | 상수·난수·스키마위반 floor |
