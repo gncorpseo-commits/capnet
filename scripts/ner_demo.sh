@@ -32,7 +32,7 @@ echo "  HTTP $code"
 echo "== 2) 능력 등록 (quality_profile=none · 골든셋 없음) =="
 cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/json' -d '{
  "code":"text.ner","version":1,"name":"structural text ner",
- "description":"email·url·ipv4·uuid·iso_date span · 규칙 · 일반 NER 주장 없음",
+ "description":"자유 문장 어디에 있든 email·url·ipv4·uuid·iso_date 를 위치(start·end)와 함께 찾는다. 이름표(키)가 없어도 된다. 규칙 기반 · 일반 NER 주장 없음",
  "input_schema":{"mediaTypes":["text/plain"],
    "preprocess":{"encoding":"utf-8","normalize":"NFC","max_chars":8000}},
  "output_schema":{"required":["entities"],"properties":{

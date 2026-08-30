@@ -32,7 +32,7 @@ echo "  HTTP $code"
 echo "== 2) 능력 등록 (quality_profile=none · 골든셋 없음) =="
 cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/json' -d '{
  "code":"text.extract","version":1,"name":"structural field extract",
- "description":"평문 「키: 값」 필드 · 줄 규칙 · 자연어 이해 주장 없음",
+ "description":"줄이 「키: 값」 꼴로 이름표를 달고 있을 때만 그 이름표와 값을 뽑는다. 자유 문장 속 이메일·IP·날짜 같은 타입 span 은 여기가 아니라 text.ner 이다. 자연어 이해 주장 없음",
  "input_schema":{"mediaTypes":["text/plain"],
    "preprocess":{"encoding":"utf-8","normalize":"NFC","max_chars":8000}},
  "output_schema":{"required":["fields"],"properties":{
