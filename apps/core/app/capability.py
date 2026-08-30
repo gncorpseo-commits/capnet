@@ -58,6 +58,45 @@ def get_capability(conn: psycopg.Connection, capability_id: uuid.UUID) -> dict[s
     return dict(row) if row else None
 
 
+def update_capability_description(
+    conn: psycopg.Connection, capability_id: uuid.UUID, *, description: str | None
+) -> dict[str, Any] | None:
+    """`description` **하나만** 갱신한다. 없는 id 면 None.
+
+    ## 왜 이 함수가 있나
+
+    `POST /v1/capabilities` 는 같은 `(code, version)` 에 UNIQUE 로 걸린다. 갱신 경로가
+    없어서, 저장소에서 설명을 고쳐도 **이미 등록된 스택에는 영원히 안 들어갔다** —
+    데모 스크립트가 그 충돌을 삼키고 기존 id 만 찾아 쓰기 때문이다. 라우터는 DB 의
+    설명을 읽으므로, 오래 돌아간 스택은 저장소와 다른 문구로 라우팅한다
+    (브리지 `routing-measured-not-fixed`). **차이의 크기는 여기 적지 않는다** —
+    같은 조건을 다시 재도 R=5 에서는 몇 점씩 흔들린다. 재려면 `scripts/route_bench.py`.
+
+    ## 왜 `description` 만인가
+
+    나머지 칸은 **스냅샷의 원본**이다 — `task_input.capability_max_input_bytes` ·
+    `gate_run` 의 프로파일 · `assignment` 의 티어·도메인이 등록 시점 값을 복사해 간다.
+    원본이 움직이면 **이미 찍힌 스냅샷이 거짓말이 된다.** 그래서 계약은 여기서 못 바꾼다.
+    바꾸려면 새 버전을 등록한다.
+
+    `description` 은 어떤 스냅샷에도 복사되지 않는다 — 라우터가 읽는 **메타**일 뿐이다.
+    """
+    row = conn.execute(
+        """
+        UPDATE capability
+           SET description = %(description)s
+         WHERE id = %(id)s
+        RETURNING id, code, version, name, description, input_schema, output_schema,
+                  output_kind, compute_tier, trust_domain_min, mvp_eligible,
+                  quality_profile, max_input_bytes, max_attempts,
+                  golden_set_ref, golden_set_sha256, golden_set_size, golden_metrics,
+                  created_at
+        """,
+        {"id": str(capability_id), "description": description},
+    ).fetchone()
+    return dict(row) if row else None
+
+
 def create_capability(
     conn: psycopg.Connection,
     *,

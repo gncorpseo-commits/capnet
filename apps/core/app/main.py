@@ -22,7 +22,12 @@ from app.apikey import (
     verify_key,
 )
 from app.arch import create_arch, list_arches
-from app.capability import create_capability, get_capability, list_capabilities
+from app.capability import (
+    create_capability,
+    get_capability,
+    list_capabilities,
+    update_capability_description,
+)
 from app.claim import claim_next, fail_assignment, fail_exhausted_tasks, reclaim_expired
 from app.complete import (
     complete_assignment,
@@ -250,6 +255,18 @@ class CapabilityCreate(BaseModel):
     golden_set_sha256: str | None = None
     golden_set_size: int | None = None
     golden_metrics: dict[str, Any] | None = None
+
+
+class CapabilityDescriptionPatch(BaseModel):
+    """`description` **하나만**. 다른 칸이 오면 400 이다 (`extra: forbid`).
+
+    화이트리스트를 손으로 세지 않는다 — 계약 칸이 늘 때 빠뜨리면 그때 구멍이 생긴다.
+    허용하는 것을 적고 **나머지는 모델이 막게** 한다.
+    """
+
+    description: str | None = None
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
 
 
 class ClaimBody(BaseModel):
@@ -596,6 +613,29 @@ def capabilities_create(body: CapabilityCreate, authorization: str | None = Head
 def capabilities_get(capability_id: uuid.UUID) -> dict[str, Any]:
     with get_conn() as conn:
         row = get_capability(conn, capability_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="capability not found")
+    return row
+
+
+@app.patch("/v1/capabilities/{capability_id}")
+def capabilities_patch_description(
+    capability_id: uuid.UUID,
+    body: CapabilityDescriptionPatch,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """라우터가 읽는 **설명만** 고친다. 계약은 못 고친다.
+
+    등록(`POST`)은 `(code, version)` UNIQUE 로 한 번뿐이라, 저장소에서 설명을 고쳐도
+    이미 등록된 스택에는 들어가지 않았다. 그 하나를 여기서 연다 — **DDL 0**.
+
+    계약 칸(`input_schema`·`compute_tier`·`golden_*` …)은 `body` 모델이 400 으로 막는다.
+    그것들은 `task_input`·`gate_run`·`assignment` **스냅샷의 원본**이고, 원본이 움직이면
+    이미 찍힌 스냅샷이 거짓말이 된다.
+    """
+    _require("admin", authorization)
+    with get_conn() as conn:
+        row = update_capability_description(conn, capability_id, description=body.description)
     if row is None:
         raise HTTPException(status_code=404, detail="capability not found")
     return row

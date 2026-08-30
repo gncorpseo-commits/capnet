@@ -1,0 +1,140 @@
+"""`PATCH /v1/capabilities/{id}` 배선 — DB 없이 소스로 본다.
+
+동작(설명이 실제로 바뀐다 · 계약이 안 바뀐다)은 `tests/integration/check_capability_patch.py`
+가 살아 있는 DB 로 본다. 여기서 고정하는 것은 **열어 준 구멍이 하나로 유지되는가**다.
+
+## 왜 이 검사가 있나
+
+Decision (b) 는 「드리프트를 고치되 **계약은 못 고치게**」였다. 그 경계는 코드 세 줄로
+지켜진다 — `UPDATE … SET description` 하나 · 모델의 `extra: forbid` · 라우트의 `admin`.
+셋 중 하나가 느슨해지면 **계약 스냅샷의 원본이 움직인다**(`task_input` 복합 FK ·
+`gate_run` · `assignment`). 그래서 세 줄을 여기서 못 박는다.
+"""
+
+from __future__ import annotations
+
+import re
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _srcguard import code_only  # noqa: E402
+
+CAPABILITY = ROOT / "apps" / "core" / "app" / "capability.py"
+MAIN = ROOT / "apps" / "core" / "app" / "main.py"
+SPEC = ROOT / "docs" / "spec" / "openapi.yaml"
+SPEC_COPY = ROOT / "apps" / "core" / "openapi.yaml"
+SCHEMA = ROOT / "docs" / "spec" / "schema.sql"
+DEMOS = (
+    ROOT / "scripts" / "ner_demo.sh",
+    ROOT / "scripts" / "text_extract_demo.sh",
+    ROOT / "scripts" / "text_rank_demo.sh",
+)
+
+# PATCH 가 절대 건드리면 안 되는 칸.
+CONTRACT_FIELDS = (
+    "input_schema", "output_schema", "output_kind", "compute_tier", "trust_domain_min",
+    "quality_profile", "golden_set_ref", "golden_set_sha256", "golden_set_size",
+    "golden_metrics", "max_input_bytes", "max_attempts", "mvp_eligible", "code", "version",
+)
+
+
+class TestUpdateTouchesOnlyDescription(unittest.TestCase):
+    def setUp(self) -> None:
+        self.code = code_only(CAPABILITY)
+
+    def test_function_exists(self) -> None:
+        self.assertIn("def update_capability_description(", self.code)
+
+    def test_the_update_sets_description_and_nothing_else(self) -> None:
+        """`SET` 절에 칸이 하나뿐이어야 한다 — 늘어나면 계약이 열린다."""
+        m = re.search(r"UPDATE capability\s+SET (.+?)\s+WHERE", self.code, re.S)
+        self.assertIsNotNone(m, "UPDATE capability … SET … WHERE 를 못 찾았다")
+        set_clause = m.group(1)
+        self.assertNotIn(",", set_clause, f"SET 절에 칸이 둘 이상이다: {set_clause!r}")
+        self.assertIn("description", set_clause)
+
+    def test_no_contract_field_is_assigned(self) -> None:
+        m = re.search(r"UPDATE capability\s+SET (.+?)\s+WHERE", self.code, re.S)
+        for field in CONTRACT_FIELDS:
+            self.assertNotIn(field, m.group(1), f"{field} 가 SET 절에 있다")
+
+    def test_only_one_update_statement_in_the_module(self) -> None:
+        """등록 모듈에 UPDATE 가 늘어나면 이 검사부터 다시 본다."""
+        self.assertEqual(self.code.count("UPDATE capability"), 1)
+
+
+class TestRouteWiring(unittest.TestCase):
+    def setUp(self) -> None:
+        self.code = code_only(MAIN)
+
+    def test_patch_route_exists(self) -> None:
+        self.assertIn('@app.patch("/v1/capabilities/{capability_id}")', self.code)
+
+    def test_route_requires_admin(self) -> None:
+        """등록(`POST`)과 같은 문턱이다 — 라우팅용 메타라도 아무나 못 바꾼다."""
+        i = self.code.index('@app.patch("/v1/capabilities/{capability_id}")')
+        body = self.code[i : i + 1200]
+        self.assertIn('_require("admin"', body)
+
+    def test_route_returns_404_for_missing_id(self) -> None:
+        i = self.code.index('@app.patch("/v1/capabilities/{capability_id}")')
+        self.assertIn("404", self.code[i : i + 1200])
+
+    def test_model_forbids_extra_fields(self) -> None:
+        """화이트리스트를 손으로 세지 않는다 — 계약 칸이 늘어도 빠뜨리지 않게."""
+        i = self.code.index("class CapabilityDescriptionPatch(BaseModel):")
+        body = self.code[i : i + 500]
+        self.assertIn('"extra": "forbid"', body)
+
+    def test_model_declares_only_description(self) -> None:
+        i = self.code.index("class CapabilityDescriptionPatch(BaseModel):")
+        body = self.code[i : self.code.index("model_config", i)]
+        fields = re.findall(r"^\s{4}(\w+)\s*:", body, re.M)
+        self.assertEqual(fields, ["description"], f"모델 필드가 늘었다: {fields}")
+
+
+class TestNoSchemaChange(unittest.TestCase):
+    def test_no_migration_was_added_for_this(self) -> None:
+        """Decision (b) 는 **DDL 0** 이다."""
+        self.assertNotIn("ALTER TABLE capability", SCHEMA.read_text(encoding="utf-8"))
+
+
+class TestDocumented(unittest.TestCase):
+    def test_openapi_both_copies_document_patch(self) -> None:
+        for path in (SPEC, SPEC_COPY):
+            text = path.read_text(encoding="utf-8")
+            i = text.index("  /v1/capabilities/{capability_id}:")
+            block = text[i : text.index("  /v1/agents:", i)]
+            self.assertIn("patch:", block, f"{path.name} 에 patch 가 없다")
+            self.assertIn("additionalProperties: false", block)
+
+
+class TestDemosSyncDescription(unittest.TestCase):
+    """데모가 **저장소 문구를 DB 에 맞춘다.** 문구를 데모에서 새로 짓지 않는다."""
+
+    def test_each_demo_patches_when_it_already_exists(self) -> None:
+        for path in DEMOS:
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("cap_body=", text, f"{path.name}: 정본 변수가 없다")
+            self.assertIn("-X PATCH", text, f"{path.name}: PATCH 단계가 없다")
+            self.assertIn("이미 있음", text, f"{path.name}: 기존 id 분기가 사라졌다")
+
+    def test_description_comes_from_the_post_body(self) -> None:
+        """PATCH 로 보내는 값의 출처가 `cap_body` 여야 한다 — 두 벌을 만들지 않는다."""
+        for path in DEMOS:
+            text = path.read_text(encoding="utf-8")
+            self.assertIn('"$cap_body"', text, f"{path.name}")
+            self.assertRegex(text, r'want=\$\(printf .%s. "\$cap_body"', f"{path.name}")
+
+    def test_demo_still_posts_first(self) -> None:
+        """PATCH 는 **폴백**이다 — 새 스택에서는 POST 한 번으로 끝나야 한다."""
+        for path in DEMOS:
+            text = path.read_text(encoding="utf-8")
+            self.assertLess(text.index("-X POST"), text.index("-X PATCH"), f"{path.name}")
+
+
+if __name__ == "__main__":
+    unittest.main()

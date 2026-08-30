@@ -111,22 +111,26 @@ def repo_descriptions() -> dict[str, str]:
 
 
 class _Patched:
-    """카탈로그 목록은 그대로 두고 **설명만** 갈아 끼운다."""
+    """카탈로그 목록은 그대로 두고 **설명만** 갈아 끼운다.
+
+    **칸을 손으로 세어 다시 만들지 않는다.** 처음에는 `CapabilityInfo(code=…, version=…,
+    name=…, description=…)` 로 새로 지었는데, 그러면 적지 않은 칸이 **조용히 기본값으로
+    떨어진다.** 라우터 프롬프트는 `kind={output_kind}` 를 넣으므로 그 조건은
+    「설명만 바꾼 카탈로그」가 아니라 **「설명을 바꾸고 kind 를 전부 지운 카탈로그」**였다.
+    그 상태로 잰 값이 한동안 비교표에 들어가 있었다 (실측으로 잡았다 · 2026-08-31).
+
+    `replace()` 는 **나머지를 그대로 들고 온다** — 필드가 늘어도 여기가 뒤처지지 않는다.
+    """
 
     def __init__(self, inner, patch: dict[str, str]) -> None:
         self.inner = inner
         self.patch = patch
 
     def list_capabilities(self):
-        from capreq.adapters.base import CapabilityInfo
+        import dataclasses
 
         return [
-            CapabilityInfo(
-                code=c.code,
-                version=c.version,
-                name=c.name,
-                description=self.patch.get(c.code, c.description),
-            )
+            dataclasses.replace(c, description=self.patch.get(c.code, c.description))
             for c in self.inner.list_capabilities()
         ]
 
