@@ -499,6 +499,35 @@ gate_run PASSED → 바인딩 → COMPLETED · fields 3건 (Ticket·Severity·As
 자르면 「전부 줄 세웠다」가 거짓이 된다. `text.extract` 의 `NODE_MAX_FIELDS` 와 같은 규율이고,
 **계약이 정하는 것은 `max_chars`** 다.
 
+종단 실측 (2026-08-30 · `scripts/text_rank_demo.sh`):
+
+```text
+OK   weights_fingerprint — 텐서 1개 · 파라미터 1 · ⚠️ shape 합계(1) ≠ 로드 후 파라미터(0)
+OK   arch — RuleTextRank 로 로드 성공
+OK   max_params — 0 <= 1000
+OK   preprocess — 선언 적용: encoding=utf-8 normalize=NFC max_chars=8000
+OK   input_schema — 선언 전처리로 샘플 추론 성공 (119 bytes · text_rank)
+OK   output_schema — 칸 2개(query, ranking)가 계약을 만족한다
+gate_run PASSED → 바인딩 → COMPLETED
+증적: node=…030 · assignment SUCCEEDED · team → team · M <= M
+```
+
+지문 경고(`shape 합계(1) ≠ 로드 후 파라미터(0)`)는 **정상이다** — 파일에 있는 것은 버퍼이고
+버퍼는 `parameters()` 에 들어가지 않는다. `text.ner`·`text.extract` 와 같은 이유다.
+
+**그 실측이 한계도 같이 보였다.** 질의 `느린 쿼리 인덱스` 에 대해:
+
+```text
+1. score=0.7500 overlap=느린,인덱스,쿼리 | 인덱스 없이 느린 쿼리
+2. score=0.1667 overlap=느린             | 느린 쿼리를 인덱스로 고쳤다
+3. score=0.0000 overlap=-                | 무관한 줄 하나
+```
+
+2위 줄은 사람이 보면 1위만큼 관련 있는데 **0.1667** 이다 — 「쿼리를」·「인덱스로」에 조사가
+붙어 「쿼리」·「인덱스」와 **다른 토큰**이 되기 때문이다. 이것은 버그가 아니라 **선언한
+한계가 실제로 그렇게 나온 것**이다. 한국어 조사·어미를 다루려면 형태소 분석이 필요하고,
+그것은 규칙 실행기가 아니라 다른 능력이 할 일이다. **그래서 품질을 주장하지 않는다.**
+
 ### `text.embed` — `structured` 의 첫 사례 (단계 6 ①)
 
 `text.classify` 와 **같은 특징 추출·전처리**를 쓴다(두 벌을 만들지 않는다 · D3).
