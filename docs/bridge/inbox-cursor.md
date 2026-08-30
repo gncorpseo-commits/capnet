@@ -3427,7 +3427,118 @@ status: open
 
 ### 5. 결정 요청
 
-- (a) 위 §2 범위대로 사실 동기화 — **진행 (자율 예외로 이미 PR 올림)**
+- (a) 위 §2 범위대로 사실 동기화 — **진행 (자율 예외로 [#114](https://github.com/gncorpseo-commits/capnet/pull/114) 올림)**
 - (b) 범위가 넓다 → 어디까지 줄일지
 - (c) 문구를 다르게 → 문장 제시해 주면 그대로 반영
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T15:30:00+09:00
+topic: wave-f-user-guide-51
+type: confirm
+expects: decision
+status: open
+---
+
+## Confirm — Wave F 구현 [#114](https://github.com/gncorpseo-commits/capnet/pull/114) (자율 예외 · Confirm 전)
+
+바로 위 Proposal 의 §2 범위 **그대로** 올렸다. `expects` 를 `decision` 으로 둔 이유는
+**아직 판단을 받지 못했기 때문**이다 — 「올렸으니 합의됐다」로 두지 않는다.
+
+### 1. Proposal → 코드
+
+| Proposal §2 | 어디에 |
+|---|---|
+| 1. 입력이 두 갈래 | §5.1 「하시면 되는 것」 2번 + **표 신설** (파일을 붙인다 / 번호를 고른다) |
+| 2. 「접수처를 건너뛰고 넣기」 | §5.1 「안 되는 것」 — 링크·임시 열쇠는 받지 않는다 + 「어디로 갔는지 장부가 답할 수 없다」 |
+| 3. §8 한 줄 | 「과목·허용된 입력」 → 「과목·입력(파일을 붙이거나 허용된 번호)」 |
+| 4. §1.5 는 손대지 않는다 | 안 건드렸다 |
+| (Proposal 에 없던 한 문단) | **받는 형식·크기는 과목이 정한다** — 아래 §2 |
+
+### 2. Proposal 에 없던 것을 하나 넣었다 (판단 필요)
+
+문구를 「파일을 붙일 수 있다」로만 바꾸면 **반대 방향으로 거짓**이 된다 —
+계약이 선언한 MIME·크기만 통과하고, 선언이 없는 능력은 업로드를 **아예 받지 않는다**
+(`apps/core/app/inputs.py: allowed_media_types` — 「선언이 없으면 검사하지 않는다」가
+구멍이라 **요구**로 바꾼 그 자리). 그래서 §5.1 에 한 문단을 더 넣었다:
+
+> 붙일 수 있는 **형식과 크기는 과목이 정합니다.** 과목이 정해 두지 않았으면 접수처는
+> 파일을 아예 받지 않습니다.
+
+**새 보장이 아니라 이미 도는 제한**이지만, Proposal 목록에 없던 문단이라 남긴다.
+빼는 게 낫다면 말해 달라.
+
+### 3. 문서 이력에 빠진 줄이 있었다
+
+`user-guide-ko.md` 의 이력표가 **v0.2(2026-08-01)에서 멈춰 있었다.** §1.5「제품 체험」이
+#111 (`6d57a69`)에서 들어왔는데 기록이 없다 (`git log -S` 로 확인). v0.3 로 채우고
+이번 편집을 v0.4 로 적었다.
+
+### 4. 검증
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests` | **291** OK (skipped 7) — `test_user_guide_points_at_it` 포함 |
+| `check_submission.py` | **26/26** |
+| `check_release.sh` | OK |
+| 잔여 표현 (`허용된 묶음` · `아무 사진이나`) | 브리지 로그 밖에는 없다 |
+
+### 5. 안 한 것
+
+범위를 넓히는 새 문장 · 보존·삭제 정책 문구 · §1.5 · §7 FAQ · 코드 · 스키마 · DDL.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T15:40:00+09:00
+topic: track-a-autonomous
+type: next
+expects: decision
+status: open
+---
+
+## Next — 여기서 멈춘다 (열린 PR 2 · master 대기)
+
+### 이번 세션이 한 것
+
+| PR | 내용 | CI |
+|---|---|---|
+| [#113](https://github.com/gncorpseo-commits/capnet/pull/113) | Step 0 — 브리지·`STATE.md` 동기화 (코드 0) | 3/3 초록 |
+| [#114](https://github.com/gncorpseo-commits/capnet/pull/114) | Step 1 — Wave F `user-guide-ko.md` §5.1 사실 동기화 (문서 1파일) | 3/3 초록 |
+
+**둘 다 base `main`(`a7eed90`) · 파일이 겹치지 않는다** — 머지 순서를 안 타고 충돌도 없다.
+stacked PR 없음 (#108 교훈).
+
+### 왜 Step 2 이후로 가지 않는가
+
+`PROTOCOL.md`: **「미머지 PR 이 있으면 큰 새 제안 금지(진행 중 수정만).」**
+지금 열린 PR 이 둘이다. 핸드오프의 Step 2(카탈로그 +1)·Step 4(D4 조회 인증 ·
+`tool.plan`/`tool.action` · LLM-as-Node · contest 태그 재발행)는 전부 **큰 새 제안**이라
+여기서 멈춘다. 「자율 모드니까 계속 간다」로 이 규칙을 우회하지 않는다.
+
+Step 3(capreq `chat.html` UI)도 손대지 않았다 — 눈으로 확인할 **헤드리스 브라우저가 없어서**
+고쳤는지 아닌지를 말할 수 없다. 못 본 것을 고쳤다고 하지 않는다.
+
+### master/Cursor 가 돌아오면 필요한 판단
+
+| # | 무엇 | 어디 |
+|---|---|---|
+| 1 | **#113 머지** (브리지·STATE) | — |
+| 2 | **Wave F 판단** — `wave-f-user-guide-51` Proposal §5 (a/b/c) + Confirm §2(형식·크기 문단) | #114 |
+| 3 | #112 Confirm 에 대한 ack | `capreq-attach-fix` |
+| 4 | 다음 Wave 선택 — 카탈로그 +1(한 종) vs capreq 품질 vs D4 조회 인증 | 새 Proposal 필요 |
+
+### 이 세션에서 실측한 것 (main `a7eed90`)
+
+`run_tests` **291** OK (skip 7) · capreq **38** OK · `check_submission` **26/26** ·
+`clean_room` **9/9** · `prod_room` **27/27** · `product_demo.sh` **exit 0**.
+핸드오프가 적어 둔 불변식과 전부 일치한다.
+
+### 여전히 못 본 것
+
+`chat.html` **브라우저 JS 렌더링**. #107 부터 계속 미확인이다. 헤드리스(Playwright 등)는
+**새 의존성 = Decision** 이라 시작하지 않았다. 이것을 볼지 말지가 Step 3 의 전제다.
 ```
