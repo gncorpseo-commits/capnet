@@ -192,6 +192,47 @@ function renderSummary(box, result) {
     sec.appendChild(el("div", "mono", `[${head}${v.truncated ? ", …" : ""}]`));
   }
 
+  // 「키: 값」 필드 (text.extract). 값의 뜻·타입을 판정하지 않는다 — 있는 그대로 옮긴다.
+  if (result.fields) {
+    const f = result.fields;
+    sec.appendChild(el("h4", null, `필드 ${f.count}건`));
+    if (f.count === 0) {
+      sec.appendChild(el("div", "note", "이름표가 붙은 줄 없음"));
+    } else {
+      sec.appendChild(table(
+        ["key", "value", "line"],
+        f.items.map(i => [i.key ?? "", i.value ?? "", i.line]),
+      ));
+      if (f.truncated) sec.appendChild(el("div", "note", `앞 ${f.items.length}건만 표시`));
+    }
+  }
+
+  // 순위 (text.rank). score 를 「관련도」로 부르지 않고 overlap 을 같이 보여 준다 —
+  // 왜 그 점수인지 사람이 대조할 수 있어야 한다. 여기서 다시 정렬하지 않는다.
+  if (result.ranking) {
+    const rk = result.ranking;
+    sec.appendChild(el("h4", null, `순위 ${rk.count}줄`));
+    if (rk.query !== undefined) {
+      sec.appendChild(el("div", "mono", `질의: ${rk.query}`));
+    }
+    if (rk.count === 0) {
+      sec.appendChild(el("div", "note", "후보 줄 없음"));
+    } else {
+      sec.appendChild(table(
+        ["rank", "score", "overlap", "text"],
+        rk.items.map(i => [
+          i.rank,
+          i.score === undefined ? "" : Number(i.score).toFixed(4),
+          Array.isArray(i.overlap) ? (i.overlap.join(", ") || "-") : "",
+          i.text ?? "",
+        ]),
+      ));
+      if (rk.truncated) sec.appendChild(el("div", "note", `앞 ${rk.items.length}줄만 표시`));
+      sec.appendChild(el("div", "note",
+        "겹친 낱말 수로 매긴 순서입니다 — 뜻을 비교한 것이 아닙니다."));
+    }
+  }
+
   if (result.table) {
     const tb = result.table;
     const cols = (tb.columns || []).map(c =>
