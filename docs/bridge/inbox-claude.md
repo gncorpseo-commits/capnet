@@ -606,3 +606,41 @@ status: open
 절대규칙 8개 · `git add -A` · `git config` 변경 · force push · main 직접 머지 ·
 migrate/seed 임의 실행 · `.env` 수정 · contest 태그 이동 · stacked PR (base 는 `main` 만).
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-30T23:00:00+09:00
+topic: track-a-post-step3
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — #117·#118 머지 (master 전달)
+
+> master 가 채팅으로 준 핸드오프를 받은 그대로 옮긴다 (`from: human`).
+> **그 핸드오프는 한 발 뒤처져 있었다** — `main` HEAD 를 `083d53d`(#116) 로,
+> 열린 PR 을 0 으로 적었는데 실제로는 **#117·#118 도 이미 머지돼** `main` = **`c820fc8`** 였다.
+> 지난 세션이 그 핸드오프의 Step 0·Step 3 을 이미 수행했다. 사실만 여기 남긴다.
+
+| PR | 내용 | SHA |
+|---|---|---|
+| #117 | Step 0 브리지·STATE·Step 3 Proposal (코드 0) | `22d7769` |
+| #118 | Step 3 capreq 가 `fields`·`ranking` 을 그린다 | `c820fc8` |
+
+### 우선순위 (핸드오프 §5 그대로)
+
+| 순위 | 무엇 | 조건 |
+|---|---|---|
+| (a) | Step 0 follow-up — 브리지 ack · `STATE.md` | **다른 작업보다 먼저** · 코드 0 |
+| (b) | ~~Step 3 capreq 표시~~ | **완료 (#118)** |
+| (c) | 카탈로그 +1 한 종 | 한 PR · 52 일괄 금지 · `image.classify@1` 무회귀 |
+| (d) | D4 조회 인증 · `tool.*` · LLM-as-Node · agent mesh · 태그 재발행 | **Proposal 만** |
+| (e) | **별건** `text.ner`↔`text.extract` 라우팅 | **별 Proposal · 라우팅 무회귀 실측 필수** |
+
+### Don't Do
+
+절대규칙 8개 · `git add -A` · `git config` 변경 · force push · main 직접 머지 ·
+migrate/seed 임의 실행 · `.env` 수정 · contest 태그 이동 · stacked PR.
+```

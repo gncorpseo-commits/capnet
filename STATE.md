@@ -25,7 +25,7 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–G 완료 · 열린 PR 0 (2026-08-30).** main HEAD = **`083d53d`** · **실행 능력 9종**.
+> **Wave A–G 완료 · 열린 PR 0 (2026-08-30).** main HEAD = **`c820fc8`** · **실행 능력 9종**.
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -39,6 +39,8 @@
 > | F | [#114](https://github.com/gncorpseo-commits/capnet/pull/114) | `user-guide-ko.md` §5.1 — Core 중개 입력 두 갈래 | `2e43680` |
 > | — | [#115](https://github.com/gncorpseo-commits/capnet/pull/115) | 브리지·STATE (Wave F 닫기 · Wave G Proposal) | `fc69d80` |
 > | **G** | [#116](https://github.com/gncorpseo-commits/capnet/pull/116) | **`text.rank` (9번째 실행기)** | **`083d53d`** |
+> | — | [#117](https://github.com/gncorpseo-commits/capnet/pull/117) | 브리지·STATE (Wave G 닫기 · Step 3 Proposal) | `22d7769` |
+> | H | [#118](https://github.com/gncorpseo-commits/capnet/pull/118) | capreq 가 `fields`·`ranking` 을 그린다 | **`c820fc8`** |
 >
 > **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
 > · main **`083d53d`**. `text.rank` = **9번째 실행기**.
@@ -74,8 +76,8 @@
 > master 우선순위: (a) 이 Step 0 → (b) Step 3 → (c) 카탈로그 +1 →
 > (d) D4 조회 인증 · `tool.*` · LLM-as-Node · 태그 재발행은 **Proposal 만**.
 >
-> **구현 = [#118](https://github.com/gncorpseo-commits/capnet/pull/118) (PR 대기)** ·
-> 브랜치 `toma/capreq-result-view-plus-two` · base `main` `083d53d`.
+> **구현 = [#118](https://github.com/gncorpseo-commits/capnet/pull/118) 머지됨** ·
+> main **`c820fc8`**.
 > `fields`(필드 표) · `ranking`(질의 + 순위 표) 렌더러 · `other` 폴백은 남긴다.
 > **새 주장 0** — `score` 를 관련도로 부르지 않고 화면에 「겹친 낱말 수로 매긴 순서입니다 —
 > 뜻을 비교한 것이 아닙니다」를 붙인다. 재정렬 없음(검사로 고정).
@@ -92,6 +94,27 @@
 >
 > **능력을 더할 때 따라와야 하는 것에 「화면」이 빠져 있었다** — #110·#116 체크리스트에
 > 그 줄이 없었다. 이제 검사가 막는다.
+
+> **라우팅을 제대로 쟀다 — 고치려던 것은 안 고쳤다 (2026-08-30).** 브리지
+> `routing-measured-not-fixed`. master 가 「별건 · 실측 필수」로 못박은 `text.ner`↔`text.extract`
+> 항목이다. **고치기 전에 재는 것**부터 했고 그 결과가 계획을 바꿨다.
+>
+> - **#116 Confirm §4 의 미스 보고는 취소한다.** 「제목·담당자…」→`text.ner` 은 **능력 5종만
+>   등록된 스택에서 n=1** 로 본 것이었다. 9종 등록 · R=5 로 다시 재니 **5/5 로 맞게 간다.**
+>   대신 재현되는 미스는 따로 있다 — 「날짜랑 URL 전부 뽑아줘」→`text.extract` **5/5**.
+> - **홀드아웃(수정안을 만들 때 안 쓴 12개 × R=5) 결과:**
+>   live 설명 **30/60** · 저장소 설명 **40/60** · 내 수정안 **40/60**.
+> - **내 수정안은 넣지 않는다.** 튜닝 세트에서 55→60 이었지만 홀드아웃에서 **순 효과 0** —
+>   미스 하나를 고치고 다른 하나를 깼다. **자기가 고른 프롬프트에 맞춘 것**이었다.
+> - **#110·#116 의 경계 문장은 효과가 있었다** (30→40). 방향은 옳았다.
+> - **진짜 결함:** `POST /v1/capabilities` 는 같은 `(code,version)` 에 **갱신 경로가 없고**
+>   데모는 오류를 삼키고 기존 id 를 쓴다 → **저장소에서 설명을 고쳐도 이미 등록된 스택에는
+>   영원히 안 들어간다.** 그 차이가 홀드아웃 **10점**이다. 빈 볼륨은 저장소 설명으로 뜨므로
+>   **오래 돌아간 스택만** 나빠진다 — 그래서 아무 검사도 못 봤다. #118 의 `chat.html`
+>   드리프트와 **같은 종류**다.
+> - **Core 변경이라 고치지 않았다** — 갱신 경로 신설 vs 버전 올리기 vs 문서화는 Decision.
+> - 문서의 라우팅 숫자(#110 「4/5→5/5」 · #116 n=5 표)는 **자기가 고른 프롬프트**였다.
+>   홀드아웃이 40/60 이라는 사실을 옆에 적어 **주장을 좁힌다**.
 >
 > **베이스라인 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
 > capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·
