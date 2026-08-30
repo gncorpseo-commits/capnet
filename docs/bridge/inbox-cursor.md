@@ -3562,8 +3562,12 @@ at: 2026-08-30T18:20:00+09:00
 topic: text-rank-catalog-plus-one
 type: proposal
 expects: decision
-status: open
+status: done
 ---
+
+> **Decision (a) accept · 닫음 (2026-08-30).** master 이견 없음 — #116 `083d53d` 로 머지.
+> (b) 점수 규칙 변경 · (c) 이웃 설명 수정은 **이번 범위 아님**으로 확인됐다.
+> 판단은 `inbox-claude.md` · `track-a-post-wave-g`.
 
 ## Proposal — 카탈로그 +1: `text.rank` (Wave G · 9번째 실행기)
 
@@ -3658,8 +3662,12 @@ at: 2026-08-30T20:00:00+09:00
 topic: text-rank-catalog-plus-one
 type: confirm
 expects: decision
-status: open
+status: done
 ---
+
+> **Decision (a) accept · 닫음 (2026-08-30).** §6 (a) 그대로. §4 에서 보고한
+> `text.ner`↔`text.extract` 미스는 **별건**으로 남는다 — 아래 `capreq-result-view-plus-two`
+> 와 별개이고, 손대려면 따로 Proposal 을 받는다.
 
 ## Confirm — Wave G 구현 [#116](https://github.com/gncorpseo-commits/capnet/pull/116) (자율 예외 · Confirm 전)
 
@@ -3742,8 +3750,11 @@ at: 2026-08-30T20:10:00+09:00
 topic: track-a-post-wave-f
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-08-30).** #115 `fc69d80` · #116 `083d53d` **둘 다 머지**. 열린 PR 0.
+> 다음은 아래 `capreq-result-view-plus-two`.
 
 ## Next — 이번 세션이 한 것 · 여기서 멈춘다 (열린 PR 2)
 
@@ -3781,4 +3792,88 @@ agent mesh · 태그 재발행)는 전부 큰 새 제안이라 시작하지 않�
 
 `chat.html` **브라우저 JS 렌더링**. #107 부터 계속 미확인이다 — 헤드리스가 없다.
 **본 것만 말한다.**
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T22:20:00+09:00
+topic: capreq-result-view-plus-two
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — 제품 입구가 능력 아홉 중 **둘의 결과를 못 그린다** (Step 3)
+
+master 우선순위 (b) 「capreq 품질」의 구체안이다. **열린 PR 0** 이라 PROTOCOL 에 걸리지 않는다.
+**새 의존성 0** — Playwright 는 여기 없다 (그건 따로 Decision 을 받아야 한다).
+
+### 1. 무엇이 문제인가
+
+`capreq/results.py` 는 #107 때 능력이 넷일 때 쓰였다. 그 뒤 **#110 `text.extract`** 와
+**#116 `text.rank`** 가 들어왔는데 요약기가 그 칸 이름을 모른다.
+
+| 능력 | 결과 칸 | 지금 표시 |
+|---|---|---|
+| `image.classify`·`text.classify` | `label`·`confidence` | ✅ 라벨 |
+| `text.ner` | `entities` | ✅ 표 |
+| `*.embed`·`timeseries.forecast` | `vector`·`forecast` | ✅ dim + 앞 8개 |
+| `table.extract` | `columns`·`rows` | ✅ 표 |
+| **`text.extract`** | **`fields`** | ❌ `other` 로 떨어져 **원시 JSON 한 줄** |
+| **`text.rank`** | **`query`·`ranking`** | ❌ 같음 |
+
+`chat.html` 의 `result.other` 분기는 `JSON.stringify(result.other)` 를 그대로 뿌린다.
+**버그가 아니라 설계된 폴백**이다 — 「계약이 새 칸을 들고 오면 조용히 삼키지 말고 그대로
+넘긴다」. 삼키지 않은 것은 맞지만, **제품 입구에서 아홉 중 둘이 원시 JSON 으로 보인다.**
+
+### 2. 무엇을 하겠다는 것인가 (범위)
+
+**표시만 고친다. 실행·계약·증적은 건드리지 않는다.**
+
+1. `results.py` 에 `fields` 요약 — `key`·`value`·`line` (·`start`/`end` 는 대조용으로 유지)
+2. `results.py` 에 `ranking` 요약 — `query` + `rank`·`score`·`overlap`·`text`
+3. 둘 다 **화면 앞부분만** 자른다 (`table` 이 앞 10행만 그리는 것과 같은 규율).
+   자른 사실을 **`truncated` 로 명시**하고 화면에 「앞 N개만 표시」를 적는다.
+   **이것은 화면 자르기이지 데이터 자르기가 아니다** — 실행기는 여전히 안 자르고 던진다
+   (`NODE_MAX_FIELDS`·`NODE_MAX_CANDIDATES`).
+4. `chat.html` 에 두 렌더러 추가. `other` 폴백은 **남긴다** — 다음에 또 새 칸이 오면 그때도
+   삼키지 않아야 한다.
+5. `capreq/README.md` 「눈으로 확인하기」 §3 의 결과 칸 목록을 아홉 능력에 맞춘다.
+
+### 3. 새 주장을 만들지 않는다
+
+- **점수를 해석하지 않는다.** `score` 를 「관련도」·「정확도」로 부르지 않고 숫자와 `overlap`
+  을 그대로 보여 준다. `text.rank` 는 `quality_profile='none'` 이다.
+- **순위를 다시 매기지 않는다.** Core 가 준 순서를 그대로 그린다.
+- `fields` 의 값 타입을 판정하지 않는다 (`text.extract` 가 안 하는 일이다).
+
+### 4. 검증 — 무엇을 볼 수 있고 무엇을 못 보나
+
+| 볼 수 있다 | 어떻게 |
+|---|---|
+| 요약기가 계약 칸을 제대로 읽는가 | `capreq/tests` 단위 (새 검사) |
+| 살아 있는 Core 결과로 종단 | Docker + Ollama 로 `/api/tasks/{id}` JSON 실측 |
+| `chat.html` 이 문법적으로 성한가 | 정적 검사 (문자열 존재 · 괄호 균형) |
+
+| **못 본다** | 왜 |
+|---|---|
+| **브라우저 JS 렌더링** | 헤드리스 브라우저가 없다. #107·#112 부터 계속 미확인이다 |
+
+**「브라우저에서 봤다」고 쓰지 않는다.** 서버가 준 JSON 까지만 봤다고 적는다.
+
+### 5. 안 할 것
+
+Playwright·헤드리스 등 **새 의존성** · 실행 경로·계약·증적 수정 · 점수 해석 ·
+재정렬 · `other` 폴백 제거 · Core 스키마 · DDL · `text.ner`↔`text.extract` 라우팅
+(그건 별건 Decision 이다).
+
+### 6. 결정 요청
+
+- (a) 위 §2 범위대로 — **master 우선순위 (b) 안이라고 보고 착수한다**
+- (b) 표시 한도(앞 몇 개)를 다르게 — 지금은 `fields` 20 · `ranking` 20 을 제안한다
+      (기존 `TABLE_ROW_HEAD=10` 과 다른 이유: 필드·순위는 행이 짧아 한 화면에 더 들어간다)
+- (c) 지금은 하지 말고 다른 것 먼저
+
+**(a) 로 착수한다.** 표시 계층 한 곳이라 되돌리기 싸고, 판단이 다르면 그 PR 에서 되돌린다.
 ```

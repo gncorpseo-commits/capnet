@@ -25,7 +25,7 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–F 완료 · 열린 PR 0 (2026-08-30).** main HEAD = **`2e43680`**.
+> **Wave A–G 완료 · 열린 PR 0 (2026-08-30).** main HEAD = **`083d53d`** · **실행 능력 9종**.
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -37,9 +37,11 @@
 > | E | [#112](https://github.com/gncorpseo-commits/capnet/pull/112) | capreq 첨부 fix + Ollama 종단 | `a7eed90` |
 > | — | [#113](https://github.com/gncorpseo-commits/capnet/pull/113) | 브리지·STATE 동기화 (코드 0) | `5080748` |
 > | F | [#114](https://github.com/gncorpseo-commits/capnet/pull/114) | `user-guide-ko.md` §5.1 — Core 중개 입력 두 갈래 | `2e43680` |
+> | — | [#115](https://github.com/gncorpseo-commits/capnet/pull/115) | 브리지·STATE (Wave F 닫기 · Wave G Proposal) | `fc69d80` |
+> | **G** | [#116](https://github.com/gncorpseo-commits/capnet/pull/116) | **`text.rank` (9번째 실행기)** | **`083d53d`** |
 >
-> **Wave G — PR 대기 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
-> `text.rank` = **9번째 실행기** · 브랜치 `toma/text-rank` · base `main` `2e43680`.
+> **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
+> · main **`083d53d`**. `text.rank` = **9번째 실행기**.
 > 카탈로그 §3 #24 에 **이미 선언돼 있던** 능력을 구현한 것이다. **DDL 0 · 새 의존성 0 ·
 > 새 학습 0 · 외부 말뭉치 0.**
 >
@@ -56,12 +58,21 @@
 >   필수 가중치 7 → **8종** · `clean_room` **9/9** · `prod_room` **27/27**
 >   (`image.classify` 무회귀) · `product_demo.sh`·`text_rank_demo.sh` **exit 0**.
 >
-> **STATE·브리지를 #116 이 만지지 않는다** — [#115](https://github.com/gncorpseo-commits/capnet/pull/115)
-> 와 같은 파일이라 충돌을 만들지 않으려고 그쪽에 모았다.
+> **master Decision (2026-08-30): (a) accept.** 규칙·`overlap`·`quality_profile='none'` 그대로.
+> (b) 점수 규칙 변경 · (c) 이웃 설명 수정은 **범위 밖**으로 확인.
 >
-> **다음 판단 (master):** #115·#116 머지 · Wave G Proposal §7 / Confirm §6 ·
-> **별건** `text.ner`↔`text.extract` 설명 손질 여부 · 다음 Wave 선택.
-> D4 조회 인증 · `tool.*` · LLM-as-Node 는 여전히 **Proposal 만**.
+> **남은 별건:** `text.ner`↔`text.extract` 라우팅 미스 — 손대려면 **별 Proposal** +
+> 라우팅 무회귀 실측 필수. 이번에 고치지 않았다.
+
+> **다음 = Step 3 · capreq 결과 표시 (2026-08-30).** 브리지 Proposal
+> `capreq-result-view-plus-two`.
+> `results.py` 가 #107 때(능력 넷) 쓰인 뒤로 **`text.extract`(`fields`)·`text.rank`(`ranking`)**
+> 가 들어왔는데 요약기가 그 칸을 모른다 — **아홉 중 둘이 제품 입구에서 원시 JSON 으로 보인다.**
+> 표시 계층만 고친다 · **새 의존성 0** (Playwright 는 별도 Decision).
+> **브라우저 JS 렌더링은 #107 부터 계속 미확인** — 헤드리스가 없다. 본 것만 말한다.
+>
+> master 우선순위: (a) 이 Step 0 → (b) Step 3 → (c) 카탈로그 +1 →
+> (d) D4 조회 인증 · `tool.*` · LLM-as-Node · 태그 재발행은 **Proposal 만**.
 >
 > **베이스라인 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
 > capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·
