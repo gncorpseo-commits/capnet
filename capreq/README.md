@@ -76,10 +76,22 @@ python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --e
    `capabilities=0` 이면 Core 카탈로그가 비었다 (`scripts/*_demo.sh` 로 등록).
 2. **상태 배지** — 보내면 `QUEUED → ASSIGNED → RUNNING → COMPLETED` 가 1초 간격으로
    바뀐다. 종결되면 배정 증적(`node=… · agent=… · domain=… · tier=…`)이 한 줄 붙는다.
-3. **결과 칸** — 능력이 실제로 낸 것만 그린다.
-   `text.ner` → 엔티티 표(label · start · end · text) · `text.classify` → 라벨·confidence ·
-   `text.embed`/`image.embed`/`timeseries.forecast` → `dim=N · [앞 8개]` ·
-   `table.extract` → 열 타입 + 앞 10행.
+3. **결과 칸** — 능력이 실제로 낸 것만 그린다. 아홉 능력이 내는 모양은 여섯이다.
+
+   | 능력 | 그리는 것 |
+   |---|---|
+   | `image.classify` · `text.classify` | 라벨 · confidence |
+   | `text.ner` | 엔티티 표 (label · start · end · text) |
+   | `text.extract` | 필드 표 (key · value · line) · 앞 20건 |
+   | `text.rank` | 질의 + 순위 표 (rank · score · overlap · text) · 앞 20줄 |
+   | `text.embed` · `image.embed` · `timeseries.forecast` | `dim=N · [앞 8개]` |
+   | `table.extract` | 열 타입 + 앞 10행 |
+
+   **앞 N개만 그리는 것은 화면 사정이다.** 자른 사실을 화면에 적고(「앞 N건만 표시」),
+   `count` 는 전체를 말한다. 실행기는 자르지 않는다 — 한도를 넘으면 던진다.
+
+   목록에 없는 칸이 오면 **삼키지 않고** 「그 밖의 출력」으로 그대로 보여 준다.
+   `text.rank` 의 `score` 는 **겹친 낱말 수**이지 관련도·정확도가 아니다.
 
 터미널에서 같은 것을 보려면:
 

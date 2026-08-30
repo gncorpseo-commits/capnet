@@ -1,8 +1,21 @@
 """Core `result_ref` → 화면 표시용 요약.
 
 능력마다 결과 모양이 다르다 — `label`·`confidence` (분류) · `vector`/`forecast`
-(임베딩·예측) · `entities` (NER) · `columns`·`rows` (표). 계약이 정한 칸 이름을
-그대로 읽어 옮기기만 한다. **새 품질 주장은 하지 않는다** — 없는 칸은 없는 대로 둔다.
+(임베딩·예측) · `entities` (NER) · `fields` (필드 추출) · `query`·`ranking` (순위) ·
+`columns`·`rows` (표). 계약이 정한 칸 이름을 그대로 읽어 옮기기만 한다.
+**새 품질 주장은 하지 않는다** — 없는 칸은 없는 대로 둔다.
+
+## 화면 자르기는 데이터 자르기가 아니다
+
+긴 결과는 앞부분만 보여 준다 (`VECTOR_HEAD`·`TABLE_ROW_HEAD`·`LIST_HEAD`). 자른 것은
+**화면**이고, 자른 사실은 `truncated` 로 항상 같이 나간다. 실행기는 여전히 자르지 않고
+한도를 넘으면 던진다 (`NODE_MAX_FIELDS`·`NODE_MAX_CANDIDATES`) — 그쪽을 자르면
+「전부 읽었다」가 거짓이 되지만, 여기서 자르는 것은 「앞 N 개만 그렸다」일 뿐이다.
+
+## 점수를 해석하지 않는다
+
+`ranking` 의 `score` 를 「관련도」·「정확도」로 부르지 않는다. 숫자와 `overlap`(겹친 토큰)을
+그대로 옮긴다 — `text.rank` 는 `quality_profile='none'` 이다. 순서도 Core 가 준 그대로다.
 """
 
 from __future__ import annotations
@@ -19,6 +32,8 @@ _VECTOR_KEYS = ("vector", "forecast", "embedding")
 # 표 앞부분만 보여 준다. 벡터 128차원·행 1000개를 화면에 다 뿌리지 않는다.
 VECTOR_HEAD = 8
 TABLE_ROW_HEAD = 10
+# 필드·순위는 한 줄이 짧아 표보다 더 들어간다.
+LIST_HEAD = 20
 
 _TABLE_KEYS = frozenset({"columns", "rows", "header_detected"})
 _LABEL_KEYS = frozenset({"label", "confidence"})
@@ -56,6 +71,9 @@ def summarize_result(source: Any) -> dict[str, Any]:
         return {}
 
     out: dict[str, Any] = {}
+    # 실제로 요약에 옮긴 칸. **소비하지 않은 칸은 `other` 로 그대로 내보낸다** —
+    # 이름만 안다고 미리 빼면 조용히 삼키는 것이 된다.
+    consumed: set[str] = set()
 
     if ref.get("label") is not None:
         out["label"] = str(ref["label"])
@@ -77,6 +95,29 @@ def summarize_result(source: Any) -> dict[str, Any]:
             }
             break
 
+    fields = ref.get("fields")
+    if isinstance(fields, list):
+        body = [f for f in fields if isinstance(f, dict)]
+        out["fields"] = {
+            "items": body[:LIST_HEAD],
+            "count": len(body),
+            "truncated": len(body) > LIST_HEAD,
+        }
+
+    ranking = ref.get("ranking")
+    if isinstance(ranking, list):
+        body = [r for r in ranking if isinstance(r, dict)]
+        # Core 가 준 순서를 그대로 둔다 — 여기서 다시 정렬하지 않는다.
+        rank = {
+            "items": body[:LIST_HEAD],
+            "count": len(body),
+            "truncated": len(body) > LIST_HEAD,
+        }
+        if isinstance(ref.get("query"), str):
+            rank["query"] = ref["query"]
+            consumed.add("query")
+        out["ranking"] = rank
+
     cols = ref.get("columns")
     rows = ref.get("rows")
     if isinstance(cols, list) and isinstance(rows, list):
@@ -93,7 +134,10 @@ def summarize_result(source: Any) -> dict[str, Any]:
         out["dummy"] = bool(ref["dummy"])
 
     # 계약이 새 칸을 들고 오면 조용히 삼키지 말고 그대로 넘긴다.
-    known = _META_KEYS | _LABEL_KEYS | _TABLE_KEYS | {"entities"} | set(_VECTOR_KEYS)
+    known = (
+        _META_KEYS | _LABEL_KEYS | _TABLE_KEYS | consumed
+        | {"entities", "fields", "ranking"} | set(_VECTOR_KEYS)
+    )
     other = {k: v for k, v in ref.items() if k not in known}
     if other:
         out["other"] = other
