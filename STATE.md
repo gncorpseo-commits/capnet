@@ -25,7 +25,7 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–G 완료 · 열린 PR 0 (2026-08-30).** main HEAD = **`c820fc8`** · **실행 능력 9종**.
+> **Wave A–H 완료 · 열린 PR 0 (2026-08-31).** main HEAD = **`9b613e4`** · **실행 능력 9종**.
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -41,6 +41,8 @@
 > | **G** | [#116](https://github.com/gncorpseo-commits/capnet/pull/116) | **`text.rank` (9번째 실행기)** | **`083d53d`** |
 > | — | [#117](https://github.com/gncorpseo-commits/capnet/pull/117) | 브리지·STATE (Wave G 닫기 · Step 3 Proposal) | `22d7769` |
 > | H | [#118](https://github.com/gncorpseo-commits/capnet/pull/118) | capreq 가 `fields`·`ranking` 을 그린다 | **`c820fc8`** |
+> | — | [#119](https://github.com/gncorpseo-commits/capnet/pull/119) | 브리지·STATE + 라우팅 측정 보고 (코드 0) | `45bf8dd` |
+> | — | [#120](https://github.com/gncorpseo-commits/capnet/pull/120) | `scripts/route_bench.py` + 카탈로그 숫자 정정 | **`9b613e4`** |
 >
 > **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
 > · main **`083d53d`**. `text.rank` = **9번째 실행기**.
@@ -115,6 +117,58 @@
 > - **Core 변경이라 고치지 않았다** — 갱신 경로 신설 vs 버전 올리기 vs 문서화는 Decision.
 > - 문서의 라우팅 숫자(#110 「4/5→5/5」 · #116 n=5 표)는 **자기가 고른 프롬프트**였다.
 >   홀드아웃이 40/60 이라는 사실을 옆에 적어 **주장을 좁힌다**.
+>
+> **하네스·정정 = #120 머지됨 (`9b613e4`).** `scripts/route_bench.py` — 튜닝/홀드아웃을 나누고
+> **기본값이 `--set holdout`** 이다(좋아 보이는 숫자가 먼저 나오면 안 된다).
+> `tests/test_route_bench.py` 12종 · `run_tests` 322 → **334**.
+> 커밋한 스크립트로 재현 확인: live 튜닝 55/60 · **live 홀드아웃 30/60** ·
+> **repo 홀드아웃 40/60**.
+
+> **Decision 도착 · 다음 = Wave I (2026-08-31).** master 채팅 Decision (브리지
+> `routing-measured-not-fixed`):
+>
+> - **(a) 설명 튜닝은 하지 않는다** — 튜닝 세트 개선 ≠ 홀드아웃 개선. **문구를 홀드아웃에
+>   맞추지 않는다.**
+> - **(b) 드리프트는 `PATCH /v1/capabilities/{id}` 로** — **`description` 만** · **DDL 0** ·
+>   계약 JSONB 불변. `@2` 버전 올리기·문서-only 는 **범위 밖**.
+> - (c)(d) 는 #120 으로 **done**.
+>
+> **Wave I 범위** (브리지 Proposal `capability-description-patch`):
+> admin PATCH 라우트 + Pydantic `extra="forbid"`(화이트리스트를 손으로 세지 않는다) +
+> 데모 **셋**(`ner`·`text_extract`·`text_rank`)에 upsert 한 단계.
+> 계약 필드(`input_schema`·`compute_tier`·`golden_*` …)는 **전부 400** — 그것들이
+> `task_input` 복합 FK·`gate_run`·`assignment` **스냅샷의 원본**이기 때문이다.
+>
+> **재측정은 실측만 적는다** — 「이제 40/60 보장」 같은 목표치를 쓰지 않는다.
+> 이 Wave 가 하는 일은 **데모의 정본을 DB 에 동기화**하는 것뿐이고, 문구는 저장소 그대로다.
+
+> **Wave I — PR 대기 (2026-08-31).** [#122](https://github.com/gncorpseo-commits/capnet/pull/122)
+> `PATCH /v1/capabilities/{id}` · 브랜치 `toma/capability-description-patch` · base `9b613e4`.
+> **DDL 0 · 새 의존성 0 · 계약 JSONB 불변.**
+>
+> - 연 것은 **`description` 하나**다. 계약 칸은 전부 400 — `task_input` 복합 FK·`gate_run`·
+>   `assignment` **스냅샷의 원본**이라 움직이면 이미 찍힌 스냅샷이 거짓말이 된다.
+>   화이트리스트를 손으로 세지 않는다(`extra="forbid"`).
+> - 데모 **셋**이 등록 본문과 DB 를 비교해 **다를 때만** PATCH. 실측에서 `text.ner`·
+>   `text.extract` 는 옛 문자열 → 저장소 문구로 바뀌었고 **`text.rank` 는 이미 최신이라
+>   건너뛰었다.** 동기화 뒤 **live == repo (9종 일치)**.
+> - `run_tests` 334 → **352** · `check_capability_patch` **6/6**(계약 16칸 PATCH 전후 동일) ·
+>   변이로 가드 확인(SET 절 2종 · `extra:forbid` 1종).
+>
+> **철회: #120 의 「저장소 설명 40/60」.** 그 값은 `route_bench --descriptions repo` 로 잰
+> 것인데, 그 경로가 `CapabilityInfo` 를 새로 지으며 **`output_kind` 를 떨어뜨리고 있었다.**
+> 라우터 프롬프트가 `kind=` 를 넣으므로 **한 번에 둘을 바꿔 놓고 설명 덕이라 읽은 것**이다.
+> `dataclasses.replace()` 로 고쳤고(칸을 손으로 세지 않는다) 같은 조건은 **37/60**.
+>
+> **지금 서 있는 숫자** (홀드아웃 12개 × R=5): DB 가 낡았을 때 **30/60**(1회) ·
+> 동기화 뒤 **36·36·38**(3회) · `repo` **37**.
+> **개선폭을 말하지 않는다** — 같은 조건도 **2점씩 흔들린다**(이것도 이번에 처음 쟀다).
+> 「5/5 아니면 0/5라 결정적」이라던 앞선 관찰도 과했다.
+> 드리프트는 **메커니즘으로 확인**됐고 **크기는 지금 데이터로 말할 수 없다** —
+> 코드·데모의 「10점 차」 문구도 전부 걷어냈다.
+>
+> **이번 세션의 공통 원인: 정본이 둘이면 갈라진다.** `chat.html`(#118) · 카탈로그 설명(#122) ·
+> **하네스 자체**(#122) — 셋 다 같은 모양이다. 하네스도 검사가 필요하다는 것을 이번에 배웠다.
 >
 > **베이스라인 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
 > capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·

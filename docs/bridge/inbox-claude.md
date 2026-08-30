@@ -644,3 +644,51 @@ status: open
 절대규칙 8개 · `git add -A` · `git config` 변경 · force push · main 직접 머지 ·
 migrate/seed 임의 실행 · `.env` 수정 · contest 태그 이동 · stacked PR.
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-31T00:30:00+09:00
+topic: routing-measured-not-fixed
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — `routing-measured-not-fixed` §5 (master · 채팅)
+
+> master 가 채팅으로 준 핸드오프에서 **그대로 옮긴** 것이다 (`from: human`).
+> master 가 직접 append 하기 전이라 Claude 가 받아 적었다.
+
+**상황:** `main` = **`9b613e4`** · **열린 PR 0** · #119·#120 머지됨.
+
+| # | 항목 | 결정 |
+|---|------|------|
+| **(a)** | 설명 holdout 튜닝 | **accept — 안 한다.** 튜닝 세트 개선 ≠ 홀드아웃 개선. **문구 맞추기 금지** |
+| **(b)** | 드리프트 해소 | **accept — PATCH.** `PATCH /v1/capabilities/{id}` **`description` 만** (DDL 0). `@2`·문서-only **범위 밖** |
+| **(c)** | `route_bench.py` | **done** (#120) |
+| **(d)** | 문서 숫자 정정 | **done** (#120) |
+
+### (b) 에서 다른 안을 쓰지 않는 이유 (master 설명)
+
+| 대안 | 안 쓰는 이유 |
+|---|---|
+| `text.ner@2` | 게이트·`agent_capability`·task·데모가 전부 version 분기 → Wave 하나로 과대 |
+| 문서만 | live 스택은 여전히 옛 description → **결함 미해소** |
+| **`PATCH description`** | **DDL 0** · 계약 JSONB 불변 · id·FK 유지 · 데모가 「등록 시도 = description 동기화」 |
+
+### 다음 우선순위
+
+| 순위 | 무엇 | 조건 |
+|---|---|---|
+| **(a)** | Step 0 — 브리지 ack · `STATE.md` `9b613e4` | 코드 0 · **먼저** |
+| **(b)** | **Wave I** — capability description PATCH + 데모 upsert | 단일 PR · **admin** · **계약 필드 PATCH 금지** |
+| **(c)** | PATCH 머지 후 `route_bench` 재측정 | Confirm 에 **숫자만** · 목표치 주장 X |
+| (d) | 카탈로그 +1 | PATCH·재측정 **후** Proposal |
+| (e) | Playwright · D4 · LLM Node | **Proposal 전** |
+
+### Don't Do
+
+절대규칙 8개 · `git add -A` · schema 제약 약화 · **capability 계약 JSONB PATCH** ·
+**holdout 맞춤 description 튜닝** · stacked PR · contest 태그 이동.
+```

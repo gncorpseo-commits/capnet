@@ -4013,8 +4013,20 @@ at: 2026-08-30T23:30:00+09:00
 topic: routing-measured-not-fixed
 type: proposal
 expects: decision
-status: open
+status: done
 ---
+
+> **Decision 도착 · 닫음 (2026-08-31).** §5 네 갈래 전부 답을 받았다
+> (`inbox-claude.md` · `routing-measured-not-fixed`).
+>
+> | | 결정 |
+> |---|---|
+> | (a) 설명 튜닝 | **안 한다.** 튜닝 세트 개선 ≠ 홀드아웃 개선 — 문구를 holdout 에 맞추지 않는다 |
+> | (b) 드리프트 | **`PATCH /v1/capabilities/{id}` 로 `description` 만.** `@2` 버전 올리기·문서-only 는 범위 밖 |
+> | (c) 하네스 | **done** — #120 `9b613e4` |
+> | (d) 숫자 정정 | **done** — #120 `9b613e4` |
+>
+> (b) 구현 = 아래 `capability-description-patch`.
 
 ## Proposal — 라우팅을 **제대로 재 봤다.** 고치려던 것은 안 고치고, 진짜 결함이 하나 나왔다
 
@@ -4102,4 +4114,233 @@ email·url·ipv4·uuid·iso_date span · 규칙 · 일반 NER 주장 없음     
 
 설명 수정 **미적용** · Core 갱신 경로 **미구현** · 카탈로그 +1 (능력 10번째를 더하기 전에
 9종에서 홀드아웃 40/60 이라는 사실을 먼저 놓고 싶다) · DDL · 스키마.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T01:00:00+09:00
+topic: capability-description-patch
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — Wave I: `PATCH /v1/capabilities/{id}` 로 **설명만** 고친다
+
+Decision **(b)** 의 구현안이다. **DDL 0 · 새 의존성 0 · 계약 JSONB 불변.**
+
+### 1. 무엇을 고치는가
+
+```text
+POST /v1/capabilities  →  (code, version) 중복이면 UniqueViolation → 409
+갱신 API 가 없다        →  apps/core/app/capability.py
+데모(*_demo.sh)        →  POST 실패하면 GET 으로 기존 id 만 찾아 쓴다
+```
+
+그래서 **저장소에서 `description` 을 고쳐도 이미 등록된 스택에는 영원히 안 들어간다.**
+홀드아웃에서 그 차이가 **10점**이다 (live 30/60 · repo 40/60 · #119·#120 실측).
+빈 볼륨(`clean_room`)은 저장소 값으로 뜨므로 **오래 돌아간 스택만** 어긋난다.
+
+### 2. API
+
+```http
+PATCH /v1/capabilities/{capability_id}
+Authorization: CapNet-Key …        ← admin (POST 와 같은 `_require("admin", …)`)
+Content-Type: application/json
+
+{ "description": "…" }
+```
+
+| | |
+|---|---|
+| **허용 필드** | **`description` 만.** `name` 은 **이번 Wave 에 넣지 않는다** — §6 참조 |
+| **거부 (400)** | 그 밖의 **모든** 필드. Pydantic `extra="forbid"` 로 **모델이 막는다** — 화이트리스트를 손으로 세지 않는다 |
+| 200 | 갱신된 row (`GET /v1/capabilities/{id}` 와 같은 모양) |
+| 404 | id 없음 · **401/403** 권한 없음 |
+
+**계약 필드는 건드리지 않는다.** `input_schema`·`output_schema`·`output_kind`·`compute_tier`·
+`trust_domain_min`·`quality_profile`·`golden_*`·`max_input_bytes`·`max_attempts`·
+`mvp_eligible`·`code`·`version` — 전부 거부다. 이유는 그것들이 `task_input` 복합 FK ·
+`gate_run` · `assignment` **스냅샷의 원본**이기 때문이다. 스냅샷이 뜻을 가지려면 원본이
+움직이면 안 된다. **드리프트는 라우팅용 메타 하나에서만 고친다.**
+
+**DDL 0** — `docs/spec/schema.sql` 손대지 않는다. 마이그레이션 0.
+
+### 3. 데모 스크립트 (upsert)
+
+`ner_demo.sh` 의 「있으면 409 — 기존 id」 분기 **뒤에** 한 단계를 붙인다:
+
+```text
+1. POST /v1/capabilities            (기존 그대로)
+2. id 를 못 받으면 GET 으로 조회     (기존 그대로)
+3. ★ id 확정 후, 현재 description 이 POST 본문과 다르면 PATCH
+4. sample · gate · task             (기존 그대로)
+```
+
+**적용 범위 — 이번 PR 은 세 개만:** `ner_demo.sh` · `text_extract_demo.sh` ·
+`text_rank_demo.sh`. 라우팅 측정이 걸린 자리가 거기고, **한 번에 여덟 개를 고치면
+「무엇이 숫자를 움직였나」를 못 가른다.** 나머지 `*_demo.sh` 는 별건으로 남긴다 (§6-b).
+
+**공통 helper 를 만들지 않는다** — 세 곳이면 inline 이 읽기 쉽다. 다섯 번째에서 뽑는다.
+
+### 4. 검증
+
+| 무엇 | 어디 |
+|---|---|
+| admin 200 · `description` 이 실제로 바뀐다 | `tests/integration/check_capability_patch.py` (신규 · **DB 필요** · CI `migrate` 잡) |
+| 계약 필드 400 · 없는 id 404 · 무인증 401 | 같은 파일 |
+| **계약 필드가 안 바뀐다** (PATCH 전후 `input_schema` 등 동일) | 같은 파일 — 이게 핵심이다 |
+| 배선 (라우트·모델·`extra="forbid"`) | `tests/test_capability_patch_wiring.py` (신규 · DB 없이) |
+| 회귀 | `run_tests` **334** 유지 · `check_submission` **27/27** · `prod_room` |
+
+`route_bench` 는 **코드 변경 없다.** 머지 후 **수동 재측정**만 Confirm 에 적는다.
+
+### 5. 새 주장을 만들지 않는다
+
+- 라우팅 **정확도**·홀드아웃 **목표치**를 적지 않는다. 「이제 40/60 보장」 같은 문장 금지
+- 재측정 숫자는 **실측한 값만**. 기대는 「live 가 repo 에 수렴할 것」 수준으로만 적는다
+- **Decision (a) 준수:** `description` **문구를 홀드아웃에 맞춰 바꾸지 않는다.**
+  이 PR 이 하는 일은 **데모의 정본을 DB 에 동기화**하는 것뿐이다 — 문구는 저장소에 있는 그대로다
+
+### 6. 결정 요청
+
+- **(a)** 위 §2 범위대로 — **[#122](https://github.com/gncorpseo-commits/capnet/pull/122) 로 착수했다**
+- **(b)** 데모 세 개(ner·extract·rank)만 먼저 vs 여덟 개 전부 — **세 개를 제안**한다
+- **(c)** `name` 도 PATCH 할 수 있게 할까 — **이번엔 빼자**고 제안한다.
+  `name` 은 라우터 프롬프트에도 들어가는데 드리프트의 원인으로 **관측된 적이 없다.**
+  필요해지면 그때 넣는 편이 「무엇이 숫자를 움직였나」를 가르기 쉽다
+
+### 7. 안 할 것
+
+계약 JSONB PATCH · `@2` 버전 올리기 · schema 약화 · DDL · 새 의존성 ·
+holdout 맞춤 문구 튜닝 · 카탈로그 +1 · Playwright · D4 · LLM Node.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T03:00:00+09:00
+topic: capability-description-patch
+type: confirm
+expects: decision
+status: open
+---
+
+## Confirm — Wave I [#122](https://github.com/gncorpseo-commits/capnet/pull/122) · **그리고 내가 만든 숫자 하나를 철회한다**
+
+Proposal §2 범위 그대로다. 그런데 **재측정이 앞선 결론 하나를 무너뜨렸다** — 그게 이
+Confirm 의 중심이다.
+
+### 1. Proposal → 코드
+
+| Proposal | 어디에 |
+|---|---|
+| §2 `description` 만 · admin · DDL 0 | `capability.py::update_capability_description` · `main.py` PATCH 라우트 |
+| §2 계약 필드 400 | `CapabilityDescriptionPatch` + **`extra: "forbid"`** — 화이트리스트를 손으로 세지 않는다 |
+| §3 데모 셋만 · helper 없음 | `ner`·`text_extract`·`text_rank` 에 inline 한 단계 |
+| §6-(b) 셋만 | 그대로 |
+| §6-(c) `name` 은 뺀다 | 그대로 |
+
+### 2. 동기화는 실제로 됐다
+
+```text
+PATCH 전  text.ner:  email·url·ipv4·uuid·iso_date span · 규칙 · 일반 NER 주장 없음
+                     ↑ 저장소 어디에도 없는 옛 문자열
+PATCH 후  text.ner:  자유 문장 어디에 있든 … 이름표(키)가 없어도 된다 …
+```
+
+`text.rank` 는 **이미 최신이라 건너뛰었다** — 「다를 때만 PATCH」가 의도대로 돈다.
+동기화 뒤 **live == repo (9종 전부 일치)** 를 별도로 확인했다.
+
+### 3. **철회** — #120 의 「저장소 설명 40/60」은 내 하네스 결함이었다
+
+라우터 프롬프트는 능력 한 줄을 이렇게 만든다:
+
+```text
+- code=… version=… name=… kind={output_kind} desc=…
+```
+
+`scripts/route_bench.py` 의 `--descriptions repo` 경로가 `CapabilityInfo` 를 **새로 지으면서
+`output_kind`·`trust_domain_min`·`extra` 를 떨어뜨렸다.** 그래서 그 조건은 「설명만 바꾼
+카탈로그」가 아니라 **「설명을 바꾸고 `kind` 를 전부 지운 카탈로그」**였다 —
+**한 번에 둘을 바꿔 놓고 설명 덕이라 읽었다.**
+
+`dataclasses.replace()` 로 고쳤다. **칸을 손으로 세지 않는 쪽**을 골랐다 — 필드가 늘어도
+여기가 뒤처지지 않는다. 고친 뒤 같은 조건은 **37/60** 이고, 이는 live 밴드 안이다.
+
+### 4. 지금 서 있는 숫자 (홀드아웃 12개 × R=5)
+
+| 언제 | 값 |
+|---|---|
+| DB 가 낡았을 때 | **30/60** (1회 · 밴드 모름) |
+| 동기화 뒤 | **36 · 36 · 38** (3회) · `repo` **37** |
+
+**개선폭을 말하지 않는다.** 같은 조건도 **2점씩 흔들린다** — 이것도 이번에 처음 쟀다.
+전에 「5/5 아니면 0/5라 결정적」이라고 적은 것도 과했다.
+
+**드리프트는 메커니즘으로 확인됐다**(옛 문자열이 DB 에 실제로 있었고 PATCH 로 고쳐졌다).
+**크기는 지금 데이터로 말할 수 없다.** 그래서 코드·데모 주석의 「홀드아웃 10점 차」 문구도
+전부 걷어냈다.
+
+### 5. 검증
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests` | 334 → **352** OK (skip 7) |
+| `check_capability_patch` (신규 · DB) | **6/6** — 계약 16칸 PATCH 전후 **동일** |
+| 변이 | `SET` 절에 계약 칸 → **2종 실패** · `extra:forbid` 제거 → **1종 실패** |
+| `test_route_bench` | `_Patched` 가 `description` 외 필드를 하나도 안 바꾸는지 dataclass 필드 순회 |
+| 데모 3종 | 종단 완주 · PATCH 로그 실측 |
+
+### 6. 결정 요청
+
+- (a) 이대로 — Proposal §6 확인
+- (b) **40/60 철회 방식** — 지금은 카탈로그에 「철회한다 + 왜」를 남겼다. 통째로 지우는 편이
+      나으면 말해 달라 (지운 자국을 남기는 쪽을 골랐다)
+- (c) 나머지 다섯 `*_demo.sh` upsert 를 언제 할지
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T03:10:00+09:00
+topic: track-a-post-wave-i
+type: next
+expects: decision
+status: open
+---
+
+## Next — 이번 세션 · 여기서 멈춘다 (열린 PR 2)
+
+| PR | 내용 | CI |
+|---|---|---|
+| [#121](https://github.com/gncorpseo-commits/capnet/pull/121) | Step 0 — 브리지·STATE + Wave I Proposal/Confirm (코드 0) | 확인 필요 |
+| [#122](https://github.com/gncorpseo-commits/capnet/pull/122) | **Wave I — `PATCH /v1/capabilities/{id}`** | 확인 필요 |
+
+`#122` 는 `STATE.md` 를 **3행 갱신일 한 줄만** 만진다 (`test_doc_counts` 가 CHANGELOG 최신일과
+대조한다). #121 은 25·41행이라 충돌하지 않는다.
+
+### 이번에 배운 것 — **하네스도 검사가 필요하다**
+
+#120 에서 「측정 없이 주장 없음」이라며 하네스를 넣었는데, **그 하네스 자체가 틀렸다.**
+`--descriptions repo` 가 `output_kind` 를 지우고 있었고, 그 값이 카탈로그에 인용됐다.
+검사가 붙은 지금은 그 실수를 되풀이할 수 없다 — 하지만 **한 번은 통과했다.**
+
+같은 종류가 이번 세션에만 셋이다: `chat.html` 드리프트(#118) · 카탈로그 설명 드리프트(#122) ·
+하네스 자체(#122). **「정본이 둘이면 갈라진다」**가 공통 원인이다.
+
+### master/Cursor 가 돌아오면 필요한 판단
+
+| # | 무엇 | 어디 |
+|---|---|---|
+| 1 | **#121 · #122 머지** | — |
+| 2 | Wave I 판단 — Confirm §6 (a)(b)(c) | #122 |
+| 3 | 나머지 다섯 `*_demo.sh` upsert | 새 Proposal |
+| 4 | 다음 Wave — 카탈로그 +1 vs D4 vs Playwright | 새 Proposal |
+
+### 여전히 못 본 것
+
+`chat.html` **브라우저 JS 렌더링**. Playwright 는 새 의존성이라 Decision 전에는 안 들인다.
+**본 것만 말한다.**
 ```
