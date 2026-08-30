@@ -86,10 +86,11 @@ D8′ 는 allowlist 를 「보조 경로」라 했는데 코드는 **필수 관�
 | **자체 생성 가능** | 규칙으로 데이터를 만든다. 라이선스 0 | `text.*`(구조·형식류) · `table.extract` · `timeseries.*` · `code.embed` · `retrieve.*` · `*.embed` |
 | **기존 자산 재사용** | 이미 있는 EuroSAT 로 된다 | `image.embed` · `image.quality` · `video.*`(EuroSAT 프레임 합성) |
 | **새 데이터 필요** | 라벨된 외부 데이터가 있어야 한다 | `image.detect`·`image.segment`·`image.ocr` · `audio.*` · `mm.*` |
-| **모델 없이도 됨** | 규칙 기반이 정직한 구현 | `safety.pii`(패턴) · **`text.ner` ✅** · **`text.extract` ✅** |
+| **모델 없이도 됨** | 규칙 기반이 정직한 구현 | `safety.pii`(패턴) · **`text.ner` ✅** · **`text.extract` ✅** · **`text.rank` ✅** |
 
 > 「모델 없이도 됨」은 이제 **추정이 아니라 실측**이다. `text.ner`(2026-08-27) ·
-> `text.extract`(2026-08-29) 둘 다 파라미터 0 으로 계약 게이트를 통과하고 Task 를 완주했다.
+> `text.extract`(2026-08-29) · `text.rank`(2026-08-30) **셋 다** 파라미터 0 으로 계약 게이트를
+> 통과하고 Task 를 완주했다.
 > 값은 **버퍼 한 칸**이다 — state dict 가 완전히 비면 `weights_fingerprint` 가 「텐서가 하나도
 > 없다」로 막는데, 그 검사는 빈 파일·잘린 파일을 잡는 것이라 약화시키지 않았다.
 
