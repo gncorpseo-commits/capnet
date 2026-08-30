@@ -94,6 +94,44 @@ paths:
           description: Capability
         "404":
           description: 없음
+    patch:
+      summary: Capability 설명만 갱신 (admin)
+      description: >
+        라우터가 읽는 `description` 하나만 고친다. 등록(POST)은 (code, version) UNIQUE 로
+        한 번뿐이라, 저장소에서 설명을 고쳐도 이미 등록된 스택에는 들어가지 않았다.
+        계약 칸(input_schema · output_schema · compute_tier · trust_domain_min ·
+        quality_profile · golden_* · max_input_bytes · max_attempts · code · version)은
+        400 이다 — 그것들은 task_input · gate_run · assignment 스냅샷의 원본이고,
+        원본이 움직이면 이미 찍힌 스냅샷이 거짓말이 된다. 바꾸려면 새 버전을 등록한다.
+      parameters:
+        - name: capability_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                description:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: 갱신된 Capability (GET 과 같은 모양)
+        "400":
+          description: description 밖의 필드가 왔다
+        "401":
+          description: 인증 없음
+        "403":
+          description: admin 아님
+        "404":
+          description: 없음
   /v1/agents:
     get:
       summary: Agent 목록

@@ -1,5 +1,70 @@
 # Changelog
 
+## 설명 드리프트를 연다 — `PATCH /v1/capabilities/{id}` (Wave I) — 2026-08-31
+
+**DDL 0 · 새 의존성 0 · 계약 JSONB 불변.** Decision (b).
+
+### 무엇이 문제였나
+
+등록(`POST /v1/capabilities`)은 `(code, version)` UNIQUE 로 **한 번뿐**이고 갱신 경로가
+없었다. 데모 스크립트는 그 충돌을 삼키고 기존 id 만 찾아 썼다. 그래서 **저장소에서
+`description` 을 고쳐도 이미 등록된 스택에는 영원히 안 들어갔다.** 라우터는 DB 의 설명을
+읽으므로, 오래 돌아간 스택은 저장소와 **다른 문구로** 라우팅했다. 이 개발 스택의 `text.ner`
+설명은 저장소 어디에도 없는 옛 문자열이었다.
+
+### 연 것은 하나뿐이다
+
+```http
+PATCH /v1/capabilities/{id}   ← admin
+{ "description": "…" }
+```
+
+계약 칸은 **전부 400** 이다 — `input_schema`·`output_schema`·`compute_tier`·
+`trust_domain_min`·`quality_profile`·`golden_*`·`max_input_bytes`·`max_attempts`·
+`mvp_eligible`·`code`·`version`. 그것들은 `task_input` 복합 FK · `gate_run` · `assignment`
+**스냅샷의 원본**이고, **원본이 움직이면 이미 찍힌 스냅샷이 거짓말이 된다.** 바꾸려면 새
+버전을 등록한다.
+
+화이트리스트를 **손으로 세지 않는다** — Pydantic `extra="forbid"` 로 모델이 막는다.
+계약 칸이 늘어도 여기가 뒤처지지 않는다.
+
+### 데모는 저장소를 정본으로 DB 를 맞춘다
+
+`ner_demo.sh`·`text_extract_demo.sh`·`text_rank_demo.sh` 가 기존 능력을 만나면 등록 본문의
+`description` 과 DB 를 비교해 다를 때만 PATCH 한다. **문구를 데모에서 새로 짓지 않는다** —
+정본은 저장소이고 DB 를 거기에 맞출 뿐이다 (Decision (a): 홀드아웃에 맞춘 문구 튜닝 금지).
+
+여덟 개가 아니라 **셋만** 고쳤다 — 한 번에 다 바꾸면 무엇이 숫자를 움직였는지 못 가른다.
+
+### 실측 — 그리고 앞선 숫자 하나를 철회한다
+
+동기화는 실제로 됐다 (`text.ner`·`text.extract` 가 옛 문자열 → 저장소 문구 · `text.rank` 는
+이미 최신이라 **건너뛰었다**). 그 뒤 `route_bench` 홀드아웃:
+
+| 언제 | 값 |
+|---|---|
+| DB 가 낡았을 때 | **30/60** (1회) |
+| 동기화 뒤 | **36 · 36 · 38** (3회) · `repo` 조건 **37** |
+
+**개선폭을 말하지 않는다.** 같은 조건도 **2점씩 흔들리고**, 30 은 한 번만 잰 값이라 밴드를
+모른다.
+
+그리고 **#120 이 카탈로그에 적은 「저장소 설명 40/60」을 철회한다.** 그 값은
+`--descriptions repo` 로 잰 것인데, 그 경로가 `CapabilityInfo` 를 새로 지으면서
+**`output_kind` 를 떨어뜨리고 있었다.** 라우터 프롬프트는 `kind=` 를 넣으므로 그 조건은
+「설명만 바꾼 카탈로그」가 아니었다 — **한 번에 둘을 바꿔 놓고 설명 덕이라 읽었다.**
+래퍼를 `dataclasses.replace()` 로 고쳤고(칸을 손으로 세지 않는다), 같은 조건은 **37/60** 이다.
+
+### 검증
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests` | 334 → **352** OK (skip 7) |
+| `tests/integration/check_capability_patch.py` (신규 · DB) | **6/6** — 계약 16칸이 PATCH 전후 **동일** · 계약 칸 17종 전부 거절 |
+| `tests/test_capability_patch_wiring.py` (신규) | `SET` 절에 계약 칸을 끼우면 **2종 실패** · `extra:forbid` 를 빼면 **1종 실패** (변이로 확인) |
+| `tests/test_route_bench.py` | `_Patched` 가 `description` 외 필드를 **하나도** 안 바꾸는지 dataclass 필드를 순회해 확인 |
+| 데모 3종 종단 | 전부 완주 · 「설명 동기화 (PATCH)」 실측 |
+
 ## 라우팅 숫자를 재현 가능하게 만들고, 옛 숫자를 정정한다 — 2026-08-30
 
 **측정 도구 하나 + 문서 정정.** 제품 코드 0 · DDL 0 · 새 의존성 0.

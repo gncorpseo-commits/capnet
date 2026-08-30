@@ -30,7 +30,8 @@ echo "  HTTP $code"
 [[ "$code" == "200" || "$code" == "409" ]] || { echo "arch 등록 실패" >&2; exit 1; }
 
 echo "== 2) 능력 등록 (quality_profile=none · 골든셋 없음) =="
-cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/json' -d '{
+# 저장소의 능력 정의. 아래 「이미 있음」 분기에서 description 동기화에 다시 쓴다.
+cap_body='{
  "code":"text.rank","version":1,"name":"lexical overlap rank",
  "description":"첫 줄을 질의로 보고 나머지 줄들을 질의와 겹치는 낱말 수(자카드)로 줄 세운다. 뜻은 모른다 — 「자동차」와 「차량」은 안 겹친다. 의미 유사도는 text.embed, 학습된 관련도는 retrieve.dense/retrieve.rerank 다. 타입 span 은 text.ner, 「키: 값」 필드는 text.extract 다. 품질 주장 없음",
  "input_schema":{"mediaTypes":["text/plain"],
@@ -48,7 +49,8 @@ cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/jso
      "additionalProperties":false}}},
    "additionalProperties":false},
  "output_kind":"structured","compute_tier":"M","trust_domain_min":"team",
- "mvp_eligible":false,"quality_profile":"none"}')
+ "mvp_eligible":false,"quality_profile":"none"}'
+cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/json' -d "$cap_body")
 capid=$(printf '%s' "$cap" | python3 -c '
 import json,sys
 d=json.load(sys.stdin)
@@ -59,6 +61,20 @@ import json,sys
 d=json.load(sys.stdin); items=d["items"] if isinstance(d,dict) else d
 print(next(c["id"] for c in items if c["code"]=="text.rank" and c["version"]==1))')
   echo "  이미 있음 → $capid"
+  # 등록은 (code, version) UNIQUE 로 한 번뿐이라, 저장소에서 description 을 고쳐도
+  # 이미 등록된 스택에는 안 들어간다. 라우터는 DB 의 설명을 읽으므로 오래 돌아간 스택은
+  # 저장소와 다른 문구로 라우팅한다 (실측 · 크기는 `scripts/route_bench.py` 로 잰다). 여기서 맞춘다.
+  # **문구를 여기서 만들지 않는다** — 정본은 위 cap_body 이고 DB 를 거기에 맞출 뿐이다.
+  want=$(printf '%s' "$cap_body" | python3 -c 'import json,sys; print(json.load(sys.stdin)["description"])')
+  have=$(ccurl -sf "$core/v1/capabilities/$capid" | python3 -c '
+import json,sys; print(json.load(sys.stdin).get("description") or "")')
+  if [[ "$want" != "$have" ]]; then
+    ccurl -sf -X PATCH "$core/v1/capabilities/$capid" -H 'content-type: application/json' \
+      -d "$(printf '%s' "$want" | python3 -c '
+import json,sys; print(json.dumps({"description": sys.stdin.read().rstrip(chr(10))}, ensure_ascii=False))')" \
+      >/dev/null
+    echo "  설명 동기화 — DB 가 저장소보다 낡아 있었다 (PATCH)"
+  fi
 else
   echo "  등록 → $capid"
 fi

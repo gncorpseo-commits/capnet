@@ -22,6 +22,14 @@ ROOT = Path(__file__).resolve().parents[1]
 BENCH = ROOT / "scripts" / "route_bench.py"
 CATALOG = ROOT / "docs" / "spec" / "capability-catalog.md"
 
+# `capreq` 는 루트 검사의 의존성이 아니다. `adapters.base` 는 dataclass 뿐이라
+# 설치 없이 읽힌다 — 그래도 못 읽으면 그 검사만 건너뛴다.
+sys.path.insert(0, str(ROOT / "capreq" / "src"))
+try:
+    from capreq.adapters.base import CapabilityInfo
+except Exception:  # pragma: no cover
+    CapabilityInfo = None
+
 # `capability-catalog.md` 가 「구현됨」으로 표시한 능력. 하네스는 이것을 다 덮어야 한다.
 IMPLEMENTED = frozenset({
     "image.classify", "text.classify", "text.embed", "timeseries.forecast",
@@ -71,6 +79,53 @@ class TestPromptSets(unittest.TestCase):
         self.assertEqual(set(self.m.SETS), {"tuning", "holdout"})
 
 
+class TestPatchedCatalogIsFaithful(unittest.TestCase):
+    """`--descriptions repo` 가 **설명만** 바꿔야 한다.
+
+    처음 판은 `CapabilityInfo(...)` 를 새로 지어 `output_kind` 를 떨어뜨렸다. 라우터
+    프롬프트가 `kind=` 를 넣으므로 그 조건은 「설명만 바꾼 카탈로그」가 아니었고,
+    그렇게 잰 값이 비교표에 들어가 있었다. 다시 그러지 않게 못 박는다.
+    """
+
+    def setUp(self) -> None:
+        self.m = _load()
+
+    @unittest.skipIf(CapabilityInfo is None, "capreq 를 못 읽었다")
+    def test_only_description_changes(self) -> None:
+        import dataclasses
+
+        original = CapabilityInfo(
+            code="text.ner", version=1, name="n", description="옛 설명",
+            output_kind="structured", trust_domain_min="team", extra={"id": "x"},
+        )
+
+        class Inner:
+            def list_capabilities(self):
+                return [original]
+
+        got = self.m._Patched(Inner(), {"text.ner": "새 설명"}).list_capabilities()[0]
+        self.assertEqual(got.description, "새 설명")
+        for field in dataclasses.fields(CapabilityInfo):
+            if field.name == "description":
+                continue
+            self.assertEqual(
+                getattr(got, field.name), getattr(original, field.name),
+                f"{field.name} 이 조용히 바뀌었다",
+            )
+
+    @unittest.skipIf(CapabilityInfo is None, "capreq 를 못 읽었다")
+    def test_unpatched_capability_is_untouched(self) -> None:
+        original = CapabilityInfo(code="a.b", version=2, name="n", description="그대로",
+                                  output_kind="freeform")
+
+        class Inner:
+            def list_capabilities(self):
+                return [original]
+
+        got = self.m._Patched(Inner(), {"other.code": "x"}).list_capabilities()[0]
+        self.assertEqual(got, original)
+
+
 class TestHonestClaims(unittest.TestCase):
     def setUp(self) -> None:
         self.text = BENCH.read_text(encoding="utf-8")
@@ -99,7 +154,15 @@ class TestCatalogClaimsAreQualified(unittest.TestCase):
 
     def test_old_numbers_carry_the_holdout_context(self) -> None:
         self.assertIn("손으로 고른 프롬프트", self.text)
-        self.assertIn("40/60", self.text)
+
+    def test_the_broken_wrapper_number_is_retracted(self) -> None:
+        """`40/60` 은 `output_kind` 를 떨어뜨린 래퍼로 잰 값이다 — 되살리지 않는다."""
+        self.assertIn("철회한다", self.text)
+        self.assertIn("output_kind", self.text)
+
+    def test_variance_is_stated_not_hidden(self) -> None:
+        """같은 조건이 흔들린다는 사실이 숫자 옆에 있어야 한다."""
+        self.assertIn("흔들린다", self.text)
 
     def test_retracted_miss_is_marked_retracted(self) -> None:
         self.assertIn("그 미스 보고는 취소한다", self.text)
