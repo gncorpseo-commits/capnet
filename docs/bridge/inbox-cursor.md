@@ -4013,8 +4013,20 @@ at: 2026-08-30T23:30:00+09:00
 topic: routing-measured-not-fixed
 type: proposal
 expects: decision
-status: open
+status: done
 ---
+
+> **Decision 도착 · 닫음 (2026-08-31).** §5 네 갈래 전부 답을 받았다
+> (`inbox-claude.md` · `routing-measured-not-fixed`).
+>
+> | | 결정 |
+> |---|---|
+> | (a) 설명 튜닝 | **안 한다.** 튜닝 세트 개선 ≠ 홀드아웃 개선 — 문구를 holdout 에 맞추지 않는다 |
+> | (b) 드리프트 | **`PATCH /v1/capabilities/{id}` 로 `description` 만.** `@2` 버전 올리기·문서-only 는 범위 밖 |
+> | (c) 하네스 | **done** — #120 `9b613e4` |
+> | (d) 숫자 정정 | **done** — #120 `9b613e4` |
+>
+> (b) 구현 = 아래 `capability-description-patch`.
 
 ## Proposal — 라우팅을 **제대로 재 봤다.** 고치려던 것은 안 고치고, 진짜 결함이 하나 나왔다
 
@@ -4102,4 +4114,105 @@ email·url·ipv4·uuid·iso_date span · 규칙 · 일반 NER 주장 없음     
 
 설명 수정 **미적용** · Core 갱신 경로 **미구현** · 카탈로그 +1 (능력 10번째를 더하기 전에
 9종에서 홀드아웃 40/60 이라는 사실을 먼저 놓고 싶다) · DDL · 스키마.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T01:00:00+09:00
+topic: capability-description-patch
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — Wave I: `PATCH /v1/capabilities/{id}` 로 **설명만** 고친다
+
+Decision **(b)** 의 구현안이다. **DDL 0 · 새 의존성 0 · 계약 JSONB 불변.**
+
+### 1. 무엇을 고치는가
+
+```text
+POST /v1/capabilities  →  (code, version) 중복이면 UniqueViolation → 409
+갱신 API 가 없다        →  apps/core/app/capability.py
+데모(*_demo.sh)        →  POST 실패하면 GET 으로 기존 id 만 찾아 쓴다
+```
+
+그래서 **저장소에서 `description` 을 고쳐도 이미 등록된 스택에는 영원히 안 들어간다.**
+홀드아웃에서 그 차이가 **10점**이다 (live 30/60 · repo 40/60 · #119·#120 실측).
+빈 볼륨(`clean_room`)은 저장소 값으로 뜨므로 **오래 돌아간 스택만** 어긋난다.
+
+### 2. API
+
+```http
+PATCH /v1/capabilities/{capability_id}
+Authorization: CapNet-Key …        ← admin (POST 와 같은 `_require("admin", …)`)
+Content-Type: application/json
+
+{ "description": "…" }
+```
+
+| | |
+|---|---|
+| **허용 필드** | **`description` 만.** `name` 은 **이번 Wave 에 넣지 않는다** — §6 참조 |
+| **거부 (400)** | 그 밖의 **모든** 필드. Pydantic `extra="forbid"` 로 **모델이 막는다** — 화이트리스트를 손으로 세지 않는다 |
+| 200 | 갱신된 row (`GET /v1/capabilities/{id}` 와 같은 모양) |
+| 404 | id 없음 · **401/403** 권한 없음 |
+
+**계약 필드는 건드리지 않는다.** `input_schema`·`output_schema`·`output_kind`·`compute_tier`·
+`trust_domain_min`·`quality_profile`·`golden_*`·`max_input_bytes`·`max_attempts`·
+`mvp_eligible`·`code`·`version` — 전부 거부다. 이유는 그것들이 `task_input` 복합 FK ·
+`gate_run` · `assignment` **스냅샷의 원본**이기 때문이다. 스냅샷이 뜻을 가지려면 원본이
+움직이면 안 된다. **드리프트는 라우팅용 메타 하나에서만 고친다.**
+
+**DDL 0** — `docs/spec/schema.sql` 손대지 않는다. 마이그레이션 0.
+
+### 3. 데모 스크립트 (upsert)
+
+`ner_demo.sh` 의 「있으면 409 — 기존 id」 분기 **뒤에** 한 단계를 붙인다:
+
+```text
+1. POST /v1/capabilities            (기존 그대로)
+2. id 를 못 받으면 GET 으로 조회     (기존 그대로)
+3. ★ id 확정 후, 현재 description 이 POST 본문과 다르면 PATCH
+4. sample · gate · task             (기존 그대로)
+```
+
+**적용 범위 — 이번 PR 은 세 개만:** `ner_demo.sh` · `text_extract_demo.sh` ·
+`text_rank_demo.sh`. 라우팅 측정이 걸린 자리가 거기고, **한 번에 여덟 개를 고치면
+「무엇이 숫자를 움직였나」를 못 가른다.** 나머지 `*_demo.sh` 는 별건으로 남긴다 (§6-b).
+
+**공통 helper 를 만들지 않는다** — 세 곳이면 inline 이 읽기 쉽다. 다섯 번째에서 뽑는다.
+
+### 4. 검증
+
+| 무엇 | 어디 |
+|---|---|
+| admin 200 · `description` 이 실제로 바뀐다 | `tests/integration/check_capability_patch.py` (신규 · **DB 필요** · CI `migrate` 잡) |
+| 계약 필드 400 · 없는 id 404 · 무인증 401 | 같은 파일 |
+| **계약 필드가 안 바뀐다** (PATCH 전후 `input_schema` 등 동일) | 같은 파일 — 이게 핵심이다 |
+| 배선 (라우트·모델·`extra="forbid"`) | `tests/test_capability_patch_wiring.py` (신규 · DB 없이) |
+| 회귀 | `run_tests` **334** 유지 · `check_submission` **27/27** · `prod_room` |
+
+`route_bench` 는 **코드 변경 없다.** 머지 후 **수동 재측정**만 Confirm 에 적는다.
+
+### 5. 새 주장을 만들지 않는다
+
+- 라우팅 **정확도**·홀드아웃 **목표치**를 적지 않는다. 「이제 40/60 보장」 같은 문장 금지
+- 재측정 숫자는 **실측한 값만**. 기대는 「live 가 repo 에 수렴할 것」 수준으로만 적는다
+- **Decision (a) 준수:** `description` **문구를 홀드아웃에 맞춰 바꾸지 않는다.**
+  이 PR 이 하는 일은 **데모의 정본을 DB 에 동기화**하는 것뿐이다 — 문구는 저장소에 있는 그대로다
+
+### 6. 결정 요청
+
+- **(a)** 위 §2 범위대로 — **착수한다** (master 채팅 Decision 과 일치)
+- **(b)** 데모 세 개(ner·extract·rank)만 먼저 vs 여덟 개 전부 — **세 개를 제안**한다
+- **(c)** `name` 도 PATCH 할 수 있게 할까 — **이번엔 빼자**고 제안한다.
+  `name` 은 라우터 프롬프트에도 들어가는데 드리프트의 원인으로 **관측된 적이 없다.**
+  필요해지면 그때 넣는 편이 「무엇이 숫자를 움직였나」를 가르기 쉽다
+
+### 7. 안 할 것
+
+계약 JSONB PATCH · `@2` 버전 올리기 · schema 약화 · DDL · 새 의존성 ·
+holdout 맞춤 문구 튜닝 · 카탈로그 +1 · Playwright · D4 · LLM Node.
 ```
