@@ -38,9 +38,30 @@
 > | — | [#113](https://github.com/gncorpseo-commits/capnet/pull/113) | 브리지·STATE 동기화 (코드 0) | `5080748` |
 > | F | [#114](https://github.com/gncorpseo-commits/capnet/pull/114) | `user-guide-ko.md` §5.1 — Core 중개 입력 두 갈래 | `2e43680` |
 >
-> **다음 = Wave G · 카탈로그 +1 한 종** (`text.rank`). 브리지 Proposal
-> `text-rank-catalog-plus-one`. master 판단: (a) 카탈로그 +1 이 1순위 ·
-> D4 조회 인증 · `tool.*` · LLM-as-Node 는 **Proposal 만**.
+> **Wave G — PR 대기 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
+> `text.rank` = **9번째 실행기** · 브랜치 `toma/text-rank` · base `main` `2e43680`.
+> 카탈로그 §3 #24 에 **이미 선언돼 있던** 능력을 구현한 것이다. **DDL 0 · 새 의존성 0 ·
+> 새 학습 0 · 외부 말뭉치 0.**
+>
+> - 첫 비어 있지 않은 줄이 **질의**, 나머지가 후보. 점수는 **자카드** · 동점은 원래 줄 순.
+>   `overlap`(겹친 토큰)을 내놓는다 — **왜 그 점수인지 대조**할 수 있어야 한다.
+> - **뜻을 모른다.** 「자동차」와 「차량」은 안 겹친다. 의미 유사도는 `text.embed`,
+>   학습된 관련도는 `retrieve.*` 몫이라고 등록 설명에 **이름으로** 적었다.
+> - **종단 실측이 한계도 같이 보였다** — 「쿼리를」·「인덱스로」의 조사 때문에 사람 눈에
+>   1위만큼 관련 있는 줄이 0.1667 이 됐다. 좋아 보이는 예시로 바꾸지 않고 카탈로그에 적었다.
+> - **이웃 라우팅을 뺏었는지 격리해서 쟀다** (n=5 · `qwen2.5:3b`) — `text.rank` 있는/뺀
+>   카탈로그의 **차이만** 본다. 자기 것만 가져갔고 나머지 네 줄은 전후가 같다.
+>   `text.extract`→`text.ner` 미스는 **빼도 똑같다**(이 PR 이 만든 것이 아님 · 범위 밖).
+> - `run_tests` 291 → **322** (`test_text_rank.py` 31종) · `check_submission` **27/27** ·
+>   필수 가중치 7 → **8종** · `clean_room` **9/9** · `prod_room` **27/27**
+>   (`image.classify` 무회귀) · `product_demo.sh`·`text_rank_demo.sh` **exit 0**.
+>
+> **STATE·브리지를 #116 이 만지지 않는다** — [#115](https://github.com/gncorpseo-commits/capnet/pull/115)
+> 와 같은 파일이라 충돌을 만들지 않으려고 그쪽에 모았다.
+>
+> **다음 판단 (master):** #115·#116 머지 · Wave G Proposal §7 / Confirm §6 ·
+> **별건** `text.ner`↔`text.extract` 설명 손질 여부 · 다음 Wave 선택.
+> D4 조회 인증 · `tool.*` · LLM-as-Node 는 여전히 **Proposal 만**.
 >
 > **베이스라인 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
 > capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·

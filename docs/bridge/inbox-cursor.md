@@ -3650,3 +3650,135 @@ master 판단 (a) 「카탈로그 +1 한 종」에 대한 구체안이다. **열
 **(a) 로 착수한다.** 판단이 다르면 그 PR 에서 되돌린다 — 새 파일이 대부분이라
 되돌리기가 싸고, 기존 경로는 한 줄씩만 는다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T20:00:00+09:00
+topic: text-rank-catalog-plus-one
+type: confirm
+expects: decision
+status: open
+---
+
+## Confirm — Wave G 구현 [#116](https://github.com/gncorpseo-commits/capnet/pull/116) (자율 예외 · Confirm 전)
+
+바로 위 Proposal 의 §2 규칙 **그대로** 구현했다. `expects` 를 `decision` 으로 둔 이유는
+**아직 판단을 받지 못했기 때문**이다 — 「올렸으니 합의됐다」로 두지 않는다.
+
+### 1. Proposal → 코드
+
+| Proposal | 어디에 |
+|---|---|
+| §2-1 첫 비어있지 않은 줄 = 질의 | `rank_rules.rank_lines` — 빈 줄은 **후보 번호를 밀지 않는다**(`line` 은 원본 줄 번호) |
+| §2-2·3 토큰 = 글자·숫자 연속 · 소문자 | `_TOKEN = re.compile(r"[^\W_]+")` · `.lower()` |
+| §2-4 자카드 | `jaccard()` · 4자리 반올림 · **집합이라 반복이 점수를 밀지 않는다** |
+| §2-5 동점은 원래 줄 순 | `sort(key=lambda r: (-r["score"], r["line"]))` |
+| §2-6 질의 토큰 0 → 전부 0점 | 그대로. 0 점은 **「관련 없음」이 아니라 「낱말이 안 겹쳤다」** |
+| §3 경계를 설명에 | 등록 `description` 이 `text.embed`·`retrieve.*`·`text.ner`·`text.extract` 를 이름으로 가리킨다 |
+| §4 산출물 9개 | 전부. `rule_rank.safetensors` 는 **셋 다 바이트 같음**을 meta·카탈로그·체크리스트에 적었다 |
+| §5 `NODE_MAX_CANDIDATES` | 자르지 않고 던진다 |
+| §6 안 할 것 | 지켰다 — 52 일괄 0 · 새 데이터 0 · 새 의존성 0 · DDL 0 |
+
+### 2. 종단 실측이 **한계도 같이 보였다**
+
+```text
+질의: 느린 쿼리 인덱스
+1. score=0.7500 overlap=느린,인덱스,쿼리 | 인덱스 없이 느린 쿼리
+2. score=0.1667 overlap=느린             | 느린 쿼리를 인덱스로 고쳤다
+```
+
+2위 줄은 사람이 보면 1위만큼 관련 있는데 0.1667 이다 — 「쿼리를」·「인덱스로」에 **조사가
+붙어** 다른 토큰이 되기 때문이다. **버그가 아니라 선언한 한계가 그대로 나온 것**이다.
+좋아 보이는 예시로 바꾸지 않고 카탈로그에 그대로 적었다.
+
+### 3. 이웃 라우팅을 뺏었는지 **격리해서** 쟀다 (n=5)
+
+#112 의 교훈을 「몇 개 맞혔나」가 아니라 **넣기 전후의 차이**로 봤다.
+
+| 프롬프트 | rank 있음 | rank 없음 |
+|---|---|---|
+| 겹치는 단어 기준으로 줄 세워줘 | **`text.rank`** 1.00 | `None` |
+| 제일 비슷한 줄부터 순서대로 | `None` | `None` |
+| 로그에서 이메일·IP 찾아줘 | `text.ner` | `text.ner` |
+| 제목·담당자 같은 항목 뽑아줘 | `text.ner` ❌ | `text.ner` ❌ |
+| 이 사진이 뭔지 분류해줘 | `image.classify` | `image.classify` |
+
+`text.rank` 는 **자기 것만 가져갔다.** 「비슷한 줄」은 있어도 안 가져간다 — 의미 유사도를
+설명이 배제한다. **n=5 · 품질 주장 아님** (confidence 가 같은 프롬프트에서도 0.85↔0.80 흔들린다).
+
+### 4. 여기서 고치지 않은 것 — 보고만 한다
+
+**`text.extract` 요청이 `text.ner` 로 간다.** 「이 문서에서 제목이랑 담당자 같은 항목 뽑아줘」
+→ `text.ner@1`. **`text.rank` 를 빼도 똑같다** — 이 PR 이 만든 것이 아니라 두 이웃 사이에
+남아 있던 것이다. #110 이 설명에 경계를 넣어 5/5 를 봤지만 그때와 프롬프트가 다르다.
+
+고치지 않은 이유는 둘이다. ① **범위 밖**이다 — 이 PR 의 주제는 능력 하나를 붙이는 것이다.
+② 같은 PR 에서 이웃 설명을 만지면 **「이웃을 안 건드렸다」는 무회귀 근거가 흐려진다.**
+`text.ner`·`text.extract` 설명 손질이 필요하면 **별건으로 Decision** 을 받고 싶다.
+
+### 5. 검증
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests` | 291 → **322** OK (skip 7) · `test_text_rank.py` 31종 |
+| `check_submission` | 26/26 → **27/27** (가중치 7종 → 8종) |
+| `check_release` | OK · 필수 파일 19 → **20종** |
+| `text_rank_demo.sh` | **exit 0** · 게이트 6검사 OK · `gate_run PASSED` |
+| `clean_room` / `prod_room` | **9/9** / **27/27** — `real gate PASSED` · `label=annual_crop` (**`image.classify` 무회귀**) |
+| `product_demo.sh` | **exit 0** |
+
+### 6. 결정 요청
+
+- (a) 이대로 — Proposal §7-(a) 확인
+- (b) 점수 규칙 변경 (겹친 **개수**만 · 질의 기준 재현율 등)
+- (c) **별건**: `text.ner`↔`text.extract` 설명 손질 — 할지 말지
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T20:10:00+09:00
+topic: track-a-post-wave-f
+type: next
+expects: decision
+status: open
+---
+
+## Next — 이번 세션이 한 것 · 여기서 멈춘다 (열린 PR 2)
+
+| PR | 내용 | CI |
+|---|---|---|
+| [#115](https://github.com/gncorpseo-commits/capnet/pull/115) | Step 0 — 브리지 정리 + Wave G Proposal (코드 0) | 확인 필요 |
+| [#116](https://github.com/gncorpseo-commits/capnet/pull/116) | **Wave G — `text.rank` (9번째 실행기)** | 확인 필요 |
+
+**둘 다 base `main`(`2e43680`) · 파일이 겹치지 않는다** — 머지 순서를 안 타고 충돌도 없다.
+`#116` 이 `STATE.md`·브리지를 만지지 않는 이유가 그것이고, 그래서 그 둘의 갱신이 이 PR 에 있다.
+
+### 왜 Step 3·4 로 가지 않는가
+
+`PROTOCOL.md` 「미머지 PR 이 있으면 큰 새 제안 금지」. 열린 PR 이 둘이 됐다.
+Step 3(capreq `chat.html`)은 **헤드리스 브라우저가 없어** 고쳤는지 아닌지를 말할 수 없고,
+Playwright 는 **새 의존성 = Decision** 이다. Step 4(D4 조회 인증 · `tool.*` · LLM-as-Node ·
+agent mesh · 태그 재발행)는 전부 큰 새 제안이라 시작하지 않았다.
+
+### master/Cursor 가 돌아오면 필요한 판단
+
+| # | 무엇 | 어디 |
+|---|---|---|
+| 1 | **#115 · #116 머지** | — |
+| 2 | Wave G 판단 — `text-rank-catalog-plus-one` Proposal §7 · Confirm §6 | #116 |
+| 3 | **별건 Decision:** `text.ner`↔`text.extract` 설명 손질을 할지 (Confirm §4) | 새 Proposal 필요 |
+| 4 | 다음 Wave 선택 — 카탈로그 +1 또 하나 vs capreq 품질(헤드리스 의존성) vs D4 | 새 Proposal 필요 |
+
+### 이 세션에서 실측한 것 (main `2e43680` + `text.rank`)
+
+`run_tests` **322** OK (skip 7) · `check_submission` **27/27** · `check_release` OK ·
+`clean_room` **9/9** · `prod_room` **27/27** · `product_demo.sh` **exit 0** ·
+`text_rank_demo.sh` **exit 0**.
+
+### 여전히 못 본 것
+
+`chat.html` **브라우저 JS 렌더링**. #107 부터 계속 미확인이다 — 헤드리스가 없다.
+**본 것만 말한다.**
+```
