@@ -74,6 +74,25 @@
 > master 우선순위: (a) 이 Step 0 → (b) Step 3 → (c) 카탈로그 +1 →
 > (d) D4 조회 인증 · `tool.*` · LLM-as-Node · 태그 재발행은 **Proposal 만**.
 >
+> **구현 = [#118](https://github.com/gncorpseo-commits/capnet/pull/118) (PR 대기)** ·
+> 브랜치 `toma/capreq-result-view-plus-two` · base `main` `083d53d`.
+> `fields`(필드 표) · `ranking`(질의 + 순위 표) 렌더러 · `other` 폴백은 남긴다.
+> **새 주장 0** — `score` 를 관련도로 부르지 않고 화면에 「겹친 낱말 수로 매긴 순서입니다 —
+> 뜻을 비교한 것이 아닙니다」를 붙인다. 재정렬 없음(검사로 고정).
+> **화면 자르기는 데이터 자르기가 아니다** — 앞 20개만 그리되 `count` 는 전체를 말한다.
+>
+> **`chat.html` 에 검사가 하나도 없었다** — 이 드리프트가 #110·#116 두 번 난 이유다.
+> `test_chat_html_unit.py` 신설: `summarize_result` 를 실제로 돌려 나온 칸마다 화면에
+> 그리는 자리가 있는지 본다(칸 목록을 손으로 두 번 적지 않는다). 변이로 확인 —
+> `result.ranking` 을 전부 지우면 실패한다. **한계:** 부분 문자열 검사라 반쯤 지우면
+> 통과하고, **브라우저 렌더링은 여전히 못 본다**(헤드리스 없음 · Playwright = Decision).
+>
+> capreq 단위 38 → **52** · 살아 있는 Core `/api/tasks/{id}` 실측에서 `text.rank`·
+> `text.extract` 둘 다 구조화 요약으로 나왔고 `other` 로 새지 않았다.
+>
+> **능력을 더할 때 따라와야 하는 것에 「화면」이 빠져 있었다** — #110·#116 체크리스트에
+> 그 줄이 없었다. 이제 검사가 막는다.
+>
 > **베이스라인 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
 > capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·
 > `product_demo.sh` **exit 0**. 불변식 전부 일치한다.

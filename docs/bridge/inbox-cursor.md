@@ -3870,10 +3870,129 @@ Playwright·헤드리스 등 **새 의존성** · 실행 경로·계약·증적 
 
 ### 6. 결정 요청
 
-- (a) 위 §2 범위대로 — **master 우선순위 (b) 안이라고 보고 착수한다**
+- (a) 위 §2 범위대로 — **[#118](https://github.com/gncorpseo-commits/capnet/pull/118) 로 착수했다**
 - (b) 표시 한도(앞 몇 개)를 다르게 — 지금은 `fields` 20 · `ranking` 20 을 제안한다
       (기존 `TABLE_ROW_HEAD=10` 과 다른 이유: 필드·순위는 행이 짧아 한 화면에 더 들어간다)
 - (c) 지금은 하지 말고 다른 것 먼저
 
 **(a) 로 착수한다.** 표시 계층 한 곳이라 되돌리기 싸고, 판단이 다르면 그 PR 에서 되돌린다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T23:30:00+09:00
+topic: capreq-result-view-plus-two
+type: confirm
+expects: decision
+status: open
+---
+
+## Confirm — Step 3 구현 [#118](https://github.com/gncorpseo-commits/capnet/pull/118) (자율 예외 · Confirm 전)
+
+바로 위 Proposal §2 범위 **그대로**. `expects` 를 `decision` 으로 둔 이유는 **아직 판단을
+받지 못했기 때문**이다 — 「올렸으니 합의됐다」로 두지 않는다.
+
+### 1. Proposal → 코드
+
+| Proposal | 어디에 |
+|---|---|
+| §2-1 `fields` 요약 | `results.py` — `key`·`value`·`line` (+`start`/`end` 는 **대조용으로 유지**) |
+| §2-2 `ranking` 요약 | 같은 파일 — `query` + `rank`·`score`·`overlap`·`text` |
+| §2-3 화면 앞부분만 · `truncated` 명시 | `LIST_HEAD=20` · `count` 는 전체 · 화면에 「앞 N건만 표시」 |
+| §2-4 렌더러 · `other` 폴백 유지 | `chat.html` 두 표. 폴백 그대로 |
+| §2-5 README §3 | 아홉 능력의 결과 모양 **여섯**을 표로 |
+| §3 새 주장 없음 | 「겹친 낱말 수로 매긴 순서입니다 — 뜻을 비교한 것이 아닙니다」를 화면에. 재정렬 없음(검사로 고정) |
+| §5 안 할 것 | 지켰다 — 새 의존성 0 · 실행·계약·증적 0 · 라우팅 0 |
+
+### 2. Proposal 에 없던 판단 하나 (되돌리기 쌈 · ack 면 충분)
+
+**소비하지 않은 칸은 `other` 로 그대로 내보낸다.** 처음엔 `query`·`ranking` 을 통째로
+「아는 칸」에 넣었는데, 그러면 **`ranking` 없이 `query` 만 온 결과에서 `query` 가 조용히
+사라진다.** 이름만 안다고 미리 빼면 폴백의 뜻이 없어진다 — 실제로 소비했을 때만 뺀다.
+검사로 고정했다 (`test_query_without_ranking_is_not_swallowed`).
+
+### 3. `chat.html` 에 검사가 **하나도 없었다** — 그게 이 드리프트가 두 번 난 이유다
+
+`test_chat_html_unit.py` 신설. `summarize_result` 를 **실제로 돌려** 나온 칸 이름마다
+화면에 그리는 자리가 있는지 본다 — **칸 목록을 손으로 두 번 적지 않는다.**
+
+변이로 확인했다:
+
+```text
+chat.html 의 result.ranking 을 전부 지움  → test_every_summary_key_has_a_renderer FAIL
+results.py 의 fields 처리를 지움          → ERROR 4종
+```
+
+**한계도 적는다.** ① 부분 문자열 검사라 렌더러를 **반쯤** 지우면 통과한다 (처음 변이가
+`result.rankingXX` 였는데 통과해서 알았다 — 검사를 믿기 전에 변이로 재 봐야 한다).
+② **브라우저 렌더링은 여전히 못 본다** — 헤드리스가 없다. `node --check` 로 문법만 봤다.
+
+### 4. 검증
+
+| 검사 | 결과 |
+|---|---|
+| capreq 단위 | 38 → **52** OK |
+| `run_tests` | **322** OK (루트 검사는 capreq 를 돌지 않는다) |
+| `chat.html` | `node --check` OK — 괄호 세기가 아니라 실제 파서로 |
+| 살아 있는 Core `/api/tasks/{id}` | `text.rank` → `ranking.query="느린 쿼리 인덱스"` · 3줄 · `text.extract` → `fields` 3건. **둘 다 `other` 로 새지 않았다** |
+
+### 5. 결정 요청
+
+- (a) 이대로 — Proposal §6-(a) 확인
+- (b) 표시 한도 `LIST_HEAD=20` 을 다르게
+- (c) §2 의 「소비했을 때만 뺀다」 판단 ack
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T23:40:00+09:00
+topic: track-a-post-wave-g
+type: next
+expects: decision
+status: open
+---
+
+## Next — 이번 세션이 한 것 · 여기서 멈춘다 (열린 PR 2)
+
+| PR | 내용 | CI |
+|---|---|---|
+| [#117](https://github.com/gncorpseo-commits/capnet/pull/117) | Step 0 — 브리지 정리 + Step 3 Proposal (코드 0) | 확인 필요 |
+| [#118](https://github.com/gncorpseo-commits/capnet/pull/118) | **Step 3 — capreq 가 `fields`·`ranking` 을 그린다** | 확인 필요 |
+
+**둘 다 base `main`(`083d53d`) · 파일이 겹치지 않는다.** `#118` 이 `STATE.md`·브리지를
+만지지 않는 이유가 그것이고, 그래서 그 둘의 갱신이 이 PR 에 있다.
+
+### 이번에 드러난 것 — 카탈로그가 커지면 **표시가 뒤처진다**
+
+`text.extract`(#110)·`text.rank`(#116) 둘 다 **머지될 때 제품 입구에서 읽을 수 없는
+모양이었다.** 능력을 더할 때 따라와야 하는 것이 카탈로그·게이트·데모만이 아니다.
+`test_chat_html_unit.py` 가 이제 그걸 본다 — 다음에 능력을 더하면 **화면이 모르면 검사가
+막는다.** #110·#116 의 체크리스트에 이 줄이 없었다.
+
+### 왜 더 가지 않는가
+
+`PROTOCOL.md` 「미머지 PR 이 있으면 큰 새 제안 금지」. 열린 PR 이 둘이다.
+(c) 카탈로그 +1 · (d) D4 조회 인증 · `tool.*` · LLM-as-Node · 태그 재발행은 시작하지 않았다.
+
+### master/Cursor 가 돌아오면 필요한 판단
+
+| # | 무엇 | 어디 |
+|---|---|---|
+| 1 | **#117 · #118 머지** | — |
+| 2 | Step 3 판단 — Proposal §6 / Confirm §5 (표시 한도 · 「소비했을 때만」) | #118 |
+| 3 | **헤드리스 브라우저를 들일지** — `chat.html` 렌더링은 #107 부터 계속 미확인. Playwright = 새 의존성 = Decision | 새 Proposal 필요 |
+| 4 | **별건:** `text.ner`↔`text.extract` 라우팅 미스 | 새 Proposal 필요 |
+| 5 | 다음 Wave — 카탈로그 +1 vs D4 조회 인증 | 새 Proposal 필요 |
+
+### 이 세션에서 실측한 것 (main `083d53d` + Step 3)
+
+`run_tests` **322** OK (skip 7) · capreq **52** OK · 살아 있는 Core 로 `/api/tasks/{id}`
+두 능력 확인 · `chat.html` `node --check` OK.
+
+### 여전히 못 본 것
+
+`chat.html` **브라우저 JS 렌더링.** 이번에도 못 봤다 — 새 의존성을 Decision 없이 들이지
+않았기 때문이다. **본 것만 말한다.**
 ```
