@@ -148,6 +148,7 @@ AI 에이전트 스토어는 이미 많다. CapNet이 다루는 건 그 앞의 �
 | `demo_violations` | M25 DB REJECTED |
 | `score_n300` / `compare_ab` | n=300 채점 · paired 비교 (숫자는 STATE) |
 | `train_scratch` | EuroSAT scratch → safetensors |
+| `route_bench.py` | 라우팅을 반복해 **어디로 갔는지 센다** (수동 · Ollama 필요 · 정확도 주장 아님) |
 
 가중치가 없으면 `scripts/train_scratch.ps1`(또는 `.sh`). EuroSAT zip은 `scripts/download_eurosat.*`로 받고 저장소에 동봉하지 않는다. claim은 Core만 · `INSERT … SELECT`.
 
