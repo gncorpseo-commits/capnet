@@ -96,7 +96,7 @@ nDCG). 채점기가 아직 없다는 것과 못 잰다는 것은 다르다.
 | 21 | `text.qa` | text | `freeform` | none | v제품-1 |
 | 22 | `text.chat` | text | `freeform` | none | v제품-1 |
 | 23 | `text.moderate` | text | `closed_set_labels` | none | v제품-1 |
-| 24 | `text.rank` | text | `structured` | none | v제품-1 |
+| 24 | `text.rank` | text | `structured` | none | v제품-1 ✅ **구현됨** |
 
 ### Audio (6)
 
@@ -441,7 +441,8 @@ label= url  confidence= 0.3115…
 
 **새 학습이 없다.** `RuleTextExtract` 는 파라미터 0 이고 `rule_extract.safetensors` 는
 버퍼 한 칸짜리 자리표시자다 — 그래서 **`rule_ner.safetensors` 와 바이트가 같다**
-(sha `15458b00…`). 구별하는 것은 `arch` 이고, 증적에는 arch 와 sha 가 사실대로 남는다.
+(sha `15458b00…`). `text.rank` 의 `rule_rank.safetensors` 까지 **셋 다 바이트가 같다**.
+구별하는 것은 `arch` 이고, 증적에는 arch 와 sha 가 사실대로 남는다.
 
 **자르지 않고 던진다.** 필드 수가 러너 한도(`NODE_MAX_FIELDS`)를 넘으면 잘라서 돌려주는
 대신 실패한다 — 자르면 「필드를 다 읽었다」가 거짓이 되고 쓰는 쪽은 뒤가 잘린 줄 모른다.
@@ -462,6 +463,41 @@ gate_run PASSED → 바인딩 → COMPLETED · fields 3건 (Ticket·Severity·As
 
 지문 경고(`shape 합계(1) ≠ 로드 후 파라미터(0)`)는 **정상이다** — 파일에 있는 것은
 버퍼이고 버퍼는 `parameters()` 에 들어가지 않는다. `text.ner` 과 같은 이유다.
+
+### `text.rank` — 어휘 겹침 순위 · **새 학습 0** (Wave G · 2026-08-30)
+
+**뜻을 안다고 주장하지 않는다.** 첫 줄을 질의로 보고 나머지 줄들을 **질의와 같은 낱말을
+얼마나 쓰는가**로 줄 세운다. 동의어·어형 변화·문맥을 보지 않는다 — 「자동차」와 「차량」은
+**안 겹친다**. 의미 유사도가 필요하면 `text.embed`, 학습된 관련도가 필요하면
+`retrieve.dense`·`retrieve.rerank` 다. 여기가 아니다.
+
+텍스트를 읽는 능력이 넷이 됐고, 넷이 **내놓는 것**이 다르다.
+
+| 능력 | 무엇을 내놓나 |
+|---|---|
+| `text.ner` | 타입 있는 span (`email`·`ipv4`·…) — 키가 없다 |
+| `text.extract` | `키: 값` 필드 — 줄에 적힌 이름표 |
+| `table.extract` | 격자 (행 × 열) |
+| **`text.rank`** | **후보 줄의 순위** — 겹친 낱말이 근거다 |
+
+**규칙을 전부 적는다** (`app/rank_rules.py`). 첫 번째 비어 있지 않은 줄이 **질의**이고
+그 뒤가 **후보**다 · 토큰은 유니코드 글자·숫자의 연속이고 **소문자로 접는다** · 점수는
+**자카드**(`|∩| / |∪|` · 4자리 반올림)이며 **집합이라 같은 낱말이 여러 번 나와도 한 번**이다
+(길이가 점수를 밀지 않는다) · 정렬은 점수 내림차순이고 **동점이면 원래 줄 번호 순**이다.
+
+**같은 입력이면 언제나 같은 순서가 나온다.** 순위에 우연이 있으면 증적이 뜻을 잃는다.
+
+결과의 `overlap` 은 실제로 겹친 토큰이다 — **왜 그 점수인지 사람이 대조**할 수 있어야 하기
+때문이고, `text.ner`·`text.extract` 가 `start`·`end` 를 주는 것과 같은 이유다.
+질의에 토큰이 하나도 없으면 전부 0 점인데, 0 점은 **「관련 없음」이 아니라 「낱말이 안 겹쳤다」**다.
+
+**설명에 「하지 않는 일」을 적는다.** `text.extract` 에서 배운 규칙(바로 위 절)을 그대로
+적용해, 등록 `description` 이 `text.embed`·`retrieve.*`·`text.ner`·`text.extract` 를 이름으로
+가리킨다. 이웃이 넷이면 경계를 안 적을 때 라우터가 섞을 자리도 넷이다.
+
+**자르지 않고 던진다.** 후보 수가 러너 한도(`NODE_MAX_CANDIDATES`)를 넘으면 실패한다 —
+자르면 「전부 줄 세웠다」가 거짓이 된다. `text.extract` 의 `NODE_MAX_FIELDS` 와 같은 규율이고,
+**계약이 정하는 것은 `max_chars`** 다.
 
 ### `text.embed` — `structured` 의 첫 사례 (단계 6 ①)
 

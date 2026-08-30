@@ -89,6 +89,12 @@ def _rule_extract() -> type[nn.Module]:
     return RuleTextExtract
 
 
+def _rule_rank() -> type[nn.Module]:
+    from app.tiny_rank import RuleTextRank
+
+    return RuleTextRank
+
+
 def _text_embedder() -> type[nn.Module]:
     from app.tiny_embed import TinyTextEmbedder
 
@@ -121,6 +127,8 @@ ARCH_REGISTRY: dict[str, type[nn.Module]] = {
     "RuleTextNer": _rule_ner(),
     # 규칙 필드 추출 — 가중치 0 · 추론은 줄 규칙 (Wave C · text.extract).
     "RuleTextExtract": _rule_extract(),
+    # 규칙 순위 — 가중치 0 · 추론은 어휘 겹침 (Wave G · text.rank).
+    "RuleTextRank": _rule_rank(),
 }
 
 # arch → 모달리티. **실행기 디스패치의 정본이다** (단계 5).
@@ -143,6 +151,9 @@ ARCH_MODALITY: dict[str, str] = {
     # NER 과 같은 텍스트 전처리를 쓰고, 다른 것은 **출력**이다 —
     # 타입 span 이 아니라 이름표가 붙은 필드다.
     "RuleTextExtract": "text_extract",
+    # 같은 텍스트 전처리를 쓴다. 다른 것은 **출력**이다 — span 도 필드도 아니고
+    # 후보 줄의 순위다.
+    "RuleTextRank": "text_rank",
 }
 
 

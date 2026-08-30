@@ -1,0 +1,9 @@
+{
+  "weights": "rule_rank.safetensors",
+  "weights_sha256": "15458b002abc515dd7be607fe79766d8d1eae5e5e1fbdd3ebc70b11828f1ee58",
+  "arch": "RuleTextRank",
+  "pretrained": false,
+  "dataset": "none (규칙 기반 · 학습 없음 · 파라미터 0 · 버퍼 1칸은 지문용)",
+  "labels": [],
+  "note": "text.rank 는 quality_profile='none' 이다 — 질의와 후보 줄의 어휘 겹침(자카드)만 센다. 뜻을 모른다: 「자동차」와 「차량」은 안 겹친다. 의미 유사도는 text.embed, 학습된 관련도는 retrieve.* 몫이다. 이 파일은 rule_ner.safetensors · rule_extract.safetensors 와 **바이트가 같다** (셋 다 파라미터 0 · 버퍼 rule_marker 한 칸). 다른 것은 arch 이고, 증적에는 arch 와 sha 가 사실대로 남는다."
+}

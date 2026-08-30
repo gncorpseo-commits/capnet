@@ -48,6 +48,8 @@ REQUIRED_WEIGHTS = [
     # text.extract 규칙 기반 (Wave C). 파라미터 0 — rule_ner 과 **바이트가 같다**
     # (둘 다 버퍼 rule_marker 한 칸). 구별하는 것은 arch 다.
     "apps/node/weights/rule_extract.safetensors",
+    # text.rank 규칙 기반 (Wave G). 파라미터 0 — 위 둘과 **셋 다 바이트가 같다**.
+    "apps/node/weights/rule_rank.safetensors",
 ]
 
 REQUIRED_FILES = ["LICENSE", "NOTICE", "THIRD-PARTY-LICENSES.md", "sbom.json"]

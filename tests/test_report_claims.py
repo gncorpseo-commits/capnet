@@ -39,7 +39,7 @@ CLAIMED = (
 # 출품(`v0.1.0-contest`) **이후**에 구현된 능력. 제출한 원고는 6종에서 얼어 있고
 # 다시 쓰지 않는다 — 그래서 카탈로그가 더 많아지는 것은 정상이다. 다만 **말없이**
 # 늘어나면 안 된다: 새 능력은 여기에 이름을 적어야 이 검사가 통과한다.
-POST_CONTEST = frozenset({"text.ner", "text.extract"})
+POST_CONTEST = frozenset({"text.ner", "text.extract", "text.rank"})
 
 _ROW = re.compile(
     r"^\|\s*\d+\s*\|\s*`([a-z][a-z0-9_.]*)`\s*\|\s*[a-z]+\s*\|\s*`\w+`\s*\|"

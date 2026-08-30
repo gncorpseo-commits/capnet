@@ -359,7 +359,7 @@ def run(
         elif modality in ("text", "text_embed"):
             enc, form, max_chars = resolve_text_preprocess(declared)
             applied = f"encoding={enc} normalize={form} max_chars={max_chars}"
-        elif modality in ("text_ner", "text_extract"):
+        elif modality in ("text_ner", "text_extract", "text_rank"):
             enc, form, max_chars = resolve_text_preprocess(declared)
             applied = f"encoding={enc} normalize={form} max_chars={max_chars}"
         else:
@@ -395,6 +395,12 @@ def run(
                 from app.infer_extract import extract_fields
 
                 table_out = extract_fields(
+                    weights, sample, arch=arch, max_params=max_params, preprocess=declared
+                )
+            elif modality == "text_rank":
+                from app.infer_rank import rank_text
+
+                table_out = rank_text(
                     weights, sample, arch=arch, max_params=max_params, preprocess=declared
                 )
             elif modality == "image_embed":
