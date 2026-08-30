@@ -25,7 +25,16 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **capreq 첨부 버그 — PR 대기 (2026-08-30).** 브랜치 **`toma/capreq-attach-fix`** · base `main` `6d57a69`.
+> **자율 세션 시작 (2026-08-30).** master 부재 · 장시간 자율 모드. **열린 PR 0** · main **`a7eed90`**.
+> 순서 = ① 브리지·STATE 동기화 → ② Wave F `user-guide-ko.md` §5.1 **사실 동기화** →
+> ③ 그 밖의 Decision 급(D4 조회 인증 · LLM-as-Node · agent mesh)은 **Proposal 만 올리고 멈춘다.**
+>
+> **베이스라인 재측정 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
+> capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·
+> `product_demo.sh` **exit 0**. 불변식 전부 일치한다.
+
+> **capreq 첨부 버그 — 머지됨 (2026-08-30).** PR [#112](https://github.com/gncorpseo-commits/capnet/pull/112)
+> · main **`a7eed90`**.
 > Ollama 가 깔려 **#107 이후 처음으로 브라우저와 같은 경로를 끝까지 돌렸고**, 그 자리에서 버그 둘이 나왔다.
 >
 > - **첨부가 한 번도 동작한 적이 없다 (제품 1호부터).** `fastapi.UploadFile` 은 starlette 것의
@@ -41,7 +50,8 @@
 >   entities 3건 · 증적 node=…030 · team→team · M ≤ M.
 > - **아직 못 본 것:** `chat.html` 의 브라우저 JS 렌더링 — 헤드리스 브라우저가 없다.
 
-> **제품 데모 한 파일 — PR 대기 (2026-08-29).** 브랜치 **`toma/product-demo`** · base `main` `30a94fb`.
+> **제품 데모 한 파일 — 머지됨 (2026-08-29).** PR [#111](https://github.com/gncorpseo-commits/capnet/pull/111)
+> · main **`6d57a69`**.
 > `scripts/product_demo.sh` — health → 카탈로그 → **능력만 요청**(기기 주소 없음) →
 > 결과·배정 증적 → `GET /v1/ops/work-units` 까지 한 파일. **제품 코드 0 · DDL 0.**
 >

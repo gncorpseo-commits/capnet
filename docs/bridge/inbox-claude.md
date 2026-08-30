@@ -472,3 +472,46 @@ status: done
 **다음:** Wave C(카탈로그 +1) → D(제품 데모) → E(capreq 종단) → F(위생).
 `base = main` 만 쓴다 — stacked PR 금지 (#108 교훈).
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-30T13:30:00+09:00
+topic: track-a-autonomous
+type: next
+expects: implement
+status: open
+---
+
+## Next — 장시간 자율 세션 (master 부재 · master 가 채팅으로 전달)
+
+> 이 블록은 **master 가 채팅으로 준 핸드오프**를 받은 그대로 옮긴 것이다.
+> Cursor 가 쓴 것이 아니므로 `from: human` 이다. 기록해 두지 않으면
+> 「채팅에 있었다」로만 남는다.
+
+**상황 (2026-08-30):** #112 머지 완료 · `main` = **`a7eed90`** · **열린 PR 0** ·
+Cursor Decision 응답이 없을 수 있다.
+
+### 진행 순서 (master 사전 승인)
+
+각 PR = **base `main` · 한 스텝 · CI 초록 · PR 올리고 멈춘다.** 머지는 master.
+
+| Step | 내용 |
+|---|---|
+| 0 | 동기화 — `run_tests`·room 재실행 · 브리지 append (`capreq-result-view` 닫기 · #112 Confirm) · `STATE.md` |
+| 1 | **Wave F** — `user-guide-ko.md` §5.1 을 capreq + Core 중개 입력(D22·D8′)에 맞게 **사실 동기화** |
+| 2 | (선택) 카탈로그 +1 **한 종** — 자체 생성·라이선스 0 우선 |
+| 3 | (선택) capreq 품질 — 새 의존성은 Decision 먼저 |
+| 4 | D4 조회 인증 · `tool.plan`/`tool.action` · LLM Node · contest 태그 재발행 → **Proposal 만** |
+
+### 자율 예외 (이번 세션 한정 · Step 1)
+
+Proposal 을 올린 **직후**, 범위가 **사실 동기화뿐이면** Confirm 없이 구현 PR 을 올려도 된다.
+**주장·숫자·보장 문구를 바꾸면 멈추고 inbox 만.**
+
+### Don't Do
+
+절대규칙 8개 · `git add -A` · `git config` 변경 · force push · main 직접 머지 ·
+migrate/seed 임의 실행 · `.env` 수정 · contest 태그(`v0.1.0-contest`) 이동·재작성 ·
+stacked PR (base 는 `main` 만).
+```
