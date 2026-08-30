@@ -515,3 +515,50 @@ Proposal 을 올린 **직후**, 범위가 **사실 동기화뿐이면** Confirm 
 migrate/seed 임의 실행 · `.env` 수정 · contest 태그(`v0.1.0-contest`) 이동·재작성 ·
 stacked PR (base 는 `main` 만).
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-30T18:00:00+09:00
+topic: track-a-post-wave-f
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — #113·#114 머지 · Wave F accept · 다음은 카탈로그 +1
+
+> master 가 채팅으로 전달한 것을 받은 그대로 옮긴다 (`from: human`).
+
+**상황:** `main` = **`2e43680`** · **열린 PR 0**.
+
+| PR | 내용 | SHA |
+|---|---|---|
+| #113 | Step 0 브리지·STATE 동기화 (코드 0) | `5080748` |
+| #114 | Wave F `user-guide-ko.md` §5.1 사실 동기화 | `2e43680` |
+
+### 판단
+
+| # | 무엇 | 결정 |
+|---|------|------|
+| **1** | #112 Confirm (`capreq-attach-fix`) | **ack.** Wave E 확인 — 블록 닫을 것 |
+| **2** | Wave F Proposal §5 (a/b/c) | **(a) accept.** §5.1 두 갈래 · D8′ 비통제 수집 금지 유지 · §8 요약 · 이력 v0.3/v0.4 |
+| **3** | Wave F Confirm §2 — 「형식·크기는 과목이 정한다」 문단 | **승인.** **사실 기술이지 새 보장이 아니다** — 빼지 말 것 |
+| **4** | 다음 Wave | **(a) 카탈로그 +1 한 종**이 1순위. `text.rank` 등 자체 생성·라이선스 0 |
+
+### 다음 작업 우선순위
+
+| 순위 | 무엇 | 조건 |
+|---|---|---|
+| **(a)** | **Step 2 — 카탈로그 +1 한 종** | 한 PR · base `main` · **52 일괄 금지** · `image.classify@1` 무회귀 필수 · 능력 설명에 **「하지 않는 일」** 경계 (#112 라우팅 혼선 교훈) |
+| (b) | Step 3 — capreq `chat.html` 표시 개선 | Playwright 등 **새 의존성 = Proposal 먼저** |
+| (c) | Step 4 — D4 조회 인증 · `tool.plan`/`tool.action` · LLM-as-Node · agent mesh · contest 태그 재발행 | **Proposal 만. 구현 금지** |
+
+**열린 PR 이 0 이므로 (a) 는 Proposal → (master 부재 시) 그대로 구현해도 된다.**
+카탈로그 +1 은 #110 에서 확립된 패턴이고 **새 제품 주장·DDL 이 없다.**
+
+### Don't Do
+
+절대규칙 8개 · `git add -A` · `git config` 변경 · force push · main 직접 머지 ·
+migrate/seed 임의 실행 · `.env` 수정 · contest 태그 이동 · stacked PR.
+```
