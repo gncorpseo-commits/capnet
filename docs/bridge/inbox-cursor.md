@@ -3199,8 +3199,12 @@ at: 2026-08-29T18:10:00+09:00
 topic: capreq-result-view
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **닫음 (2026-08-30).** 판단 3건은 `pr-c-work-units` **ack** 로 승인됐고, #112 가 머지되며
+> Wave E 까지 끝났다. 여기 §5 의 열린 질문(`user-guide-ko.md` §5.1)만 남아
+> **`wave-f-user-guide-51` Proposal 로 옮겼다** — 이 블록에서는 더 다루지 않는다.
 
 ## Confirm — #107 capreq 결과 표시·상태 폴링 (뒤늦게 적는다)
 
@@ -3288,4 +3292,253 @@ D8′·D22 로 Core 중개 수집이 들어왔고 capreq 가 그 경로를 쓴�
 
 스키마 약화 · DDL · 자유 업로드 경로 · contest 태그 재작성 · `git add -A` · force push ·
 main 직접 머지 · Decision 없는 제품 주장 변경.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T14:00:00+09:00
+topic: capreq-attach-fix
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — #112 capreq 첨부 (Wave E 완료)
+
+| | |
+|---|---|
+| PR | [#112](https://github.com/gncorpseo-commits/capnet/pull/112) → `main` **`a7eed90`** (squash · master 머지) |
+| 성격 | **Core 스키마·DDL 0 · 새 의존성 0.** capreq 모듈 + 검사 + 문서 |
+
+### 1. 무엇이 나왔나
+
+Ollama(`qwen2.5:3b`)가 깔려서 **#107 이후 처음으로 브라우저와 같은 경로를 끝까지** 돌렸다.
+그 자리에서 버그 둘이 나왔다. 둘 다 **실행해 보기 전에는 보이지 않는 종류**다.
+
+1. **첨부가 한 번도 동작한 적이 없다 — 제품 1호부터.**
+   `fastapi.UploadFile` 은 `starlette.datastructures.UploadFile` 의 **하위** 클래스이고,
+   `request.form()` 이 돌려주는 것은 **부모** 인스턴스다. `isinstance(up, fastapi.UploadFile)`
+   가 **항상 False** 였다 → 첨부 분기가 통째로 안 돌고, 요청이 allowlist 데모 경로
+   (`eurosat-rgb` / `ic1-0001`)로 조용히 떨어졌다. 부모 클래스로 검사하게 고쳤다.
+2. **그렇게 만들어진 텍스트 작업은 영원히 QUEUED 였다.**
+   Node 는 이미지 밖 모달리티에 로컬 골든셋 폴백이 없다 (D8′). 400 재시도만 하다
+   attempt 5회를 소진하고 FAILED 가 된다 — **실측**. 이제 **만들기 전에** 거절한다.
+   이미지의 `caseId` 데모 경로는 그대로 둔다.
+
+### 2. 왜 아무도 몰랐나
+
+**서버 경로에 검사가 0 이었다.** `capreq/tests/test_server_unit.py` 6종 신설 —
+**고침을 되돌리면 4종이 실패한다**(확인). CI `capreq` 잡에 `fastapi`·`python-multipart` 추가.
+capreq 검사 32 → **38**.
+
+### 3. 종단 실측 (2026-08-30 · Docker + Ollama)
+
+| 단계 | 결과 |
+|---|---|
+| `POST /api/chat` 첨부 + 실행 | `text.ner@1` · confidence 1.00 |
+| Core 중개 수집 | `POST /v1/inputs` → sha256 기록 · `inputId` 로 task 생성 (D22 · D8′) |
+| 종결 | **1s 만에 COMPLETED** · entities 3건 |
+| 증적 | `node=…030` · 신뢰도메인 `team→team` · 티어 `M ≤ M` |
+
+라우팅 설명 보정도 같이 했다 — 실제 `qwen2.5:3b` 로 프롬프트 5개 측정 **4/5 → 5/5**
+(n=5 · **품질 주장 아님** · 표본이 작다).
+
+### 4. 이 세션에서 다시 확인한 것 (main `a7eed90`)
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests` | **291** OK (skipped 7) |
+| capreq 단위 | **38** OK |
+| `check_submission.py` | **26/26** |
+| `clean_room.sh` | **9/9** |
+| `prod_room.sh` | **27/27** |
+| `product_demo.sh` | **exit 0** — Core 가 받아 적은 sha256 → 배정 증적 → `work-units` 까지 |
+
+### 5. 아직 못 본 것
+
+`chat.html` 의 **브라우저 JS 렌더링**. 헤드리스 브라우저가 없다 — 서버가 주는 JSON 까지만
+봤다. **본 것만 말한다.**
+
+### 6. 안 한 것
+
+스키마 약화 · DDL · 자유 업로드 경로 · contest 태그 재작성 · `git add -A` · force push ·
+main 직접 머지 · Decision 없는 제품 주장 변경.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T14:10:00+09:00
+topic: wave-f-user-guide-51
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — Wave F: `user-guide-ko.md` §5.1 이 제품보다 뒤에 있다
+
+`capreq-result-view` §5 에서 「고칠지 말지 알려달라」고 남겨 둔 것이다. master 부재 중이라
+**사실 동기화 범위에 한해** Proposal 직후 구현 PR 을 올린다 (핸드오프 §4 자율 예외).
+**주장·숫자·보장 문구를 바꾸는 편집은 여기 넣지 않는다.**
+
+### 1. 지금 문서가 하는 말 vs 제품이 하는 일
+
+`docs/guide/user-guide-ko.md` §5.1 (D22 이전 문구):
+
+> 2. **미리 허용된** 사진(또는 번호)을 고릅니다.
+> **이 데모에서 안 되는 것** — 아무 사진이나 마음대로 올리기 → **허용된 묶음만** 가능합니다.
+
+제품이 실제로 하는 일 (D8′ · D22 · #112 종단 실측):
+
+| 경로 | 지금 동작 |
+|---|---|
+| **capreq 첨부** | 파일을 붙이면 **Core 가 받아 적는다** — `POST /v1/inputs` 가 sha256 · 크기 · MIME · 올린 주체를 `task_input` 에 남기고, 그 `inputId` 로 task 를 만든다 |
+| **데모 caseId** | 첨부 없이 보내면 종전대로 allowlist 데이터셋·번호. **이미지에만 있다** (#112) |
+| **여전히 기각** | 서명 URL · `fileToken` 같은 **비통제 수집** (D8′) |
+
+즉 §5.1 은 **제품이 하는 일을 못 한다고 적은 문장**이다. 반대로 「아무거나 올려도 된다」도
+아니다 — 계약이 선언한 MIME·크기만 통과하고(`input_schema.mediaTypes` · `max_input_bytes`),
+선언이 없는 능력은 **업로드를 아예 받지 않는다**.
+
+### 2. 무엇을 고치겠다는 것인가 (범위)
+
+**사실 동기화만.** 새 보장·새 숫자·새 품질 주장 **0**.
+
+1. §5.1 「하시면 되는 것」 2번 — 입력이 **두 갈래**임을 적는다: (a) 파일을 붙이면 접수처가
+   받아 적는다 (b) 첨부 없이 하는 데모는 미리 허용된 번호.
+2. §5.1 「이 데모에서 안 되는 것」 — 「아무 사진이나 마음대로 올리기」를
+   **「접수처를 건너뛰고 올리기(링크·토큰만 건네주기)」**로 바꾼다. 금지 대상이 «자유 업로드»가
+   아니라 «비통제 수집»이라는 D8′ 를 그대로 옮기는 것이다.
+3. §8 한 장 요약의 「허용된 입력」 한 칸을 위와 맞춘다.
+4. §1.5(제품 체험)·capreq README 와 어긋나지 않게만 둔다. **§1.5 는 손대지 않는다.**
+
+### 3. 안 하는 것
+
+- 「무엇이 되는가」를 넓히는 **새 문장** — 예: 「이제 아무 파일이나 올릴 수 있습니다」. 거짓이다.
+- 보존·삭제 정책 문구 신설 (D22 는 「보존·삭제 정책이 선행 조건」이라고만 했다 · 별건)
+- 비밀 데이터 관련 FAQ(§7) — 대회 데모는 공개 사진이라는 문장은 그대로 맞다
+- 스키마 · DDL · 코드 · `.env` · contest 태그
+
+### 4. 되돌리기 비용
+
+문서 한 파일 · 문단 3개. 되돌리기 싸다. 그래서 **`expects: decision` 이지만 자율 예외로
+먼저 구현**하고, 판단이 다르면 그 PR 에서 되돌린다.
+
+### 5. 결정 요청
+
+- (a) 위 §2 범위대로 사실 동기화 — **진행 (자율 예외로 [#114](https://github.com/gncorpseo-commits/capnet/pull/114) 올림)**
+- (b) 범위가 넓다 → 어디까지 줄일지
+- (c) 문구를 다르게 → 문장 제시해 주면 그대로 반영
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T15:30:00+09:00
+topic: wave-f-user-guide-51
+type: confirm
+expects: decision
+status: open
+---
+
+## Confirm — Wave F 구현 [#114](https://github.com/gncorpseo-commits/capnet/pull/114) (자율 예외 · Confirm 전)
+
+바로 위 Proposal 의 §2 범위 **그대로** 올렸다. `expects` 를 `decision` 으로 둔 이유는
+**아직 판단을 받지 못했기 때문**이다 — 「올렸으니 합의됐다」로 두지 않는다.
+
+### 1. Proposal → 코드
+
+| Proposal §2 | 어디에 |
+|---|---|
+| 1. 입력이 두 갈래 | §5.1 「하시면 되는 것」 2번 + **표 신설** (파일을 붙인다 / 번호를 고른다) |
+| 2. 「접수처를 건너뛰고 넣기」 | §5.1 「안 되는 것」 — 링크·임시 열쇠는 받지 않는다 + 「어디로 갔는지 장부가 답할 수 없다」 |
+| 3. §8 한 줄 | 「과목·허용된 입력」 → 「과목·입력(파일을 붙이거나 허용된 번호)」 |
+| 4. §1.5 는 손대지 않는다 | 안 건드렸다 |
+| (Proposal 에 없던 한 문단) | **받는 형식·크기는 과목이 정한다** — 아래 §2 |
+
+### 2. Proposal 에 없던 것을 하나 넣었다 (판단 필요)
+
+문구를 「파일을 붙일 수 있다」로만 바꾸면 **반대 방향으로 거짓**이 된다 —
+계약이 선언한 MIME·크기만 통과하고, 선언이 없는 능력은 업로드를 **아예 받지 않는다**
+(`apps/core/app/inputs.py: allowed_media_types` — 「선언이 없으면 검사하지 않는다」가
+구멍이라 **요구**로 바꾼 그 자리). 그래서 §5.1 에 한 문단을 더 넣었다:
+
+> 붙일 수 있는 **형식과 크기는 과목이 정합니다.** 과목이 정해 두지 않았으면 접수처는
+> 파일을 아예 받지 않습니다.
+
+**새 보장이 아니라 이미 도는 제한**이지만, Proposal 목록에 없던 문단이라 남긴다.
+빼는 게 낫다면 말해 달라.
+
+### 3. 문서 이력에 빠진 줄이 있었다
+
+`user-guide-ko.md` 의 이력표가 **v0.2(2026-08-01)에서 멈춰 있었다.** §1.5「제품 체험」이
+#111 (`6d57a69`)에서 들어왔는데 기록이 없다 (`git log -S` 로 확인). v0.3 로 채우고
+이번 편집을 v0.4 로 적었다.
+
+### 4. 검증
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests` | **291** OK (skipped 7) — `test_user_guide_points_at_it` 포함 |
+| `check_submission.py` | **26/26** |
+| `check_release.sh` | OK |
+| 잔여 표현 (`허용된 묶음` · `아무 사진이나`) | 브리지 로그 밖에는 없다 |
+
+### 5. 안 한 것
+
+범위를 넓히는 새 문장 · 보존·삭제 정책 문구 · §1.5 · §7 FAQ · 코드 · 스키마 · DDL.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-30T15:40:00+09:00
+topic: track-a-autonomous
+type: next
+expects: decision
+status: open
+---
+
+## Next — 여기서 멈춘다 (열린 PR 2 · master 대기)
+
+### 이번 세션이 한 것
+
+| PR | 내용 | CI |
+|---|---|---|
+| [#113](https://github.com/gncorpseo-commits/capnet/pull/113) | Step 0 — 브리지·`STATE.md` 동기화 (코드 0) | 3/3 초록 |
+| [#114](https://github.com/gncorpseo-commits/capnet/pull/114) | Step 1 — Wave F `user-guide-ko.md` §5.1 사실 동기화 (문서 1파일) | 3/3 초록 |
+
+**둘 다 base `main`(`a7eed90`) · 파일이 겹치지 않는다** — 머지 순서를 안 타고 충돌도 없다.
+stacked PR 없음 (#108 교훈).
+
+### 왜 Step 2 이후로 가지 않는가
+
+`PROTOCOL.md`: **「미머지 PR 이 있으면 큰 새 제안 금지(진행 중 수정만).」**
+지금 열린 PR 이 둘이다. 핸드오프의 Step 2(카탈로그 +1)·Step 4(D4 조회 인증 ·
+`tool.plan`/`tool.action` · LLM-as-Node · contest 태그 재발행)는 전부 **큰 새 제안**이라
+여기서 멈춘다. 「자율 모드니까 계속 간다」로 이 규칙을 우회하지 않는다.
+
+Step 3(capreq `chat.html` UI)도 손대지 않았다 — 눈으로 확인할 **헤드리스 브라우저가 없어서**
+고쳤는지 아닌지를 말할 수 없다. 못 본 것을 고쳤다고 하지 않는다.
+
+### master/Cursor 가 돌아오면 필요한 판단
+
+| # | 무엇 | 어디 |
+|---|---|---|
+| 1 | **#113 머지** (브리지·STATE) | — |
+| 2 | **Wave F 판단** — `wave-f-user-guide-51` Proposal §5 (a/b/c) + Confirm §2(형식·크기 문단) | #114 |
+| 3 | #112 Confirm 에 대한 ack | `capreq-attach-fix` |
+| 4 | 다음 Wave 선택 — 카탈로그 +1(한 종) vs capreq 품질 vs D4 조회 인증 | 새 Proposal 필요 |
+
+### 이 세션에서 실측한 것 (main `a7eed90`)
+
+`run_tests` **291** OK (skip 7) · capreq **38** OK · `check_submission` **26/26** ·
+`clean_room` **9/9** · `prod_room` **27/27** · `product_demo.sh` **exit 0**.
+핸드오프가 적어 둔 불변식과 전부 일치한다.
+
+### 여전히 못 본 것
+
+`chat.html` **브라우저 JS 렌더링**. #107 부터 계속 미확인이다. 헤드리스(Playwright 등)는
+**새 의존성 = Decision** 이라 시작하지 않았다. 이것을 볼지 말지가 Step 3 의 전제다.
 ```
