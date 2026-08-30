@@ -4205,7 +4205,7 @@ Content-Type: application/json
 
 ### 6. 결정 요청
 
-- **(a)** 위 §2 범위대로 — **착수한다** (master 채팅 Decision 과 일치)
+- **(a)** 위 §2 범위대로 — **[#122](https://github.com/gncorpseo-commits/capnet/pull/122) 로 착수했다**
 - **(b)** 데모 세 개(ner·extract·rank)만 먼저 vs 여덟 개 전부 — **세 개를 제안**한다
 - **(c)** `name` 도 PATCH 할 수 있게 할까 — **이번엔 빼자**고 제안한다.
   `name` 은 라우터 프롬프트에도 들어가는데 드리프트의 원인으로 **관측된 적이 없다.**
@@ -4215,4 +4215,132 @@ Content-Type: application/json
 
 계약 JSONB PATCH · `@2` 버전 올리기 · schema 약화 · DDL · 새 의존성 ·
 holdout 맞춤 문구 튜닝 · 카탈로그 +1 · Playwright · D4 · LLM Node.
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T03:00:00+09:00
+topic: capability-description-patch
+type: confirm
+expects: decision
+status: open
+---
+
+## Confirm — Wave I [#122](https://github.com/gncorpseo-commits/capnet/pull/122) · **그리고 내가 만든 숫자 하나를 철회한다**
+
+Proposal §2 범위 그대로다. 그런데 **재측정이 앞선 결론 하나를 무너뜨렸다** — 그게 이
+Confirm 의 중심이다.
+
+### 1. Proposal → 코드
+
+| Proposal | 어디에 |
+|---|---|
+| §2 `description` 만 · admin · DDL 0 | `capability.py::update_capability_description` · `main.py` PATCH 라우트 |
+| §2 계약 필드 400 | `CapabilityDescriptionPatch` + **`extra: "forbid"`** — 화이트리스트를 손으로 세지 않는다 |
+| §3 데모 셋만 · helper 없음 | `ner`·`text_extract`·`text_rank` 에 inline 한 단계 |
+| §6-(b) 셋만 | 그대로 |
+| §6-(c) `name` 은 뺀다 | 그대로 |
+
+### 2. 동기화는 실제로 됐다
+
+```text
+PATCH 전  text.ner:  email·url·ipv4·uuid·iso_date span · 규칙 · 일반 NER 주장 없음
+                     ↑ 저장소 어디에도 없는 옛 문자열
+PATCH 후  text.ner:  자유 문장 어디에 있든 … 이름표(키)가 없어도 된다 …
+```
+
+`text.rank` 는 **이미 최신이라 건너뛰었다** — 「다를 때만 PATCH」가 의도대로 돈다.
+동기화 뒤 **live == repo (9종 전부 일치)** 를 별도로 확인했다.
+
+### 3. **철회** — #120 의 「저장소 설명 40/60」은 내 하네스 결함이었다
+
+라우터 프롬프트는 능력 한 줄을 이렇게 만든다:
+
+```text
+- code=… version=… name=… kind={output_kind} desc=…
+```
+
+`scripts/route_bench.py` 의 `--descriptions repo` 경로가 `CapabilityInfo` 를 **새로 지으면서
+`output_kind`·`trust_domain_min`·`extra` 를 떨어뜨렸다.** 그래서 그 조건은 「설명만 바꾼
+카탈로그」가 아니라 **「설명을 바꾸고 `kind` 를 전부 지운 카탈로그」**였다 —
+**한 번에 둘을 바꿔 놓고 설명 덕이라 읽었다.**
+
+`dataclasses.replace()` 로 고쳤다. **칸을 손으로 세지 않는 쪽**을 골랐다 — 필드가 늘어도
+여기가 뒤처지지 않는다. 고친 뒤 같은 조건은 **37/60** 이고, 이는 live 밴드 안이다.
+
+### 4. 지금 서 있는 숫자 (홀드아웃 12개 × R=5)
+
+| 언제 | 값 |
+|---|---|
+| DB 가 낡았을 때 | **30/60** (1회 · 밴드 모름) |
+| 동기화 뒤 | **36 · 36 · 38** (3회) · `repo` **37** |
+
+**개선폭을 말하지 않는다.** 같은 조건도 **2점씩 흔들린다** — 이것도 이번에 처음 쟀다.
+전에 「5/5 아니면 0/5라 결정적」이라고 적은 것도 과했다.
+
+**드리프트는 메커니즘으로 확인됐다**(옛 문자열이 DB 에 실제로 있었고 PATCH 로 고쳐졌다).
+**크기는 지금 데이터로 말할 수 없다.** 그래서 코드·데모 주석의 「홀드아웃 10점 차」 문구도
+전부 걷어냈다.
+
+### 5. 검증
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests` | 334 → **352** OK (skip 7) |
+| `check_capability_patch` (신규 · DB) | **6/6** — 계약 16칸 PATCH 전후 **동일** |
+| 변이 | `SET` 절에 계약 칸 → **2종 실패** · `extra:forbid` 제거 → **1종 실패** |
+| `test_route_bench` | `_Patched` 가 `description` 외 필드를 하나도 안 바꾸는지 dataclass 필드 순회 |
+| 데모 3종 | 종단 완주 · PATCH 로그 실측 |
+
+### 6. 결정 요청
+
+- (a) 이대로 — Proposal §6 확인
+- (b) **40/60 철회 방식** — 지금은 카탈로그에 「철회한다 + 왜」를 남겼다. 통째로 지우는 편이
+      나으면 말해 달라 (지운 자국을 남기는 쪽을 골랐다)
+- (c) 나머지 다섯 `*_demo.sh` upsert 를 언제 할지
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T03:10:00+09:00
+topic: track-a-post-wave-i
+type: next
+expects: decision
+status: open
+---
+
+## Next — 이번 세션 · 여기서 멈춘다 (열린 PR 2)
+
+| PR | 내용 | CI |
+|---|---|---|
+| [#121](https://github.com/gncorpseo-commits/capnet/pull/121) | Step 0 — 브리지·STATE + Wave I Proposal/Confirm (코드 0) | 확인 필요 |
+| [#122](https://github.com/gncorpseo-commits/capnet/pull/122) | **Wave I — `PATCH /v1/capabilities/{id}`** | 확인 필요 |
+
+`#122` 는 `STATE.md` 를 **3행 갱신일 한 줄만** 만진다 (`test_doc_counts` 가 CHANGELOG 최신일과
+대조한다). #121 은 25·41행이라 충돌하지 않는다.
+
+### 이번에 배운 것 — **하네스도 검사가 필요하다**
+
+#120 에서 「측정 없이 주장 없음」이라며 하네스를 넣었는데, **그 하네스 자체가 틀렸다.**
+`--descriptions repo` 가 `output_kind` 를 지우고 있었고, 그 값이 카탈로그에 인용됐다.
+검사가 붙은 지금은 그 실수를 되풀이할 수 없다 — 하지만 **한 번은 통과했다.**
+
+같은 종류가 이번 세션에만 셋이다: `chat.html` 드리프트(#118) · 카탈로그 설명 드리프트(#122) ·
+하네스 자체(#122). **「정본이 둘이면 갈라진다」**가 공통 원인이다.
+
+### master/Cursor 가 돌아오면 필요한 판단
+
+| # | 무엇 | 어디 |
+|---|---|---|
+| 1 | **#121 · #122 머지** | — |
+| 2 | Wave I 판단 — Confirm §6 (a)(b)(c) | #122 |
+| 3 | 나머지 다섯 `*_demo.sh` upsert | 새 Proposal |
+| 4 | 다음 Wave — 카탈로그 +1 vs D4 vs Playwright | 새 Proposal |
+
+### 여전히 못 본 것
+
+`chat.html` **브라우저 JS 렌더링**. Playwright 는 새 의존성이라 Decision 전에는 안 들인다.
+**본 것만 말한다.**
 ```
