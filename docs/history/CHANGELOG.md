@@ -1,5 +1,62 @@
 # Changelog
 
+## capreq 첨부가 한 번도 동작하지 않았다 — 종단 실측으로 잡았다 — 2026-08-30
+
+Ollama 가 설치돼 **#107 이후 처음으로 브라우저와 같은 경로를 끝까지** 돌렸다.
+그 자리에서 버그 둘이 나왔다. **DDL 0 · 새 의존성 0.**
+
+### 1. 첨부가 조용히 버려졌다 (제품 1호부터 있던 버그)
+
+```python
+from fastapi import UploadFile
+...
+if isinstance(up, UploadFile) and up.filename:   # 항상 False 였다
+```
+
+`fastapi.UploadFile` 은 `starlette` 것의 **하위 클래스**이고 `request.form()` 이 돌려주는
+것은 **starlette 인스턴스**다 — 부모 인스턴스는 자식 클래스의 instance 가 아니다.
+그래서 첨부 분기가 **한 번도 실행되지 않았고**, 요청은 allowlist 데모 경로로 떨어져
+`datasetId=eurosat-rgb · caseId=ic1-0001` 로 텍스트 능력 작업을 만들었다.
+
+`starlette.datastructures.UploadFile` 로 검사한다 (`fastapi` 것이 그 하위라 둘 다 잡힌다).
+
+### 2. 그 작업은 영원히 QUEUED 였다 — 이제 미리 거절한다
+
+Node 는 **이미지 밖 모달리티에 로컬 골든셋 폴백이 없다**(D8′). 첨부 없이 보낸 텍스트
+작업은 `400 text 실행에는 Core 가 중개한 입력이 필요하다` 로 재시도만 하다 FAILED 가 된다
+(실측: 한 작업당 attempt 5회). 클라이언트가 **만들기 전에** 거절한다 —
+`{code} 는 파일 첨부가 필요하다`. 이미지의 `caseId` 데모 경로는 그대로 둔다.
+
+### 3. 왜 아무도 몰랐나 — 서버 경로에 검사가 0 이었다
+
+`capreq/tests/test_server_unit.py` **6종** 신설 (FastAPI `TestClient` · Core·Ollama 대역).
+**고침을 되돌리면 4종이 실패한다** — 확인했다. CI `capreq` 잡에 `fastapi` ·
+`python-multipart` 를 넣었다 (둘 다 `capreq[server]` 의 것이고 이미 고지돼 있다).
+capreq 검사 32 → **38**.
+
+### 4. 라우팅 설명도 손봤다 (실측 4/5 → 5/5)
+
+같은 실행에서 「이메일·IP·날짜 찾아줘」가 `text.extract` 로 갔다. 두 능력의 설명이
+경계를 말하지 않아서다. 실제 `qwen2.5:3b` 로 프롬프트 5개를 옛/새 설명에 각각 돌려
+**4/5 → 5/5** 를 확인하고 반영했다 (`ner_demo.sh` · `text_extract_demo.sh` ·
+`sample-catalog.json`). **n=5 다 — 품질을 주장하지 않는다.**
+
+> 이미 등록된 DB 의 설명은 바뀌지 않는다. 능력 설명 갱신 API 가 없고 버전을 올릴 만한
+> 변경도 아니다 — 새로 세우는 스택부터 적용된다.
+
+### 종단 실측 (2026-08-30 · Ollama 0.33.2 · `qwen2.5:3b`)
+
+```text
+/api/health      capabilities=4 · executor=true · input_upload=true
+/api/chat        첨부 + 실행 → 라우팅 text.ner@1 conf=1.00 · inputId=cceadef4…
+/api/tasks/{id}  1s 만에 COMPLETED
+화면에 그려질 것  email ops@example.dev 8-23 · ipv4 10.0.0.7 29-37 · iso_date 2026-08-30 41-51
+증적            node=…030 · agent=29819aab… · domain=team · tier=M
+```
+
+**아직 못 본 것:** 브라우저 자체(`chat.html` 의 JS 렌더링). 헤드리스 브라우저가 없다 —
+서버가 주는 JSON 까지만 확인했다.
+
 ## 제품 데모 한 파일 — `scripts/product_demo.sh` (Wave D) — 2026-08-29
 
 **제품 코드 0 · DDL 0 · 새 의존성 0.** 스크립트 하나 + 문서 셋 + 검사 하나.

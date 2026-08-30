@@ -38,8 +38,12 @@ jobs:
           python-version: "3.11"
       # capreq 는 Core 와 달리 httpx 를 쓴다 (THIRD-PARTY-LICENSES 에 이미 있는 항목).
       # 잡을 따로 둔 이유: 위 unit 잡의 「의존성 설치 없음」을 그대로 지키기 위해서다.
+      #
+      # fastapi·python-multipart 는 `capreq[server]` 의 것이고 역시 이미 고지돼 있다.
+      # 여기 넣은 이유: **서버 경로에 검사가 하나도 없어서** 첨부가 통째로 버려지는
+      # 버그를 종단 실측 전까지 아무도 몰랐다 (2026-08-30). 이제 CI 가 본다.
       - name: 러너 의존성 (capreq 런타임 핀)
-        run: pip install "httpx>=0.27"
+        run: pip install "httpx>=0.27" "fastapi>=0.110" "python-multipart>=0.0.9"
       - name: capreq 단위 테스트
         env:
           PYTHONPATH: ${{ github.workspace }}/capreq/src

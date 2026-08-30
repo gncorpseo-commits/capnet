@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-08-29** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
+> **갱신: 2026-08-30** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
 
 ---
 
@@ -24,6 +24,22 @@
 
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
+
+> **capreq 첨부 버그 — PR 대기 (2026-08-30).** 브랜치 **`toma/capreq-attach-fix`** · base `main` `6d57a69`.
+> Ollama 가 깔려 **#107 이후 처음으로 브라우저와 같은 경로를 끝까지 돌렸고**, 그 자리에서 버그 둘이 나왔다.
+>
+> - **첨부가 한 번도 동작한 적이 없다 (제품 1호부터).** `fastapi.UploadFile` 은 starlette 것의
+>   *하위* 클래스라 `request.form()` 결과에 `isinstance` 가 **항상 False** 였다. 파일이 조용히
+>   버려지고 요청은 allowlist 데모 경로로 떨어졌다 → `starlette.datastructures.UploadFile` 로 검사.
+> - 그렇게 만들어진 텍스트 작업은 **영원히 QUEUED** 였다 (Node 는 이미지 밖 폴백이 없다 · D8′ ·
+>   attempt 5회 소진 후 FAILED 실측). 이제 **만들기 전에** 거절한다. 이미지 caseId 경로는 그대로.
+> - **서버 경로에 검사가 0 이라 아무도 몰랐다.** `test_server_unit.py` 6종 신설 —
+>   **고침을 되돌리면 4종이 실패한다**(확인). CI `capreq` 잡에 fastapi·python-multipart 추가.
+>   capreq 검사 32 → **38**.
+> - 라우팅 설명 보정 — 실제 `qwen2.5:3b` 로 프롬프트 5개 측정 **4/5 → 5/5** (n=5 · 품질 주장 아님).
+> - **종단 실측:** `/api/chat` 첨부+실행 → `text.ner@1` conf=1.00 → 1s 만에 COMPLETED ·
+>   entities 3건 · 증적 node=…030 · team→team · M ≤ M.
+> - **아직 못 본 것:** `chat.html` 의 브라우저 JS 렌더링 — 헤드리스 브라우저가 없다.
 
 > **제품 데모 한 파일 — PR 대기 (2026-08-29).** 브랜치 **`toma/product-demo`** · base `main` `30a94fb`.
 > `scripts/product_demo.sh` — health → 카탈로그 → **능력만 요청**(기기 주소 없음) →

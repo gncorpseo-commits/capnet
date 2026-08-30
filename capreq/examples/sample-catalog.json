@@ -17,7 +17,7 @@
     "code": "text.ner",
     "version": 1,
     "name": "structural text ner",
-    "description": "Find email/url/ipv4/uuid/iso_date spans in plain text and return start/end offsets. Rule-based; not general NER.",
+    "description": "Find typed spans anywhere in plain text — email, url, ipv4, uuid, iso_date — and return their start/end offsets. No key/label is needed. Rule-based; not general NER.",
     "output_kind": "structured"
   },
   {

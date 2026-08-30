@@ -15,7 +15,7 @@ from capreq.adapters.capnet import (
 )
 from capreq.adapters.static import StaticCatalog
 from capreq.config import api_key, ollama_model, ollama_url
-from capreq.media import check_media_for_capability
+from capreq.media import check_media_for_capability, modality_of_capability
 from capreq.ollama import OllamaClient
 from capreq.results import summarize_result
 from capreq.router import CapabilityRouter
@@ -58,8 +58,13 @@ def create_app(
     dataset: str = "eurosat-rgb",
     case_id: str = "ic1-0001",
 ) -> Any:
-    from fastapi import FastAPI, Request, UploadFile
+    from fastapi import FastAPI, Request
     from fastapi.responses import FileResponse, HTMLResponse
+
+    # **`fastapi.UploadFile` 로 검사하면 안 된다.** 그것은 starlette 것의 *하위* 클래스이고,
+    # `request.form()` 이 돌려주는 것은 **starlette 인스턴스**다 — `isinstance` 가 항상
+    # False 라 첨부 분기가 통째로 안 돌았다(실측 2026-08-30). 부모로 검사한다.
+    from starlette.datastructures import UploadFile
 
     llm = OllamaClient(base_url=ollama_url(), model=ollama_model())
     capnet: CapNetAdapter | None = None
@@ -182,7 +187,14 @@ def create_app(
                 return _chat_response(decision, _fail(f"Core 통신 실패: {exc}"))
             target: dict[str, Any] = {"input_id": input_id}
         else:
-            # allowlist 데모 경로 (D8′ · 카탈로그 보조).
+            # allowlist 데모 경로 (D8′ · 카탈로그 보조)는 **이미지에만** 있다.
+            # Node 는 이미지 밖 모달리티에 로컬 골든셋 폴백이 없다 — 첨부 없이 보내면
+            # 작업이 QUEUED 로 영원히 남는다(실측). 여기서 먼저 거절한다.
+            if modality_of_capability(code) != "image":
+                return _chat_response(
+                    decision,
+                    _fail(f"{code} 는 파일 첨부가 필요하다 — 입력은 Core 중개로만 온다 (D8′)"),
+                )
             target = {
                 "dataset_id": dataset_id or dataset,
                 "case_id": case_id_val or case_id,
