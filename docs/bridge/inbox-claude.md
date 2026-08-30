@@ -562,3 +562,47 @@ status: open
 절대규칙 8개 · `git add -A` · `git config` 변경 · force push · main 직접 머지 ·
 migrate/seed 임의 실행 · `.env` 수정 · contest 태그 이동 · stacked PR.
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-30T22:00:00+09:00
+topic: track-a-post-wave-g
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — #115·#116 머지 · Wave G (a) accept · 다음 우선순위
+
+> master 가 채팅으로 전달한 것을 받은 그대로 옮긴다 (`from: human`).
+
+**상황:** `main` = **`083d53d`** · **열린 PR 0** → PROTOCOL 상 새 Proposal·구현 OK.
+
+| PR | 내용 | SHA |
+|---|---|---|
+| #115 | Step 0 브리지·STATE·Wave G Proposal (코드 0) | `fc69d80` |
+| #116 | Wave G `text.rank` (9번째 실행기) | `083d53d` |
+
+### 판단
+
+| # | 무엇 | 결정 |
+|---|------|------|
+| **1** | Wave G Proposal §7 / Confirm §6 | **(a) accept.** 규칙·`overlap`·`quality_profile='none'` 그대로 |
+| **2** | (b) 점수 규칙 변경 · (c) 이웃 설명 수정 | **이번 범위 아님** |
+| **3** | `text.ner`↔`text.extract` 라우팅 미스 (Confirm §4) | **별건.** 손대려면 **별 Proposal** + 라우팅 무회귀 실측 필수 |
+
+### 다음 우선순위
+
+| 순위 | 무엇 | 조건 |
+|---|---|---|
+| **(a)** | **Step 0 follow-up — 브리지 ack · `STATE.md` `083d53d`** | **다른 작업보다 먼저** · 코드 0 |
+| (b) | **Step 3 — capreq `chat.html` 품질** | **Playwright 등 새 의존성 = Proposal + Decision 먼저.** 없으면 정적·서버 테스트만 · **「브라우저에서 봤다」고 쓰지 말 것** |
+| (c) | 카탈로그 +1 한 종 | 한 PR · 52 일괄 금지 · 설명에 **「하지 않는 이웃 능력」** 경계 · `image.classify@1` 무회귀 |
+| (d) | D4 조회 인증 · `tool.*` · LLM-as-Node · agent mesh · contest 태그 재발행 | **Proposal 만. 구현 금지** |
+
+### Don't Do
+
+절대규칙 8개 · `git add -A` · `git config` 변경 · force push · main 직접 머지 ·
+migrate/seed 임의 실행 · `.env` 수정 · contest 태그 이동 · stacked PR (base 는 `main` 만).
+```

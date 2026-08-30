@@ -25,7 +25,7 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–F 완료 · 열린 PR 0 (2026-08-30).** main HEAD = **`2e43680`**.
+> **Wave A–G 완료 · 열린 PR 0 (2026-08-30).** main HEAD = **`083d53d`** · **실행 능력 9종**.
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -37,9 +37,11 @@
 > | E | [#112](https://github.com/gncorpseo-commits/capnet/pull/112) | capreq 첨부 fix + Ollama 종단 | `a7eed90` |
 > | — | [#113](https://github.com/gncorpseo-commits/capnet/pull/113) | 브리지·STATE 동기화 (코드 0) | `5080748` |
 > | F | [#114](https://github.com/gncorpseo-commits/capnet/pull/114) | `user-guide-ko.md` §5.1 — Core 중개 입력 두 갈래 | `2e43680` |
+> | — | [#115](https://github.com/gncorpseo-commits/capnet/pull/115) | 브리지·STATE (Wave F 닫기 · Wave G Proposal) | `fc69d80` |
+> | **G** | [#116](https://github.com/gncorpseo-commits/capnet/pull/116) | **`text.rank` (9번째 실행기)** | **`083d53d`** |
 >
-> **Wave G — PR 대기 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
-> `text.rank` = **9번째 실행기** · 브랜치 `toma/text-rank` · base `main` `2e43680`.
+> **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
+> · main **`083d53d`**. `text.rank` = **9번째 실행기**.
 > 카탈로그 §3 #24 에 **이미 선언돼 있던** 능력을 구현한 것이다. **DDL 0 · 새 의존성 0 ·
 > 새 학습 0 · 외부 말뭉치 0.**
 >
@@ -56,12 +58,40 @@
 >   필수 가중치 7 → **8종** · `clean_room` **9/9** · `prod_room` **27/27**
 >   (`image.classify` 무회귀) · `product_demo.sh`·`text_rank_demo.sh` **exit 0**.
 >
-> **STATE·브리지를 #116 이 만지지 않는다** — [#115](https://github.com/gncorpseo-commits/capnet/pull/115)
-> 와 같은 파일이라 충돌을 만들지 않으려고 그쪽에 모았다.
+> **master Decision (2026-08-30): (a) accept.** 규칙·`overlap`·`quality_profile='none'` 그대로.
+> (b) 점수 규칙 변경 · (c) 이웃 설명 수정은 **범위 밖**으로 확인.
 >
-> **다음 판단 (master):** #115·#116 머지 · Wave G Proposal §7 / Confirm §6 ·
-> **별건** `text.ner`↔`text.extract` 설명 손질 여부 · 다음 Wave 선택.
-> D4 조회 인증 · `tool.*` · LLM-as-Node 는 여전히 **Proposal 만**.
+> **남은 별건:** `text.ner`↔`text.extract` 라우팅 미스 — 손대려면 **별 Proposal** +
+> 라우팅 무회귀 실측 필수. 이번에 고치지 않았다.
+
+> **다음 = Step 3 · capreq 결과 표시 (2026-08-30).** 브리지 Proposal
+> `capreq-result-view-plus-two`.
+> `results.py` 가 #107 때(능력 넷) 쓰인 뒤로 **`text.extract`(`fields`)·`text.rank`(`ranking`)**
+> 가 들어왔는데 요약기가 그 칸을 모른다 — **아홉 중 둘이 제품 입구에서 원시 JSON 으로 보인다.**
+> 표시 계층만 고친다 · **새 의존성 0** (Playwright 는 별도 Decision).
+> **브라우저 JS 렌더링은 #107 부터 계속 미확인** — 헤드리스가 없다. 본 것만 말한다.
+>
+> master 우선순위: (a) 이 Step 0 → (b) Step 3 → (c) 카탈로그 +1 →
+> (d) D4 조회 인증 · `tool.*` · LLM-as-Node · 태그 재발행은 **Proposal 만**.
+>
+> **구현 = [#118](https://github.com/gncorpseo-commits/capnet/pull/118) (PR 대기)** ·
+> 브랜치 `toma/capreq-result-view-plus-two` · base `main` `083d53d`.
+> `fields`(필드 표) · `ranking`(질의 + 순위 표) 렌더러 · `other` 폴백은 남긴다.
+> **새 주장 0** — `score` 를 관련도로 부르지 않고 화면에 「겹친 낱말 수로 매긴 순서입니다 —
+> 뜻을 비교한 것이 아닙니다」를 붙인다. 재정렬 없음(검사로 고정).
+> **화면 자르기는 데이터 자르기가 아니다** — 앞 20개만 그리되 `count` 는 전체를 말한다.
+>
+> **`chat.html` 에 검사가 하나도 없었다** — 이 드리프트가 #110·#116 두 번 난 이유다.
+> `test_chat_html_unit.py` 신설: `summarize_result` 를 실제로 돌려 나온 칸마다 화면에
+> 그리는 자리가 있는지 본다(칸 목록을 손으로 두 번 적지 않는다). 변이로 확인 —
+> `result.ranking` 을 전부 지우면 실패한다. **한계:** 부분 문자열 검사라 반쯤 지우면
+> 통과하고, **브라우저 렌더링은 여전히 못 본다**(헤드리스 없음 · Playwright = Decision).
+>
+> capreq 단위 38 → **52** · 살아 있는 Core `/api/tasks/{id}` 실측에서 `text.rank`·
+> `text.extract` 둘 다 구조화 요약으로 나왔고 `other` 로 새지 않았다.
+>
+> **능력을 더할 때 따라와야 하는 것에 「화면」이 빠져 있었다** — #110·#116 체크리스트에
+> 그 줄이 없었다. 이제 검사가 막는다.
 >
 > **베이스라인 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
 > capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·
