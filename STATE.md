@@ -25,13 +25,35 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **자율 세션 시작 (2026-08-30).** master 부재 · 장시간 자율 모드. **열린 PR 0** · main **`a7eed90`**.
-> 순서 = ① 브리지·STATE 동기화 → ② Wave F `user-guide-ko.md` §5.1 **사실 동기화** →
-> ③ 그 밖의 Decision 급(D4 조회 인증 · LLM-as-Node · agent mesh)은 **Proposal 만 올리고 멈춘다.**
+> **Wave A–F 완료 · 열린 PR 0 (2026-08-30).** main HEAD = **`2e43680`**.
 >
-> **베이스라인 재측정 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
+> | Wave | PR | 내용 | main |
+> |------|-----|------|------|
+> | A | [#105](https://github.com/gncorpseo-commits/capnet/pull/105) | capreq 입력 챗봇 + `text.ner` | ✅ |
+> | B | [#107](https://github.com/gncorpseo-commits/capnet/pull/107) | capreq 결과·폴링 UI | `1a15ff1` |
+> | B′ | [#109](https://github.com/gncorpseo-commits/capnet/pull/109) | `GET /v1/ops/work-units` (D26) | `7e6d5f9` |
+> | C | [#110](https://github.com/gncorpseo-commits/capnet/pull/110) | `text.extract` (8번째) | `30a94fb` |
+> | D | [#111](https://github.com/gncorpseo-commits/capnet/pull/111) | `scripts/product_demo.sh` | `6d57a69` |
+> | E | [#112](https://github.com/gncorpseo-commits/capnet/pull/112) | capreq 첨부 fix + Ollama 종단 | `a7eed90` |
+> | — | [#113](https://github.com/gncorpseo-commits/capnet/pull/113) | 브리지·STATE 동기화 (코드 0) | `5080748` |
+> | F | [#114](https://github.com/gncorpseo-commits/capnet/pull/114) | `user-guide-ko.md` §5.1 — Core 중개 입력 두 갈래 | `2e43680` |
+>
+> **다음 = Wave G · 카탈로그 +1 한 종** (`text.rank`). 브리지 Proposal
+> `text-rank-catalog-plus-one`. master 판단: (a) 카탈로그 +1 이 1순위 ·
+> D4 조회 인증 · `tool.*` · LLM-as-Node 는 **Proposal 만**.
+>
+> **베이스라인 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
 > capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·
 > `product_demo.sh` **exit 0**. 불변식 전부 일치한다.
+
+> **Wave F — 머지됨 (2026-08-30).** PR [#114](https://github.com/gncorpseo-commits/capnet/pull/114)
+> · main **`2e43680`**.
+> `user-guide-ko.md` §5.1 이 D22 이전 문구였다 — 「미리 허용된 사진만」. D8′·D22 로 Core 중개
+> 수집이 들어왔고 capreq 가 그 경로를 쓰는데(#112 실측), **제품이 하는 일을 못 한다고 적은
+> 문장**이었다. 입력을 **두 갈래**로 적었다 — ① 파일 첨부 → 접수처가 지문·크기·형식·올린
+> 사람을 장부에 적는다 ② 데모 번호는 **사진 과목에만**. 「안 되는 것」은 D8′ 그대로
+> **「접수처를 건너뛰고 넣기」**다. 받는 형식·크기는 **과목이 정한다**(master: 사실 기술로 승인).
+> **코드 0 · DDL 0.**
 
 > **capreq 첨부 버그 — 머지됨 (2026-08-30).** PR [#112](https://github.com/gncorpseo-commits/capnet/pull/112)
 > · main **`a7eed90`**.
