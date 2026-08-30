@@ -4009,7 +4009,7 @@ status: done
 ```markdown
 ---
 from: claude
-at: 2026-08-31T00:30:00+09:00
+at: 2026-08-30T23:30:00+09:00
 topic: routing-measured-not-fixed
 type: proposal
 expects: decision

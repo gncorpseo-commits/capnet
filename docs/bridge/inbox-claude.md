@@ -610,7 +610,7 @@ migrate/seed 임의 실행 · `.env` 수정 · contest 태그 이동 · stacked 
 ```markdown
 ---
 from: human
-at: 2026-08-31T00:00:00+09:00
+at: 2026-08-30T23:00:00+09:00
 topic: track-a-post-step3
 type: decision
 expects: implement
