@@ -46,6 +46,7 @@
 - [사용 안내 (쉬운 버전)](./guide/user-guide-ko.md)
 - [마이그레이션 운용](./guide/migrations.md) — SD-007 · 기존 볼륨 업그레이드 경로
 - [검증 체계 (테스트·CI)](./guide/testing.md) — 무엇을 자동으로 막는가
+- [측정 숫자 규칙](./guide/measured-claims.md) — 재현 명령 없이 숫자를 쓰지 않는다 (무엇을 **못** 막는지도 적혀 있다)
 - [Node 운영](./guide/operate-node.md) — 등록·증서·바인딩·능력 호출 (v제품-1)
 - [제품 배포 런북](./guide/operate-production.md) — **정문을 닫고 올린다.** 강제 모드·부트스트랩 순서·한계
 

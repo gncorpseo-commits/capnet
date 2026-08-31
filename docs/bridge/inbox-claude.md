@@ -734,3 +734,61 @@ status: open
 
 **다음 순서:** #123 머지 → Claude Proposal → **구현 강도만 한 번 더 Decision.**
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-31T13:23:00+09:00
+topic: measured-claims-repro-command
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — 측정 숫자 재현 규칙 · 구현 강도 (master · 채팅)
+
+> Proposal `measured-claims-repro-command` §7 에 대한 응답. 그대로 옮긴다 (`from: human`).
+> 선행: PR #124 머지 완료 (`411be33`).
+
+### §7-(a) 범위 좁힘 — **accept**
+
+| 종류 | 예 | 이 규칙 |
+|---|---|---|
+| **재야 나온다** | `acc=0.8500` · 홀드아웃 `36/60` · `789 ms` · 게이트 `9/9` | **적용** |
+| **세면 나온다** | 「9종」·「352」·「가중치 8종」 | **제외** — 기존 규율(`check_submission`·`test_report_claims`·`test_checklist_claims`) |
+
+「개수」를 일괄 포함하지 않는다. **실행·재측정 없이는 알 수 없는 숫자**만 대상.
+
+### §7-(b) `CHANGELOG` — **accept** (별 규칙)
+
+| 문서 | 규칙 |
+|---|---|
+| 카탈로그 · `STATE.md` | 같은 커밋에 재현 명령·`scripts/` 도구. 없으면 숫자 쓰지 않음 |
+| `CHANGELOG.md` | 명령 **대신** **「무엇으로 쟀나」**(도구·조건·표본·환경). **소급 적용 안 함** |
+
+### §7-(c) 구현 강도 — **(A) 문서만**
+
+| 안 | 결정 |
+|---|---|
+| **(A) 문서만** | **accept** — `docs/guide/measured-claims.md` 신규 + `CLAUDE.md` **한 줄 링크** |
+| (B) 신규 좁은 검사 | **이번 Wave 에서 하지 않음** — 카탈로그는 이미 거의 준수(#124 §0). 필요해지면 **별 Proposal** |
+| (C) 소급 | **reject** |
+
+**구현 범위 (단일 PR):** guide 신규 · `CLAUDE.md` 1줄+링크 · `docs/INDEX.md` 한 줄 ·
+**코드·DDL·의존성 0 · CI 검사 추가 0.**
+
+### §7-(d) 규칙 위치 — **accept**
+
+| 위치 | 역할 |
+|---|---|
+| `docs/guide/measured-claims.md` | **정본** |
+| `CLAUDE.md` | **한 줄 + 링크** (에이전트가 매 세션 보는 곳) |
+| `docs/context-handoff.md` D-결정 | **이번에는 승격 안 함** — **운영 규칙이지 제품 주장·스키마 결정이 아님** |
+
+### Don't Do
+
+Markdown 전체 lint · `CHANGELOG` 소급 · (B) 검사 이번에 붙이기 ·
+`route_bench` CI 편입 · 이 규칙을 「드리프트 대책」으로 마케팅 ·
+나머지 5 `*_demo.sh` upsert · 카탈로그 +1 · stacked PR · `git add -A` ·
+schema 약화 · contest 태그 이동.
+```

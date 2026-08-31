@@ -25,7 +25,7 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–I 완료 · 열린 PR 0 (2026-08-31).** main HEAD = **`50f51ba`** · **실행 능력 9종** ·
+> **Wave A–I 완료 · 열린 PR 0 (2026-08-31).** main HEAD = **`411be33`** · **실행 능력 9종** ·
 > `run_tests` **352**.
 >
 > | Wave | PR | 내용 | main |
@@ -46,6 +46,8 @@
 > | — | [#120](https://github.com/gncorpseo-commits/capnet/pull/120) | `scripts/route_bench.py` + 카탈로그 숫자 정정 | **`9b613e4`** |
 > | — | [#121](https://github.com/gncorpseo-commits/capnet/pull/121) | 브리지·STATE (Decision (b) ack · Wave I Proposal) | `7f8d8c5` |
 > | **I** | [#122](https://github.com/gncorpseo-commits/capnet/pull/122) | **`PATCH /v1/capabilities/{id}` + 데모 3종 upsert** | **`50f51ba`** |
+> | — | [#123](https://github.com/gncorpseo-commits/capnet/pull/123) | 브리지·STATE (Wave I 닫기) | `2530ba7` |
+> | — | [#124](https://github.com/gncorpseo-commits/capnet/pull/124) | 측정 숫자 재현 규칙 Proposal | **`411be33`** |
 >
 > **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
 > · main **`083d53d`**. `text.rank` = **9번째 실행기**.
@@ -192,8 +194,25 @@
 >   **도구가 틀렸다.** 그건 다른 조건과의 **대조**가 잡았다 — 그러니 이 규칙을
 >   드리프트 대책으로 팔지 않는다.
 >
-> **구현 강도는 받지 않았다** — (A) 문서만 / (B) 신규만 좁은 검사 / (C) 소급 중
-> **(B) 를 좁게 제안**했고, Decision 전까지 구현하지 않는다.
+> **Decision 도착 (2026-08-31):** (a) 범위 좁힘 accept · (b) `CHANGELOG` 은 명령 대신
+> 「무엇으로 쟀나」 accept · **(c) (A) 문서만** · (d) `docs/guide/` 정본.
+> (B) 좁은 검사는 **이번 Wave 에서 하지 않는다** — 카탈로그가 이미 거의 지키고 있어
+> 값이 크지 않다. 필요해지면 별 Proposal.
+
+> **측정 숫자 규칙 — PR 대기 (2026-08-31).** 브랜치 `toma/measured-claims-guide` ·
+> base `411be33`. **코드·DDL·의존성·CI 검사 0.**
+>
+> - **정본 = [`docs/guide/measured-claims.md`](docs/guide/measured-claims.md)** ·
+>   `CLAUDE.md` 는 **한 줄 + 링크** (두 곳에 적으면 갈라진다).
+> - `CLAUDE.md` 안에서는 **절대규칙이 아니라 「작업 방식」**에 넣었다. Decision 자신이
+>   「운영 규칙이지 제품 주장·스키마 결정이 아님」이라 D-결정 승격을 안 했는데,
+>   절대규칙 머리말은 「어기면 **핵심 주장이 무너진다**」다. 그 여덟과 같은 칸에 두면
+>   **그 여덟의 무게가 내려간다.** ack 를 청했다 — 되돌리기 한 줄이다.
+> - **규칙이 못 막는 것을 문서 본문에 적었다** — #110·#116 은 막지만 **#120 「40/60」은
+>   못 막는다**(명령은 있었고 **도구가 틀렸다**). 「드리프트 대책으로 팔지 말라」를
+>   브리지에만 두면 다음 사람이 안 본다.
+> - guide **§7 이 자기 처지를 적는다** — (A) 는 검사가 없으니 **이 문서 자신이 「적혀만 있고
+>   기계가 잇지 않는 줄」**이다. (B) 로 갈 조건도 같이 적었다.
 >
 > **베이스라인 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
 > capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·
