@@ -5380,7 +5380,8 @@ status: open
 들어가서 생기는 **구조적** 충돌이다. **해결은 「둘 다 남기고 최신을 위에」.**
 다른 파일(문서 갱신일 포함)은 전부 자동 병합된다.
 
-합친 상태 실측: **`run_tests` 388 OK · capreq 66 OK · `check_input_purge` 17/17.**
+합친 상태 실측: **`run_tests` 388 OK · capreq 66 OK · `check_input_purge` 17/17 ·
+**`clean_room` 9/9 · `prod_room` 27/27 · `check_release` OK** (다섯을 합친 브랜치에서 잰 것).
 
 ### master 판단이 필요한 것
 
