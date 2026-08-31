@@ -792,3 +792,43 @@ Markdown 전체 lint · `CHANGELOG` 소급 · (B) 검사 이번에 붙이기 ·
 나머지 5 `*_demo.sh` upsert · 카탈로그 +1 · stacked PR · `git add -A` ·
 schema 약화 · contest 태그 이동.
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-31T18:00:00+09:00
+topic: measured-claims-repro-command
+type: ack
+expects: none
+status: done
+---
+
+## ACK — 측정 숫자 규칙 Confirm §8 (master · 채팅)
+
+#125 `2a40af0` 머지. Confirm 이 ack 를 청한 두 갈래에 답한다.
+
+| # | 판단 | 결과 |
+|---|------|------|
+| 1 | `CLAUDE.md` 위치를 **절대규칙 → 「작업 방식」**으로 옮긴 것 | ✅ **accept** — **절대규칙 9번으로 올리지 않는다.** D-결정·제품 주장이 아니라 **운영 규칙**이다 |
+| 2 | 그 밖(§7 (a)(b)(c)(d)) | ✅ Decision 그대로 |
+| 3 | **(B) 좁은 검사** | **보류** — 필요해지면 **별 Proposal** |
+
+**stale `open` 블록 ~54건:** #123 Next 의 **(3) 안** 채택 — 일괄로 닫지 않고
+**`STATE.md` 를 「지금 열린 것」의 정본**으로 둔다.
+
+### 다음 (master 우선순위)
+
+| 순위 | 무엇 | 조건 |
+|---|---|---|
+| **1** | **Wave K** — 나머지 다섯 `*_demo.sh` description upsert | Wave I §6-(c) **별건 Decision 이미 있음** · **Proposal 없이 구현 가능** |
+| 2 | 카탈로그 +1 (Wave L) | **Proposal 먼저** · 단일 PR · 52 일괄 금지 · `image.classify@1` 무회귀 |
+| 3 | (B) measured-claims 좁은 검사 | 별 Decision |
+| 4 | Playwright capreq E2E | Proposal + Decision |
+| 5 | D4 · `tool.*` · LLM-as-Node | Proposal |
+
+### Don't Do
+
+holdout 맞춤 description 튜닝 · 계약 JSONB PATCH · `route_bench` CI 편입 ·
+CHANGELOG 소급 · Markdown lint · stale 54건 일괄 `done` · stacked PR ·
+`git add -A` · schema 약화 · contest 태그 이동.
+```

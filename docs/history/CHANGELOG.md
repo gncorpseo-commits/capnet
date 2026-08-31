@@ -73,6 +73,60 @@ gate_run PASSED → 바인딩 → COMPLETED · 증적 team → team · M <= M
 `run_tests` 355 → **384** (`tests/test_safety_pii.py` 28종) · capreq 52 → **56** ·
 `check_submission` **28/28** (필수 가중치 8 → 9종) · `check_release` OK.
 
+## 데모 다섯 종도 설명을 DB 에 맞춘다 (Wave K) — 2026-08-31
+
+Wave I(#122)가 셋만 고쳤다. **나머지 다섯**을 같은 패턴으로 마친다.
+**코드·DDL·의존성 0** — 스크립트 다섯과 검사뿐이다.
+
+| 데모 | 능력 |
+|---|---|
+| `embed_demo.sh` | `text.embed` |
+| `text_demo.sh` | `text.classify` |
+| `table_demo.sh` | `table.extract` |
+| `series_demo.sh` | `timeseries.forecast` |
+| `image_embed_demo.sh` | `image.embed` |
+
+이제 **능력을 등록하는 스크립트 여덟 개 전부**가 기존 능력을 만나면 등록 본문의
+`description` 과 DB 를 비교해 **다를 때만** `PATCH /v1/capabilities/{id}` 한다.
+**문구를 데모에서 새로 짓지 않는다** — 정본은 저장소이고 DB 를 거기에 맞출 뿐이다.
+
+### 검사를 목록에서 **파생**으로 바꿨다
+
+`test_capability_patch_wiring` 이 데모 이름을 손으로 세고 있었다(Wave I 때 셋).
+**아홉 번째 데모에서 또 갈라질 자리**다 — 이번 달에 세 번 겪은 그 모양이라 고쳤다.
+이제 「`POST /v1/capabilities` 를 하는 스크립트」를 찾아서 **전부** 검사한다.
+
+`demo.sh` 는 여기 안 걸린다. `image.classify` 는 **seed 가 넣기 때문에 등록하지 않는다** —
+예외를 적어 둔 게 아니라 **대상이 아닌 것**이다. 검사가 그 사실도 같이 고정한다.
+
+`PATCH` 본문에 계약 칸이 섞이지 않는지 보는 검사도 더했다. Core 가 400 으로 막지만,
+데모가 **시도조차 하지 않게** 한다.
+
+### 실측 (2026-08-31 · 살아 있는 스택)
+
+드리프트를 **일부러 만들어** 확인했다 — `text.classify`·`table.extract` 의 DB 설명을
+저장소에 없는 문자열로 바꾼 뒤 데모를 돌렸다.
+
+```text
+text_demo          이미 있음 → …  설명 동기화 — DB 가 저장소보다 낡아 있었다 (PATCH)
+table_demo         이미 있음 → …  설명 동기화 — DB 가 저장소보다 낡아 있었다 (PATCH)
+embed_demo         이미 있음 → …  (이미 최신 — PATCH 안 함)
+image_embed_demo   이미 있음 → …  (이미 최신 — PATCH 안 함)
+series_demo        이미 있음 → …  (이미 최신 — PATCH 안 함)
+```
+
+다섯 다 종단 완주했고, 그 뒤 **능력 9종의 설명이 저장소와 전부 일치**한다.
+재현: `bash scripts/<이름>_demo.sh` (Core·Docker 필요).
+
+**라우팅 숫자는 적지 않는다.** 이 변경은 설명을 저장소에 맞출 뿐이고, 그 효과의 크기는
+`scripts/route_bench.py` 로만 말한다 (`docs/guide/measured-claims.md`).
+
+### 검증
+
+`run_tests` 352 → **355** OK (skip 7) · `check_submission` **27/27** · `check_release` OK.
+변이 확인: `table_demo` 에서 upsert 블록을 지우면 **4종이 실패한다**.
+
+
 ## 측정 숫자는 재현 명령 없이 쓰지 않는다 — 규칙 (문서만) — 2026-08-31
 
 **코드 · DDL · 의존성 · CI 검사 0.** 브리지 `measured-claims-repro-command` Decision (A).
