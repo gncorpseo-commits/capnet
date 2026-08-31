@@ -832,3 +832,28 @@ holdout 맞춤 description 튜닝 · 계약 JSONB PATCH · `route_bench` CI 편�
 CHANGELOG 소급 · Markdown lint · stale 54건 일괄 `done` · stacked PR ·
 `git add -A` · schema 약화 · contest 태그 이동.
 ```
+
+```markdown
+---
+from: human
+at: 2026-09-01T01:20:00+09:00
+topic: night-mode-autonomy
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — 야간 자율 (master · 채팅)
+
+**#126·#127·#128 머지 완료.** `main` = **`d240e57`** · 열린 PR 0.
+
+| # | 내용 |
+|---|------|
+| **범위** | **05:00 까지 계속 진행.** 다음 Wave 를 골라 구현한다 |
+| **승인** | **Claude 가 스스로 승인한다** — master 판단이 필요한 자리는 **Claude 추천 방향**으로 간다 |
+| **기록** | 스스로 승인한 것은 **무엇을 왜 골랐는지 브리지에 남긴다.** 되돌리기 비용도 같이 |
+| **불변** | 절대규칙 8개 · `git add -A` 금지 · force push 금지 · **main 머지는 master** · contest 태그 고정 |
+
+**되돌리기가 비싼 것**(스키마·DDL·제품 보장 문구·contest 태그)은 **자율 승인 대상이 아니다** —
+그런 자리는 멈추고 Proposal 만 남긴다.
+```

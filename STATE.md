@@ -25,8 +25,8 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–J 완료 (2026-08-31).** main HEAD = **`2a40af0`** · **실행 능력 9종** ·
-> `run_tests` **352**.
+> **Wave A–L 완료 (2026-09-01).** main HEAD = **`d240e57`** · **실행 능력 10종** ·
+> `run_tests` **387**.
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -49,6 +49,9 @@
 > | — | [#123](https://github.com/gncorpseo-commits/capnet/pull/123) | 브리지·STATE (Wave I 닫기) | `2530ba7` |
 > | — | [#124](https://github.com/gncorpseo-commits/capnet/pull/124) | 측정 숫자 재현 규칙 Proposal | **`411be33`** |
 > | **J** | [#125](https://github.com/gncorpseo-commits/capnet/pull/125) | **측정 숫자 재현 규칙** (문서만 · `docs/guide/measured-claims.md`) | **`2a40af0`** |
+> | **K** | [#126](https://github.com/gncorpseo-commits/capnet/pull/126) | 데모 다섯 종 description upsert (여덟 전부) | `c9fcaf3` |
+> | — | [#127](https://github.com/gncorpseo-commits/capnet/pull/127) | 브리지·STATE (Wave K·L) | `60f5b5a` |
+> | **L** | [#128](https://github.com/gncorpseo-commits/capnet/pull/128) | **`safety.pii` (10번째 실행기)** | **`d240e57`** |
 >
 > **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
 > · main **`083d53d`**. `text.rank` = **9번째 실행기**.
@@ -219,8 +222,8 @@
 > 절대규칙 9번으로 올리지 않는다. **(B) 좁은 검사는 보류.**
 > stale `open` 54건은 **(3) 안** — 일괄로 닫지 않고 **`STATE.md` 를 정본**으로 둔다.
 
-> **Wave K — PR 대기 (2026-08-31).** [#126](https://github.com/gncorpseo-commits/capnet/pull/126)
-> 브랜치 `toma/demo-upsert-five` · base `2a40af0`. **코드·DDL·의존성 0.**
+> **Wave K — 머지됨 (2026-09-01).** [#126](https://github.com/gncorpseo-commits/capnet/pull/126)
+> · main **`c9fcaf3`**. **코드·DDL·의존성 0.**
 >
 > - Wave I 가 셋만 고쳤던 데모 upsert 를 **나머지 다섯**(`text.embed`·`text.classify`·
 >   `table.extract`·`timeseries.forecast`·`image.embed`)까지 마쳤다. 이제 **능력을 등록하는
@@ -251,8 +254,8 @@
 > - **마스킹·삭제 도구가 아니고, 컴플라이언스를 주장하지 않는다** · `quality_profile='none'`
 > - **capreq 표시를 같은 PR 에서 함께 고친다** (#118 교훈 — 능력을 더하면 화면이 따라와야 한다)
 >
-> **구현 = [#128](https://github.com/gncorpseo-commits/capnet/pull/128) (PR 대기)** ·
-> 브랜치 `toma/safety-pii` · base `2a40af0`. **실행 능력 9종 → 10종.**
+> **구현 = [#128](https://github.com/gncorpseo-commits/capnet/pull/128) 머지됨** ·
+> main **`d240e57`**. **실행 능력 9종 → 10종.**
 >
 > - 규칙 7종 (`email`·`ipv4`·`ipv6`·`uuid`·`krrn_like`·`card_like`·`phone_kr_like`).
 >   `krrn_like` 는 **앞 6자리가 달력에 맞아야** 하고 `card_like` 는 **Luhn 통과**해야 한다 —
@@ -279,6 +282,23 @@
 > **머지 순서: #126 → #127 → #128.** 3번에서 `CHANGELOG` 충돌 1건.
 > `#128` 을 `#126` 위에 미리 얹지 않은 것은 **stacked PR 금지** 때문이다 — 충돌을 없애려면
 > 그 규칙을 어겨야 해서 **규칙을 지키고 충돌을 알리는 쪽**을 골랐다.
+
+> **야간 자율 · Wave M 착수 (2026-09-01 01:40).** 브리지 `night-mode-autonomy` ·
+> `chat-render-probe`. master 가 **05:00 까지 스스로 승인하며 진행**하라고 위임했다.
+> 되돌리기 비싼 것(스키마·DDL·제품 보장 문구·contest 태그)은 **자율 승인 대상이 아니다.**
+>
+> **Wave M = `chat.html` 을 실제로 그려 본다.** #107·#112·#118·#128 네 번 연속으로
+> 「브라우저 렌더링은 못 봤다」고 적은 자리이고, **거기서 결함이 두 번 나왔다**
+> (#118 원시 JSON · #128 고지 개수). **가장 오래 미확인으로 남은 것**이라 골랐다.
+>
+> **Playwright 를 쓰지 않는다.** `chat.html` 이 실제로 쓰는 브라우저 API 가 적어서
+> (`document` 12 · `fetch` 4 · `addEventListener` 3 · `window` **0** · `localStorage` **0**)
+> **최소 스텁**으로 `<script>` 를 통째로 실행할 수 있다 — **npm 패키지 0.**
+> `node` 가 없으면 **skip** 한다(이 WSL 에 없다) — 루트 `run_tests` 의 「의존성 설치 없음」을
+> 깨지 않는다.
+>
+> **여전히 못 보는 것:** 실제 브라우저의 CSS·레이아웃 · 사용자 상호작용.
+> 그래서 「브라우저에서 봤다」고 쓰지 않고 **「렌더러를 실행해 DOM 을 봤다」**고 쓴다.
 
 > **이번 세션에 손으로 센 목록 셋을 파생으로 바꿨다 (2026-08-31).**
 >

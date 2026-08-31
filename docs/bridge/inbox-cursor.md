@@ -4626,8 +4626,11 @@ at: 2026-08-31T19:00:00+09:00
 topic: demo-upsert-five
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **머지 · 닫음 (2026-09-01).** #126 `c9fcaf3`. §6 의 「검사를 목록 → 파생」 ack 포함.
+> 합쳐 보니 그 파생이 **Wave L 의 `pii_demo.sh` 를 자동으로 집었다** — 값을 했다.
 
 ## Confirm — Wave K [#126](https://github.com/gncorpseo-commits/capnet/pull/126) · 여덟 개가 다 됐고, 목록 하나를 없앴다
 
@@ -4710,8 +4713,10 @@ at: 2026-08-31T19:20:00+09:00
 topic: safety-pii-catalog-plus-one
 type: proposal
 expects: decision
-status: open
+status: done
 ---
+
+> **머지 · 닫음 (2026-09-01).** #128 `d240e57`. §6-(a) 그대로 · (c) `krrn_like` **존치**.
 
 ## Proposal — 카탈로그 +1: `safety.pii` (Wave L · 10번째) · **이름이 위험한 능력**
 
@@ -4807,8 +4812,11 @@ at: 2026-08-31T21:00:00+09:00
 topic: safety-pii-catalog-plus-one
 type: confirm
 expects: decision
-status: open
+status: done
 ---
+
+> **머지 · 닫음 (2026-09-01).** #128 `d240e57`. §6 세 갈래 — (a) 이대로 · (b) 이름·마스킹
+> 정책 유지 · (c) 하드코딩 → 파생 두 곳 ack.
 
 ## Confirm — Wave L [#128](https://github.com/gncorpseo-commits/capnet/pull/128) · 10번째 실행기
 
@@ -4883,8 +4891,11 @@ at: 2026-08-31T21:10:00+09:00
 topic: track-a-post-wave-l
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-01).** #126 `c9fcaf3` · #127 `60f5b5a` · #128 `d240e57` **셋 다 머지**.
+> 열린 PR 0. 다음은 아래 `chat-render-probe`.
 
 ## Next — 이번 세션 · 열린 PR 3
 
@@ -4937,8 +4948,11 @@ at: 2026-09-01T09:00:00+09:00
 topic: track-a-post-wave-l
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-01).** 정정을 받아들이고 머지 순서대로 처리됐다. `CHANGELOG` 충돌은
+> 예고한 대로 한 곳이었다.
 
 ## Confirm — **정정: 「파일이 겹치지 않는다」는 틀렸다.** 세 PR 을 합쳐 봤다
 
@@ -4989,4 +5003,85 @@ Wave K 파생 검사가 보는 데모: 9
 「겹치지 않는다」는 **파일 목록을 눈으로 본 것**이었지 **합쳐 본 것**이 아니었다.
 이번 달에 세 번 겪은 것과 같은 모양이다 — **확인하지 않은 것을 확인한 것처럼 적었다.**
 앞으로 PR 을 둘 이상 동시에 열 때는 **합쳐서 돌려 보고 나서** 그 문장을 쓴다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T01:40:00+09:00
+topic: chat-render-probe
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — Wave M: **#107 부터 못 본 것을 본다** — `chat.html` 을 실제로 그려 본다
+
+야간 자율 위임(`night-mode-autonomy`)으로 **스스로 승인하고 착수한다.**
+되돌리기 비용은 **검사 파일 둘 + CI 한 단계**다.
+
+### 1. 왜 이것을 골랐나
+
+**#107 · #112 · #118 · #128 — 네 번 연속으로 「`chat.html` 브라우저 렌더링은 못 봤다」고 적었다.**
+이 저장소에서 **가장 오래 미확인으로 남은 것**이고, 그 자리에서 실제로 버그가 두 번 나왔다
+(#118 의 원시 JSON · #128 의 자른 사실 고지 개수).
+
+다른 후보와 견줘 보면:
+
+| 후보 | 값 | 문제 |
+|---|---|---|
+| **`chat.html` 실행 검증** | **미확인 4회 · 결함 2회 나온 자리** | 없음 (아래 §2) |
+| 카탈로그 +1 (11번째) | 능력 하나 | 남은 후보가 `text.moderate`·`safety.classify` 처럼 **주장이 위험한 것**뿐이다 |
+| (B) measured-claims 검사 | 작음 | master 가 **보류**로 뒀다 |
+| D4 조회 인증 | 보안 | **되돌리기 비싼 제품 결정** — 자율 승인 대상 아님 |
+
+### 2. 새 의존성 0 으로 한다 — Playwright 를 쓰지 않는다
+
+Playwright·jsdom 은 **새 의존성이고 무겁다.** 그런데 `chat.html` 이 실제로 쓰는 브라우저
+API 는 **적다** (실측):
+
+```text
+document.*  12   ·  addEventListener 3  ·  fetch 4  ·  FormData 1  ·  setTimeout 1
+window.*     0   ·  localStorage 0
+```
+
+그래서 **`document`·`fetch` 최소 스텁**(순수 JS 몇십 줄)이면 `<script>` 를 통째로 실행하고
+`renderSummary()` 를 **진짜로 호출**할 수 있다. **npm 패키지 0.**
+
+### 3. 무엇을 보나
+
+능력 **10종이 내는 결과 모양 전부**를 `summarize_result` 에 통과시킨 뒤, 그 요약으로
+`renderSummary()` 를 실행해 **만들어진 DOM 을 검사**한다.
+
+- 칸마다 **실제로 그려지는가** (지금은 「`result.X` 문자열이 파일에 있는가」까지만 본다)
+- `safety.pii` 의 **「없다가 아니라 못 찾았다」 문장이 화면에 실제로 붙는가**
+- 가려진 `text` 가 **그대로 그려지는가** (화면이 되돌리지 않는가)
+- 자른 사실 고지가 **truncated 일 때만** 나오는가
+
+**지금 검사와 다른 점:** `test_chat_html_unit` 은 **문자열 검사**다. 그래서 「반쯤 지운
+렌더러」를 통과시킨다는 한계를 그 파일이 스스로 적어 뒀다. 이건 **실행**이라 그 구멍을 막는다.
+
+### 4. 무엇을 만드나
+
+| # | 산출물 |
+|---|--------|
+| 1 | `capreq/tests/chat_render_probe.js` — 최소 DOM·fetch 스텁 + 실행 + 단언 |
+| 2 | `capreq/tests/test_chat_render.py` — `node` 를 찾아 실행. **없으면 skip** (이 WSL 에 node 가 없다) |
+| 3 | `.github/workflows` `capreq` 잡에 `actions/setup-node` 한 단계 |
+| 4 | `capreq/README.md` 「눈으로 확인하기」에 한 줄 |
+
+**`node` 가 없으면 건너뛴다.** 루트 `run_tests` 의 「의존성 설치 없음」을 깨지 않는다 —
+기존 skip 7 과 같은 취급이다.
+
+### 5. 여전히 못 보는 것 (정직하게)
+
+- **실제 브라우저의 CSS·레이아웃** — 스텁은 DOM 트리만 만든다
+- **사용자 상호작용**(드래그앤드롭·폼 제출) — 이번 범위 밖. 스텁을 키우면 되지만
+  **한 번에 하나씩** 한다
+- 「브라우저에서 봤다」고 **여전히 쓰지 않는다.** 「렌더러를 실행해 DOM 을 봤다」고 쓴다
+
+### 6. 스스로 승인한 근거
+
+되돌리기 = **새 파일 둘 + CI 한 단계.** 제품 코드 0 · 스키마 0 · 제품 주장 0 ·
+새 npm 의존성 0. 야간 위임의 「되돌리기 비싼 것은 제외」에 걸리지 않는다.
 ```
