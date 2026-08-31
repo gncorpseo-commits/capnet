@@ -25,8 +25,8 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–J 완료 (2026-08-31).** main HEAD = **`2a40af0`** · **실행 능력 9종** ·
-> `run_tests` **352**.
+> **Wave A–L 완료 (2026-09-01).** main HEAD = **`d240e57`** · **실행 능력 10종** ·
+> `run_tests` **387**.
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -49,6 +49,9 @@
 > | — | [#123](https://github.com/gncorpseo-commits/capnet/pull/123) | 브리지·STATE (Wave I 닫기) | `2530ba7` |
 > | — | [#124](https://github.com/gncorpseo-commits/capnet/pull/124) | 측정 숫자 재현 규칙 Proposal | **`411be33`** |
 > | **J** | [#125](https://github.com/gncorpseo-commits/capnet/pull/125) | **측정 숫자 재현 규칙** (문서만 · `docs/guide/measured-claims.md`) | **`2a40af0`** |
+> | **K** | [#126](https://github.com/gncorpseo-commits/capnet/pull/126) | 데모 다섯 종 description upsert (여덟 전부) | `c9fcaf3` |
+> | — | [#127](https://github.com/gncorpseo-commits/capnet/pull/127) | 브리지·STATE (Wave K·L) | `60f5b5a` |
+> | **L** | [#128](https://github.com/gncorpseo-commits/capnet/pull/128) | **`safety.pii` (10번째 실행기)** | **`d240e57`** |
 >
 > **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
 > · main **`083d53d`**. `text.rank` = **9번째 실행기**.
@@ -219,8 +222,8 @@
 > 절대규칙 9번으로 올리지 않는다. **(B) 좁은 검사는 보류.**
 > stale `open` 54건은 **(3) 안** — 일괄로 닫지 않고 **`STATE.md` 를 정본**으로 둔다.
 
-> **Wave K — PR 대기 (2026-08-31).** [#126](https://github.com/gncorpseo-commits/capnet/pull/126)
-> 브랜치 `toma/demo-upsert-five` · base `2a40af0`. **코드·DDL·의존성 0.**
+> **Wave K — 머지됨 (2026-09-01).** [#126](https://github.com/gncorpseo-commits/capnet/pull/126)
+> · main **`c9fcaf3`**. **코드·DDL·의존성 0.**
 >
 > - Wave I 가 셋만 고쳤던 데모 upsert 를 **나머지 다섯**(`text.embed`·`text.classify`·
 >   `table.extract`·`timeseries.forecast`·`image.embed`)까지 마쳤다. 이제 **능력을 등록하는
@@ -251,8 +254,8 @@
 > - **마스킹·삭제 도구가 아니고, 컴플라이언스를 주장하지 않는다** · `quality_profile='none'`
 > - **capreq 표시를 같은 PR 에서 함께 고친다** (#118 교훈 — 능력을 더하면 화면이 따라와야 한다)
 >
-> **구현 = [#128](https://github.com/gncorpseo-commits/capnet/pull/128) (PR 대기)** ·
-> 브랜치 `toma/safety-pii` · base `2a40af0`. **실행 능력 9종 → 10종.**
+> **구현 = [#128](https://github.com/gncorpseo-commits/capnet/pull/128) 머지됨** ·
+> main **`d240e57`**. **실행 능력 9종 → 10종.**
 >
 > - 규칙 7종 (`email`·`ipv4`·`ipv6`·`uuid`·`krrn_like`·`card_like`·`phone_kr_like`).
 >   `krrn_like` 는 **앞 6자리가 달력에 맞아야** 하고 `card_like` 는 **Luhn 통과**해야 한다 —
@@ -279,6 +282,97 @@
 > **머지 순서: #126 → #127 → #128.** 3번에서 `CHANGELOG` 충돌 1건.
 > `#128` 을 `#126` 위에 미리 얹지 않은 것은 **stacked PR 금지** 때문이다 — 충돌을 없애려면
 > 그 규칙을 어겨야 해서 **규칙을 지키고 충돌을 알리는 쪽**을 골랐다.
+
+> **야간 자율 · Wave M 착수 (2026-09-01 01:40).** 브리지 `night-mode-autonomy` ·
+> `chat-render-probe`. master 가 **05:00 까지 스스로 승인하며 진행**하라고 위임했다.
+> 되돌리기 비싼 것(스키마·DDL·제품 보장 문구·contest 태그)은 **자율 승인 대상이 아니다.**
+>
+> **Wave M = `chat.html` 을 실제로 그려 본다.** #107·#112·#118·#128 네 번 연속으로
+> 「브라우저 렌더링은 못 봤다」고 적은 자리이고, **거기서 결함이 두 번 나왔다**
+> (#118 원시 JSON · #128 고지 개수). **가장 오래 미확인으로 남은 것**이라 골랐다.
+>
+> **Playwright 를 쓰지 않는다.** `chat.html` 이 실제로 쓰는 브라우저 API 가 적어서
+> (`document` 12 · `fetch` 4 · `addEventListener` 3 · `window` **0** · `localStorage` **0**)
+> **최소 스텁**으로 `<script>` 를 통째로 실행할 수 있다 — **npm 패키지 0.**
+> `node` 가 없으면 **skip** 한다(이 WSL 에 없다) — 루트 `run_tests` 의 「의존성 설치 없음」을
+> 깨지 않는다.
+>
+> **구현 = [#130](https://github.com/gncorpseo-commits/capnet/pull/130) (PR 대기).**
+> 렌더러(31종)뿐 아니라 **흐름 전체**(28종)까지 넣었다 — 보내기 → 라우팅 → 폴링 → 결과.
+>
+> - **#112 의 클라이언트 짝을 처음 봤다.** 그때 고친 것은 서버 쪽이고, **클라이언트가
+>   파일을 `FormData` 에 실제로 담는지는 아무도 확인한 적이 없었다.** 맞게 담고 있었다.
+> - **문자열 검사가 못 잡던 것을 잡는다** — `result.pii` 몸통만 지우면 문자열 검사는
+>   62 OK 로 통과하고 실행 검사는 7종으로 잡는다(변이 확인). 첨부·폴링 변이도 각각 1·5종.
+> - **첫 실행에서 24종이 한꺼번에 실패했다** — 스텁에 `childElementCount` 가 없어서였다.
+>   **스텁 쪽 결함**이라 고쳤고 주석에 남겼다. **프로브도 틀릴 수 있다**(#120 하네스와 같은 자리).
+> - capreq 56 → **66**(node 있을 때) · skip 6(없을 때) · **CI 로그에서 `Ran 66 · OK` 확인.**
+>
+> **여전히 못 보는 것:** 실제 브라우저의 CSS·레이아웃 · 파일 선택기의 OS 상호작용.
+> 그래서 「브라우저에서 봤다」고 쓰지 않고 **「렌더러·흐름을 실행해 DOM 을 봤다」**고 쓴다.
+
+> **Wave N — 착수 (2026-09-01 02:00).** 라우팅 벤치가 **10번째 능력을 안 덮고 있었다.**
+> 카탈로그는 `safety.pii` 를 「구현됨」이라 하는데 `scripts/route_bench.py` 의 프롬프트
+> 세트와 `test_route_bench.IMPLEMENTED` 는 **9종에서 멈춰 있었다** — `IMPLEMENTED` 가
+> **손으로 센 목록**이라 검사가 못 잡았다.
+>
+> **이번 달 네 번째 같은 모양이다** (데모 목록 · 자른 사실 고지 · 바이트 동일 문구 · 여기).
+> `IMPLEMENTED` 를 **카탈로그의 「✅ 구현됨」 행에서 파생**으로 바꾸자 **그 자리에서
+> 실패가 떴다** — 그게 이 Wave 의 시작이다.
+>
+> **구현 = [#131](https://github.com/gncorpseo-commits/capnet/pull/131) (PR 대기).**
+> 실측: 능력 10종 · 홀드아웃 13개 × R=5 → **42/65** · `safety.pii` **5/5** ·
+> **기존 12개 37/60**(이전 밴드 36·36·38 안) — **10번째 능력이 이웃을 밀어내지 않았다.**
+> 재현: `PYTHONPATH=capreq/src python3 scripts/route_bench.py --set holdout --repeats 5`.
+> **개선은 주장하지 않는다.**
+
+> **Wave O — PR 대기 (2026-09-01).** [#132](https://github.com/gncorpseo-commits/capnet/pull/132)
+> **D22 가 「선행 조건」이라고 못박은 입력 보존·삭제에 검사가 하나도 없었다.**
+> 구현은 돼 있었다(`task_input_purge_due` 뷰 · `mark_purged` · GC) — **검사만 없었다.**
+> `tests/integration/check_input_purge.py` **17종** · **코드 0 · DDL 0 · 정책 숫자 0.**
+>
+> - 없으면 조용히 무너지는 것: **뷰의 샘플 제외(0013 B2)가 빠지면 계약 샘플 바이트가
+>   24h 뒤 지워지고 게이트가 통째로 못 돈다** · `mark_purged` 가 행까지 지우면
+>   「어디로 갔는지 답한다」가 거짓이 된다 · `STORED` 조건이 빠지면 GC 가 무한 재시도한다
+> - 「**바이트만 지우고 행은 남는다**」를 고정했다 — `PURGED` 뒤에도 `sha256`·크기·MIME·
+>   올린 주체가 그대로다. **이게 「어디로 갔는지」에 답하는 값이다.**
+> - **정책 숫자(24h·7d·72h)는 바꾸지 않았다** — 되돌리기 비싼 제품 결정이라 야간 자율
+>   대상이 아니다. **지금 값을 읽어서 고정할 뿐이다.**
+> - CI 통합 검사 14 → **15 통과** 확인.
+
+> **파생으로 바꾸지 않은 자리도 있다 (2026-09-01).** `check_submission.REQUIRED_WEIGHTS` 는
+> 손으로 센 목록이지만 **그대로 뒀다.** 파일 시스템에서 파생하면 **누가 가중치를 지웠을 때
+> 목록도 같이 줄어들어 아무것도 안 걸린다.** 「목록을 파생으로」가 언제나 옳은 것이 아니라
+> **그 목록이 무엇을 지키는가**에 달렸다.
+
+> **Wave P — PR 대기 (2026-09-01).** [#133](https://github.com/gncorpseo-commits/capnet/pull/133)
+> `docs/guide/testing.md` 가 이번 야간에 생긴 **두 부류를 몰랐다** — `node` 실행 프로브
+> (없으면 skip)와 라우팅 벤치(수동). §4.6 을 채웠다. **문서만 · 코드 0 · 검사 0.**
+>
+> **이 Wave 의 중심은 「안 만든 것」이다.** 「능력 N종」이 박힌 자리에 검사를 붙이려다
+> **대부분이 과거 서술**임을 봤다 — 「그때 5종만 등록된 스택에서」(정정 기록) ·
+> 「능력 6종이 같은 사슬을 통과했다」(**제출 원고**). 일괄 검사를 붙이면 **설명을 지워야
+> 통과하는 검사**가 된다(`_srcguard` 의 다섯 사고). **그래서 만들지 않았다.**
+>
+> **이번 야간에 「안 하는 쪽」을 두 번 골랐다** — 위 `REQUIRED_WEIGHTS` 와 여기.
+> 「목록을 파생으로」도 「모든 것에 검사를」도 규칙이 아니다. **그 목록이·그 문장이 무엇을
+> 지키는가**에 달렸다.
+>
+> 대신 **내 문서의 낡은 예시**를 고쳤다 — `measured-claims.md` 가 「능력 9종」을 예로
+> 들고 있었는데 10종이 되면서 낡았다. **규칙 문서가 자기 말을 안 지키는 꼴**이라
+> 개수 예시는 `N` 으로, 측정 예시에는 **언제 잰 것인지**를 붙였다.
+
+> **야간 세션 총괄 (2026-09-01 01:24 → 02:30).** 열린 PR **5** (#129~#133).
+> **머지 순서 #129 → #130 → #131 → #132 → #133** · 뒤 셋에서 각각 `CHANGELOG` 충돌 1건
+> (**둘 다 남기고 최신을 위에**). 합친 상태 실측: **`run_tests` 388 · capreq 66 ·
+> `check_input_purge` 17/17 · `clean_room` 9/9 · `prod_room` 27/27 · `check_release` OK.**
+>
+> **넷 다 「이미 있는데 아무도 안 보던 자리」였다** — `chat.html` 렌더링(#107 부터 네 번) ·
+> #112 의 클라이언트 짝 · 라우팅 벤치의 능력 목록 · D22 의 선행 조건.
+>
+> **제품 기능은 늘지 않았다.** 11번째 능력(`retrieve.dense`)을 검토했다가 **접었다** —
+> `text.embed` 는 **문자 n-gram 해시 사영**이라 코사인이 **철자 유사도**이지 의미가 아니다.
+> 「dense retrieval」이라는 이름으로 내면 오해를 부르고 실질은 `text.rank` 와 같은 축이다.
 
 > **이번 세션에 손으로 센 목록 셋을 파생으로 바꿨다 (2026-08-31).**
 >

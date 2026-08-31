@@ -71,6 +71,7 @@ TUNING: list[tuple[str, str]] = [
     ("이 이미지를 벡터로 바꿔줘", "image.embed"),
     ("이 표에서 열 타입이랑 행 좀 읽어줘", "table.extract"),
     ("이 시계열 다음 값 예측해줘", "timeseries.forecast"),
+    ("이 문서에 주민번호나 카드번호 같은 게 있는지 봐줘", "safety.pii"),
 ]
 
 # **설명을 고칠 때 이 세트를 보지 않는다.** 보는 순간 홀드아웃이 아니게 된다.
@@ -87,6 +88,7 @@ HOLDOUT: list[tuple[str, str]] = [
     ("그림 특징 벡터 만들어줘", "image.embed"),
     ("텍스트 표 파싱해서 컬럼 종류 알려줘", "table.extract"),
     ("지난 값들로 다음 구간 추정해줘", "timeseries.forecast"),
+    ("민감한 번호가 어디 적혀 있는지 가려서 보여줘", "safety.pii"),
 ]
 
 SETS = {"tuning": TUNING, "holdout": HOLDOUT}

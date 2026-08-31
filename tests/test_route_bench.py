@@ -14,6 +14,7 @@ Core·Ollama 가 필요한 실행 자체는 여기서 하지 않는다 (수동 �
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -30,11 +31,22 @@ try:
 except Exception:  # pragma: no cover
     CapabilityInfo = None
 
-# `capability-catalog.md` 가 「구현됨」으로 표시한 능력. 하네스는 이것을 다 덮어야 한다.
-IMPLEMENTED = frozenset({
-    "image.classify", "text.classify", "text.embed", "timeseries.forecast",
-    "image.embed", "table.extract", "text.ner", "text.extract", "text.rank",
-})
+# 「구현됨」 목록을 **손으로 세지 않는다.**
+#
+# 처음엔 아홉 개를 적어 뒀는데, Wave L 이 `safety.pii` 를 더했을 때 **여기가 뒤처져도
+# 검사가 통과했다** — 그래서 라우팅 벤치가 새 능력을 덮지 않는 것을 아무도 몰랐다.
+# 이 저장소가 이번 달에 네 번 겪은 모양이다(데모 목록 · 자른 사실 고지 · 바이트 동일 문구 ·
+# 그리고 여기). **정본은 카탈로그의 「✅ 구현됨」 행**이고 여기는 그걸 읽는다.
+_IMPL_ROW = re.compile(
+    r"^\|\s*\d+\s*\|\s*`([a-z][a-z0-9_.]*)`\s*\|.*✅\s*\*\*구현됨\*\*", re.M
+)
+
+
+def implemented_capabilities() -> frozenset[str]:
+    return frozenset(_IMPL_ROW.findall(CATALOG.read_text(encoding="utf-8")))
+
+
+IMPLEMENTED = implemented_capabilities()
 
 
 def _load():
@@ -61,6 +73,10 @@ class TestPromptSets(unittest.TestCase):
         for name in ("TUNING", "HOLDOUT"):
             wants = {w for _, w in getattr(self.m, name)}
             self.assertEqual(IMPLEMENTED - wants, set(), f"{name} 이 안 덮는 능력이 있다")
+
+    def test_the_catalog_probe_finds_things(self) -> None:
+        """정규식이 0개를 찾으며 통과하는 상태를 막는다."""
+        self.assertGreaterEqual(len(IMPLEMENTED), 10, sorted(IMPLEMENTED))
 
     def test_expected_codes_are_real_capabilities(self) -> None:
         """기대값에 카탈로그에 없는 능력을 적어 두면 영원히 실패한다."""
