@@ -5157,3 +5157,133 @@ capreq 56 → **66** (`node` 있을 때) · **skip 6** (없을 때) · 프로브
 - §5 흐름을 같은 PR 에 합친 것
 - 그 밖은 Proposal 그대로
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T02:10:00+09:00
+topic: night-mode-waves-n-o
+type: confirm
+expects: decision
+status: open
+---
+
+## Confirm — Wave N·O · **둘 다 「검사가 없어서 뒤처진 자리」였다**
+
+야간 자율로 스스로 승인하고 진행했다. 무엇을 왜 골랐는지 남긴다.
+
+### Wave N — 라우팅 벤치가 10번째 능력을 안 덮고 있었다 ([#131](https://github.com/gncorpseo-commits/capnet/pull/131))
+
+다음 후보를 찾다가 **발견**했다. 카탈로그는 `safety.pii` 를 「구현됨」이라 하는데
+`route_bench` 의 프롬프트 세트와 `test_route_bench.IMPLEMENTED` 는 **9종에서 멈춰 있었다** —
+`IMPLEMENTED` 가 **손으로 센 목록**이라 검사가 못 잡았다.
+
+**이번 달 네 번째 같은 모양이다:**
+
+| 어디 | 무엇을 세고 있었나 | 언제 |
+|---|---|---|
+| `test_capability_patch_wiring` | 데모 이름 셋 | Wave K |
+| `test_chat_html_unit` | 「자른 사실 고지」 3개 | Wave L |
+| `test_text_rank` | 「셋 다 바이트가 같다」 | Wave L |
+| **`test_route_bench`** | **구현 능력 9종** | **Wave N** |
+
+카탈로그의 「✅ 구현됨」 행에서 **파생**으로 바꾸자 **그 자리에서 실패가 떴다.**
+
+**실측:** 능력 10종 · 홀드아웃 13개 × R=5 → **42/65.** `safety.pii` **5/5** ·
+**기존 12개 37/60** 으로 이전 밴드(36·36·38) 안이다 — **10번째 능력이 이웃을 밀어내지 않았다.**
+**개선은 주장하지 않는다.**
+
+### Wave O — 입력 보존·삭제에 검사가 하나도 없었다 ([#132](https://github.com/gncorpseo-commits/capnet/pull/132))
+
+**D22 가 「보존·삭제 정책이 선행 조건」이라고 못박은 그 정책**이다. 구현은 돼 있었다
+(`task_input_purge_due` 뷰 · `mark_purged` · GC). **검사만 없었다.**
+
+없으면 조용히 무너지는 것 셋을 적었다. 그중 하나가 특히 무섭다 —
+**뷰의 샘플 제외(0013 B2)가 빠지면 계약 샘플 바이트가 24h 뒤 지워지고 게이트가 통째로
+못 돈다.** 아무도 모르게.
+
+**17/17 통과.** 「바이트만 지우고 행은 남는다」 — `PURGED` 뒤에도 `sha256`·크기·MIME·
+올린 주체가 그대로다. **이게 「어디로 갔는지」에 답하는 값이다.**
+
+**정책 숫자(24h·7d·72h)는 바꾸지 않았다** — 되돌리기 비싼 제품 결정이라 야간 자율 대상이
+아니다. **지금 값을 읽어서 고정할 뿐이다.**
+
+### 스스로 승인한 근거
+
+둘 다 **코드 0 · DDL 0 · 정책 숫자 0 · 새 의존성 0.** 되돌리기 = 검사 파일이다.
+야간 위임의 「되돌리기 비싼 것은 제외」에 걸리지 않는다.
+
+### 파생으로 바꾸지 **않은** 자리도 있다
+
+`check_submission.REQUIRED_WEIGHTS` 는 손으로 센 목록이지만 **그대로 뒀다.**
+파일 시스템에서 파생하면 **누가 가중치를 지웠을 때 목록도 같이 줄어들어 아무것도 안 걸린다.**
+「목록을 파생으로」가 언제나 옳은 것이 아니라는 것 — **그 목록이 무엇을 지키는가**에 달렸다.
+
+### 결정 요청
+
+- (a) Wave N·O 이대로
+- (b) 정책 숫자(24h·7d·72h)를 손볼지 — **별건 Decision** (나는 지금 값을 유지하자고 본다)
+- (c) `IMPLEMENTED` 파생 방식(카탈로그 행 정규식) ack
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T02:15:00+09:00
+topic: track-a-night-open-prs
+type: next
+expects: decision
+status: open
+---
+
+## Next — 야간 세션 · 열린 PR 4
+
+| PR | 내용 | 성격 |
+|---|---|---|
+| [#129](https://github.com/gncorpseo-commits/capnet/pull/129) | 브리지·STATE (Wave K·L 닫기 · M·N·O 기록) | **코드 0** |
+| [#130](https://github.com/gncorpseo-commits/capnet/pull/130) | **Wave M** — `chat.html` 렌더러 + 흐름 실행 검증 | 검사 |
+| [#131](https://github.com/gncorpseo-commits/capnet/pull/131) | **Wave N** — 라우팅 벤치가 10종을 덮게 | 검사 |
+| [#132](https://github.com/gncorpseo-commits/capnet/pull/132) | **Wave O** — 입력 보존·삭제 검사 | 검사 |
+
+### 머지 순서와 충돌 (합쳐서 확인했다)
+
+```text
+main + #129  OK   + #130  OK
+      + #131  CONFLICT — docs/history/CHANGELOG.md
+      + #132  CONFLICT — docs/history/CHANGELOG.md
+합친 상태: run_tests 388 OK · capreq 66 OK · check_input_purge 17/17
+```
+
+**코드 PR 마다 `CHANGELOG` 최상단에 항목이 들어가서** 생기는 **구조적** 충돌이다.
+다른 파일(문서 갱신일 포함)은 전부 자동 병합된다. **해결은 「둘 다 남기고 최신을 위에」.**
+
+> 이걸 없애려면 CHANGELOG 를 조각 파일로 쪼개는 방식(changeset)이 있는데,
+> **`CLAUDE.md` 의 「버전 이력은 `CHANGELOG.md` 단독」을 바꾸는 일**이라 자율로 정하지 않았다.
+> 필요하면 Proposal 을 올린다.
+
+### 이번 야간이 찾은 것
+
+**넷 다 「이미 구현돼 있는데 검사가 없어서 뒤처지거나 못 보던 자리」였다.**
+
+| Wave | 무엇 |
+|---|---|
+| M | `chat.html` 렌더링 — **#107 부터 네 번 미룬 것** · 변이 3종으로 값 증명 |
+| M | **#112 의 클라이언트 짝** — 첨부가 `FormData` 에 실리는지 아무도 안 봤다 |
+| N | 라우팅 벤치가 **10번째 능력을 안 덮음** |
+| O | **D22 의 선행 조건**(보존·삭제)에 검사 0 |
+
+### 다음 후보 (master 판단)
+
+| # | 무엇 | 조건 |
+|---|---|---|
+| 1 | **#129–#132 머지** | 순서·충돌은 위 |
+| 2 | 정책 숫자(24h·7d·72h) 손볼지 | 별건 Decision |
+| 3 | `CHANGELOG` 충돌을 구조로 없앨지 (changeset) | **`CLAUDE.md` 규칙 변경** — Proposal 필요 |
+| 4 | 카탈로그 +1 (11번째) | 남은 후보가 `code.embed` 정도인데 **`text.embed` 와 차별점이 약하다** — 능력 수를 늘리는 것 자체가 목적이 되면 「52 일괄」과 같은 냄새다 |
+| 5 | D4 조회 인증 · `tool.*` · LLM-as-Node | **되돌리기 비싼 제품 결정** — 자율 대상 아님 |
+
+### 여전히 못 보는 것
+
+실제 브라우저의 **CSS·레이아웃**, 파일 선택기의 **OS 상호작용**. Playwright 는 새 의존성이라
+안 들였다 — **본 것만 말한다.**
+```
