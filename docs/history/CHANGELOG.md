@@ -1,5 +1,47 @@
 # Changelog
 
+## 입력 보존·삭제에 검사가 하나도 없었다 (Wave O) — 2026-09-01
+
+**D22 는 Core 중개 수집을 허용하면서 「보존·삭제 정책이 선행 조건」이라고 못박았다.**
+그 정책은 구현돼 있다 — `task_input_purge_due` 뷰 · `mark_purged` · Core 워커의 GC.
+**그런데 검사가 하나도 없었다.** `tests/integration/check_input_purge.py` **17종** 신설.
+
+**코드 0 · DDL 0 · 정책 숫자 변경 0** — 지금 정책이 무엇인지 **읽어서** 고정할 뿐이다.
+
+### 없으면 무엇이 조용히 무너지나
+
+| 무엇이 빠지면 | 무슨 일이 |
+|---|---|
+| 뷰의 `NOT EXISTS (… capability.sample_input_id …)` (0013 B2) | **계약 샘플 바이트가 24시간 뒤 지워지고** 계약 게이트가 통째로 못 돈다 |
+| `mark_purged` 가 행까지 지우게 되면 | **「어디로 갔는지 답할 수 있다」가 거짓**이 된다 — 제품 주장이 사라지는데 아무도 모른다 |
+| `WHERE storage_state = 'STORED'` | 이미 지운 것을 GC 가 **무한히 다시 집는다** |
+
+### 고정한 것 (실측 17/17)
+
+- **정책이 SQL 에 있다** — `reason` 세 종이 뷰에서 나온다:
+  `orphan-24h`(task 없는 업로드) · `finished-7d`(종결 후) · `stale-72h`(미완료 최대 수명)
+- **아직 살아 있는 것은 안 지운다** — 방금 끝난 task · 도는 중인 task · 1시간짜리 고아
+- **계약 샘플은 대상에서 빠진다** — 붙기 전엔 고아라 대상이었다가, 붙는 순간 **뷰에서 사라진다**
+- **바이트만 지우고 행은 남는다** — `PURGED` 뒤에도 `sha256`·`byte_size`·`media_type`·
+  `uploaded_by` 가 **그대로다**. 이게 「어디로 갔는지」에 답하는 값이다
+- **두 번 돌려도 안전하다** — `mark_purged` 는 `STORED` 인 것만 바꾸고, `PURGED` 는 목록에서 빠진다
+
+### 쓰다가 배운 것
+
+`task` 의 `capability_trust_domain_min` 은 **스냅샷이고 복합 FK 가 걸려 있다.** 검사도
+앱과 같은 태도로 `capability` 에서 **`INSERT … SELECT` 로 복사**한다 — 검사가 손으로
+채우면 그 검사만 통과하는 상태를 만든다.
+
+`uploaded_by` 는 `app_user` 를 가리키는 **FK** 다. 「누가 올렸나」가 실제 사람을 가리켜야
+증적이 뜻을 갖는다는 것이 스키마에 이미 박혀 있었다.
+
+재현: `scripts/run_integration.sh check_input_purge` (DB 필요).
+
+### 검증
+
+통합 검사 13 → **14종**. `run_integration.sh` 가 `tests/integration/check_*.py` 를
+자동으로 줍는다 — **CI 배선 변경 없음.** `run_tests` **388** 그대로.
+
 ## 카탈로그 +1: `safety.pii` — 탐지가 아니라 참고다 (Wave L) — 2026-08-31
 
 **10번째 실행기.** DDL 0 · 새 의존성 0 · 새 학습 0 · 외부 말뭉치 0.
