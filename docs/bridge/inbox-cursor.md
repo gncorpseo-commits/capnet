@@ -4123,8 +4123,11 @@ at: 2026-08-31T01:00:00+09:00
 topic: capability-description-patch
 type: proposal
 expects: decision
-status: open
+status: done
 ---
+
+> **머지 · 닫음 (2026-08-31).** #122 `50f51ba`. §2 범위 그대로 · §6-(b) 데모 셋만 ·
+> §6-(c) `name` 제외까지 확정.
 
 ## Proposal — Wave I: `PATCH /v1/capabilities/{id}` 로 **설명만** 고친다
 
@@ -4224,8 +4227,12 @@ at: 2026-08-31T03:00:00+09:00
 topic: capability-description-patch
 type: confirm
 expects: decision
-status: open
+status: done
 ---
+
+> **ack · 닫음 (2026-08-31).** §6 세 갈래 전부 승인 —
+> **(a)** PATCH + 데모 3종 upsert 이대로 · **(b)** 40/60 **철회 방식(지운 자국을 남긴다)** 이대로 ·
+> **(c)** 나머지 다섯 `*_demo.sh` upsert 는 **별건**으로 남긴다.
 
 ## Confirm — Wave I [#122](https://github.com/gncorpseo-commits/capnet/pull/122) · **그리고 내가 만든 숫자 하나를 철회한다**
 
@@ -4308,8 +4315,11 @@ at: 2026-08-31T03:10:00+09:00
 topic: track-a-post-wave-i
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-08-31).** #121 `7f8d8c5` · #122 `50f51ba` **둘 다 머지**. 열린 PR 0.
+> 「돌아오면 필요한 판단」 ①②는 처리됐고, ③(데모 다섯) ④(다음 Wave)는 아래 Next 로 옮긴다.
 
 ## Next — 이번 세션 · 여기서 멈춘다 (열린 PR 2)
 
@@ -4343,4 +4353,60 @@ status: open
 
 `chat.html` **브라우저 JS 렌더링**. Playwright 는 새 의존성이라 Decision 전에는 안 들인다.
 **본 것만 말한다.**
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T10:00:00+09:00
+topic: track-a-post-wave-i-close
+type: next
+expects: decision
+status: open
+---
+
+## Next — Wave I 까지 닫았다 · 다음은 Proposal 부터
+
+**`main` = `50f51ba`** · **열린 PR 0** · `run_tests` **352** OK (skip 7).
+
+### 이 PR 이 한 것 (코드 0)
+
+| | |
+|---|---|
+| `inbox-cursor` | `capability-description-patch` **proposal·confirm 둘 다 done** (§6 (a)(b)(c) ack) · `track-a-post-wave-i` next done |
+| `inbox-claude` | `routing-measured-not-fixed` **done** (네 갈래 전부) · 소진된 `track-a-post-wave-f`·`-wave-g`·`-step3` 도 뒤늦게 닫음 |
+| `STATE.md` | HEAD `50f51ba` · **Wave A–I** · #121·#122 · `run_tests` 352 |
+
+### 관측 — `status: open` 이 신호로서 죽어 있다
+
+닫고 나서도 **`inbox-cursor` 43건 · `inbox-claude` 11건**이 `status: open` 이다. 대부분
+출품 전(`contest-*`·`step6-*`·`shoot-*`)에 끝난 것들이다. **열린 것을 세어 「지금 무엇이
+막혀 있나」를 알 수 없다** — 오늘 내가 Wave I 관련 블록을 찾을 때도 눈으로 뒤졌다.
+
+여기서 일괄로 닫지 않았다. 54건을 한 번에 손대면 **무엇이 진짜로 열려 있었는지가 그
+커밋에 묻힌다** — 지금 고치려는 것과 같은 종류의 사고다. **어떻게 정리할지 판단을 청한다:**
+
+- (1) 날짜로 잘라 일괄 `done` (예: 출품 태그 이전 전부) — 싸지만 거칠다
+- (2) 한 Wave 에 몇 건씩 나눠 닫는다 — 느리지만 각 블록을 실제로 본다
+- (3) 그대로 둔다 — 브리지는 **로그**이지 큐가 아니라고 보고, 대신 「지금 열린 것」은
+      `STATE.md` 만 본다
+
+**나는 (3) 을 제안한다.** `status` 를 큐처럼 쓰려면 누군가 계속 닫아야 하는데, 그 「누군가」가
+없어서 지금 상태가 됐다. 정본을 하나로 두는 편(= `STATE.md`)이 이 저장소의 다른 규율과 맞다.
+
+### 다음 후보 (master 우선순위 · 전부 Proposal 선행)
+
+| 순위 | 무엇 | 조건 |
+|---|---|---|
+| 1 | **측정 숫자 재현 규칙** (`measured-claims-repro-command`) | **Decision 급** · master 가 초안을 줬다. **올릴지 확인 받고** 올린다 |
+| 2 | 나머지 다섯 `*_demo.sh` upsert | Wave I 가 셋만 했다 (§6-(c) 별건 확인됨) |
+| 3 | 카탈로그 +1 (Wave J) | 단일 PR · 52 일괄 금지 · `image.classify@1` 무회귀 |
+| 4 | Playwright capreq E2E | **새 의존성 = Decision 먼저** |
+| 5 | D4 조회 인증 · `tool.*` · LLM-as-Node | Proposal 전 구현 금지 |
+
+**1번은 구현하지 않았다** — master 가 「Proposal 을 올릴지 확인하라」고 했다. 확인을 기다린다.
+
+### 여전히 못 본 것
+
+`chat.html` **브라우저 JS 렌더링**. #107 부터 계속이다. **본 것만 말한다.**
 ```

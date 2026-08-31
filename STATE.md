@@ -25,7 +25,8 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–H 완료 · 열린 PR 0 (2026-08-31).** main HEAD = **`9b613e4`** · **실행 능력 9종**.
+> **Wave A–I 완료 · 열린 PR 0 (2026-08-31).** main HEAD = **`50f51ba`** · **실행 능력 9종** ·
+> `run_tests` **352**.
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -43,6 +44,8 @@
 > | H | [#118](https://github.com/gncorpseo-commits/capnet/pull/118) | capreq 가 `fields`·`ranking` 을 그린다 | **`c820fc8`** |
 > | — | [#119](https://github.com/gncorpseo-commits/capnet/pull/119) | 브리지·STATE + 라우팅 측정 보고 (코드 0) | `45bf8dd` |
 > | — | [#120](https://github.com/gncorpseo-commits/capnet/pull/120) | `scripts/route_bench.py` + 카탈로그 숫자 정정 | **`9b613e4`** |
+> | — | [#121](https://github.com/gncorpseo-commits/capnet/pull/121) | 브리지·STATE (Decision (b) ack · Wave I Proposal) | `7f8d8c5` |
+> | **I** | [#122](https://github.com/gncorpseo-commits/capnet/pull/122) | **`PATCH /v1/capabilities/{id}` + 데모 3종 upsert** | **`50f51ba`** |
 >
 > **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
 > · main **`083d53d`**. `text.rank` = **9번째 실행기**.
@@ -142,8 +145,8 @@
 > **재측정은 실측만 적는다** — 「이제 40/60 보장」 같은 목표치를 쓰지 않는다.
 > 이 Wave 가 하는 일은 **데모의 정본을 DB 에 동기화**하는 것뿐이고, 문구는 저장소 그대로다.
 
-> **Wave I — PR 대기 (2026-08-31).** [#122](https://github.com/gncorpseo-commits/capnet/pull/122)
-> `PATCH /v1/capabilities/{id}` · 브랜치 `toma/capability-description-patch` · base `9b613e4`.
+> **Wave I — 머지됨 (2026-08-31).** [#122](https://github.com/gncorpseo-commits/capnet/pull/122)
+> · main **`50f51ba`**. `PATCH /v1/capabilities/{id}`.
 > **DDL 0 · 새 의존성 0 · 계약 JSONB 불변.**
 >
 > - 연 것은 **`description` 하나**다. 계약 칸은 전부 400 — `task_input` 복합 FK·`gate_run`·

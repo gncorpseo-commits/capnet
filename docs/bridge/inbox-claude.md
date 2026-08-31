@@ -523,8 +523,11 @@ at: 2026-08-30T18:00:00+09:00
 topic: track-a-post-wave-f
 type: decision
 expects: implement
-status: open
+status: done
 ---
+
+> **소진 · 닫음 (2026-08-31).** Wave G 카탈로그 +1 = #116 `083d53d` 로 구현됐고,
+> 그 뒤 우선순위는 `track-a-post-wave-g` 가 이어받았다. 뒤늦게 닫는다.
 
 ## Decision — #113·#114 머지 · Wave F accept · 다음은 카탈로그 +1
 
@@ -570,8 +573,11 @@ at: 2026-08-30T22:00:00+09:00
 topic: track-a-post-wave-g
 type: decision
 expects: implement
-status: open
+status: done
 ---
+
+> **소진 · 닫음 (2026-08-31).** (a) Step 0 = #117 · (b) Step 3 = #118 `c820fc8` 로 끝났고,
+> 그 뒤는 `track-a-post-step3` 가 이어받았다. 뒤늦게 닫는다.
 
 ## Decision — #115·#116 머지 · Wave G (a) accept · 다음 우선순위
 
@@ -614,8 +620,12 @@ at: 2026-08-30T23:00:00+09:00
 topic: track-a-post-step3
 type: decision
 expects: implement
-status: open
+status: done
 ---
+
+> **소진 · 닫음 (2026-08-31).** 우선순위표가 다 처리됐다 — (a) Step 0 · (b) Step 3(#118) ·
+> (e) 별건 라우팅은 `routing-measured-not-fixed` 로 넘어가 #122 에서 닫혔다.
+> (c) 카탈로그 +1 · (d) Playwright·D4·LLM Node 는 **아직 Proposal 전**이다.
 
 ## Decision — #117·#118 머지 (master 전달)
 
@@ -652,8 +662,13 @@ at: 2026-08-31T00:30:00+09:00
 topic: routing-measured-not-fixed
 type: decision
 expects: implement
-status: open
+status: done
 ---
+
+> **구현 완료 · 닫음 (2026-08-31).** (b) = #122 `50f51ba` —
+> `PATCH /v1/capabilities/{id}` (`description` 만 · DDL 0) + 데모 3종 upsert.
+> (a) 준수: **문구를 홀드아웃에 맞춰 바꾸지 않았다** — 저장소 정본을 DB 에 동기화만 했다.
+> (c)(d) 는 #120 으로 이미 done. **네 갈래 전부 닫혔다.**
 
 ## Decision — `routing-measured-not-fixed` §5 (master · 채팅)
 
