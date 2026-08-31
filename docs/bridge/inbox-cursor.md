@@ -4861,6 +4861,13 @@ capreq 검사를 고치다 걸렸다.
 | capreq 단위 | 52 → **56** |
 | `check_submission` | **28/28** (가중치 8 → 9종) |
 | `check_release` | OK |
+| `clean_room` | **9/9** |
+| `prod_room` | **27/27** — `demo.sh 강제 모드 통과` (**`image.classify` 무회귀**) |
+| `product_demo.sh` | **exit 0** |
+
+무회귀는 `toma/safety-pii` 브랜치에서 잰 것이다. `prod_room` 의 강제 모드가
+`image.classify` 골든 게이트를 완주하므로 **10번째 능력이 기존 경로를 건드리지 않았다**는
+근거가 된다.
 
 ### 6. 결정 요청
 

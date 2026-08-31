@@ -264,7 +264,8 @@
 >   capreq `/api/tasks/{id}` 에서도 `pii` 로 구조화돼 나온다.
 >   재현: `bash scripts/pii_demo.sh`.
 > - `run_tests` 355 → **384** · capreq 52 → **56** · `check_submission` **28/28**
->   (가중치 8 → **9종**) · `check_release` OK.
+>   (가중치 8 → **9종**) · `check_release` OK · **`clean_room` 9/9 · `prod_room` 27/27**
+>   (`demo.sh` 강제 모드 통과 = **`image.classify` 무회귀**) · `product_demo.sh` exit 0.
 
 > **이번 세션에 손으로 센 목록 셋을 파생으로 바꿨다 (2026-08-31).**
 >
