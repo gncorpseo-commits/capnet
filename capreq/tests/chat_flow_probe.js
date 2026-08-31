@@ -99,7 +99,8 @@ global.fetch = (url, init) => {
 const HTML = path.join(__dirname, "..", "src", "capreq", "static", "chat.html");
 const script = fs.readFileSync(HTML, "utf8").split("<script>")[1].split("</script>")[0];
 // `setFile` 은 첨부 상태를 만드는 유일한 길이라 같이 꺼낸다.
-new Function(script + "\nglobalThis.__setFile = setFile;")();
+new Function(script + "\nglobalThis.__setFile = setFile;\nglobalThis.__resetCaps = () => { knownCaps = null; };")();
+const knownCapsReset = () => globalThis.__resetCaps();
 
 const onsubmit = byId.f.onsubmit;
 
@@ -233,14 +234,46 @@ async function main() {
     check(byId.log.children.length === 0, "말풍선도 만들지 않는다");
   }
 
-  console.log("\n== 미매칭이어도 화면이 무너지지 않는다 ==");
+  console.log("\n== 미매칭 — 막다른 골목에 두지 않는다 ==");
   {
+    routes["/api/capabilities"] = () => reply({ items: [
+      { code: "text.ner", version: 1, name: "structural text ner", description: "타입 span 을 찾는다" },
+      { code: "safety.pii", version: 1, name: "pii pattern hint", description: "선언한 패턴의 자리를 가려서 알려 준다" },
+    ] });
     chatPost({ ok: false, reason: "확신 부족", capability_code: null, capability_version: null,
                confidence: 0.1 });
     const bubble = await submit({ message: "?????" });
-    check(bubble.textContent.includes("(미매칭)"), "미매칭을 적는다");
-    check(bubble.textContent.includes("확신 부족"), "이유를 적는다");
-    check(!bubble.textContent.includes("COMPLETED"), "task 가 없으면 실행 줄을 그리지 않는다");
+    const t = bubble.textContent;
+    check(t.includes("(미매칭)"), "미매칭을 적는다");
+    check(t.includes("확신 부족"), "이유를 적는다");
+    check(!t.includes("COMPLETED"), "task 가 없으면 실행 줄을 그리지 않는다");
+    check(t.includes("지금 할 수 있는 일 2가지"), "**할 수 있는 것을 보여 준다**");
+    check(t.includes("text.ner@1") && t.includes("safety.pii@1"), "능력 목록이 실제로 그려진다");
+    check(calls.some((c) => c.url === "/api/capabilities"), "카탈로그를 서버에서 받는다");
+  }
+  {
+    // 두 번째 미매칭에서 또 받아 오지 않는다 (한 번 받아 두고 쓴다).
+    calls.length = 0;
+    chatPost({ ok: false, reason: "또 모름", capability_code: null, capability_version: null });
+    await submit({ message: "?????" });
+    check(!calls.some((c) => c.url === "/api/capabilities"), "두 번째부터는 다시 안 받는다");
+  }
+  {
+    // 매칭됐을 때는 목록을 들이밀지 않는다 — 방해가 된다.
+    chatPost({ ok: true, capability_code: "text.ner", capability_version: 1,
+               confidence: 0.9, task_id: "t-7", task_status: "QUEUED" });
+    taskStates([DONE_OK]);
+    const bubble = await submit({ message: "이메일 찾아줘" });
+    check(!bubble.textContent.includes("지금 할 수 있는 일"), "매칭되면 목록을 안 보여 준다");
+  }
+  {
+    // 카탈로그를 못 받아도 화면이 무너지지 않는다.
+    knownCapsReset();
+    routes["/api/capabilities"] = () => Promise.reject(new Error("Core 없음"));
+    chatPost({ ok: false, reason: "확신 부족", capability_code: null, capability_version: null });
+    const bubble = await submit({ message: "?????" });
+    check(bubble.textContent.includes("(미매칭)"), "카탈로그를 못 받아도 미매칭은 그린다");
+    check(!bubble.textContent.includes("지금 할 수 있는 일"), "없으면 목록 줄을 안 만든다");
   }
 
   console.log("\n===== 결과: 통과 " + passed + " · 실패 " + failed + " =====");

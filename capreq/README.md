@@ -74,9 +74,12 @@ python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --e
 
 1. **상단 줄** — `model=… · capabilities=7 · executor=true · input_upload=true`.
    `capabilities=0` 이면 Core 카탈로그가 비었다 (`scripts/*_demo.sh` 로 등록).
-2. **상태 배지** — 보내면 `QUEUED → ASSIGNED → RUNNING → COMPLETED` 가 1초 간격으로
+2. **미매칭** — 라우터가 못 고르면 「(미매칭)」과 이유 아래에 **지금 할 수 있는 일**을
+   표로 보여 준다. 막다른 골목에 두지 않으려는 것이고, **고르라고 권하지는 않는다** —
+   고르는 것은 여전히 라우터다. 카탈로그를 못 받으면 그 줄만 없다.
+3. **상태 배지** — 보내면 `QUEUED → ASSIGNED → RUNNING → COMPLETED` 가 1초 간격으로
    바뀐다. 종결되면 배정 증적(`node=… · agent=… · domain=… · tier=…`)이 한 줄 붙는다.
-3. **결과 칸** — 능력이 실제로 낸 것만 그린다. 아홉 능력이 내는 모양은 여섯이다.
+4. **결과 칸** — 능력이 실제로 낸 것만 그린다. 아홉 능력이 내는 모양은 여섯이다.
 
    | 능력 | 그리는 것 |
    |---|---|
@@ -119,7 +122,7 @@ curl -s localhost:8090/api/tasks/<taskId>     # 상태·결과·배정 증적
 | 엔드포인트 | 하는 일 |
 |------------|---------|
 | `GET /api/health` | 모델·카탈로그 수·실행 백엔드 연결 |
-| `GET /api/capabilities` | allowlist (Core 카탈로그 그대로) |
+| `GET /api/capabilities` | allowlist (Core 카탈로그 그대로). **미매칭일 때 화면이 이걸 보여 준다** |
 | `POST /api/chat` | 라우팅 + (`execute`) 실행. `wait=false` 면 Task 만 만들고 즉시 반환 |
 | `GET /api/tasks/{id}` | Task 상태·결과 요약·배정 증적 (Core 응답을 옮길 뿐) |
 
