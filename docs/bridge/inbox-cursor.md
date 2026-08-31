@@ -5012,8 +5012,10 @@ at: 2026-09-01T01:40:00+09:00
 topic: chat-render-probe
 type: proposal
 expects: decision
-status: open
+status: done
 ---
+
+> **머지 · 닫음 (2026-09-01).** #130 `0b4f38c`.
 
 ## Proposal — Wave M: **#107 부터 못 본 것을 본다** — `chat.html` 을 실제로 그려 본다
 
@@ -5093,8 +5095,10 @@ at: 2026-09-01T02:00:00+09:00
 topic: chat-render-probe
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **머지 · 닫음 (2026-09-01).** #130 `0b4f38c`. §8 흐름을 같은 PR 에 합친 것 ack.
 
 ## Confirm — Wave M [#130](https://github.com/gncorpseo-commits/capnet/pull/130) · **네 번 미룬 것을 봤다**
 
@@ -5165,8 +5169,11 @@ at: 2026-09-01T02:10:00+09:00
 topic: night-mode-waves-n-o
 type: confirm
 expects: decision
-status: open
+status: done
 ---
+
+> **머지 · 닫음 (2026-09-01).** #131 `074871c` · #132 `834280c`. §6 세 갈래 ack —
+> 정책 숫자(24h·7d·72h)는 **유지**.
 
 ## Confirm — Wave N·O · **둘 다 「검사가 없어서 뒤처진 자리」였다**
 
@@ -5233,8 +5240,10 @@ at: 2026-09-01T02:15:00+09:00
 topic: track-a-night-open-prs
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-01).** #129~#133 **다섯 다 머지**. 예고한 대로 `CHANGELOG` 충돌 셋뿐이었다.
 
 ## Next — 야간 세션 · 열린 PR 4
 
@@ -5295,8 +5304,10 @@ at: 2026-09-01T02:20:00+09:00
 topic: night-mode-wave-p
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **머지 · 닫음 (2026-09-01).** #133 `10eba27`. 「능력 N종」에 검사를 **안 붙인** 판단 ack.
 
 ## Confirm — Wave P [#133](https://github.com/gncorpseo-commits/capnet/pull/133) · **검사를 만들지 않기로 한 판단**
 
@@ -5343,8 +5354,10 @@ at: 2026-09-01T02:30:00+09:00
 topic: track-a-night-summary
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-01).** 다섯 머지 완료. 다음은 아래 `no-match-dead-end`.
 
 ## Next — 야간 세션 총괄 (01:24 → 02:30) · 열린 PR **5**
 
@@ -5397,4 +5410,69 @@ status: open
 
 실제 브라우저의 **CSS·레이아웃**, 파일 선택기의 **OS 상호작용**. Playwright 는 새 의존성이라
 안 들였다. **본 것만 말한다.**
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T02:45:00+09:00
+topic: no-match-dead-end
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — Wave Q [#134](https://github.com/gncorpseo-commits/capnet/pull/134) · **이번 야간의 첫 제품 개선**
+
+스스로 승인하고 착수했다. **제품 입구 개선 · Core 스키마·DDL 0 · 새 의존성 0 ·
+새 제품 주장 0.**
+
+### 1. 왜 이것을 골랐나
+
+야간 내내 검사만 늘었다. **제품을 하나 하고 싶었는데**, 남은 후보가 전부 막혀 있었다:
+
+| 후보 | 왜 아닌가 |
+|---|---|
+| 11번째 능력 (`retrieve.dense`) | `text.embed` 가 **문자 n-gram 해시 사영**이라 코사인이 **철자 유사도**다. 「dense retrieval」이라는 이름으로 내면 오해를 부르고 실질은 `text.rank` 와 같은 축 |
+| 라우팅 개선 | **Decision (a) 가 튜닝을 금지**했다 |
+| 신뢰도 문턱 조정 | **정책 숫자 = Decision** |
+| D4 · `tool.*` · LLM Node | **되돌리기 비싼 제품 결정** |
+
+그러다 **막힌 자리를 하나 봤다.** 라우터가 못 고르면 화면이 「(미매칭)」과 이유 한 줄로
+끝난다 — **사용자는 무엇을 물어야 하는지 알 길이 없다.** `/api/capabilities` 는 서버에
+있는데 **`chat.html` 이 한 번도 부르지 않았다.**
+
+**드문 일이 아니다** — #131 홀드아웃 13개 중 **둘이 `None`** 이었다.
+
+### 2. 무엇을 했고, 무엇을 하지 않았나
+
+미매칭이면 **「지금 할 수 있는 일 N가지」**를 표로 보여 준다. 한 번만 받아 두고,
+못 받으면 그 줄만 없고, **매칭됐을 때는 안 보여 준다**(방해가 된다).
+
+**하지 않은 것이 더 중요하다:**
+
+- **미매칭 자체를 줄이려 하지 않았다** — 막다른 골목만 없앴다. 라우팅 튜닝은 Decision (a) 위반
+- **고르라고 권하지 않는다** — 목록을 보여 줄 뿐이고 **고르는 것은 여전히 라우터**다
+- **새 주장 0** — Core 카탈로그에 있는 것을 그대로 옮긴다. 정렬·추천도 안 한다
+
+### 3. 실측 — 진짜 미매칭을 만들었다
+
+```text
+카탈로그 11종 · "오늘 날씨 어때? 노래 한 곡 불러줘"
+  → ok=False · code=None · conf=0.8
+  → reason="… weather information and music playback, which are not suppor…"
+```
+
+### 4. 검증 — **흐름 프로브가 어제 생겨서 오늘 값을 했다**
+
+`chat_flow_probe.js` 28 → **35종**. Wave M 에서 만든 프로브로 **이번 변경을 실행해서**
+확인했다 — 목록이 실제로 DOM 에 그려지는지 · 두 번째부터 안 받는지 · 매칭되면 안
+보여 주는지 · 카탈로그를 못 받아도 안 무너지는지.
+
+**변이:** 목록 표시를 지우면 **3종**, 캐시를 없애면 **1종** 실패.
+
+### 5. ack 청하는 것
+
+- 미매칭 화면에 카탈로그를 보여 주는 것 (새 주장은 아니지만 **화면에 없던 것**이다)
+- 「고르라고 권하지 않는다」는 선 — 추천·정렬을 넣자는 판단이면 말해 달라
 ```

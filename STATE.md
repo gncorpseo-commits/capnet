@@ -25,8 +25,8 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–L 완료 (2026-09-01).** main HEAD = **`d240e57`** · **실행 능력 10종** ·
-> `run_tests` **387**.
+> **Wave A–P 완료 (2026-09-01).** main HEAD = **`10eba27`** · **실행 능력 10종** ·
+> `run_tests` **388** · capreq **66**.
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -52,6 +52,11 @@
 > | **K** | [#126](https://github.com/gncorpseo-commits/capnet/pull/126) | 데모 다섯 종 description upsert (여덟 전부) | `c9fcaf3` |
 > | — | [#127](https://github.com/gncorpseo-commits/capnet/pull/127) | 브리지·STATE (Wave K·L) | `60f5b5a` |
 > | **L** | [#128](https://github.com/gncorpseo-commits/capnet/pull/128) | **`safety.pii` (10번째 실행기)** | **`d240e57`** |
+> | — | [#129](https://github.com/gncorpseo-commits/capnet/pull/129) | 브리지·STATE (Wave K·L 닫기) | `f05676e` |
+> | **M** | [#130](https://github.com/gncorpseo-commits/capnet/pull/130) | `chat.html` 렌더러 + 흐름 실행 검증 | `0b4f38c` |
+> | **N** | [#131](https://github.com/gncorpseo-commits/capnet/pull/131) | 라우팅 벤치가 10종을 덮게 | `074871c` |
+> | **O** | [#132](https://github.com/gncorpseo-commits/capnet/pull/132) | 입력 보존·삭제 검사 (D22 선행 조건) | `834280c` |
+> | **P** | [#133](https://github.com/gncorpseo-commits/capnet/pull/133) | 검증 체계 문서 | **`10eba27`** |
 >
 > **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
 > · main **`083d53d`**. `text.rank` = **9번째 실행기**.
@@ -361,6 +366,19 @@
 > 대신 **내 문서의 낡은 예시**를 고쳤다 — `measured-claims.md` 가 「능력 9종」을 예로
 > 들고 있었는데 10종이 되면서 낡았다. **규칙 문서가 자기 말을 안 지키는 꼴**이라
 > 개수 예시는 `N` 으로, 측정 예시에는 **언제 잰 것인지**를 붙였다.
+
+> **Wave Q — PR 대기 (2026-09-01).** [#134](https://github.com/gncorpseo-commits/capnet/pull/134)
+> **이번 야간의 첫 제품 개선이다.** 라우터가 못 고르면 화면이 「(미매칭)」 한 줄로 끝나
+> **사용자가 무엇을 물어야 하는지 알 길이 없었다.** `/api/capabilities` 는 서버에 있는데
+> `chat.html` 이 **한 번도 부르지 않았다.**
+>
+> - 미매칭이면 **「지금 할 수 있는 일 N가지」**를 표로. 한 번만 받고 · 못 받으면 그 줄만 없고 ·
+>   **매칭됐을 때는 안 보여 준다.**
+> - **미매칭 자체를 줄이려 하지 않았다** — 막다른 골목만 없앴다. 라우팅 튜닝은 Decision (a) 위반.
+>   **고르라고 권하지도 않는다** — 고르는 것은 여전히 라우터다. **새 주장 0.**
+> - 실측: 「오늘 날씨 어때? 노래 한 곡 불러줘」 → `ok=False · code=None · conf=0.8`.
+> - **Wave M 의 흐름 프로브가 어제 생겨서 오늘 값을 했다** — 28 → **35종**으로 이번 변경을
+>   실행해서 확인했다. 변이 2종(목록 3 · 캐시 1).
 
 > **야간 세션 총괄 (2026-09-01 01:24 → 02:30).** 열린 PR **5** (#129~#133).
 > **머지 순서 #129 → #130 → #131 → #132 → #133** · 뒤 셋에서 각각 `CHANGELOG` 충돌 1건
