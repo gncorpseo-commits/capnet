@@ -25,7 +25,7 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–I 완료 · 열린 PR 0 (2026-08-31).** main HEAD = **`411be33`** · **실행 능력 9종** ·
+> **Wave A–J 완료 (2026-08-31).** main HEAD = **`2a40af0`** · **실행 능력 9종** ·
 > `run_tests` **352**.
 >
 > | Wave | PR | 내용 | main |
@@ -48,6 +48,7 @@
 > | **I** | [#122](https://github.com/gncorpseo-commits/capnet/pull/122) | **`PATCH /v1/capabilities/{id}` + 데모 3종 upsert** | **`50f51ba`** |
 > | — | [#123](https://github.com/gncorpseo-commits/capnet/pull/123) | 브리지·STATE (Wave I 닫기) | `2530ba7` |
 > | — | [#124](https://github.com/gncorpseo-commits/capnet/pull/124) | 측정 숫자 재현 규칙 Proposal | **`411be33`** |
+> | **J** | [#125](https://github.com/gncorpseo-commits/capnet/pull/125) | **측정 숫자 재현 규칙** (문서만 · `docs/guide/measured-claims.md`) | **`2a40af0`** |
 >
 > **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
 > · main **`083d53d`**. `text.rank` = **9번째 실행기**.
@@ -199,8 +200,8 @@
 > (B) 좁은 검사는 **이번 Wave 에서 하지 않는다** — 카탈로그가 이미 거의 지키고 있어
 > 값이 크지 않다. 필요해지면 별 Proposal.
 
-> **측정 숫자 규칙 — PR 대기 (2026-08-31).** 브랜치 `toma/measured-claims-guide` ·
-> base `411be33`. **코드·DDL·의존성·CI 검사 0.**
+> **측정 숫자 규칙 — 머지됨 (2026-08-31).** [#125](https://github.com/gncorpseo-commits/capnet/pull/125)
+> · main **`2a40af0`**. **코드·DDL·의존성·CI 검사 0.**
 >
 > - **정본 = [`docs/guide/measured-claims.md`](docs/guide/measured-claims.md)** ·
 >   `CLAUDE.md` 는 **한 줄 + 링크** (두 곳에 적으면 갈라진다).
@@ -213,6 +214,42 @@
 >   브리지에만 두면 다음 사람이 안 본다.
 > - guide **§7 이 자기 처지를 적는다** — (A) 는 검사가 없으니 **이 문서 자신이 「적혀만 있고
 >   기계가 잇지 않는 줄」**이다. (B) 로 갈 조건도 같이 적었다.
+>
+> **master ack (2026-08-31):** `CLAUDE.md` 위치를 「작업 방식」으로 둔 것 **accept** —
+> 절대규칙 9번으로 올리지 않는다. **(B) 좁은 검사는 보류.**
+> stale `open` 54건은 **(3) 안** — 일괄로 닫지 않고 **`STATE.md` 를 정본**으로 둔다.
+
+> **Wave K — PR 대기 (2026-08-31).** [#126](https://github.com/gncorpseo-commits/capnet/pull/126)
+> 브랜치 `toma/demo-upsert-five` · base `2a40af0`. **코드·DDL·의존성 0.**
+>
+> - Wave I 가 셋만 고쳤던 데모 upsert 를 **나머지 다섯**(`text.embed`·`text.classify`·
+>   `table.extract`·`timeseries.forecast`·`image.embed`)까지 마쳤다. 이제 **능력을 등록하는
+>   스크립트 여덟 개 전부**가 「다를 때만」 PATCH 한다.
+> - **검사를 목록에서 파생으로 바꿨다** — 데모 이름을 손으로 세고 있어서 **아홉 번째에서
+>   또 갈라질 자리**였다. 「`POST /v1/capabilities` 를 하는 스크립트」를 찾아서 전부 본다.
+>   `demo.sh` 는 **seed 가 넣으므로 대상이 아니다**(예외가 아니다 · 검사가 그것도 고정).
+> - **드리프트를 일부러 만들어 봤다** — `text.classify`·`table.extract` 의 DB 설명을
+>   저장소에 없는 문자열로 바꾼 뒤 돌리니 그 둘만 PATCH 가 뛰고 셋은 건너뛰었다.
+>   다섯 다 종단 완주 · 그 뒤 **능력 9종 설명이 저장소와 전부 일치**.
+>   재현: `bash scripts/<이름>_demo.sh`.
+> - `run_tests` 352 → **355** · 변이로 확인(`table_demo` 에서 upsert 를 지우면 4종 실패).
+> - **라우팅 숫자를 적지 않았다** — 이 스택은 이미 동기 상태여서 「고치기 전」이 없다.
+
+> **Wave L — 착수 (2026-08-31).** 브리지 Proposal `safety-pii-catalog-plus-one`.
+> 카탈로그 §Safety **#49 `safety.pii`** — **10번째 실행기**. **DDL·새 의존성·새 학습·
+> 외부 데이터 0.** `step6-executors.md` §3 이 「모델 없이도 됨 — 규칙 기반이 정직한 구현」으로
+> 지목한 후보다 (Language 잔여는 전부 `freeform` 이라 채점이 금지돼 있다).
+>
+> **이름이 위험한 능력이라 규율을 먼저 정했다.** 「PII 를 찾는다」는 능력이 놓치면
+> 없느니만 못하다 — 사람은 「검사했으니 없다」로 읽는다. 카탈로그의 기존 선례
+> (`safety.malware_hint` 의 **「탐지가 아니라 참고」**)를 그대로 따른다:
+>
+> - 결과가 **`patterns_checked`** 를 들고 다닌다 — **무엇을 찾아봤는지**를 결과가 말한다.
+>   목록에 없는 것은 **찾지 않았다**는 뜻이지 없다는 뜻이 아니다
+> - `krrn_like`·`card_like` 의 `_like` 는 **꼴이 같다**는 뜻이지 실제 번호라는 뜻이 아니다
+> - span 의 `text` 를 **가려서** 낸다 — 위치는 주되 **결과 자체가 새 유출면이 되지 않게**
+> - **마스킹·삭제 도구가 아니고, 컴플라이언스를 주장하지 않는다** · `quality_profile='none'`
+> - **capreq 표시를 같은 PR 에서 함께 고친다** (#118 교훈 — 능력을 더하면 화면이 따라와야 한다)
 >
 > **베이스라인 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
 > capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·

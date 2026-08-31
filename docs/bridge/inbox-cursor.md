@@ -4362,8 +4362,12 @@ at: 2026-08-31T10:00:00+09:00
 topic: track-a-post-wave-i-close
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-08-31).** #124 `411be33` · #125 `2a40af0` 머지. 열린 PR 0.
+> 여기서 물은 「`status: open` 54건」은 **(3) 그대로 두고 `STATE.md` 를 정본으로** 로
+> 결정됐다 — 이번에도 일괄로 닫지 않는다.
 
 ## Next — Wave I 까지 닫았다 · 다음은 Proposal 부터
 
@@ -4543,8 +4547,13 @@ at: 2026-08-31T14:00:00+09:00
 topic: measured-claims-repro-command
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **ack · 닫음 (2026-08-31).** #125 `2a40af0` 머지. §8 두 갈래 전부 승인 —
+> **`CLAUDE.md` 위치를 「작업 방식」으로 둔 것 accept** (절대규칙 9번으로 올리지 않는다 ·
+> D-결정·제품 주장이 아니라 운영 규칙이다) · 그 밖은 Decision 그대로.
+> **(B) 좁은 검사는 보류** — 필요해지면 별 Proposal.
 
 ## Confirm — 규칙을 문서로 넣었다 (A) · 판단 하나를 다르게 했다
 
@@ -4608,4 +4617,185 @@ D-결정 승격 · 나머지 5 `*_demo.sh` · 카탈로그 +1.
 
 - §2 `CLAUDE.md` 위치(절대규칙 → 작업 방식)
 - 그 밖은 Decision 그대로다
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T19:00:00+09:00
+topic: demo-upsert-five
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — Wave K [#126](https://github.com/gncorpseo-commits/capnet/pull/126) · 여덟 개가 다 됐고, 목록 하나를 없앴다
+
+Wave I §6-(c) 의 **별건**이다. Decision 이 이미 있어 Proposal 없이 구현했다.
+**코드 · DDL · 의존성 0** — 스크립트 다섯과 검사뿐.
+
+### 1. 무엇이 들어갔나
+
+| 데모 | 능력 |
+|---|---|
+| `embed_demo.sh` | `text.embed` |
+| `text_demo.sh` | `text.classify` |
+| `table_demo.sh` | `table.extract` |
+| `series_demo.sh` | `timeseries.forecast` |
+| `image_embed_demo.sh` | `image.embed` |
+
+Wave I 의 셋과 합쳐 **능력을 등록하는 스크립트 여덟 개 전부**가 기존 능력을 만나면
+등록 본문과 DB 를 비교해 **다를 때만** PATCH 한다. **문구를 데모에서 새로 짓지 않는다**
+(Decision (a)).
+
+### 2. Proposal 에 없던 것 하나 — **검사를 목록에서 파생으로 바꿨다** (ack 청함)
+
+`test_capability_patch_wiring` 이 데모 이름을 **손으로 세고** 있었다 — Wave I 때 셋을 적었다.
+**아홉 번째 데모에서 또 갈라질 자리**다. 이번 달에 같은 모양을 세 번 겪었다
+(`chat.html` · 카탈로그 설명 · 하네스 자체).
+
+그래서 「`POST /v1/capabilities` 를 하는 스크립트」를 **찾아서 전부** 검사하게 바꿨다.
+Wave K 범위(다섯을 고친다)를 넘어서지만, **범위를 지키느라 같은 함정을 하나 더 심는 것**은
+이 저장소가 배운 것과 반대라고 봤다. 되돌리기는 검사 파일 한 곳이다.
+
+`demo.sh` 는 여기 안 걸린다 — **`image.classify` 는 seed 가 넣기 때문에 등록하지 않는다.**
+핸드오프는 이것을 「범위 밖」이라고 했는데, **예외가 아니라 대상이 아닌 것**이다.
+검사가 그 사실도 고정한다 (`test_seeded_capability_demo_is_not_in_scope`).
+
+`PATCH` 본문에 계약 칸이 섞이지 않는지 보는 검사도 더했다 — Core 가 400 으로 막지만
+**데모가 시도조차 하지 않게** 한다.
+
+### 3. 실측 — 드리프트를 **일부러 만들어** 봤다
+
+다섯은 오늘 이미 등록돼 **동기 상태**였다. 그대로 돌리면 PATCH 가 안 뛰므로,
+`text.classify`·`table.extract` 의 DB 설명을 **저장소에 없는 문자열**로 바꾼 뒤 돌렸다.
+
+```text
+text_demo          설명 동기화 — DB 가 저장소보다 낡아 있었다 (PATCH)
+table_demo         설명 동기화 — DB 가 저장소보다 낡아 있었다 (PATCH)
+embed_demo         (이미 최신 — PATCH 안 함)
+image_embed_demo   (이미 최신 — PATCH 안 함)
+series_demo        (이미 최신 — PATCH 안 함)
+```
+
+다섯 다 **종단 완주**했고, 그 뒤 **능력 9종의 설명이 저장소와 전부 일치**한다.
+**「다를 때만」이 양쪽으로 도는 것**을 봤다 — 고치기도 하고 건너뛰기도 한다.
+
+### 4. 라우팅 숫자를 적지 않았다
+
+`docs/guide/measured-claims.md` 규칙 그대로다. 이 변경은 설명을 저장소에 맞출 뿐이고,
+효과의 크기는 `scripts/route_bench.py` 로만 말한다. **재측정도 하지 않았다** —
+이 스택은 이미 동기 상태여서 **잰다면 「고치기 전」이 없다.**
+
+### 5. 검증
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests` | 352 → **355** OK (skip 7) |
+| `check_submission` | **27/27** |
+| `check_release` | OK |
+| 변이 | `table_demo` 에서 upsert 를 지우면 **4종 실패** |
+| 데모 5종 | 종단 완주 · PATCH 2 · skip 3 |
+
+### 6. ack 청하는 것
+
+- §2 검사를 **목록 → 파생**으로 바꾼 것 (Wave K 범위를 조금 넘는다)
+- 그 밖은 Wave I 패턴 그대로다
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T19:20:00+09:00
+topic: safety-pii-catalog-plus-one
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — 카탈로그 +1: `safety.pii` (Wave L · 10번째) · **이름이 위험한 능력**
+
+master 우선순위 2번이다. **장시간 자율 위임**을 받았으므로 Proposal 을 올리고
+**그대로 착수한다** — #110·#116 에서 확립된 패턴이고 **DDL·새 의존성·새 학습·외부 데이터 0**
+이다. 판단이 다르면 되돌리기가 싸다(대부분 새 파일).
+
+### 1. 왜 이것인가 · **왜 망설였는가**
+
+카탈로그 §Safety #49 에 **이미 선언돼 있고**, `step6-executors.md` §3 이 「모델 없이도 됨 —
+규칙 기반이 정직한 구현」으로 **`safety.pii`(패턴)** 를 콕 집었다. Language 잔여는
+`text.summarize`·`generate`·`qa`·`chat` 처럼 전부 `freeform` 이라 **채점 자체가 금지**돼 있고
+(`ck_capability_golden_scoreable`), `text.moderate` 는 규칙으로 정직하게 만들 수 없다.
+
+**그런데 이름이 위험하다.** 「PII 를 찾는다」는 능력이 **놓치면** 없느니만 못하다.
+사람은 「검사했으니 없다」로 읽는다. 이 저장소가 계속 싸워 온 종류의 과장이다.
+
+**그래서 카탈로그의 기존 선례를 그대로 따른다** — `safety.malware_hint` 옆에 이렇게 적혀 있다:
+
+> **`_hint` 는 이름 그대로다.** 「탐지」가 아니라 「참고」이며, **바이러스 검사(AV)가 아니다.**
+
+`safety.pii` 도 같은 규율로 만든다. **이름을 바꾸지 못하는 대신**(카탈로그 52 는 고정),
+**결과가 자기 한계를 들고 다니게** 한다 — §3.
+
+### 2. 무엇을 하나 — 규칙 전부
+
+입력은 평문 한 파일 (Core 중개 · D8′).
+
+1. **선언된 패턴만** 찾는다: `email` · `ipv4` · `ipv6` · `uuid` · `krrn_like`(주민번호 **꼴**) ·
+   `card_like`(카드번호 **꼴** · Luhn 검사 통과분만) · `phone_kr_like`
+2. `text.ner` 과 **같은 span 규약** — `label`·`start`·`end`·`text` 로 `text[start:end]` 가 맞다
+3. **원문을 결과에 그대로 담지 않는다.** 각 span 의 `text` 는 **가려서** 낸다
+   (`ops@example.dev` → `o**@e*******.dev` 규칙은 §2-5). 위치는 그대로 준다 —
+   **어디에 있었는지는 알려 주되, 결과 자체가 새 유출면이 되지 않게.**
+4. 결과에 **`patterns_checked`** 를 같이 낸다 — **무엇을 찾아봤는지**를 결과가 들고 다닌다.
+   목록에 없는 것은 **찾지 않았다**는 뜻이지 **없다는 뜻이 아니다.**
+5. 마스킹 규칙: 첫 글자와 마지막 도메인/네 자리만 남기고 `*`. **원문 복원 불가.**
+
+출력:
+
+```json
+{"patterns_checked": ["card_like","email","ipv4","ipv6","krrn_like","phone_kr_like","uuid"],
+ "findings": [{"label":"email","start":8,"end":23,"text":"o**@e*******.dev"}]}
+```
+
+### 3. 무엇을 **하지 않나** (등록 설명에 그대로 넣는다)
+
+- **놓친 것이 없다고 말하지 않는다.** 선언한 패턴만 본다 — 자유 문장 속 이름·주소·계좌
+  설명문 같은 것은 **못 찾는다**
+- **판정이 아니다.** `krrn_like`·`card_like` 는 **꼴이 같다**는 뜻이지 실제 번호라는 뜻이 아니다
+  (`_like` 는 `_hint` 와 같은 규율)
+- **마스킹·삭제 도구가 아니다.** 원문을 고쳐 주지 않는다. 결과의 `text` 를 가리는 것은
+  **결과가 새 유출면이 되지 않게** 하려는 것이지 「비식별화 서비스」가 아니다
+- **개인정보 보호 준수(컴플라이언스)를 주장하지 않는다**
+- `quality_profile='none'` · 골든셋 없음 · 재현율·정밀도 **숫자 없음**
+
+### 4. 무엇을 만드나 (#116 형판 그대로)
+
+| # | 산출물 |
+|---|--------|
+| 1 | `apps/node/app/pii_rules.py` — 규칙 전문 + 마스킹 |
+| 2 | `apps/node/app/tiny_pii.py` — `RuleTextPii` (파라미터 0 · 버퍼 1칸) |
+| 3 | `apps/node/app/infer_pii.py` — 실행기 |
+| 4 | `apps/train/gen_rule_pii_weights.py` · `weights/rule_pii.safetensors` |
+| 5 | `tiny_cnn.py` 레지스트리·모달리티 · `core/app/gate.py` `REFERENCE_ARCHS` |
+| 6 | `contract_check.py` · `node/main.py::_run` 분기 |
+| 7 | `scripts/pii_demo.sh` (등록 시 **description upsert 포함** — Wave K 규율) |
+| 8 | `tests/test_safety_pii.py` |
+| 9 | 카탈로그 「구현됨」 · `check_submission` · `check_release` · `test_report_claims` · 체크리스트 · CHANGELOG |
+
+가중치는 `rule_ner`·`rule_extract`·`rule_rank` 와 **바이트가 같아진다**(넷 다 버퍼 한 칸).
+숨기지 않고 적는다 — 구별하는 것은 `arch` 다.
+
+### 5. capreq 표시도 같이 본다 (#118 교훈)
+
+`results.py` 가 `findings`·`patterns_checked` 를 모르면 **또 원시 JSON 으로 떨어진다.**
+`test_chat_html_unit` 이 그걸 잡게 돼 있으므로 **요약기·화면을 같은 PR 에서 함께 고친다.**
+능력을 더할 때 **화면이 따라와야 한다**는 것이 #118 의 교훈이다.
+
+### 6. 결정 요청
+
+- **(a)** 위 범위대로 — **자율 위임으로 착수한다**
+- **(b)** **이름·마스킹 정책**이 걸리면 말해 달라 — 되돌리기 대상 1순위다
+- **(c)** `krrn_like`(주민번호 꼴)을 아예 빼는 편이 나은가. **한국 맥락에서 가장 민감한 패턴**이라
+      「꼴만 본다」를 적어 두더라도 오해 소지가 남는다. **나는 남기되 `_like` 규율을 지키자고
+      제안**한다 — 빼면 「PII 를 본다면서 가장 흔한 것을 안 본다」가 된다
 ```
