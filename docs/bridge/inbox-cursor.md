@@ -4793,9 +4793,132 @@ master 우선순위 2번이다. **장시간 자율 위임**을 받았으므로 P
 
 ### 6. 결정 요청
 
-- **(a)** 위 범위대로 — **자율 위임으로 착수한다**
+- **(a)** 위 범위대로 — **[#128](https://github.com/gncorpseo-commits/capnet/pull/128) 로 착수했다**
 - **(b)** **이름·마스킹 정책**이 걸리면 말해 달라 — 되돌리기 대상 1순위다
 - **(c)** `krrn_like`(주민번호 꼴)을 아예 빼는 편이 나은가. **한국 맥락에서 가장 민감한 패턴**이라
       「꼴만 본다」를 적어 두더라도 오해 소지가 남는다. **나는 남기되 `_like` 규율을 지키자고
       제안**한다 — 빼면 「PII 를 본다면서 가장 흔한 것을 안 본다」가 된다
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T21:00:00+09:00
+topic: safety-pii-catalog-plus-one
+type: confirm
+expects: decision
+status: open
+---
+
+## Confirm — Wave L [#128](https://github.com/gncorpseo-commits/capnet/pull/128) · 10번째 실행기
+
+Proposal 범위 그대로다. **DDL 0 · 새 의존성 0 · 새 학습 0 · 외부 말뭉치 0.**
+
+### 1. Proposal → 코드
+
+| Proposal | 어디에 |
+|---|---|
+| §2 규칙 7종 | `app/pii_rules.py` — 규칙·한계·마스킹을 한 파일에 |
+| §2-3 원문을 담지 않는다 | 라벨별 마스킹. 검사가 **「어떤 라벨이든 가려지지 않은 채로 나가면 안 된다」**를 고정 |
+| §2-4 `patterns_checked` | 항상 나온다. **빈 결과에서도** (검사 3종) |
+| §3 하지 않는 것 | `pii_rules`·데모·카탈로그 셋 다에 적었고 **검사가 셋 다를 본다** |
+| §4 산출물 9개 | 전부 |
+| §5 capreq 표시 | `results.py`·`chat.html`·검사 4종을 **같은 PR 에서** |
+
+### 2. Proposal 에 없던 것 — **하드코딩된 개수 둘을 파생으로 바꿨다** (ack 청함)
+
+capreq 검사를 고치다 걸렸다.
+
+| 어디 | 전 | 후 |
+|---|---|---|
+| `test_chat_html_unit` | 「자른 사실 고지가 **3개**」 | `truncated` 를 보는 **곳마다** 고지가 있는지 (형태 무관 — 목록은 「앞 N개만」, 벡터는 `…`) |
+| `test_text_rank` | 카탈로그에 「**셋 다** 바이트가 같다」 | 「**N 다** 바이트가 같다」 정규식 |
+
+둘 다 **Wave L 때문에 숫자가 틀어져서** 알았다. 개수를 손으로 세게 하면 능력이 하나 늘 때마다
+검사를 고쳐야 하고, 언젠가 **고치는 대신 검사를 지우게** 된다. Wave K 에서 데모 목록을
+파생으로 바꾼 것과 같은 이유다.
+
+### 3. §6-(c) 에 물은 것 — `krrn_like` 를 남겼다
+
+**남겼다.** 빼면 「PII 를 본다면서 **가장 흔한 것을 안 본다**」가 된다. 대신 `_like` 규율을
+세 겹으로 걸었다: ① 앞 6자리가 **달력에 맞아야** 통과 ② 결과에서 **앞 6자리까지 가린다**
+(생년월일 꼴 자체가 개인정보다) ③ 이름·설명·카탈로그가 **「꼴이 같다는 뜻」**이라고 적는다.
+
+### 4. 실측 (`scripts/pii_demo.sh` · exit 0)
+
+게이트 6검사 OK · `output_schema` 칸 2개 · `gate_run PASSED` → COMPLETED ·
+증적 `team → team` · `M <= M`.
+
+**가짜 카드(`1234 5678 9012 3456`)와 날짜꼴 아닌 것(`991301-…`)이 걸러졌다** — 데모가
+그것을 검사한다. capreq `/api/tasks/{id}` 에서도 **`pii` 로 구조화**돼 나오고 `other` 로
+새지 않는다.
+
+### 5. 검증
+
+| 검사 | 결과 |
+|---|---|
+| `run_tests` | 355 → **384** (`test_safety_pii` 28종) |
+| capreq 단위 | 52 → **56** |
+| `check_submission` | **28/28** (가중치 8 → 9종) |
+| `check_release` | OK |
+
+### 6. 결정 요청
+
+- (a) 이대로 — Proposal §6-(a) 확인
+- (b) **이름·마스킹 정책** — 걸리면 되돌리기 1순위다
+- (c) §2 의 **하드코딩 → 파생** 두 곳 ack
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T21:10:00+09:00
+topic: track-a-post-wave-l
+type: next
+expects: decision
+status: open
+---
+
+## Next — 이번 세션 · 열린 PR 3
+
+| PR | 내용 | 성격 |
+|---|---|---|
+| [#126](https://github.com/gncorpseo-commits/capnet/pull/126) | **Wave K** — 데모 다섯 upsert | 코드(스크립트) |
+| [#127](https://github.com/gncorpseo-commits/capnet/pull/127) | Step 0 — 브리지·STATE + Wave K Confirm + Wave L Proposal/Confirm | **코드 0** |
+| [#128](https://github.com/gncorpseo-commits/capnet/pull/128) | **Wave L** — `safety.pii` (10번째 실행기) | 코드 |
+
+**셋 다 base `main`(`2a40af0`) · 파일이 겹치지 않는다** — 머지 순서를 안 탄다.
+`STATE.md`·브리지는 #127 에만 있다.
+
+### 이번 세션이 한 것
+
+**능력 9종 → 10종** · 데모 upsert **3 → 8종(전부)** · `run_tests` **352 → 384** ·
+capreq **52 → 56** · 필수 가중치 **8 → 9종**.
+
+### 되풀이된 교훈 — 「손으로 센 목록」
+
+이번 세션에만 **셋**을 파생으로 바꿨다:
+
+| 어디 | 무엇을 손으로 세고 있었나 |
+|---|---|
+| `test_capability_patch_wiring` | 데모 이름 셋 (Wave K) |
+| `test_chat_html_unit` | 「자른 사실 고지」 3개 (Wave L) |
+| `test_text_rank` | 「셋 다 바이트가 같다」 (Wave L) |
+
+셋 다 **다음 항목이 붙을 때 틀어지는** 자리였고, 실제로 이번에 틀어져서 알았다.
+「정본이 둘이면 갈라진다」의 검사판이다.
+
+### master 판단이 필요한 것
+
+| # | 무엇 | 어디 |
+|---|---|---|
+| 1 | **#126·#127·#128 머지** | — |
+| 2 | Wave L — 이름·마스킹 정책 · `krrn_like` 존치 | #128 Confirm §6 |
+| 3 | Wave K·L 의 **하드코딩 → 파생** 세 곳 ack | #127·#128 |
+| 4 | 다음 — 카탈로그 +1 또 하나 vs (B) measured-claims 검사 vs Playwright vs D4 | 새 Proposal |
+
+### 여전히 못 본 것
+
+`chat.html` **브라우저 JS 렌더링**. Playwright 는 **새 의존성 = Decision** 이라 안 들였다.
+`node --check` 로 문법만 봤다. **본 것만 말한다.**
 ```

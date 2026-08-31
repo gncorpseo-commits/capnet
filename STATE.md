@@ -251,6 +251,33 @@
 > - **마스킹·삭제 도구가 아니고, 컴플라이언스를 주장하지 않는다** · `quality_profile='none'`
 > - **capreq 표시를 같은 PR 에서 함께 고친다** (#118 교훈 — 능력을 더하면 화면이 따라와야 한다)
 >
+> **구현 = [#128](https://github.com/gncorpseo-commits/capnet/pull/128) (PR 대기)** ·
+> 브랜치 `toma/safety-pii` · base `2a40af0`. **실행 능력 9종 → 10종.**
+>
+> - 규칙 7종 (`email`·`ipv4`·`ipv6`·`uuid`·`krrn_like`·`card_like`·`phone_kr_like`).
+>   `krrn_like` 는 **앞 6자리가 달력에 맞아야** 하고 `card_like` 는 **Luhn 통과**해야 한다 —
+>   **Luhn 은 오타 검사지 실재 검사가 아니다.** 그래서 `_like` 다.
+> - **`krrn_like` 를 남겼다** (Proposal §6-(c)). 빼면 「PII 를 본다면서 가장 흔한 것을 안 본다」가
+>   된다. 대신 규율을 세 겹 — 달력 검사 · **앞 6자리까지 마스킹** · 이름·설명에 「꼴이 같다」.
+> - **종단 실측:** 게이트 6검사 OK · `gate_run PASSED` → COMPLETED · `team → team` · `M ≤ M`.
+>   **가짜 카드와 날짜꼴 아닌 것이 걸러졌고** 원문은 전부 가려졌다 — 데모가 검사한다.
+>   capreq `/api/tasks/{id}` 에서도 `pii` 로 구조화돼 나온다.
+>   재현: `bash scripts/pii_demo.sh`.
+> - `run_tests` 355 → **384** · capreq 52 → **56** · `check_submission` **28/28**
+>   (가중치 8 → **9종**) · `check_release` OK.
+
+> **이번 세션에 손으로 센 목록 셋을 파생으로 바꿨다 (2026-08-31).**
+>
+> | 어디 | 무엇을 세고 있었나 | Wave |
+> |---|---|---|
+> | `test_capability_patch_wiring` | 데모 이름 셋 | K |
+> | `test_chat_html_unit` | 「자른 사실 고지」 3개 | L |
+> | `test_text_rank` | 「셋 다 바이트가 같다」 | L |
+>
+> 셋 다 **다음 항목이 붙을 때 틀어지는** 자리였고 **실제로 이번에 틀어져서 알았다.**
+> 「정본이 둘이면 갈라진다」의 **검사판**이다 — 개수를 손으로 세게 하면 언젠가
+> **고치는 대신 검사를 지우게** 된다.
+>
 > **베이스라인 (Docker·Ollama 있는 세션):** `run_tests` **291** OK (skip 7) ·
 > capreq **38** OK · `check_submission` **26/26** · `clean_room` **9/9** · `prod_room` **27/27** ·
 > `product_demo.sh` **exit 0**. 불변식 전부 일치한다.
