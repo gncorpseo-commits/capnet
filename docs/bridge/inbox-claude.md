@@ -707,3 +707,30 @@ status: done
 절대규칙 8개 · `git add -A` · schema 제약 약화 · **capability 계약 JSONB PATCH** ·
 **holdout 맞춤 description 튜닝** · stacked PR · contest 태그 이동.
 ```
+
+```markdown
+---
+from: human
+at: 2026-08-31T12:39:00+09:00
+topic: measured-claims-repro-command
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — 측정 숫자 재현 규칙 · Proposal 을 올릴 것 (master · 채팅)
+
+> master 가 채팅으로 준 것을 그대로 옮긴다 (`from: human`).
+
+**결정: accept** — Step 0(#123) 머지 **후** `topic: measured-claims-repro-command` Proposal 을
+`inbox-cursor` 에 올린다.
+
+| # | 내용 |
+|---|------|
+| **범위** | 카탈로그·`STATE.md`·`CHANGELOG` 의 **측정·비율·개수** 주장만. **브리지 서사·D-결정 근거는 제외** |
+| **규칙** | 측정 숫자를 쓸 때는 같은 커밋에 재현 명령·`scripts/` 도구를 붙인다. **없으면 숫자를 쓰지 않는다** |
+| **구현 강도** | **Proposal 본문에서 제안받고 다시 Decision** (문서만 vs 가벼운 검사) |
+| **선행** | #123 머지 완료 후 append. **#123 열려 있는 동안 구현 PR 금지** |
+
+**다음 순서:** #123 머지 → Claude Proposal → **구현 강도만 한 번 더 Decision.**
+```
