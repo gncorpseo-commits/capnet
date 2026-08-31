@@ -207,6 +207,28 @@ function renderSummary(box, result) {
     }
   }
 
+  // PII 참고 (safety.pii). **찾아본 목록을 먼저 그린다** — 빈 결과가 「깨끗하다」로
+  // 읽히지 않게. span 의 text 는 서버가 이미 가려서 준다.
+  if (result.pii) {
+    const p = result.pii;
+    sec.appendChild(el("h4", null, `PII 참고 ${p.count}건`));
+    if (Array.isArray(p.patterns_checked)) {
+      sec.appendChild(el("div", "note",
+        `찾아본 패턴: ${p.patterns_checked.join(", ")} — 목록에 없는 것은 찾지 않았습니다.`));
+    }
+    if (p.count === 0) {
+      sec.appendChild(el("div", "note", "찾은 자리 없음 — 「없다」가 아니라 「이 패턴들로는 못 찾았다」입니다."));
+    } else {
+      sec.appendChild(table(
+        ["label", "start", "end", "text(가림)"],
+        p.items.map(i => [i.label ?? "", i.start, i.end, i.text ?? ""]),
+      ));
+      if (p.truncated) sec.appendChild(el("div", "note", `앞 ${p.items.length}건만 표시`));
+      sec.appendChild(el("div", "note",
+        "탐지가 아니라 참고입니다 — 「_like」는 꼴이 같다는 뜻입니다."));
+    }
+  }
+
   // 순위 (text.rank). score 를 「관련도」로 부르지 않고 overlap 을 같이 보여 준다 —
   // 왜 그 점수인지 사람이 대조할 수 있어야 한다. 여기서 다시 정렬하지 않는다.
   if (result.ranking) {

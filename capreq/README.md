@@ -84,6 +84,7 @@ python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --e
    | `text.ner` | 엔티티 표 (label · start · end · text) |
    | `text.extract` | 필드 표 (key · value · line) · 앞 20건 |
    | `text.rank` | 질의 + 순위 표 (rank · score · overlap · text) · 앞 20줄 |
+   | `safety.pii` | **찾아본 패턴 목록** + 가려진 span 표 (label · start · end · text) |
    | `text.embed` · `image.embed` · `timeseries.forecast` | `dim=N · [앞 8개]` |
    | `table.extract` | 열 타입 + 앞 10행 |
 
@@ -92,6 +93,8 @@ python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --e
 
    목록에 없는 칸이 오면 **삼키지 않고** 「그 밖의 출력」으로 그대로 보여 준다.
    `text.rank` 의 `score` 는 **겹친 낱말 수**이지 관련도·정확도가 아니다.
+   `safety.pii` 는 **탐지가 아니라 참고**다 — 찾아본 패턴을 먼저 그리고, 결과가 비어도
+   「없다」가 아니라 **「이 패턴들로는 못 찾았다」**로 적는다. span 은 서버가 가려서 준다.
 
 터미널에서 같은 것을 보려면:
 

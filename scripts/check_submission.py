@@ -50,6 +50,8 @@ REQUIRED_WEIGHTS = [
     "apps/node/weights/rule_extract.safetensors",
     # text.rank 규칙 기반 (Wave G). 파라미터 0 — 위 둘과 **셋 다 바이트가 같다**.
     "apps/node/weights/rule_rank.safetensors",
+    # safety.pii 규칙 기반 (Wave L). 파라미터 0 — 위 셋과 **넷 다 바이트가 같다**.
+    "apps/node/weights/rule_pii.safetensors",
 ]
 
 REQUIRED_FILES = ["LICENSE", "NOTICE", "THIRD-PARTY-LICENSES.md", "sbom.json"]

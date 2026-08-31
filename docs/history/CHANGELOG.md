@@ -1,5 +1,78 @@
 # Changelog
 
+## 카탈로그 +1: `safety.pii` — 탐지가 아니라 참고다 (Wave L) — 2026-08-31
+
+**10번째 실행기.** DDL 0 · 새 의존성 0 · 새 학습 0 · 외부 말뭉치 0.
+카탈로그 §Safety **#49 에 이미 선언돼 있던** 능력을 구현한 것이다.
+
+### 이름이 위험한 능력이라 규율을 먼저 정했다
+
+「PII 를 찾는다」가 **놓치면 없느니만 못하다** — 사람은 결과가 비면 「검사했으니 없다」로
+읽는다. 그래서 이 카탈로그가 `safety.malware_hint` 에 이미 적어 둔 규율을 그대로 썼다:
+**「탐지」가 아니라 「참고」다.**
+
+**주장하지 않는 것:** 놓친 것이 없다 · 실제 개인정보다 · 마스킹/비식별화 도구다 ·
+개인정보 보호 준수를 보증한다. `quality_profile='none'` · 재현율·정밀도 숫자 없음.
+
+### 결과가 자기 한계를 들고 다닌다
+
+`patterns_checked` 를 **항상** 같이 낸다 — **목록에 없는 것은 「찾지 않았다」는 뜻이지
+「없다」는 뜻이 아니다.** 이 칸이 없으면 빈 `findings` 가 「깨끗하다」로 읽힌다.
+capreq 화면도 그 문장을 그대로 보여 준다(「찾은 자리 없음 — 「없다」가 아니라
+「이 패턴들로는 못 찾았다」입니다」).
+
+### 원문을 결과에 담지 않는다
+
+찾은 자리의 글자를 그대로 돌려주면 **결과 자체가 새 유출면**이 된다 — 결과는 증적에 남고
+화면에 그려지고 로그를 탄다. 그래서 `text` 는 **가려서** 낸다(`ops@example.dev` →
+`o**@e******.dev`). `start`·`end` 는 그대로 준다 — 원문을 다시 볼 수 있는 쪽은
+**원문을 가진 사람**뿐이다.
+
+### 규칙 (`app/pii_rules.py` 에 전부)
+
+`email`·`ipv4`·`ipv6`·`uuid`·`krrn_like`·`card_like`·`phone_kr_like`.
+`krrn_like` 는 **앞 6자리가 달력에 맞아야** 하고(없으면 임의의 13자리가 다 걸린다),
+`card_like` 는 13..19자리이고 **Luhn 을 통과**해야 한다 — **Luhn 은 오타 검사지 실재
+검사가 아니다.** 그래서 `_like` 다. 겹치면 먼저 온 패턴이 이긴다.
+`ipv6` 는 **축약(`::`)을 다 풀지 않아** 뒷부분만 걸릴 수 있다 — 숨기지 않고 적었다.
+
+**자르지 않고 던진다** (`NODE_MAX_PII_FINDINGS`) — 자르면 「전부 찾아봤다」가 거짓이 되고,
+**PII 능력에서 그 거짓말은 특히 나쁘다.**
+
+### capreq 표시를 같은 PR 에서 고쳤다 (#118 교훈)
+
+`results.py` 가 `findings`·`patterns_checked` 를 모르면 또 원시 JSON 으로 떨어진다.
+요약기·화면·검사를 함께 넣었다 — **능력을 더할 때 화면이 따라와야 한다.**
+
+그 과정에서 **하드코딩된 개수 두 개**를 파생으로 바꿨다: `chat.html` 의 「자른 사실 고지」
+개수(3 → 렌더러 수만큼)와 카탈로그의 「셋 다 바이트가 같다」(→ 정규식). 개수를 손으로
+세게 하면 언젠가 **고치는 대신 검사를 지우게** 된다.
+
+### 실측 (2026-08-31 · `scripts/pii_demo.sh`)
+
+```text
+OK  weights_fingerprint / arch / max_params(0<=1000) / preprocess / input_schema
+OK  output_schema — 칸 2개(findings, patterns_checked)가 계약을 만족한다
+gate_run PASSED → 바인딩 → COMPLETED · 증적 team → team · M <= M
+
+찾아본 패턴: card_like, email, ipv4, ipv6, krrn_like, phone_kr_like, uuid
+  email          o**@e******.dev
+  phone_kr_like  *******5678
+  krrn_like      ******-1******
+  card_like      ************1111
+```
+
+같은 입력의 **가짜 카드(`1234 5678 9012 3456`)와 날짜꼴 아닌 것(`991301-…`)은 걸러졌다.**
+데모가 그것을 검사한다. capreq `/api/tasks/{id}` 에서도 `pii` 로 구조화돼 나오고
+`other` 로 새지 않는다.
+
+재현: `bash scripts/pii_demo.sh` (Core · Docker 필요).
+
+### 검증
+
+`run_tests` 355 → **384** (`tests/test_safety_pii.py` 28종) · capreq 52 → **56** ·
+`check_submission` **28/28** (필수 가중치 8 → 9종) · `check_release` OK.
+
 ## 데모 다섯 종도 설명을 DB 에 맞춘다 (Wave K) — 2026-08-31
 
 Wave I(#122)가 셋만 고쳤다. **나머지 다섯**을 같은 패턴으로 마친다.
@@ -52,6 +125,7 @@ series_demo        이미 있음 → …  (이미 최신 — PATCH 안 함)
 
 `run_tests` 352 → **355** OK (skip 7) · `check_submission` **27/27** · `check_release` OK.
 변이 확인: `table_demo` 에서 upsert 블록을 지우면 **4종이 실패한다**.
+
 
 ## 측정 숫자는 재현 명령 없이 쓰지 않는다 — 규칙 (문서만) — 2026-08-31
 

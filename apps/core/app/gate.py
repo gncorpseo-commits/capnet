@@ -60,7 +60,7 @@ CONTRACT_CHECKS_REFERENCE = ("arch",)
 REFERENCE_ARCHS = frozenset({
     "TinyEuroSAT", "TinyEuroSATB", "TinyTextClassifier", "TinyTextEmbedder",
     "TinySeriesForecaster", "TinyEuroSATEmbed", "TinyTableTyper", "RuleTextNer",
-    "RuleTextExtract", "RuleTextRank",
+    "RuleTextExtract", "RuleTextRank", "RuleTextPii",
 })
 
 # 하위 호환 별칭 — 참조 구현일 때의 전체 집합. 기존 문서·스크립트가 이 이름을 쓴다.

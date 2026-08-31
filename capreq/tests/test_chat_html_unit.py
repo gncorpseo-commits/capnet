@@ -62,11 +62,20 @@ class TestViewKnowsEveryResultShape(unittest.TestCase):
             self.assertIn(col, self.html, f"표 머리 {col} 이 없다")
 
     def test_truncation_is_disclosed_on_screen(self) -> None:
-        """화면 자르기를 말없이 하지 않는다 — 「앞 N개만 표시」가 붙는다."""
-        for expr in ("tb.truncated", "f.truncated", "rk.truncated"):
-            self.assertIn(expr, self.html, f"{expr} 를 보지 않는다")
-        self.assertEqual(len(re.findall(r"만 표시", self.html)), 3,
-                         "표·필드·순위 셋 다 자른 사실을 적어야 한다")
+        """화면 자르기를 말없이 하지 않는다 — `truncated` 를 보는 곳마다 「앞 N개만 표시」.
+
+        개수를 손으로 세지 않는다. 렌더러가 하나 늘 때마다 이 숫자를 고치게 하면
+        언젠가 **고치는 대신 검사를 지우게** 된다 — 실제로 Wave L 에서 4가 됐다.
+        """
+        guards = list(re.finditer(r"(\w+)\.truncated", self.html))
+        self.assertGreaterEqual(len(guards), 4, [g.group(0) for g in guards])
+        silent = []
+        for g in guards:
+            near = self.html[g.end() : g.end() + 200]
+            # 목록은 「앞 N개만 표시」로, 벡터는 `…` 로 알린다 — 형태는 가리지 않는다.
+            if "만 표시" not in near and "…" not in near:
+                silent.append(g.group(0))
+        self.assertEqual(silent, [], f"자른 사실을 말하지 않는 곳: {silent}")
 
     def test_rank_score_is_not_called_relevance(self) -> None:
         """`text.rank` 는 quality_profile='none' 이다 — 점수를 관련도로 팔지 않는다."""

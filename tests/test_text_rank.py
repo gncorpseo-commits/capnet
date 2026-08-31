@@ -192,8 +192,12 @@ class TestHonestClaims(unittest.TestCase):
         self.assertIn("| 24 | `text.rank` | text | `structured` | none | v제품-1 ✅ **구현됨** |", cat)
 
     def test_catalog_records_identical_weights(self) -> None:
-        """`rule_ner`·`rule_extract` 와 바이트가 같다는 사실을 숨기지 않는다."""
-        self.assertIn("셋 다 바이트가 같다", CATALOG.read_text(encoding="utf-8"))
+        """규칙 실행기들의 가중치가 바이트가 같다는 사실을 숨기지 않는다.
+
+        Wave L 에서 `safety.pii` 가 붙어 **넷**이 됐다. 개수를 손으로 세는 대신
+        「N 다 바이트가 같다」가 있는지만 본다 — 다음 규칙 실행기에서 또 고치지 않게.
+        """
+        self.assertRegex(CATALOG.read_text(encoding="utf-8"), r"[가-힣]+ 다 바이트가 같다")
 
     def test_limit_throws_instead_of_truncating(self) -> None:
         """자르면 「전부 줄 세웠다」가 거짓이 된다 (`text.extract` 와 같은 규율)."""

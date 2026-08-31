@@ -1,0 +1,9 @@
+{
+  "weights": "rule_pii.safetensors",
+  "weights_sha256": "15458b002abc515dd7be607fe79766d8d1eae5e5e1fbdd3ebc70b11828f1ee58",
+  "arch": "RuleTextPii",
+  "pretrained": false,
+  "dataset": "none (규칙 기반 · 학습 없음 · 파라미터 0 · 버퍼 1칸은 지문용)",
+  "labels": ["email", "krrn_like", "card_like", "phone_kr_like", "ipv6", "ipv4", "uuid"],
+  "note": "safety.pii 는 quality_profile='none' 이다 — 선언한 패턴만 찾는 **참고**이지 탐지가 아니다(카탈로그의 safety.malware_hint 와 같은 규율). 놓친 것이 없다고 말하지 않고, _like 는 꼴이 같다는 뜻이며, 결과의 span 은 가려서 낸다(결과가 새 유출면이 되지 않게). 마스킹 도구도 컴플라이언스 보증도 아니다. 이 파일은 rule_ner · rule_extract · rule_rank 와 **바이트가 같다** (넷 다 파라미터 0 · 버퍼 rule_marker 한 칸). 구별하는 것은 arch 이고 증적에는 arch 와 sha 가 사실대로 남는다."
+}
