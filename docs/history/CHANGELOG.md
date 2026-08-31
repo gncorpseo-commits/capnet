@@ -1,5 +1,52 @@
 # Changelog
 
+## 라우팅 벤치가 10번째 능력을 안 덮고 있었다 (Wave N) — 2026-09-01
+
+**검사 하나를 파생으로 바꾸자 그 자리에서 실패가 떴다.** 코드 0 · DDL 0 · 새 의존성 0.
+
+### 무엇이 뒤처져 있었나
+
+카탈로그는 `safety.pii` 를 **「구현됨」**이라 하는데, `scripts/route_bench.py` 의 프롬프트
+세트와 `tests/test_route_bench.py` 의 `IMPLEMENTED` 는 **9종에서 멈춰 있었다.**
+Wave L 이 능력을 더했는데 라우팅 벤치가 안 따라왔고, **`IMPLEMENTED` 가 손으로 센 목록이라
+검사가 못 잡았다.**
+
+**이번 달 네 번째 같은 모양이다:**
+
+| 어디 | 무엇을 세고 있었나 | 언제 |
+|---|---|---|
+| `test_capability_patch_wiring` | 데모 이름 셋 | Wave K |
+| `test_chat_html_unit` | 「자른 사실 고지」 3개 | Wave L |
+| `test_text_rank` | 「셋 다 바이트가 같다」 | Wave L |
+| **`test_route_bench`** | **구현 능력 9종** | **여기** |
+
+### 고친 것
+
+`IMPLEMENTED` 를 **카탈로그의 「✅ 구현됨」 행에서 파생**한다. 바꾸자마자
+`test_both_sets_cover_every_implemented_capability` 가 **`safety.pii` 가 빠졌다고 실패했다** —
+그게 이 Wave 의 시작이다. 정규식이 0개를 찾으며 통과하는 상태도 같이 막았다.
+
+프롬프트 세트에 `safety.pii` 를 넣었다 (튜닝·홀드아웃 각 하나).
+
+### 실측 — 10번째 능력이 이웃을 밀어내지 않았다
+
+능력 10종 등록 · 홀드아웃 13개 × R=5 (`qwen2.5:3b`):
+
+```text
+합계 42/65
+  safety.pii   5/5   ← 새 능력이 자기 것을 가져간다
+  기존 12개    37/60 ← 이전 밴드(36·36·38) 안
+```
+
+재현: `PYTHONPATH=capreq/src python3 scripts/route_bench.py --set holdout --repeats 5`
+(능력 10종 등록 선행 · Ollama 필요).
+
+**개선을 주장하지 않는다.** 같은 조건도 2점씩 흔들린다는 것을 이미 쟀고, 37 은 그 밴드 안이다.
+여기서 말하는 것은 **「새 능력을 더해도 이웃이 안 밀렸다」** 하나뿐이다.
+
+### 검증
+
+`run_tests` 387 → **388** OK (skip 7) · `check_submission` **28/28**.
 ## `chat.html` 을 처음으로 실행해 봤다 (Wave M) — 2026-09-01
 
 **#107 · #112 · #118 · #128 — 네 번 연속으로 「브라우저 렌더링은 못 봤다」고 적은 자리**다.
