@@ -36,6 +36,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      # `chat.html` 렌더러를 **실행**해 보는 검사가 node 를 쓴다 (`test_chat_render.py`).
+      # **npm 패키지는 0 이다** — 저장소 안의 최소 스텁만 쓴다. node 가 없으면 그 검사만
+      # skip 되므로, 여기 두는 이유는 CI 에서는 **실제로 돌게** 하려는 것이다.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
       # capreq 는 Core 와 달리 httpx 를 쓴다 (THIRD-PARTY-LICENSES 에 이미 있는 항목).
       # 잡을 따로 둔 이유: 위 unit 잡의 「의존성 설치 없음」을 그대로 지키기 위해서다.
       #
