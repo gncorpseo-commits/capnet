@@ -27,11 +27,22 @@ MAIN = ROOT / "apps" / "core" / "app" / "main.py"
 SPEC = ROOT / "docs" / "spec" / "openapi.yaml"
 SPEC_COPY = ROOT / "apps" / "core" / "openapi.yaml"
 SCHEMA = ROOT / "docs" / "spec" / "schema.sql"
-DEMOS = (
-    ROOT / "scripts" / "ner_demo.sh",
-    ROOT / "scripts" / "text_extract_demo.sh",
-    ROOT / "scripts" / "text_rank_demo.sh",
-)
+
+
+def registering_demos() -> list[Path]:
+    """**능력을 등록하는** 스크립트를 목록에서 세지 않고 찾아낸다.
+
+    Wave I 는 셋, Wave K 가 나머지 다섯을 고쳤다. 그때 목록을 손으로 적어 뒀다면
+    아홉 번째 데모에서 또 갈라진다 — 이 저장소가 이번 달에 세 번 겪은 그 모양이다.
+    「`POST /v1/capabilities` 를 하는 스크립트」가 정본이고 여기는 그걸 읽는다.
+
+    `demo.sh` 는 여기 안 걸린다 — `image.classify` 는 **seed** 가 넣기 때문에 등록하지
+    않는다. 예외를 적어 둔 게 아니라 **대상이 아닌 것**이다.
+    """
+    return sorted(
+        p for p in (ROOT / "scripts").glob("*.sh")
+        if 'v1/capabilities" -H' in p.read_text(encoding="utf-8")
+    )
 
 # PATCH 가 절대 건드리면 안 되는 칸.
 CONTRACT_FIELDS = (
@@ -115,8 +126,19 @@ class TestDocumented(unittest.TestCase):
 class TestDemosSyncDescription(unittest.TestCase):
     """데모가 **저장소 문구를 DB 에 맞춘다.** 문구를 데모에서 새로 짓지 않는다."""
 
-    def test_each_demo_patches_when_it_already_exists(self) -> None:
-        for path in DEMOS:
+    def setUp(self) -> None:
+        self.demos = registering_demos()
+
+    def test_the_probe_finds_the_demos(self) -> None:
+        """검사가 0개를 돌며 통과하는 상태를 막는다."""
+        self.assertGreaterEqual(len(self.demos), 8, [p.name for p in self.demos])
+
+    def test_seeded_capability_demo_is_not_in_scope(self) -> None:
+        """`demo.sh` 는 등록하지 않는다 — `image.classify` 는 seed 가 넣는다."""
+        self.assertNotIn("demo.sh", [p.name for p in self.demos])
+
+    def test_every_registering_demo_patches_when_it_already_exists(self) -> None:
+        for path in self.demos:
             text = path.read_text(encoding="utf-8")
             self.assertIn("cap_body=", text, f"{path.name}: 정본 변수가 없다")
             self.assertIn("-X PATCH", text, f"{path.name}: PATCH 단계가 없다")
@@ -124,16 +146,26 @@ class TestDemosSyncDescription(unittest.TestCase):
 
     def test_description_comes_from_the_post_body(self) -> None:
         """PATCH 로 보내는 값의 출처가 `cap_body` 여야 한다 — 두 벌을 만들지 않는다."""
-        for path in DEMOS:
+        for path in self.demos:
             text = path.read_text(encoding="utf-8")
             self.assertIn('"$cap_body"', text, f"{path.name}")
             self.assertRegex(text, r'want=\$\(printf .%s. "\$cap_body"', f"{path.name}")
 
     def test_demo_still_posts_first(self) -> None:
         """PATCH 는 **폴백**이다 — 새 스택에서는 POST 한 번으로 끝나야 한다."""
-        for path in DEMOS:
+        for path in self.demos:
             text = path.read_text(encoding="utf-8")
             self.assertLess(text.index("-X POST"), text.index("-X PATCH"), f"{path.name}")
+
+    def test_patch_body_carries_only_description(self) -> None:
+        """계약 칸이 PATCH 본문에 섞이면 Core 가 400 이지만, 데모가 그걸 시도조차 않게 한다."""
+        for path in self.demos:
+            text = path.read_text(encoding="utf-8")
+            i = text.index("-X PATCH")
+            body = text[i : i + 400]
+            self.assertIn('{"description"', body, f"{path.name}")
+            for field in ("input_schema", "output_schema", "compute_tier", "quality_profile"):
+                self.assertNotIn(field, body, f"{path.name}: PATCH 본문에 {field}")
 
 
 if __name__ == "__main__":
