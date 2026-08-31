@@ -41,7 +41,8 @@ for a in json.load(sys.stdin)['items']:
 fi
 
 echo "== 2) 능력 등록 (quality_profile=none · 골든셋 없음) =="
-cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/json' -d '{
+# 저장소의 능력 정의. 아래 「이미 있음」 분기에서 description 동기화에 다시 쓴다.
+cap_body='{
  "code":"image.embed","version":1,"name":"image embed (fixed projection)",
  "description":"128차원 벡터 · 기존 eurosat_scratch 트렁크 재사용 · 유사도 주장 없음",
  "input_schema":{"mediaTypes":["image/jpeg"],
@@ -50,7 +51,8 @@ cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/jso
    "vector":{"type":"array","items":{"type":"number"},"minItems":128,"maxItems":128}},
    "additionalProperties":false},
  "output_kind":"structured","compute_tier":"M","trust_domain_min":"team",
- "mvp_eligible":false,"quality_profile":"none"}')
+ "mvp_eligible":false,"quality_profile":"none"}'
+cap=$(ccurl -s -X POST "$core/v1/capabilities" -H 'content-type: application/json' -d "$cap_body")
 capid=$(printf '%s' "$cap" | python3 -c '
 import json,sys
 d=json.load(sys.stdin)
@@ -61,6 +63,20 @@ import json,sys
 d=json.load(sys.stdin); items=d["items"] if isinstance(d,dict) else d
 print(next(c["id"] for c in items if c["code"]=="image.embed" and c["version"]==1))')
   echo "  이미 있음 → $capid"
+  # 등록은 (code, version) UNIQUE 로 한 번뿐이라, 저장소에서 description 을 고쳐도
+  # 이미 등록된 스택에는 안 들어간다. 라우터는 DB 의 설명을 읽으므로 오래 돌아간 스택은
+  # 저장소와 다른 문구로 라우팅한다 (실측 · 크기는 `scripts/route_bench.py` 로 잰다). 여기서 맞춘다.
+  # **문구를 여기서 만들지 않는다** — 정본은 위 cap_body 이고 DB 를 거기에 맞출 뿐이다.
+  want=$(printf '%s' "$cap_body" | python3 -c 'import json,sys; print(json.load(sys.stdin)["description"])')
+  have=$(ccurl -sf "$core/v1/capabilities/$capid" | python3 -c '
+import json,sys; print(json.load(sys.stdin).get("description") or "")')
+  if [[ "$want" != "$have" ]]; then
+    ccurl -sf -X PATCH "$core/v1/capabilities/$capid" -H 'content-type: application/json' \
+      -d "$(printf '%s' "$want" | python3 -c '
+import json,sys; print(json.dumps({"description": sys.stdin.read().rstrip(chr(10))}, ensure_ascii=False))')" \
+      >/dev/null
+    echo "  설명 동기화 — DB 가 저장소보다 낡아 있었다 (PATCH)"
+  fi
 else
   echo "  등록 → $capid"
 fi
