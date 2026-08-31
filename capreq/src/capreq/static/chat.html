@@ -114,6 +114,21 @@ function add(role, text, cls) {
   return d;
 }
 
+// 미매칭일 때 「그럼 무엇을 할 수 있나」를 보여 주려고 한 번 받아 둔다.
+// **새 주장을 만들지 않는다** — Core 카탈로그에 있는 것을 그대로 옮긴다.
+let knownCaps = null;
+
+async function loadCaps() {
+  if (knownCaps) return knownCaps;
+  try {
+    const d = await fetch("/api/capabilities").then(r => r.json());
+    knownCaps = Array.isArray(d.items) ? d.items : [];
+  } catch (e) {
+    knownCaps = [];   // 못 받아도 화면이 무너지지 않는다
+  }
+  return knownCaps;
+}
+
 async function refreshMeta() {
   try {
     const h = await fetch("/api/health").then(r => r.json());
@@ -293,6 +308,18 @@ function renderRouting(box, res) {
   return box;
 }
 
+// 못 고른 자리에서 사용자를 막다른 골목에 두지 않는다.
+// **고르라고 권하지 않는다** — 있는 것을 보여 줄 뿐이고, 고르는 것은 여전히 라우터다.
+function renderWhatYouCanAsk(box, caps) {
+  if (!caps || !caps.length) return;
+  box.appendChild(el("div", "sub2", `지금 할 수 있는 일 ${caps.length}가지 — 다시 말해 보세요.`));
+  const rows = caps.map(c => {
+    const desc = (c.description || "").replace(/\s+/g, " ").trim();
+    return [`${c.code}@${c.version}`, c.name || "", desc.length > 90 ? desc.slice(0, 87) + "..." : desc];
+  });
+  box.appendChild(table(["code", "name", "설명"], rows));
+}
+
 function renderExec(box, status, taskId, message, assignment) {
   const line = el("div", "sub2");
   line.appendChild(statusBadge(status));
@@ -379,6 +406,7 @@ document.getElementById("f").onsubmit = async (ev) => {
     }
     renderRouting(pending, res);
     pending.className = "bubble bot " + (res.ok ? "ok" : "bad");
+    if (!res.ok) renderWhatYouCanAsk(pending, await loadCaps());
     if (res.execution_ok === false) {
       renderExec(pending, res.task_status || "FAILED", res.task_id, res.execution_message);
       renderSummary(pending, res.result);
