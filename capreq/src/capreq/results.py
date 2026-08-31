@@ -2,7 +2,8 @@
 
 능력마다 결과 모양이 다르다 — `label`·`confidence` (분류) · `vector`/`forecast`
 (임베딩·예측) · `entities` (NER) · `fields` (필드 추출) · `query`·`ranking` (순위) ·
-`columns`·`rows` (표). 계약이 정한 칸 이름을 그대로 읽어 옮기기만 한다.
+`patterns_checked`·`findings` (PII 참고) · `columns`·`rows` (표).
+계약이 정한 칸 이름을 그대로 읽어 옮기기만 한다.
 **새 품질 주장은 하지 않는다** — 없는 칸은 없는 대로 둔다.
 
 ## 화면 자르기는 데이터 자르기가 아니다
@@ -104,6 +105,22 @@ def summarize_result(source: Any) -> dict[str, Any]:
             "truncated": len(body) > LIST_HEAD,
         }
 
+    findings = ref.get("findings")
+    if isinstance(findings, list):
+        body = [f for f in findings if isinstance(f, dict)]
+        pii: dict[str, Any] = {
+            "items": body[:LIST_HEAD],
+            "count": len(body),
+            "truncated": len(body) > LIST_HEAD,
+        }
+        # **찾아본 목록을 같이 옮긴다.** 이게 없으면 빈 `findings` 가 「깨끗하다」로 읽힌다 —
+        # `safety.pii` 는 선언한 패턴만 보고 놓친 것이 없다고 말하지 않는다.
+        checked = ref.get("patterns_checked")
+        if isinstance(checked, list):
+            pii["patterns_checked"] = [str(c) for c in checked]
+            consumed.add("patterns_checked")
+        out["pii"] = pii
+
     ranking = ref.get("ranking")
     if isinstance(ranking, list):
         body = [r for r in ranking if isinstance(r, dict)]
@@ -136,7 +153,7 @@ def summarize_result(source: Any) -> dict[str, Any]:
     # 계약이 새 칸을 들고 오면 조용히 삼키지 말고 그대로 넘긴다.
     known = (
         _META_KEYS | _LABEL_KEYS | _TABLE_KEYS | consumed
-        | {"entities", "fields", "ranking"} | set(_VECTOR_KEYS)
+        | {"entities", "fields", "ranking", "findings"} | set(_VECTOR_KEYS)
     )
     other = {k: v for k, v in ref.items() if k not in known}
     if other:

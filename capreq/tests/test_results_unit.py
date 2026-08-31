@@ -136,6 +136,35 @@ class TestSummarize(unittest.TestCase):
         self.assertEqual(set(out["ranking"]), {"items", "count", "truncated"})
         self.assertEqual(set(out["ranking"]["items"][0]), {"rank", "score", "text"})
 
+    def test_pii_is_summarised_with_its_limits(self) -> None:
+        """`safety.pii` — **찾아본 목록을 같이 옮긴다.** 없으면 빈 결과가 「깨끗하다」로 읽힌다."""
+        out = summarize_result({
+            "patterns_checked": ["card_like", "email"],
+            "findings": [{"label": "email", "start": 3, "end": 18, "text": "o**@e***.dev"}],
+        })
+        self.assertEqual(out["pii"]["count"], 1)
+        self.assertEqual(out["pii"]["patterns_checked"], ["card_like", "email"])
+        self.assertNotIn("other", out, "findings·patterns_checked 가 other 로 새면 안 된다")
+
+    def test_empty_pii_still_carries_patterns_checked(self) -> None:
+        out = summarize_result({"patterns_checked": ["email"], "findings": []})
+        self.assertEqual(out["pii"]["count"], 0)
+        self.assertEqual(out["pii"]["patterns_checked"], ["email"])
+
+    def test_patterns_checked_without_findings_is_not_swallowed(self) -> None:
+        """소비하지 않은 칸은 `other` 로 그대로 내보낸다 (`query` 와 같은 규율)."""
+        out = summarize_result({"patterns_checked": ["email"]})
+        self.assertNotIn("pii", out)
+        self.assertEqual(out["other"], {"patterns_checked": ["email"]})
+
+    def test_summariser_does_not_unmask(self) -> None:
+        """가린 것을 되돌리지 않는다 — 옮기기만 한다."""
+        out = summarize_result({
+            "patterns_checked": ["email"],
+            "findings": [{"label": "email", "start": 0, "end": 3, "text": "o**@e***.dev"}],
+        })
+        self.assertEqual(out["pii"]["items"][0]["text"], "o**@e***.dev")
+
     def test_unknown_key_is_kept(self) -> None:
         out = summarize_result({"segments": [1, 2], "weights_sha256": "ab"})
         self.assertEqual(out["other"], {"segments": [1, 2]})

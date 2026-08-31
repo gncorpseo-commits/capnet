@@ -95,6 +95,12 @@ def _rule_rank() -> type[nn.Module]:
     return RuleTextRank
 
 
+def _rule_pii() -> type[nn.Module]:
+    from app.tiny_pii import RuleTextPii
+
+    return RuleTextPii
+
+
 def _text_embedder() -> type[nn.Module]:
     from app.tiny_embed import TinyTextEmbedder
 
@@ -129,6 +135,8 @@ ARCH_REGISTRY: dict[str, type[nn.Module]] = {
     "RuleTextExtract": _rule_extract(),
     # 규칙 순위 — 가중치 0 · 추론은 어휘 겹침 (Wave G · text.rank).
     "RuleTextRank": _rule_rank(),
+    # 규칙 PII 참고 — 가중치 0 · 추론은 정규식 (Wave L · safety.pii).
+    "RuleTextPii": _rule_pii(),
 }
 
 # arch → 모달리티. **실행기 디스패치의 정본이다** (단계 5).
@@ -154,6 +162,9 @@ ARCH_MODALITY: dict[str, str] = {
     # 같은 텍스트 전처리를 쓴다. 다른 것은 **출력**이다 — span 도 필드도 아니고
     # 후보 줄의 순위다.
     "RuleTextRank": "text_rank",
+    # 같은 텍스트 전처리를 쓴다. 다른 것은 **출력**이다 — 가려진 span 과
+    # **찾아본 목록**(`patterns_checked`)을 같이 낸다.
+    "RuleTextPii": "text_pii",
 }
 
 

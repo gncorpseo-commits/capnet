@@ -347,7 +347,7 @@ def _run(
             image_path = fetched
         elif modality in (
             "text", "text_embed", "series", "table_extract", "text_ner", "text_extract",
-            "text_rank",
+            "text_rank", "text_pii",
         ):
             # 이미지 밖 모달리티에는 로컬 골든셋 폴백이 없다 — 입력은 Core 중개로만 온다 (D8′).
             raise HTTPException(
@@ -404,6 +404,17 @@ def _run(
 
                 try:
                     output = rank_text(
+                        path, image_path, arch=arch, max_params=max_params,
+                        preprocess=preprocess,
+                    )
+                except TextResourceLimitExceeded as exc:
+                    raise ResourceLimitExceeded(str(exc)) from exc
+            elif modality == "text_pii":
+                from app.infer_pii import scan_pii
+                from app.infer_text import TextResourceLimitExceeded
+
+                try:
+                    output = scan_pii(
                         path, image_path, arch=arch, max_params=max_params,
                         preprocess=preprocess,
                     )

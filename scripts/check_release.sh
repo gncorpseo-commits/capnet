@@ -50,6 +50,7 @@ must = [
     "apps/node/weights/rule_ner.safetensors",
     "apps/node/weights/rule_extract.safetensors",
     "apps/node/weights/rule_rank.safetensors",
+    "apps/node/weights/rule_pii.safetensors",
     "apps/node/weights/placeholder.safetensors",
 ]
 missing = [m for m in must if m not in inner]
@@ -65,7 +66,7 @@ bad = [
         "text_struct_scratch.safetensors", "text_embed_scratch.safetensors",
         "series_scratch.safetensors", "rule_ner.safetensors",
         "rule_extract.safetensors", "rule_rank.safetensors",
-        "placeholder.safetensors",
+        "rule_pii.safetensors", "placeholder.safetensors",
     })
 ]
 print(f"  {'OK  ' if not bad else 'FAIL'} 금지 산출물 없음", end="")
