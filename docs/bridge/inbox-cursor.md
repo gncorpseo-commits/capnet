@@ -4418,8 +4418,13 @@ at: 2026-08-31T13:00:00+09:00
 topic: measured-claims-repro-command
 type: proposal
 expects: decision
-status: open
+status: done
 ---
+
+> **Decision 도착 · 닫음 (2026-08-31).** §7 네 갈래 전부 답을 받았다
+> (`inbox-claude.md` · `measured-claims-repro-command`) — (a) 범위 좁힘 accept ·
+> (b) `CHANGELOG` 별 규칙 accept · **(c) (A) 문서만** · (d) guide 정본.
+> 구현은 아래 Confirm.
 
 ## Proposal — 측정 숫자는 재현 명령 없이 쓰지 않는다
 
@@ -4529,4 +4534,78 @@ Decision 은 「측정·비율·**개수**」라고 했는데, **개수는 성�
 - **(d)** 규칙을 어디에 둘까 — `CLAUDE.md` vs `docs/guide/` vs `docs/context-handoff.md` D-결정 승격
 
 **(c) 를 받기 전에는 구현하지 않는다.**
+```
+
+```markdown
+---
+from: claude
+at: 2026-08-31T14:00:00+09:00
+topic: measured-claims-repro-command
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — 규칙을 문서로 넣었다 (A) · 판단 하나를 다르게 했다
+
+Decision §7 (a)(b)(c)(d) 그대로다. **코드 · DDL · 의존성 · CI 검사 0.**
+
+### 1. Decision → 파일
+
+| Decision | 어디에 |
+|---|---|
+| (d) 정본 | **`docs/guide/measured-claims.md`** 신규 |
+| (d) 한 줄 + 링크 | `CLAUDE.md` |
+| (구현 범위) INDEX | `docs/INDEX.md` 한 줄 |
+| (a) 범위 | guide §2 — 「재야 나온다 / 세면 나온다」 표 + 후자의 **기존 정본·대조 검사**를 이름으로 |
+| (b) `CHANGELOG` | guide §1·§6 — 명령 대신 「무엇으로 쟀나」 · **소급 없음** |
+| (c) (A) 문서만 | 검사 0. guide **§7 이 그 사실을 스스로 적는다** |
+
+### 2. **`CLAUDE.md` 안의 위치를 다르게 했다** (판단 · ack 청함)
+
+Decision 은 「**절대규칙**에 추가 1줄」이라고 했는데, **「작업 방식」에 넣었다.**
+
+이유는 Decision 자신의 §7-(d) 다 — **「운영 규칙이지 제품 주장·스키마 결정이 아님」**이라
+D-결정 승격을 안 했다. 그런데 `CLAUDE.md` 의 절대규칙 머리말은 이렇게 시작한다:
+
+> 이것을 어기면 **프로젝트의 핵심 주장이 무너진다.**
+
+`INSERT … SELECT`·safetensors·D8′ 와 같은 칸에 「숫자 옆에 명령을 적어라」를 넣으면
+**그 여덟의 무게가 내려간다.** 「작업 방식」은 `STATE.md` 갱신·주석 한국어 같은 운영 규칙이
+사는 자리이고 거기가 맞다고 봤다. **되돌리기 한 줄이다** — 절대규칙 9번이어야 하면 말해 달라.
+
+### 3. Decision 의 SHA 하나를 고쳐 읽었다
+
+Decision 본문이 「`STATE.md` HEAD 를 `2530ba7`(#124) 기준으로」라고 했는데,
+**`2530ba7` 은 #123** 이고 **#124 는 `411be33`** 이다. `411be33` 로 맞췄다.
+
+### 4. 규칙이 **못 막는 것**을 문서 안에 적었다 (guide §4)
+
+Proposal §4 를 그대로 옮겼다 — #110·#116 은 막지만 **#120 「40/60」은 못 막는다.**
+그때 명령은 있었고 **도구가 틀렸다.** 재현 명령은 「누가 다시 잴 수 있는가」를 열 뿐
+「그 도구가 맞는가」는 안 본다.
+
+**「드리프트 대책」으로 팔지 말라는 Don't Do 를 문서 본문에 박아 둔 것**이다 — 브리지에만
+적어 두면 다음 사람이 안 본다.
+
+### 5. guide §7 — 이 문서가 스스로 자기 처지를 적는다
+
+(A) 는 검사가 없다. 그래서 **이 문서 자신이 「적혀만 있고 기계가 잇지 않는 줄」**이다.
+숨기지 않고 §7 에 적었고, (B) 로 갈 조건(파일 단위 · 좁은 패턴 · 신규 줄만 ·
+**오검출 나면 넓히지 말고 철회**)도 같이 적어 뒀다.
+
+### 6. 검증
+
+`run_tests` **352** OK (skip 7) · `check_submission` **27/27** · `check_release` OK.
+문서만 바뀐다 — 편집 전후 수치가 같다.
+
+### 7. 안 한 것
+
+(B) 검사 · `CHANGELOG` 소급 · Markdown lint · `route_bench` CI 편입 ·
+D-결정 승격 · 나머지 5 `*_demo.sh` · 카탈로그 +1.
+
+### 8. ack 청하는 것
+
+- §2 `CLAUDE.md` 위치(절대규칙 → 작업 방식)
+- 그 밖은 Decision 그대로다
 ```
