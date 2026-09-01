@@ -52,9 +52,6 @@ python -m capreq route "이 사진 분류해줘" --core http://127.0.0.1:8000
 # 대화형 CLI
 python -m capreq chat --core http://127.0.0.1:8000
 
-# 웹 챗봇
-python -m capreq serve --core http://127.0.0.1:8000 --port 8090
-
 # 웹 챗봇 (파일 첨부 → Core 중개 업로드 → Task)
 python -m capreq serve --core http://127.0.0.1:8000 --port 8090
 # 브라우저 http://127.0.0.1:8090/ — + 버튼·드래그앤드롭으로 파일 첨부
@@ -65,6 +62,17 @@ python -m capreq serve --core http://127.0.0.1:8000 --port 8090
 python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --execute \
   --dataset eurosat-rgb --case ic1-0001
 ```
+
+### **CLI 로는 파일을 붙일 수 없다**
+
+`route`·`chat` 에는 파일 인자가 **없다.** 첨부는 `serve` 의 multipart 경로
+(`POST /api/chat` 의 `file` 파트)뿐이다 — 그 길만 Core 중개 업로드로 이어진다 (D8′).
+
+위 `--dataset eurosat-rgb --case ic1-0001` 은 **자기 파일을 보내는 것이 아니다.**
+저장소에 이미 있는 **allowlist 데모 골든셋**에서 한 장을 고르는 것이고,
+**이미지 능력에만** 있다. 이걸 업로드로 읽으면 「내 파일이 돌았다」고 오해한다.
+
+종단으로 확인하려면 `bash scripts/capreq_demo.sh` 를 쓴다.
 
 능력이 해석됐으나 백엔드가 못 돌리면 **해석은 남기고** 실행 실패를 명시한다.
 
@@ -100,7 +108,11 @@ python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --e
 > **화면은 검사가 실행해 본다.** `chat.html` 의 `<script>` 를 최소 DOM 스텁으로 돌린다
 > (`node` 필요 · **npm 패키지 0** · 없으면 skip).
 >
-> - `chat_render_probe.js` — 렌더러를 호출해 **만들어진 DOM** 을 단언 (능력 10종의 결과 모양)
+> - `chat_render_probe.js` — 렌더러를 호출해 **만들어진 DOM** 을 단언.
+>   능력마다가 아니라 **결과 칸마다** 본다 — 열 능력이 내는 칸은 그보다 적다
+>   (`image.classify`·`text.classify` 는 둘 다 `label`, `text.embed`·`image.embed` 는 둘 다 `vector`).
+>   **칸 목록의 정본은 `capreq/src/capreq/results.py`** 이고,
+>   `test_chat_html_unit.test_fixture_covers_every_summariser_branch` 가 소스에서 뽑아 대조한다
 > - `chat_flow_probe.js` — **경로 전체**: 보내기 → 라우팅 → 폴링 → 결과.
 >   **첨부가 `FormData` 에 실제로 실리는지**도 여기서 본다 (#112 의 클라이언트 짝)
 >

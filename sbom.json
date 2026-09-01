@@ -16,6 +16,20 @@
       "version": "0.116.1"
     },
     {
+      "bom-ref": "requirements-L9",
+      "description": "requirements line 9: httpx>=0.27",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/httpx/"
+        }
+      ],
+      "name": "httpx",
+      "purl": "pkg:pypi/httpx",
+      "type": "library"
+    },
+    {
       "bom-ref": "requirements-L7",
       "description": "requirements line 7: numpy==2.4.6",
       "externalReferences": [
@@ -97,6 +111,20 @@
       "version": "2.10.1"
     },
     {
+      "bom-ref": "requirements-L10",
+      "description": "requirements line 10: python-multipart>=0.0.9",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/python-multipart/"
+        }
+      ],
+      "name": "python-multipart",
+      "purl": "pkg:pypi/python-multipart",
+      "type": "library"
+    },
+    {
       "bom-ref": "requirements-L6",
       "description": "requirements line 6: safetensors==0.8.0",
       "externalReferences": [
@@ -112,8 +140,8 @@
       "version": "0.8.0"
     },
     {
-      "bom-ref": "requirements-L9",
-      "description": "requirements line 9: torch==2.13.0+cpu",
+      "bom-ref": "requirements-L11",
+      "description": "requirements line 11: torch==2.13.0+cpu",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -127,8 +155,8 @@
       "version": "2.13.0+cpu"
     },
     {
-      "bom-ref": "requirements-L10",
-      "description": "requirements line 10: torchvision==0.28.0+cpu",
+      "bom-ref": "requirements-L12",
+      "description": "requirements line 12: torchvision==0.28.0+cpu",
       "externalReferences": [
         {
           "comment": "implicit dist url",
@@ -185,6 +213,12 @@
       "ref": "requirements-L10"
     },
     {
+      "ref": "requirements-L11"
+    },
+    {
+      "ref": "requirements-L12"
+    },
+    {
       "ref": "requirements-L2"
     },
     {
@@ -210,7 +244,7 @@
     }
   ],
   "metadata": {
-    "timestamp": "2026-08-12T12:14:01Z",
+    "timestamp": "2026-09-01T17:36:50Z",
     "tools": {
       "components": [
         {
@@ -309,7 +343,7 @@
           ],
           "name": "cyclonedx-python-lib",
           "type": "library",
-          "version": "11.11.1"
+          "version": "11.12.0"
         }
       ]
     },
@@ -337,7 +371,7 @@
       }
     ]
   },
-  "serialNumber": "urn:uuid:8d0efa79-c2f6-4e81-a837-5bbbf6263602",
+  "serialNumber": "urn:uuid:aa00af1b-127c-4d33-8f6d-ccab4f0351be",
   "version": 1,
   "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
   "bomFormat": "CycloneDX",
