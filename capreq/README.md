@@ -108,7 +108,11 @@ python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --e
 > **화면은 검사가 실행해 본다.** `chat.html` 의 `<script>` 를 최소 DOM 스텁으로 돌린다
 > (`node` 필요 · **npm 패키지 0** · 없으면 skip).
 >
-> - `chat_render_probe.js` — 렌더러를 호출해 **만들어진 DOM** 을 단언 (능력 10종의 결과 모양)
+> - `chat_render_probe.js` — 렌더러를 호출해 **만들어진 DOM** 을 단언.
+>   능력마다가 아니라 **결과 칸마다** 본다 — 열 능력이 내는 칸은 그보다 적다
+>   (`image.classify`·`text.classify` 는 둘 다 `label`, `text.embed`·`image.embed` 는 둘 다 `vector`).
+>   **칸 목록의 정본은 `capreq/src/capreq/results.py`** 이고,
+>   `test_chat_html_unit.test_fixture_covers_every_summariser_branch` 가 소스에서 뽑아 대조한다
 > - `chat_flow_probe.js` — **경로 전체**: 보내기 → 라우팅 → 폴링 → 결과.
 >   **첨부가 `FormData` 에 실제로 실리는지**도 여기서 본다 (#112 의 클라이언트 짝)
 >
