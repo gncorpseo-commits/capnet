@@ -6448,3 +6448,122 @@ SELECT kind, count(*) n,
 > 달라진다. 여기 적는 이유는 **T 후보가 안전 구간에 있는지**를 보이려는 것뿐이다.
 > 재현 명령은 위 SQL 이다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T06:10:00+09:00
+topic: verify-round3-post-wave-z
+type: confirm
+expects: ack
+status: open
+---
+
+## 종단 verify (3회차) — 열여덟 PR 을 전부 얹은 트리
+
+| 무엇 | 결과 |
+|---|---|
+| 열여덟 PR 머지 | **충돌 0** |
+| `run_tests.sh` | **441 OK** (건너뜀 7 · 전부 `psycopg 없음`) |
+| `capreq/tests` | **72 OK · 건너뜀 0** |
+| `check_submission.py` | 통과 |
+| `check_input_purge.py` | **17/17** |
+| `product_demo`·`pii_demo`·`demo_violations` | **exit 0** |
+| `capreq_demo.sh` (빈 첨부 회귀 포함) | **exit 0** |
+
+**실패 0.**
+
+### 이번 회차에 고친 실제 결함 **다섯**
+
+| # | 무엇 | 실측 |
+|---|---|---|
+| #154 | 빈 파일 첨부 → **데모 데이터가 대신 돌았다** | `input_id=null` 인데 `label=annual_crop` |
+| #156 | **Core 의 로그가 한 줄도 안 나왔다** | `grep -c "gc:"` → **0** |
+| #158 | gate 폐기가 **관측 절반을 빠뜨렸다** | `except: pass` · 로거조차 없었다 |
+| #159 | **Core 와 끊긴 Node 가 한가한 Node 처럼 보였다** | `except: return []` |
+| #161 | 카탈로그를 한 번 못 받으면 **영영 안 받았다** | `knownCaps = []` 인데 JS 에서 `[]` 는 truthy |
+
+**다섯 다 같은 문장으로 요약된다 — 「못 했다」를 「없다」·「됐다」로 뭉뚱그린다.**
+`7936a0f`(첨부가 통째로 버려진 버그)가 그 계열의 첫 사례였고, 이번에 다섯이 더 나왔다.
+
+### 안 고치고 **재기만 한** 것 셋 (Decision 대기)
+
+| 주제 | 실측 |
+|---|---|
+| `silent-truncation` | 9,031바이트 파일의 8,000자 뒤 이메일 → `entities: []` · **잘렸다는 말이 없다** |
+| `retention-ttl-policy-evidence` | 계약 샘플 **9건이 무기한** · `stale-72h` 는 한 번도 안 걸렸다 |
+| `gate-run-stuck-running` | `golden|RUNNING` **6건 · 나이 23일** · 끝난 95건의 최대는 **6.9초** |
+
+셋 다 **정책 숫자나 제품 주장**이라 내가 못 정한다.
+
+### 확인했고 **문제 없던** 것 (적어 둔다 — 다음 사람이 다시 안 재게)
+
+- **D26 정본이 DB 와 정확히 맞는다** — `/v1/ops/work-units` 62/47/15 ·
+  `core_observed_ms_sum` 48,428 · max 3,983 · `hint_missing` 15. 직접 쿼리와 일치
+- `task` 에 막힌 `QUEUED`·`LEASED`·`RUNNING` **0건** (GC 가 실제로 종결한다)
+- `pollTask` 는 조회 실패·`!ok`·120초 초과를 **전부 구분해 그린다**
+- Node 오보고는 **422** 로 막힌다 (`OutputKeysMismatch`)
+- 관리 API 가 인증 없이 열려 있는 것은 `REQUIRE_API_KEY=0` 의 **문서화된 상태**다 (SD-010)
+- `node_liveness` 에 하트비트 없는 둘은 **컨테이너가 없는 시드 행**이다
+- `docs/INDEX.md` 에 **깨진 참조 0**
+
+**정확도·성능 주장 없음** — 이 표는 전부 통과/실패다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T06:20:00+09:00
+topic: track-a-post-round3
+type: next
+expects: decision
+status: open
+---
+
+## Next — 3회차 뒤
+
+`main` = **`a4d47dd`** · 열린 PR **열여덟**. 전부 `a4d47dd` 위에서 **충돌 0** 이다
+(프로브로 확인 · `run_tests` **441** · capreq **72**).
+
+### 스택 관계 (머지 순서가 자유롭도록 미리 얹었다)
+
+    #164 ⊃ #163 ⊃ #160 ⊃ #157 ⊃ #155 ⊃ #153 ⊃ #150 ⊃ #147·#149
+    #162 ⊃ #154 · #161 ⊃ #154
+    #148 · #151 · #152 · #156 · #158 · #159 은 독립
+
+**어느 순서로 머지해도 깨끗하다.** 스택 위쪽 하나만 머지해도 아래가 따라 들어간다.
+
+### `CHANGELOG` — **열여덟 중 하나만** 썼다
+
+#147(Wave Y) 만 선두를 건드렸다. 나머지 열일곱은 항목이 **없다.**
+규율은 통했지만(충돌 0) **대가가 세 번째로 실측됐다.**
+`changelog-changeset-rule` Decision 에 그 값을 얹어 뒀다 — 이번 회차의 다섯 결함 수정이
+전부 기록 없이 머지된다는 뜻이다.
+
+### 열린 Decision **여섯**
+
+| # | 주제 | 왜 막혀 있나 |
+|---|---|---|
+| 1 | `11th-capability-timeseries-anomaly` | 카탈로그 +1 · 정책 숫자 |
+| 2 | `changelog-changeset-rule` | `CLAUDE.md` 개정 |
+| 3 | `retention-ttl-policy` (+evidence) | 정책 숫자 · 제품 약속 |
+| 4 | `silent-truncation` | 제품 주장 (A 는 싸다 · B 는 계약 변경) |
+| 5 | `gate-run-stuck-running` | 정책 숫자 (T) |
+| 6 | `track-a-post-round3` | 이 블록 |
+
+**값이 큰 순서:** 4-A(화면에 계약 상한 표시 · 새 주장 0 · 싸다) →
+5-A(`gate_run_stale` 뷰 · 기존 두 뷰와 같은 모양) → 3 → 1 → 2.
+
+### 다음 세션 후보 (Decision 없이 되는 것)
+
+| # | 무엇 | 근거 |
+|---|---|---|
+| 1 | 같은 계열 결함 **계속 탐색** | 이번에 다섯 나왔다. `ast` 로 조용한 삼킴을 훑는 방식이 통했다 |
+| 2 | `table`/`series` 의 `max_rows` **경로 실측** | `silent-truncation` 이 「아직 안 쟀다」고 적었다. 예외를 던지는 것은 확인했지만 사용자에게 어떻게 보이는지는 안 봤다 |
+| 3 | `docs/INDEX.md` 의 `check_release.sh` 가 **design 절에 있다** | 자리가 틀렸다 (스크립트인데). 되돌리기 싸다 |
+
+### 여전히 못 보는 것 (그대로)
+
+실제 브라우저의 **CSS·레이아웃**, 파일 선택기의 **OS 상호작용**.
+Playwright 는 새 의존성이라 안 들였다 — **본 것만 말한다.**
+```
