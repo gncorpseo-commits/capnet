@@ -5488,8 +5488,11 @@ at: 2026-09-01T03:05:00+09:00
 topic: track-a-post-wave-r
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-01).** 계획대로 갔다 — Step 0 = #137 `7ef3abe` · Wave S = #138 `a09de5f`.
+> **`CHANGELOG` 를 한 PR 만 건드리게 가른 것이 이번엔 통했다** (충돌 0).
 
 ## Next — Wave R 뒤 · **머지 뒤에야 보이는 것이 있다**
 
@@ -5553,6 +5556,91 @@ Playwright npm.
 | `scripts/pii_demo.sh` | **exit 0** |
 
 **숫자를 새로 적지 않는다** — 통과/실패만이다 (`measured-claims.md`).
+
+### 여전히 못 보는 것
+
+실제 브라우저의 **CSS·레이아웃**, 파일 선택기의 **OS 상호작용**. **본 것만 말한다.**
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T10:20:00+09:00
+topic: capreq-no-match-docs
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — Wave S [#138](https://github.com/gncorpseo-commits/capnet/pull/138) 머지 (`a09de5f`)
+
+**문서만 · 코드 0 · 검사 0 · 새 의존성 0 · 새 제품 주장 0.**
+
+### 1. 무엇이 들어갔나
+
+| 파일 | 무엇 |
+|---|---|
+| `capreq/README.md` | **「못 알아들었을 때」** 절 신설 — 화면 예시 + **무엇을 하지 않는지** |
+| `docs/guide/user-guide-ko.md` §7 | 쉬운 말로 두 문답 |
+| 같은 절의 낡은 숫자 셋 | 「세 가지」→네 · `capabilities=7`→`N` · 「아홉 능력」→「등록된 능력」 |
+
+**Wave Q 가 화면에 넣은 것을 읽는 사람이 알 수 있게** 적었을 뿐이다 — 로직은 안 건드렸다.
+
+### 2. 「고르게 권하지 않는다」를 문서에도 박았다
+
+master ack 의 선을 그대로 옮겼다: **목록을 보여 줄 뿐이고 고르는 것은 여전히 라우터**다.
+추천도 정렬도 없다. 사용자 안내에는 그 이유까지 적었다 —
+**「내가 시킨 것이 아니라 접수처가 정했다」는 장부가 유지되려면** 그래야 한다.
+
+### 3. 낡은 숫자는 **다시 안 낡게** 고쳤다
+
+`capabilities=7` 을 `10` 으로 바꾸지 않고 **`N`** 으로 바꿨다.
+`measured-claims.md` §2 가 「개수 예시는 `N` 으로」라고 적어 둔 그대로다 —
+**능력이 늘 때마다 고쳐야 하는 숫자는 애초에 적지 않는다.**
+
+### 4. CHANGELOG 를 갈랐다 (#136 교훈)
+
+`CHANGELOG` 선두를 건드리는 PR 은 **#138 하나뿐**이었고 #137(Step 0)은 안 건드렸다.
+**충돌 0** 으로 머지됐다 — 야간의 셋과 대비된다.
+
+### 5. ack 청하는 것
+
+- 문서 범위 (로직 변경 0)
+- **`N` 표기** — 개수 예시를 숫자로 되돌리지 말 것
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T10:25:00+09:00
+topic: track-a-post-wave-s
+type: next
+expects: decision
+status: open
+---
+
+## Next — Wave S 뒤 · 이번 세션 큐
+
+`main` = **`a09de5f`** · 열린 PR 0 · `run_tests` **392** · capreq **66** ·
+`check_submission` **28/28** · `check_input_purge` **17/17** · **실행 능력 10종.**
+
+### 이번 세션에 하는 것
+
+| # | 무엇 | CHANGELOG |
+|---|---|---|
+| ④ | **Step 0** — Wave S 닫기 · `STATE.md` `a09de5f` · Wave A–S | **없음** |
+| ⑤ | **Wave T** — 문서·주석 drift 스윕 (「아홉」·`387` 등) | 1건 |
+| ⑥ | **Proposal 3건** (구현 0) — changeset 규칙 · 보존 TTL · 11번째 능력 기각 | 없음 |
+| ⑦ | **Wave U** — `openapi.yaml` 드리프트 | 1건 (⑤와 분리) |
+| ⑧ | 종단 verify — 통과/실패만 | 없음 |
+
+**`CHANGELOG` 선두를 건드리는 PR 은 언제나 하나뿐이게** 갈랐다 (#136 교훈).
+
+### Decision 없이 시작하지 않는 것 (그대로)
+
+11번째 능력(`retrieve.dense` **기각** · ⑥에서 근거를 적는다) · D4 · `tool.*` ·
+LLM-as-Node · 라우팅 튜닝·정확도 주장 · 보존 TTL 숫자 · `CLAUDE.md` changeset 규칙 승격 ·
+`route_bench` CI · Playwright·npm.
 
 ### 여전히 못 보는 것
 
