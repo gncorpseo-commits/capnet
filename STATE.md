@@ -83,6 +83,46 @@
 > | — | [#157](https://github.com/gncorpseo-commits/capnet/pull/157) | 브리지 — 2회차 verify | **PR 대기** |
 > | **AC** | [#158](https://github.com/gncorpseo-commits/capnet/pull/158) | gate 폐기가 관측 절반을 빠뜨렸다 | **PR 대기** |
 > | **AD** | [#159](https://github.com/gncorpseo-commits/capnet/pull/159) | **Core 와 끊긴 Node 가 한가한 Node 처럼 보였다** | **PR 대기** |
+> | **AE** | [#161](https://github.com/gncorpseo-commits/capnet/pull/161) | **카탈로그를 한 번 못 받으면 영영 안 받았다** | **PR 대기** |
+> | — | [#162](https://github.com/gncorpseo-commits/capnet/pull/162) | 빈 첨부 회귀를 종단 스크립트에 | **PR 대기** |
+> | — | [#163](https://github.com/gncorpseo-commits/capnet/pull/163)–[#166](https://github.com/gncorpseo-commits/capnet/pull/166) | 브리지 (gate_run · D27 · 3회차 verify · 실패 이유) | **PR 대기** |
+> | — | [#167](https://github.com/gncorpseo-commits/capnet/pull/167)–[#170](https://github.com/gncorpseo-commits/capnet/pull/170) | 문서 (INDEX 자리 · capreq README · 러너 가드 · 머지 안내) | **PR 대기** |
+> | **AF** | [#171](https://github.com/gncorpseo-commits/capnet/pull/171) | **`pass_rate.sh` 가 규칙 가중치를 이미지 후보로 집어 죽었다** | **PR 대기** |
+> | **AG** | [#172](https://github.com/gncorpseo-commits/capnet/pull/172) | **`regate.sh` 가 폐기된 증서를 재게이트 대상으로 집었다** | **PR 대기** |
+
+> **4회차 (2026-09-02) — 실제 결함 일곱.** 스물여섯을 `a4d47dd` 위에 전부 머지한
+> 트리에서 쟀다: 충돌 0 · `run_tests` **453** · capreq **72 (건너뜀 0)** ·
+> `check_submission` 통과 · `check_input_purge` **17/17** · 데모 넷 **exit 0** ·
+> 열린 PR **전부 CI 3/3 SUCCESS**.
+>
+> **일곱 다 한 문장이다 — 「못 했다」를 「없다」·「됐다」로 뭉뚱그린다.**
+>
+> | # | 무엇 |
+> |---|---|
+> | #154 | 빈 파일 첨부 → 데모 데이터가 대신 돌았다 (`input_id=null` 인데 `label=annual_crop`) |
+> | #156 | Core 의 로그가 한 줄도 안 나왔다 (`grep -c "gc:"` → 0) |
+> | #158 | gate 폐기가 「같은 규약」이라 적고 관측 절반을 빠뜨렸다 |
+> | #159 | Core 와 끊긴 Node 가 한가한 Node 처럼 보였다 |
+> | #161 | 카탈로그를 한 번 못 받으면 영영 안 받았다 (`[]` 는 JS 에서 truthy) |
+> | #171 | `pass_rate.sh` 가 규칙 가중치를 이미지 후보로 집어 죽었다 |
+> | **#172** | **`regate.sh` 가 폐기된 증서를 재게이트 대상으로 집었다** |
+>
+> **#172 가 가장 무겁다.** 폐기된 것을 재게이트하면 `UPSERT_AC_PASSED` 가
+> `gate_run_id` 를 옮겨 **폐기가 되돌려질 수 있다.** 안 터진 것은 Node 에 그 가중치가
+> 없어 건너뛰었기 때문 — **우연이지 방어가 아니었다.** 폐기는 안전 주장 중 하나다.
+>
+> **게이트 사슬은 무회귀다** — `demo.sh` `acc=0.8500 f1=0.8344` · `sanity.sh` 바닥 셋
+> FAILED · `proof_ab.sh` AGREE · `pass_rate.sh` 11/16 · `regate.sh` 대상 없음.
+> 앞선 verify 표 셋에 이것들이 빠져 있어서 이번에 채웠다.
+>
+> **머지: 26개를 13번에** — `#170 #161 #162 #158 #148 #151 #152 #159 #167 #168 #169
+> #171 #172`. 브리지 `verify-round4-and-merge-guide-v2` 가 정본이다.
+> **코드 수정 일곱은 전부 문서 갈래 밖**이라 그쪽을 미뤄도 다 들어간다.
+>
+> **열린 Decision 일곱:** `11th-capability-timeseries-anomaly` ·
+> `changelog-changeset-rule`(대가가 **네 번째로** 실측됐다 — 스물여섯 중 하나만 썼다) ·
+> `retention-ttl-policy`(+evidence) · `silent-truncation` · `gate-run-stuck-running` ·
+> `failure-reason-not-surfaced` · Next.
 
 > **2회차 (2026-09-02) — 실제 결함 넷.** 열세 PR 을 `a4d47dd` 위에 전부 머지한 트리에서
 > 쟀다 — 충돌 0 · `run_tests` **440** · capreq **72 (건너뜀 0)** ·
