@@ -6285,3 +6285,162 @@ curl -s -X POST "$CAPREQ/api/chat" -F 'message=이메일 찾아줘' \
 **1 이 「예」면 그것만 구현한다.** 화면 문구는 Decision 을 받고 적는다 —
 Wave Q 에서 「고르라고 권하지 않는다」가 Decision 이었던 것과 같은 자리다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T04:40:00+09:00
+topic: verify-round2-post-wave-z
+type: confirm
+expects: ack
+status: open
+---
+
+## 종단 verify (2회차) — 열 PR 을 전부 얹은 트리에서
+
+`main`(`a4d47dd`) 위에 **열린 PR 열 개를 전부 머지한 트리**에서 쟀다.
+
+| 무엇 | 결과 |
+|---|---|
+| 열 PR 머지 | **충돌 0** |
+| `run_tests.sh` | **432 OK** (건너뜀 7) |
+| `capreq/tests` | **72 OK · 건너뜀 0** |
+| `check_submission.py` | 통과 |
+| `check_input_purge.py` | **17/17** |
+| `product_demo`·`pii_demo`·`demo_violations` | **exit 0** |
+| `capreq_demo.sh` | **exit 0** |
+
+**실패 0.**
+
+### 이번 회차에 찾은 **실제 결함 둘** (Decision 없이 고쳤다 — 버그다)
+
+| # | 무엇 | 어떻게 드러났나 |
+|---|---|---|
+| #154 | **빈 파일을 붙이면 데모 데이터가 대신 돌았다** | 0 바이트 첨부 + 이미지 능력 → `input_id=null` 인데 `label=annual_crop` · `confidence=0.99` |
+| #156 | **Core 의 로그가 한 줄도 안 나왔다** | `docker compose logs core \| grep -c "gc:"` → **0** |
+
+둘 다 **`7936a0f` 와 같은 계열**이다 — 하지 않은 일을 한 것처럼 보이거나(#154),
+한 일을 아무도 볼 수 없다(#156).
+
+**#156 이 더 넓다.** `gc: purged=N freed=N bytes` 는 **D22 보존 정책이 도는 유일한 증거**이고,
+`gc: pass failed`·`worker: claim failed` 는 **예외 경로**다 — 둘 다 「죽지 않는다」로 삼키고
+로그로만 알리는데 그 로그가 없었다. **매 패스마다 터져도 몰랐을 것이다.**
+
+### 되짚은 것
+
+#156 을 찾는 도중 「exhausted task 가 QUEUED 로 멈춰 있다」고 판단했다. **틀렸다** —
+GC 주기가 300초라 아직 안 돈 것이었다. 로그가 없어서 멈춘 것처럼 보였다.
+**틀린 진단이 진짜 결함을 가리켰다**는 점은 그대로 적어 둔다.
+
+### 새로 연 Proposal 둘 (구현 0)
+
+- `retention-ttl-policy-evidence` — 계약 샘플이 **무기한**이라는 것, 실측 분포,
+  되돌리기 비용이 두 겹이라는 것
+- `silent-truncation` — **8,000자 뒤의 이메일은 못 찾는데 그 말을 안 한다** (실측)
+
+### 열린 Decision 넷
+
+1. `11th-capability-timeseries-anomaly` (채택·문턱·이름)
+2. `changelog-changeset-rule` — 이번 회차에 **대가가 또 실측됐다** (PR 열 개 중
+   **한 개만** CHANGELOG 를 쓸 수 있었다)
+3. `retention-ttl-policy` (+ evidence 블록)
+4. `silent-truncation` (A/B/C/D)
+
+**정확도·성능 주장 없음** — 이 표는 전부 통과/실패다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T05:30:00+09:00
+topic: gate-run-stuck-running
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — `gate_run` 이 **23일째 RUNNING** 이다 (회수 장치가 없다)
+
+**구현하지 않았다.** 「얼마나 지나면 죽은 것으로 보나」는 **정책 숫자**이고,
+`retention-ttl-policy` 와 같은 자리다.
+
+### 1. 실측 (2026-09-02 · 개발 스택)
+
+```sql
+SELECT kind, status, count(*) FROM gate_run GROUP BY 1,2 ORDER BY 1,2;
+SELECT id, now() - created_at AS age FROM gate_run WHERE status = 'RUNNING' ORDER BY created_at;
+```
+
+| kind | status | 개수 |
+|---|---|---|
+| contract | PASSED | 21 |
+| contract | FAILED | 1 |
+| golden | PASSED | 69 |
+| golden | FAILED | 4 |
+| **golden** | **RUNNING** | **6** |
+
+여섯 전부 **2026-08-09** 에 시작됐다 — **나이 23일.** 회수·만료 코드는 없다
+(`grep -iE "expire|reclaim|stale|timeout" apps/core/app/gate.py` → 없음).
+
+### 2. 무엇을 막지는 **않는다** (과장하지 않는다)
+
+- 재게이팅을 막지 않는다. `gate_run` 의 UNIQUE 에 `id` 가 들어 있어 **쌍을 잠그지 않는다**
+- 배정도 막지 않는다. `assignment` 는 `agent_capability_passed` 를 보고, 그건 `PASSED` 만 본다
+- 여섯 쌍은 **같은 agent+capability 로 PASSED 가 0개**다 — 그때 버려진 시도들이다
+
+### 3. 그래도 왜 고쳐야 하나
+
+`gate_run` 은 **이 프로젝트의 핵심 주장을 받치는 증적 테이블**이다 —
+「게이트를 통과한 것만 실행된다」. 그 테이블이 **23일째 「돌고 있다」고 말한다.**
+
+- 「지금 게이트가 몇 개 도는가」를 물으면 **6** 이 나온다. 사실이 아니다
+- `RUNNING → PASSED/FAILED` 를 못 끝낸 원인(러너 죽음·네트워크·중단)이 **아무 데도 안 남는다**
+- 이번 회차에 고친 넷과 **같은 모양**이다 — 상태가 진실을 말하지 않고, 아무도 안 본다
+
+### 4. 고르는 길 셋
+
+| # | 무엇 | 비용 | 걸리는 것 |
+|---|---|---|---|
+| **A** | **뷰만 만든다** — `gate_run_stale` (`RUNNING` + 나이 > T). 종결은 사람이 | **싸다.** 추가만 · 기존 행 무변경 | T 를 정해야 한다 |
+| **B** | GC 가 종결한다 — `EXPIRED` 로 (또는 `FAILED` + 사유) | 중간. **새 상태값이면 CHECK 개정** | 절대규칙 1 — 제약 **추가**는 되지만 값 추가는 개정이다 |
+| **C** | 지금 여섯을 손으로 정리하고 끝 | 0 | **다시 쌓인다** |
+
+**A 를 권한다.** `task_input_purge_due`·`task_attempts_exhausted` 가 이미 같은 모양이다 —
+**정책을 뷰가 갖고, 사람이 본다.** 이 저장소의 기존 태도와 맞고 되돌리기 싸다.
+
+B 는 `EXPIRED` 를 쓰면 `ck_gate_run_*` 계열과 상태값 CHECK 를 건드린다.
+**절대규칙 1** 상 먼저 근거와 함께 제안해야 하므로 A 뒤로 미룬다.
+
+### 5. 묻는 것
+
+| # | 질문 |
+|---|---|
+| 1 | **A 를 할까** (뷰 + 검사 · 종결 없음) |
+| 2 | **T 를 얼마로 두나** (아래 실측을 근거로) |
+| 3 | 지금 쌓인 여섯을 **어떻게 할까** — 그대로 두고 뷰에만 보이게 할지, 한 번 정리할지 |
+
+### 6. T 를 정하라고 하기 전에 **실제 소요를 쟀다**
+
+```sql
+SELECT kind, count(*) n,
+       round(min(EXTRACT(EPOCH FROM (finished_at-created_at)))::numeric,1) min_s,
+       round(avg(EXTRACT(EPOCH FROM (finished_at-created_at)))::numeric,1) avg_s,
+       round(max(EXTRACT(EPOCH FROM (finished_at-created_at)))::numeric,1) max_s
+  FROM gate_run WHERE finished_at IS NOT NULL GROUP BY 1;
+```
+
+| kind | 끝난 건수 | 최소 | 평균 | **최대** |
+|---|---|---|---|---|
+| contract | 22 | 2.7s | 3.4s | **6.2s** |
+| golden | 73 | 0.0s | 2.2s | **6.9s** |
+
+**끝난 것 95건 중 가장 오래 걸린 것이 7초**다 (개발 스택 · CPU · 골든셋 40건 · 2026-09-02).
+막힌 여섯은 **23일**이다 — 자릿수가 다섯 개 다르다. **애매한 구간이 없다.**
+
+그래서 T 는 **넉넉해도 된다.** 24시간이면 관측 최대의 **1만 배**다 — 정상 게이트런을
+잘못 잡을 위험이 사실상 없고, 막힌 것은 확실히 걸린다.
+
+> **이 숫자를 성능 주장으로 쓰지 않는다.** 개발 스택의 골든셋 40건이고 기기가 바뀌면
+> 달라진다. 여기 적는 이유는 **T 후보가 안전 구간에 있는지**를 보이려는 것뿐이다.
+> 재현 명령은 위 SQL 이다.
+```
