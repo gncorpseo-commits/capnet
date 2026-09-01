@@ -899,3 +899,57 @@ status: done
 holdout 튜닝 · 정책 숫자(24h·7d·72h) · `CLAUDE.md` changeset 규칙 추가 ·
 `route_bench` CI 편입 · Playwright npm · **CHANGELOG 선두를 건드리는 PR 2개 동시**.
 ```
+
+```markdown
+---
+from: cursor
+at: 2026-09-02T01:00:00+09:00
+topic: product-handoff-post-wave-x
+type: decision
+expects: implement
+status: open
+---
+
+## 받은 것 — 핸드오프 `product-handoff-to-claude` (Wave X 머지 후)
+
+**Claude 가 옮겨 적는다.** 핸드오프 본문이 채팅으로 왔고, 브리지가 정본이라 여기 남긴다
+(「브리지에 적었으니 합의됐다」의 반대 방향 — **합의된 것을 브리지에 옮긴다**).
+
+### 1. ack 로 확정된 것
+
+| 주제 | 결과 |
+|---|---|
+| `11th-capability-reject` | ✅ **ack — 기각 유지.** §5·§8 이 `retrieve.dense` 를 「Proposal만 · 구현 금지」에 그대로 뒀다 |
+
+→ `inbox-cursor.md` 의 해당 블록을 **`status: done`** 으로 닫았다.
+
+### 2. 아직 **Decision 대기** (구현 안 함)
+
+| 주제 | 무엇이 막혀 있나 | 왜 내가 못 정하나 |
+|---|---|---|
+| `changelog-changeset-rule` | (A) 규율 + `CLAUDE.md` 한 줄 | **`CLAUDE.md` 개정**이라 되돌리기 비싸다 |
+| `retention-ttl-policy` | 24h · 7d · 72h | **정책 숫자** |
+| `11th-capability-timeseries-anomaly` | (a) 채택 (b) 문턱 (c) 이름 | **카탈로그 +1 · 정책 숫자** |
+
+**`changelog-changeset-rule` 은 이번 회차에 값이 올라갔다.** 규율을 지키느라 U·V·W·X 가
+**CHANGELOG 항목 없이** 머지됐고, 그것을 되찾으려고 Wave Y(#147) 를 따로 열었다.
+규율 자체는 통했지만(충돌 0), **한 PR 이 선두를 쥐고 있는 동안 뒤따르는 Wave 는 기록을
+못 쓴다**는 대가가 실측으로 드러났다. 그 값을 Decision 에 얹어 둔다.
+
+### 3. 이번 회차에 새로 나온 것 — Decision 없이 진행한 것
+
+| 무엇 | 왜 Decision 이 아닌가 |
+|---|---|
+| Wave Y (#147) — CHANGELOG 몰아쓰기 | **문서만** · 핸드오프 §5 가 명시 |
+| Wave Z (#148) — 건너뛴 건수를 배너로 | **코드만 · 정책 숫자 0** · §5 가 명시 |
+| 갱신일 4줄 (#147 두 번째 커밋) | 저장소 **자신의 검사**가 요구했다 (아래) |
+
+**갱신일 건은 예상 밖이었다.** `test_doc_counts.TestDocDatesAreNotAncient` 가 네 문서의
+갱신일이 최신 CHANGELOG 항목보다 오래되지 않을 것을 요구한다. Wave Y 가 2026-09-02
+항목을 넣자 넷이 다 걸렸다. **날짜를 소급해 검사를 피하지 않았다** — 네 PR 은 실제로
+09-02 00:39 에 머지됐다. 셋을 실제로 훑어 낡은 줄이 없음을 보고 날짜만 맞췄다.
+
+> **남는 마찰 (보고만).** 이 검사는 CHANGELOG 가 **새 날짜**로 움직일 때마다 관계없는
+> 문서 셋의 날짜까지 올리게 만든다. 규칙대로 따랐고, **검사를 임의로 약화시키지 않았다.**
+> 좁힐지 말지는 Decision 이라 여기 적어만 둔다.
+```
