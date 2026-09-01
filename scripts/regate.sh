@@ -29,19 +29,27 @@ dry_run=false
 curl -sf "$core/health" >/dev/null || { echo "Core 응답 없음: $core" >&2; exit 1; }
 nh="$(curl -sf "$node/health")" || { echo "Node 응답 없음: $node" >&2; exit 1; }
 
-# 대상: 라우팅 가능한 증서 중, 근거 gate_run 의 sha 가 현재 capability sha 와 다른 것
+# 대상: **`provenance_drift` 뷰가 정본이다.** 여기서 조인을 다시 짜지 않는다.
+#
+# 왜 바꿨나 (2026-09-02 실측). 예전에는 같은 조인을 손으로 다시 썼는데
+# **`acp.revoked_at IS NULL` 을 빠뜨렸다.** 그래서 뷰는 「라우팅되는 드리프트 0」이라는데
+# 이 스크립트는 1건을 대상으로 집었다 — `seed-agent`, `revoked_at=2026-08-10` 인
+# **폐기된 증서**였다.
+#
+# 폐기된 것을 재게이트하면 `gate.py` 의 UPSERT_AC_PASSED 가 `agent_capability.gate_run_id`
+# 를 새 run 으로 옮긴다. **폐기가 되돌려질 수 있다.** 지금까지 안 터진 것은 Node 에 그
+# 가중치가 없어 건너뛰었기 때문이다 — **우연이지 방어가 아니었다.**
+#
+# 같은 사실을 두 곳에서 정의하지 않는다. 뷰가 `still_routable` 을 판정하고
+# 스크립트는 그것을 읽기만 한다.
 targets="$(docker compose --project-directory "$root" exec -T postgres \
   psql -U capnet -d capnet -tAc "
-SELECT a.id||'|'||a.name||'|'||a.weights_sha256
-  FROM agent_capability ac
-  JOIN agent_capability_passed acp
-    ON acp.agent_id = ac.agent_id AND acp.capability_id = ac.capability_id
-  JOIN agent a       ON a.id = ac.agent_id
-  JOIN gate_run gr   ON gr.id = ac.gate_run_id
-  JOIN capability c  ON c.id = ac.capability_id
- WHERE ac.capability_id = '$capId'
-   AND gr.golden_set_sha256 IS DISTINCT FROM c.golden_set_sha256
- ORDER BY a.name, a.id")"
+SELECT DISTINCT a.id||'|'||a.name||'|'||a.weights_sha256
+  FROM provenance_drift d
+  JOIN agent a ON a.id = d.agent_id
+ WHERE d.capability_id = '$capId'
+   AND d.still_routable
+ ORDER BY 1")"
 
 if [[ -z "${targets//[[:space:]]/}" ]]; then
   echo "재게이트 대상 없음 — 모든 증서가 현재 골든셋 기준이다."
