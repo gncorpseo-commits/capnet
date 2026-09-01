@@ -139,7 +139,26 @@ def create_app(
         wait: bool = True,
     ) -> dict[str, Any]:
         prompt = message.strip()
-        if file_bytes:
+        # **첨부가 「있다」와 「내용이 있다」는 다르다.** 예전에는 `file_bytes` 의 참/거짓만
+        # 봤고, 0 바이트 파일은 `b""` 라 **첨부 없음과 같아졌다.** 그러면 이미지 능력은
+        # 아래 allowlist 데모 경로로 흘러가 **데모 데이터셋의 결과**를 사용자 파일의
+        # 결과처럼 돌려준다 (2026-09-02 실측 · `input_id=null` 인데 `label=annual_crop`).
+        # 첨부를 조용히 버리고 초록으로 끝나는 것 — `7936a0f` 와 같은 계열이다.
+        attached = file_name is not None
+        if attached and not file_bytes:
+            return ChatOut(
+                ok=False,
+                reason=f"첨부 파일이 비어 있다 ({file_name} · 0 바이트) — 내용이 있어야 한다",
+                model=ollama_model(),
+            ).model_dump()
+        if not prompt and not attached:
+            # 문장도 파일도 없으면 고를 근거가 없다. 로컬 LLM 을 부르지 않는다.
+            return ChatOut(
+                ok=False,
+                reason="문장이나 파일 중 하나는 있어야 한다",
+                model=ollama_model(),
+            ).model_dump()
+        if attached:
             hint = file_mime or "application/octet-stream"
             name = file_name or "file"
             prompt = (
@@ -163,7 +182,8 @@ def create_app(
         code = decision.capability_code
         ver = int(decision.capability_version or 1)
 
-        if file_bytes:
+        if attached:
+            # 위에서 빈 첨부를 이미 거절했으므로 여기 오면 내용이 있다.
             mime = (file_mime or "").split(";")[0].strip()
             err = check_media_for_capability(code, mime)
             if err:
@@ -187,6 +207,8 @@ def create_app(
                 return _chat_response(decision, _fail(f"Core 통신 실패: {exc}"))
             target: dict[str, Any] = {"input_id": input_id}
         else:
+            # 여기는 **첨부가 아예 없을 때만** 온다. 첨부가 있는데 여기로 오면
+            # 사용자의 파일을 버리고 데모 데이터를 대신 돌리는 것이 된다.
             # allowlist 데모 경로 (D8′ · 카탈로그 보조)는 **이미지에만** 있다.
             # Node 는 이미지 밖 모달리티에 로컬 골든셋 폴백이 없다 — 첨부 없이 보내면
             # 작업이 QUEUED 로 영원히 남는다(실측). 여기서 먼저 거절한다.
