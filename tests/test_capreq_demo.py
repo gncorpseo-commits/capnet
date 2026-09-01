@@ -60,6 +60,16 @@ class TestScriptShape(unittest.TestCase):
         """정적 사본을 읽고 있어도 「능력이 보인다」가 되면 안 된다."""
         self.assertIn("/v1/capabilities", self.text, "Core 카탈로그와 대조하지 않는다")
 
+    def test_covers_the_empty_attachment_regression(self) -> None:
+        """단위 검사는 **가짜 Core** 를 쓴다 — 살아 있는 스택에서도 막히는지는 여기서만 본다.
+
+        0 바이트 첨부가 「첨부 없음」과 같아지면 이미지 능력은 allowlist 데모
+        데이터셋으로 흘러가 **남의 결과를 사용자 파일의 결과처럼** 돌려준다 (2026-09-02).
+        """
+        self.assertIn("빈 첨부", self.text, "빈 첨부 회귀 절이 없다")
+        self.assertRegex(self.text, r': > "\$tmp/empty\.txt"', "0 바이트 파일을 안 만든다")
+        self.assertIn("빈 첨부로 작업이 만들어졌다", self.text, "task 가 생겼는지 안 본다")
+
     def test_separates_routing_miss_from_wiring(self) -> None:
         """라우팅은 매번 같지 않다. 배선 실패와 같이 세면 검사가 흔들린다."""
         self.assertIn("exit 2", self.text, "라우팅 빗나감을 따로 세는 길이 없다")
