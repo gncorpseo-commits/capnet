@@ -6285,3 +6285,66 @@ curl -s -X POST "$CAPREQ/api/chat" -F 'message=이메일 찾아줘' \
 **1 이 「예」면 그것만 구현한다.** 화면 문구는 Decision 을 받고 적는다 —
 Wave Q 에서 「고르라고 권하지 않는다」가 Decision 이었던 것과 같은 자리다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T04:40:00+09:00
+topic: verify-round2-post-wave-z
+type: confirm
+expects: ack
+status: open
+---
+
+## 종단 verify (2회차) — 열 PR 을 전부 얹은 트리에서
+
+`main`(`a4d47dd`) 위에 **열린 PR 열 개를 전부 머지한 트리**에서 쟀다.
+
+| 무엇 | 결과 |
+|---|---|
+| 열 PR 머지 | **충돌 0** |
+| `run_tests.sh` | **432 OK** (건너뜀 7) |
+| `capreq/tests` | **72 OK · 건너뜀 0** |
+| `check_submission.py` | 통과 |
+| `check_input_purge.py` | **17/17** |
+| `product_demo`·`pii_demo`·`demo_violations` | **exit 0** |
+| `capreq_demo.sh` | **exit 0** |
+
+**실패 0.**
+
+### 이번 회차에 찾은 **실제 결함 둘** (Decision 없이 고쳤다 — 버그다)
+
+| # | 무엇 | 어떻게 드러났나 |
+|---|---|---|
+| #154 | **빈 파일을 붙이면 데모 데이터가 대신 돌았다** | 0 바이트 첨부 + 이미지 능력 → `input_id=null` 인데 `label=annual_crop` · `confidence=0.99` |
+| #156 | **Core 의 로그가 한 줄도 안 나왔다** | `docker compose logs core \| grep -c "gc:"` → **0** |
+
+둘 다 **`7936a0f` 와 같은 계열**이다 — 하지 않은 일을 한 것처럼 보이거나(#154),
+한 일을 아무도 볼 수 없다(#156).
+
+**#156 이 더 넓다.** `gc: purged=N freed=N bytes` 는 **D22 보존 정책이 도는 유일한 증거**이고,
+`gc: pass failed`·`worker: claim failed` 는 **예외 경로**다 — 둘 다 「죽지 않는다」로 삼키고
+로그로만 알리는데 그 로그가 없었다. **매 패스마다 터져도 몰랐을 것이다.**
+
+### 되짚은 것
+
+#156 을 찾는 도중 「exhausted task 가 QUEUED 로 멈춰 있다」고 판단했다. **틀렸다** —
+GC 주기가 300초라 아직 안 돈 것이었다. 로그가 없어서 멈춘 것처럼 보였다.
+**틀린 진단이 진짜 결함을 가리켰다**는 점은 그대로 적어 둔다.
+
+### 새로 연 Proposal 둘 (구현 0)
+
+- `retention-ttl-policy-evidence` — 계약 샘플이 **무기한**이라는 것, 실측 분포,
+  되돌리기 비용이 두 겹이라는 것
+- `silent-truncation` — **8,000자 뒤의 이메일은 못 찾는데 그 말을 안 한다** (실측)
+
+### 열린 Decision 넷
+
+1. `11th-capability-timeseries-anomaly` (채택·문턱·이름)
+2. `changelog-changeset-rule` — 이번 회차에 **대가가 또 실측됐다** (PR 열 개 중
+   **한 개만** CHANGELOG 를 쓸 수 있었다)
+3. `retention-ttl-policy` (+ evidence 블록)
+4. `silent-truncation` (A/B/C/D)
+
+**정확도·성능 주장 없음** — 이 표는 전부 통과/실패다.
+```
