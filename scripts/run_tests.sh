@@ -10,7 +10,14 @@ cd "$root"
 fail=0
 
 echo "== 단위 테스트 =="
-python3 -m unittest discover -s tests "${@}" || fail=1
+# 출력을 잡아 두는 이유는 **건너뛴 건수**를 맨 아래 배너에 다시 올리기 위해서다.
+# `OK (skipped=7)` 은 초록으로 지나가고, 그래서 실제로 6건이 조용히 빠진 적이 있다
+# (2026-09-01 · `node` 가 사라졌고 아무도 그 숫자를 안 읽었다). 임시 파일은 쓰지 않는다.
+unit_out="$(python3 -m unittest discover -s tests "${@}" 2>&1)" || fail=1
+printf '%s\n' "$unit_out"
+# `OK (skipped=7)` · `FAILED (failures=1, skipped=7)` 둘 다에서 뽑는다.
+skipped="$(printf '%s' "$unit_out" | sed -n 's/.*skipped=\([0-9][0-9]*\).*/\1/p' | tail -1)"
+: "${skipped:=0}"
 
 echo
 echo "== 골든셋 sha 정합 =="
@@ -32,3 +39,8 @@ if [[ "$fail" -ne 0 ]]; then
   exit 1
 fi
 echo "전부 통과."
+# **skip 은 통과가 아니다.** 배너까지 끌고 올라오지 않으면 아무도 안 읽는다.
+if [[ "$skipped" -gt 0 ]]; then
+  echo "  다만 ${skipped}건은 **건너뛰었다** — 그 환경에 없는 것이 있다는 뜻이다."
+  echo "  사유 목록: tests/test_skip_reasons.py 의 ALLOWED · 전부 돌리는 법: docs/guide/testing.md §2·§4.6"
+fi

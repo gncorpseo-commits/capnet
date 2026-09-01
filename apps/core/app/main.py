@@ -93,6 +93,24 @@ from app.registry import (
     list_nodes,
 )
 
+# **핸들러를 붙이지 않으면 `logger.*` 는 조용히 버려진다 (2026-09-02 실측).**
+# uvicorn 은 자기 로거만 설정하고 앱 로거는 건드리지 않는다. 그래서 이 파일의
+# `logger.info`·`logger.exception` 15곳이 **한 줄도 안 나왔다** — 컨테이너 로그에
+# `core gc started` 도 `gc: purged=…` 도 없었다.
+#
+# 무엇이 안 보였나가 중요하다:
+#   - GC 가 **입력 바이트를 언제 몇 개 지웠는지** (D22 보존 정책이 도는 증거)
+#   - 시도 상한을 다 쓴 task 를 **종결했는지** (0015 가 「운영에서 보이게」 하려던 것)
+#   - `gc: pass failed` · `worker: claim failed` — **예외 경로**.
+#     둘 다 「죽지 않는다」고 삼키고 로그로만 알리는데, 그 로그가 없었다.
+#     매 패스마다 터져도 아무도 몰랐을 것이다.
+#
+# `force=` 를 쓰지 않는다 — uvicorn 이 이미 붙인 것을 걷어내지 않는다.
+logging.basicConfig(
+    level=os.environ.get("CORE_LOG_LEVEL", "INFO"),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
