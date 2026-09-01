@@ -1,5 +1,51 @@
 # Changelog
 
+## 픽스처가 뒤처져 `safety.pii` 렌더러가 검사 밖이었다 (Wave T) — 2026-09-01
+
+**이번 달 다섯 번째 「손으로 센 목록」.** 코드 0 · 새 의존성 0.
+
+### 무엇이 뒤처져 있었나
+
+`capreq/tests/test_chat_html_unit.py` 의 `EVERY_SHAPE` 는 **능력이 내는 결과 칸을 한데 모은
+픽스처**다. Wave L 이 `safety.pii` 를 더하면서 `results.py` 와 `chat.html` 은 고쳤는데
+**이 픽스처는 안 고쳤다.**
+
+결과: `test_every_summary_key_has_a_renderer` 가 **`pii` 를 아예 보지 않았다** —
+`result.pii` 를 **통째로 지워도 통과**했다.
+
+### 그때 진단이 절반만 맞았다
+
+Wave M 에서 이 파일의 한계를 「부분 문자열 검사라 **반쯤 지운** 렌더러를 통과시킨다」고
+적었다. 맞지만 **통째로 지운 것까지 통과한 이유는 그게 아니었다** — **픽스처에 그 칸이
+없었기 때문**이다. 주석을 정정했다.
+
+### 고친 것
+
+1. `EVERY_SHAPE` 에 `patterns_checked`·`findings` 추가
+2. **`test_fixture_covers_every_summariser_branch` 신설** — `results.py` 소스에서
+   `out["…"]` 키를 **뽑아** 픽스처가 그걸 다 만드는지 대조한다. **손으로 세지 않는다**
+3. 정규식이 0개를 찾으며 통과하는 상태도 막았다
+
+### 변이로 확인
+
+```text
+chat.html 의 result.pii 를 통째로 지우면
+  전 → 통과 (구멍)
+  후 → test_every_summary_key_has_a_renderer 실패 「화면이 모르는 결과 칸: ['pii']」
+
+픽스처에서 pii 칸을 빼면 (뒤처짐 재현)
+  → test_fixture_covers_every_summariser_branch 실패 「픽스처가 안 만드는 칸: ['pii']」
+```
+
+### 손대지 않은 것
+
+`STATE.md`·브리지·`measured-claims.md` 의 「능력 9종」은 **과거 서술**이다 —
+「그때 9종이었다」·「2026-08-31 기준」. **고치면 거짓이 된다** (Wave P 의 판단 그대로).
+
+### 검증
+
+capreq 단위 66 → **68** OK · `run_tests` **392** 그대로.
+
 ## 미매칭 화면을 문서에 적는다 · 낡은 숫자 셋 (Wave S) — 2026-09-01
 
 **문서만.** 코드 0 · 검사 0 · 새 의존성 0. Wave Q(#134)가 화면에 넣은 것을 **읽는 사람이
