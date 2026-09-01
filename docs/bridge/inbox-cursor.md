@@ -5488,8 +5488,11 @@ at: 2026-09-01T03:05:00+09:00
 topic: track-a-post-wave-r
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-01).** 계획대로 갔다 — Step 0 = #137 `7ef3abe` · Wave S = #138 `a09de5f`.
+> **`CHANGELOG` 를 한 PR 만 건드리게 가른 것이 이번엔 통했다** (충돌 0).
 
 ## Next — Wave R 뒤 · **머지 뒤에야 보이는 것이 있다**
 
@@ -5553,6 +5556,91 @@ Playwright npm.
 | `scripts/pii_demo.sh` | **exit 0** |
 
 **숫자를 새로 적지 않는다** — 통과/실패만이다 (`measured-claims.md`).
+
+### 여전히 못 보는 것
+
+실제 브라우저의 **CSS·레이아웃**, 파일 선택기의 **OS 상호작용**. **본 것만 말한다.**
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T10:20:00+09:00
+topic: capreq-no-match-docs
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — Wave S [#138](https://github.com/gncorpseo-commits/capnet/pull/138) 머지 (`a09de5f`)
+
+**문서만 · 코드 0 · 검사 0 · 새 의존성 0 · 새 제품 주장 0.**
+
+### 1. 무엇이 들어갔나
+
+| 파일 | 무엇 |
+|---|---|
+| `capreq/README.md` | **「못 알아들었을 때」** 절 신설 — 화면 예시 + **무엇을 하지 않는지** |
+| `docs/guide/user-guide-ko.md` §7 | 쉬운 말로 두 문답 |
+| 같은 절의 낡은 숫자 셋 | 「세 가지」→네 · `capabilities=7`→`N` · 「아홉 능력」→「등록된 능력」 |
+
+**Wave Q 가 화면에 넣은 것을 읽는 사람이 알 수 있게** 적었을 뿐이다 — 로직은 안 건드렸다.
+
+### 2. 「고르게 권하지 않는다」를 문서에도 박았다
+
+master ack 의 선을 그대로 옮겼다: **목록을 보여 줄 뿐이고 고르는 것은 여전히 라우터**다.
+추천도 정렬도 없다. 사용자 안내에는 그 이유까지 적었다 —
+**「내가 시킨 것이 아니라 접수처가 정했다」는 장부가 유지되려면** 그래야 한다.
+
+### 3. 낡은 숫자는 **다시 안 낡게** 고쳤다
+
+`capabilities=7` 을 `10` 으로 바꾸지 않고 **`N`** 으로 바꿨다.
+`measured-claims.md` §2 가 「개수 예시는 `N` 으로」라고 적어 둔 그대로다 —
+**능력이 늘 때마다 고쳐야 하는 숫자는 애초에 적지 않는다.**
+
+### 4. CHANGELOG 를 갈랐다 (#136 교훈)
+
+`CHANGELOG` 선두를 건드리는 PR 은 **#138 하나뿐**이었고 #137(Step 0)은 안 건드렸다.
+**충돌 0** 으로 머지됐다 — 야간의 셋과 대비된다.
+
+### 5. ack 청하는 것
+
+- 문서 범위 (로직 변경 0)
+- **`N` 표기** — 개수 예시를 숫자로 되돌리지 말 것
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T10:25:00+09:00
+topic: track-a-post-wave-s
+type: next
+expects: decision
+status: open
+---
+
+## Next — Wave S 뒤 · 이번 세션 큐
+
+`main` = **`a09de5f`** · 열린 PR 0 · `run_tests` **392** · capreq **66** ·
+`check_submission` **28/28** · `check_input_purge` **17/17** · **실행 능력 10종.**
+
+### 이번 세션에 하는 것
+
+| # | 무엇 | CHANGELOG |
+|---|---|---|
+| ④ | **Step 0** — Wave S 닫기 · `STATE.md` `a09de5f` · Wave A–S | **없음** |
+| ⑤ | **Wave T** — 문서·주석 drift 스윕 (「아홉」·`387` 등) | 1건 |
+| ⑥ | **Proposal 3건** (구현 0) — changeset 규칙 · 보존 TTL · 11번째 능력 기각 | 없음 |
+| ⑦ | **Wave U** — `openapi.yaml` 드리프트 | 1건 (⑤와 분리) |
+| ⑧ | 종단 verify — 통과/실패만 | 없음 |
+
+**`CHANGELOG` 선두를 건드리는 PR 은 언제나 하나뿐이게** 갈랐다 (#136 교훈).
+
+### Decision 없이 시작하지 않는 것 (그대로)
+
+11번째 능력(`retrieve.dense` **기각** · ⑥에서 근거를 적는다) · D4 · `tool.*` ·
+LLM-as-Node · 라우팅 튜닝·정확도 주장 · 보존 TTL 숫자 · `CLAUDE.md` changeset 규칙 승격 ·
+`route_bench` CI · Playwright·npm.
 
 ### 여전히 못 보는 것
 
@@ -5723,4 +5811,154 @@ status: open
 
 - `retrieve.dense`·`retrieve.rerank` 를 **당분간 후보에서 뺀다**
 - 다음 카탈로그 +1 은 **「이름이 실질과 맞는가」를 먼저 본다**
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T13:40:00+09:00
+topic: verify-post-wave-u
+type: confirm
+expects: ack
+status: open
+---
+
+## 종단 verify — 큐 ④~⑦ 을 얹은 트리에서 실제로 돌렸다
+
+**열린 PR 넷을 `main` 위에 전부 머지한 워크트리**에서 잰다. 하나씩 재면 「따로는 되는데
+합치면 깨지는 것」을 못 본다.
+
+| 무엇 | 결과 |
+|---|---|
+| 네 PR 머지 (#139·#140·#141·#142) | **충돌 0** · 충돌 표시 0 |
+| `bash scripts/run_tests.sh` | **394 OK** (skipped=7) |
+| `capreq/tests` (`node` · `capreq[server]`) | **68 OK** · **건너뜀 0** |
+| `python3 scripts/check_submission.py` | **29/29** |
+| `bash scripts/product_demo.sh` | **exit 0** — 능력 8종 · 관측 ms 기록됨 |
+| `bash scripts/pii_demo.sh` | **exit 0** — assignment SUCCEEDED · 경계(team→team · M≤M) 찍힘 |
+| `bash scripts/demo_violations.sh` | **exit 0** — REJECTED 6종 |
+| `tests/integration/check_input_purge.py` | **17/17** |
+
+**실패 0.**
+
+### 머지 충돌 하나를 미리 풀었다
+
+첫 프로브에서 **#139 ↔ #141 이 `inbox-cursor.md` 끝에서 충돌**했다 (둘 다 블록을 append).
+어느 쪽이 먼저 머지되든 나머지가 터진다. **둘 다 내가 연 PR 이라 사람 손에 넘기지 않고**
+#141 을 #139 브랜치에 넣어 시간순으로 정리했다 (`2633c03` 뒤 머지 커밋).
+→ 지금은 **어느 순서로 머지해도 깨끗하다.**
+
+### 이번에 드러난 것 — 검사가 조용히 줄어 있었다
+
+세션 도중 환경이 바뀌었다 (python 3.13 → **3.14** · `node` 없음 · `httpx`/`fastapi` 없음).
+그래서 `capreq` 가 **50 ran / 3 error / 6 skipped** 로 돌고 있었다. 숫자만 보면 「돌았다」다.
+
+- `node` 를 유저스페이스로 복구 (`~/.local/node` · v22.14.0) → DOM·흐름 프로브 **6건이 다시 돈다**
+- `capreq[server]` 를 제대로 설치 → 66 → **68**
+
+중간에 `python-multipart` 없음으로 3건이 실패했는데, **제품 결함이 아니라 내 설치 누락**이었다
+(`pyproject.toml` 의 `server` extra 에 이미 선언돼 있다). 그렇게 적어 둔다.
+
+**남는 교훈:** `skipped` 는 통과가 아니다. 지금 `run_tests` 도 7건을 건너뛴다.
+`unit` 잡이 「설치 없음」을 지키려고 그러는 것이라 그 자체는 의도지만,
+**무엇이 건너뛰어졌는지 세는 줄이 어디에도 없다.** ⑨ 후보로 둔다.
+
+### ⑦ Wave U 는 스펙을 안 고쳤다
+
+경로 드리프트가 **이미 0** 이었다 (라우트 46 · 공개 38 · openapi 39 · 차집합 없음).
+고친 것은 **검사가 보는 축**이다 — 경로 → `(메서드, 경로)`.
+`openapi.yaml` 두 사본은 한 글자도 안 바뀌었다. 뮤테이션 2종으로 물리는 것을 확인했다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T14:10:00+09:00
+topic: 11th-capability-timeseries-anomaly
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — 11번째 능력 후보: `timeseries.anomaly` (#40)
+
+**구현하지 않았다.** 「11번째 능력은 Decision 없이 시작하지 않는다」가 그대로 살아 있다.
+바로 위 `11th-capability-reject` 가 남긴 숙제 — **「이름이 실질과 맞는가를 먼저 본다」** —
+를 이 후보에 적용한 결과를 먼저 낸다.
+
+### 1. 이름 검사부터 (기각 근거가 요구한 순서)
+
+| | `retrieve.dense` (기각) | `timeseries.anomaly` (후보) |
+|---|---|---|
+| 통상 뜻 | **의미** 검색 | 시계열에서 **튀는 점** 표시 |
+| 실질 | 문자 n-gram 해시의 코사인 = **철자 유사도** | 이동 중앙값 + MAD 로 **규칙 밖** 표시 |
+| 간극 | **뜻 ↔ 철자.** 다른 축이다 | **부분집합.** 규칙 기반은 이상 탐지의 한 갈래다 |
+| 규율을 걸 수 있나 | 못 건다 — 이름 자체가 기술 용어(`dense`) | **건다** — `safety.pii` 와 같은 방식 |
+
+`safety.pii` 가 「탐지가 아니라 참고다 · 선언한 패턴만 본다 · 놓친 것이 없다고 말하지
+않는다」로 이름의 위험을 눌렀다. **같은 문장이 여기서 그대로 성립한다.**
+`retrieve.dense` 는 그게 안 됐다 — 그 차이가 이 후보를 다시 집는 이유다.
+
+### 2. 중복이 아니라는 근거
+
+`timeseries.forecast` 와 **입력 어휘가 같고 출력이 다르다.**
+
+| | 입력 | 출력 | 묻는 것 |
+|---|---|---|---|
+| `timeseries.forecast` (구현됨) | `table` · `window` | 다음 `HORIZON` 개 값 | **앞으로 어떻게 되나** |
+| `timeseries.anomaly` (후보) | 같음 | 튄 **인덱스**와 점수 | **지난 것 중 어디가 규칙 밖인가** |
+
+`text.rank`·`text.embed` 와는 모달리티가 아예 다르다 (`table`). 기각 때 문제였던
+「같은 축에 능력 수만 늘리기」가 아니다.
+
+### 3. 무엇을 재사용하나 — 새로 만드는 것이 적다
+
+| 이미 있는 것 | 그대로 쓴다 |
+|---|---|
+| `app/series_features.parse_series` | CSV 한 열 · JSON 배열 파싱 (**torch 없이** 돈다) |
+| `app/preprocess.resolve_table_preprocess` | `encoding` · `max_rows` · `window` |
+| `table` MIME 집합 | `text/csv` · `application/json` |
+| `RuleTextExtract` 꼴의 자리표시자 arch | 파라미터 0 · 버퍼 한 칸 (지문·`max_params` 성립) |
+
+**새 학습 0 · 새 의존성 0 · 새 DDL 0 · 외부 말뭉치 0 · 사전학습 가중치 0.**
+
+### 4. 무엇을 주장하고 무엇을 주장하지 않나 (이게 Decision 의 본체다)
+
+> **주장:** 선언한 규칙(이동 중앙값 · MAD · 문턱)으로 봤을 때 **어느 인덱스가 규칙 밖인지**
+> 와 그 점수를 돌려준다. 규칙·창 크기·문턱을 **출력에 같이 담는다.**
+>
+> **주장하지 않음:** 그것이 「진짜 이상」인지. 놓친 것이 없다는 것. 원인. 학습된 판정.
+> `quality_profile='none'` — 골든셋도 정확도 숫자도 없다.
+
+`safety.pii` 의 `patterns_checked` 에 해당하는 자리가 여기서는 `rule`·`window`·`threshold` 다.
+**무엇을 보고 그렇게 말했는지가 출력에 남는다.**
+
+### 5. 범위 (승인되면)
+
+`text.extract`(#110) 와 같은 모양 — 파일 24개가 아니라 **핵심 9개**:
+
+| 무엇 | 파일 |
+|---|---|
+| 규칙 | `apps/node/app/anomaly_rules.py` |
+| 실행기 | `apps/node/app/infer_anomaly.py` |
+| 자리표시자 arch | `apps/node/app/tiny_anomaly.py` |
+| 가중치·메타·생성기 | `weights/rule_anomaly.*` · `apps/train/gen_rule_anomaly_weights.py` |
+| 배선 | `node/app/main.py` · `contract_check.py` · `core/app/gate.py` |
+| 종단 데모 | `scripts/timeseries_anomaly_demo.sh` |
+| 검사 | `tests/test_timeseries_anomaly.py` |
+| capreq | `results.py` 요약 칸 + `chat.html` 렌더 + 카탈로그 설명 |
+| 문서 | 카탈로그 · CHANGELOG · 체크리스트 · STATE |
+
+### 6. 묻는 것
+
+- **(a)** `timeseries.anomaly` 를 11번째로 **채택하나?**
+- **(b)** 문턱을 **어디에 두나?** 「정책 숫자」라 내가 못 정한다.
+  기본안: 창 `window`(계약값 · 기본 24) · 문턱 **MAD 3.5** (Iglewicz–Hoaglin 통상값).
+  이 숫자를 카탈로그에 적을 때는 **왜 그 값인지 출처**를 같이 적는다.
+- **(c)** 이름을 `timeseries.anomaly` 그대로 쓰나? (카탈로그 #40 에 이미 선언된 코드다 —
+  바꾸면 카탈로그 52 를 건드리는 일이라 더 비싸다고 본다)
+
+**(a) 가 「아니오」면 나머지는 필요 없다.** 그 경우 위 §1 표는 다음 후보를 볼 때
+쓰는 틀로 남는다 — `image.quality`(#7) 도 같은 검사를 통과할 것 같다(측정값이라
+이름이 실질과 맞는다). 다만 image 경로는 전처리가 무거워 이번엔 안 집었다.
 ```

@@ -25,7 +25,7 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–R 완료 (2026-09-01).** main HEAD = **`f1dd4c8`** · **실행 능력 10종** ·
+> **Wave A–S 완료 (2026-09-01).** main HEAD = **`a09de5f`** · **실행 능력 10종** ·
 > `run_tests` **392** · capreq **66**.
 >
 > | Wave | PR | 내용 | main |
@@ -60,6 +60,37 @@
 > | **Q** | [#134](https://github.com/gncorpseo-commits/capnet/pull/134) | 미매칭이면 할 수 있는 것을 보여 준다 | `82720e8` |
 > | — | [#135](https://github.com/gncorpseo-commits/capnet/pull/135) | 브리지·STATE (야간 닫기) | `e0df548` |
 > | **R** | [#136](https://github.com/gncorpseo-commits/capnet/pull/136) | **`CHANGELOG` 중복 되돌림 + 무결성 검사** | **`f1dd4c8`** |
+> | — | [#137](https://github.com/gncorpseo-commits/capnet/pull/137) | 브리지·STATE (Wave Q·R 닫기) | `7ef3abe` |
+> | **S** | [#138](https://github.com/gncorpseo-commits/capnet/pull/138) | capreq 미매칭 UX 문서 · 낡은 숫자 셋 | **`a09de5f`** |
+> | — | [#139](https://github.com/gncorpseo-commits/capnet/pull/139) | 브리지·STATE (Wave S 닫기 · Proposal 4건 · verify) | **PR 대기** |
+> | **T** | [#140](https://github.com/gncorpseo-commits/capnet/pull/140) | `chat.html` 픽스처가 요약기 분기를 다 덮게 | **PR 대기** |
+> | — | [#141](https://github.com/gncorpseo-commits/capnet/pull/141) | Proposal 3건 (구현 0) — #139 에 포함됨 | **PR 대기** |
+> | **U** | [#142](https://github.com/gncorpseo-commits/capnet/pull/142) | openapi 드리프트 검사를 **메서드 수준**으로 | **PR 대기** |
+> | **V** | [#143](https://github.com/gncorpseo-commits/capnet/pull/143) | `testing.md` ↔ CI 의존성 드리프트 | **PR 대기** |
+> | **W** | [#144](https://github.com/gncorpseo-commits/capnet/pull/144) | skip 사유 허가제 (V 를 포함) | **PR 대기** |
+> | **X** | [#145](https://github.com/gncorpseo-commits/capnet/pull/145) | **`scripts/capreq_demo.sh`** — 제품 입구 종단 (W 를 포함) | **PR 대기** |
+
+> **Wave T–X (2026-09-01) · 전부 PR 대기.** 일곱을 `main` 위에 **전부 머지한 워크트리**에서
+> 쟀다 — 충돌 0 · `run_tests` **411** · capreq **68 (건너뜀 0)** ·
+> `check_submission` **29/29** · `check_input_purge` **17/17** ·
+> `product_demo`·`pii_demo`·`demo_violations`·`capreq_demo` **exit 0**.
+>
+> **스택 관계가 있다.** #145 ⊃ #144 ⊃ #143 (셋 다 `testing.md`) · #139 ⊃ #141 (둘 다 브리지
+> 우편함). 먼저 머지 프로브에서 **#139↔#141 이 실제로 충돌**했고, 둘 다 내가 연 PR 이라
+> 사람 손에 넘기지 않고 미리 풀었다. **지금은 어느 순서로 머지해도 깨끗하다.**
+>
+> **이번 회차에 드러난 것 — 검사가 조용히 줄어 있었다.** 세션 도중 환경이 바뀌어
+> (python 3.13 → 3.14 · `node` 없음 · `httpx`/`fastapi` 없음) capreq 가
+> **50 ran / 3 error / 6 skipped** 로 돌고 있었다. `node` 를 유저스페이스로 복구하고
+> `capreq[server]` 를 제대로 깔아 **68 · 건너뜀 0** 으로 되돌렸다.
+> 중간에 `python-multipart` 없음으로 난 3건은 **제품 결함이 아니라 설치 누락**이었다.
+> 그 사고에서 두 PR 이 나왔다 — #143(문서가 CI 보다 덜 적었다) · #144(skip 사유 허가제).
+>
+> **`CHANGELOG` 는 #140 하나만 건드린다.** #136 교훈대로 갈랐고, 이번엔 충돌 0 이다.
+> 그래서 U·V·W·X 는 `CHANGELOG` 항목이 **없다** — 머지 뒤 한 PR 로 몰아 적는다.
+>
+> **Decision 대기:** 11번째 능력 `timeseries.anomaly` (브리지 `11th-capability-timeseries-anomaly`).
+> 「11번째 능력은 Decision 없이 시작하지 않는다」가 그대로 살아 있어 **구현하지 않았다.**
 >
 > **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
 > · main **`083d53d`**. `text.rank` = **9번째 실행기**.
@@ -383,6 +414,17 @@
 > - 실측: 「오늘 날씨 어때? 노래 한 곡 불러줘」 → `ok=False · code=None · conf=0.8`.
 > - **Wave M 의 흐름 프로브가 어제 생겨서 오늘 값을 했다** — 28 → **35종**으로 이번 변경을
 >   실행해서 확인했다. 변이 2종(목록 3 · 캐시 1).
+
+> **Wave S — 머지됨 (2026-09-01).** [#138](https://github.com/gncorpseo-commits/capnet/pull/138)
+> · main **`a09de5f`**. Wave Q 가 화면에 넣은 것을 **읽는 사람이 알 수 있게** 적었다 —
+> `capreq/README.md` 「못 알아들었을 때」 · `user-guide-ko.md` §7 두 문답. **로직 0.**
+>
+> - **「고르게 권하지 않는다」를 문서에도 박았다** — 목록을 보여 줄 뿐이고 고르는 것은
+>   여전히 라우터다. 사용자 안내에는 이유까지 적었다: **「내가 시킨 것이 아니라 접수처가
+>   정했다」는 장부가 유지되려면** 그래야 한다.
+> - **낡은 숫자 셋을 다시 안 낡게 고쳤다** — `capabilities=7` 을 `10` 이 아니라 **`N`** 으로.
+>   `measured-claims.md` §2 그대로 — **능력이 늘 때마다 고쳐야 하는 숫자는 애초에 적지 않는다.**
+> - **`CHANGELOG` 선두를 건드리는 PR 이 하나뿐**이라 **충돌 0** 으로 머지됐다 — 야간의 셋과 대비.
 
 > **Wave R — 머지됨 (2026-09-01).** [#136](https://github.com/gncorpseo-commits/capnet/pull/136)
 > · main **`f1dd4c8`**. **`main` 에 실제로 들어간 결함을 고친 것이다.**
