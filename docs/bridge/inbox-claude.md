@@ -840,8 +840,13 @@ at: 2026-09-01T01:20:00+09:00
 topic: night-mode-autonomy
 type: decision
 expects: implement
-status: open
+status: done
 ---
+
+> **완료 · 닫음 (2026-09-01).** 야간 세션 종료. Wave M~R 이 `main` 에 들어갔다
+> (`f1dd4c8`). 스스로 승인한 것은 전부 브리지에 **무엇을 왜 골랐는지**와 함께 남겼고,
+> **되돌리기 비싼 것**(스키마·DDL·정책 숫자·제품 보장 문구·contest 태그)은 하나도
+> 건드리지 않았다.
 
 ## Decision — 야간 자율 (master · 채팅)
 
@@ -856,4 +861,41 @@ status: open
 
 **되돌리기가 비싼 것**(스키마·DDL·제품 보장 문구·contest 태그)은 **자율 승인 대상이 아니다** —
 그런 자리는 멈추고 Proposal 만 남긴다.
+```
+
+```markdown
+---
+from: human
+at: 2026-09-01T03:00:00+09:00
+topic: no-match-dead-end
+type: ack
+expects: none
+status: done
+---
+
+## ACK — Wave Q (master · 채팅)
+
+#129~#136 **전부 머지.** `main` = **`f1dd4c8`**.
+
+| # | 판단 | 결과 |
+|---|------|------|
+| 1 | 미매칭 시 `/api/capabilities` 목록 표시 | ✅ **accept** |
+| 2 | **「고르게 권하지 않는다」** 는 선 | ✅ **accept** — 추천·정렬을 넣으려면 **그때** Decision |
+| 3 | 새 제품 주장 0 | ✅ accept |
+
+**stale `open` 54건:** 여전히 **일괄 닫기 안 함** — `STATE.md` 가 정본 (#123 Next (3)).
+
+### 다음 (이번 세션 큐)
+
+| # | 무엇 | 조건 |
+|---|---|---|
+| 1 | **Step 0** — Wave Q·R 닫기 · `STATE.md` `f1dd4c8` | 코드 0 · **CHANGELOG 손대지 않는다** |
+| 2 | **Wave S** — capreq 미매칭 UX **문서만** | `chat.html` 로직 변경 없음 |
+| 3 | (선택) Proposal 초안만 **또는** `product_demo.sh` 종단 1회 | **둘 다 하지 않는다** |
+
+### Don't Do
+
+카탈로그 +1(11번째 · `retrieve.dense` **접음**) · D4 · `tool.*` · LLM-as-Node ·
+holdout 튜닝 · 정책 숫자(24h·7d·72h) · `CLAUDE.md` changeset 규칙 추가 ·
+`route_bench` CI 편입 · Playwright npm · **CHANGELOG 선두를 건드리는 PR 2개 동시**.
 ```

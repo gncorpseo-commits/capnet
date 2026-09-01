@@ -25,8 +25,8 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–P 완료 (2026-09-01).** main HEAD = **`10eba27`** · **실행 능력 10종** ·
-> `run_tests` **388** · capreq **66**.
+> **Wave A–R 완료 (2026-09-01).** main HEAD = **`f1dd4c8`** · **실행 능력 10종** ·
+> `run_tests` **392** · capreq **66**.
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -57,6 +57,9 @@
 > | **N** | [#131](https://github.com/gncorpseo-commits/capnet/pull/131) | 라우팅 벤치가 10종을 덮게 | `074871c` |
 > | **O** | [#132](https://github.com/gncorpseo-commits/capnet/pull/132) | 입력 보존·삭제 검사 (D22 선행 조건) | `834280c` |
 > | **P** | [#133](https://github.com/gncorpseo-commits/capnet/pull/133) | 검증 체계 문서 | **`10eba27`** |
+> | **Q** | [#134](https://github.com/gncorpseo-commits/capnet/pull/134) | 미매칭이면 할 수 있는 것을 보여 준다 | `82720e8` |
+> | — | [#135](https://github.com/gncorpseo-commits/capnet/pull/135) | 브리지·STATE (야간 닫기) | `e0df548` |
+> | **R** | [#136](https://github.com/gncorpseo-commits/capnet/pull/136) | **`CHANGELOG` 중복 되돌림 + 무결성 검사** | **`f1dd4c8`** |
 >
 > **Wave G — 머지됨 (2026-08-30).** [#116](https://github.com/gncorpseo-commits/capnet/pull/116)
 > · main **`083d53d`**. `text.rank` = **9번째 실행기**.
@@ -367,7 +370,8 @@
 > 들고 있었는데 10종이 되면서 낡았다. **규칙 문서가 자기 말을 안 지키는 꼴**이라
 > 개수 예시는 `N` 으로, 측정 예시에는 **언제 잰 것인지**를 붙였다.
 
-> **Wave Q — PR 대기 (2026-09-01).** [#134](https://github.com/gncorpseo-commits/capnet/pull/134)
+> **Wave Q — 머지됨 (2026-09-01).** [#134](https://github.com/gncorpseo-commits/capnet/pull/134)
+> · main `82720e8`.
 > **이번 야간의 첫 제품 개선이다.** 라우터가 못 고르면 화면이 「(미매칭)」 한 줄로 끝나
 > **사용자가 무엇을 물어야 하는지 알 길이 없었다.** `/api/capabilities` 는 서버에 있는데
 > `chat.html` 이 **한 번도 부르지 않았다.**
@@ -379,6 +383,24 @@
 > - 실측: 「오늘 날씨 어때? 노래 한 곡 불러줘」 → `ok=False · code=None · conf=0.8`.
 > - **Wave M 의 흐름 프로브가 어제 생겨서 오늘 값을 했다** — 28 → **35종**으로 이번 변경을
 >   실행해서 확인했다. 변이 2종(목록 3 · 캐시 1).
+
+> **Wave R — 머지됨 (2026-09-01).** [#136](https://github.com/gncorpseo-commits/capnet/pull/136)
+> · main **`f1dd4c8`**. **`main` 에 실제로 들어간 결함을 고친 것이다.**
+>
+> 야간에 PR 다섯을 동시에 열어 `CHANGELOG` 충돌 셋이 났고, 「둘 다 남긴다」로 푸는 과정에서
+> **파일 중간에 두 번째 `# Changelog` 헤더**가 생기고 **Wave M·N·O 가 159줄 되풀이**됐다
+> (3,662 → 3,821줄). **`run_tests` 도 `check_submission` 도 아무것도 걸리지 않았다** —
+> 아무도 그 파일의 **모양**을 안 봤기 때문이다. `git pull` 의 diffstat(`7601 +/-`)이 이상해서
+> 알아챘다.
+>
+> - 뒤쪽 159줄을 잘라냈다. 지우기 전에 **위쪽 사본이 온전한지 세 항목 모두 줄 단위로 대조**했다.
+> - `tests/test_changelog_integrity.py` — **모양만** 본다(헤더 1개 · 제목 중복 없음 · 맨 위가 헤더).
+>   변이: 파일을 두 배로 만들면 **2종 실패**. `run_tests` 388 → **392**.
+> - **「최신이 위」는 검사하지 않는다** — 다친 것은 순서가 아니라 중복이다.
+>
+> **원인은 내 PR 방식이다.** 충돌을 잘 설명하는 것보다 **충돌을 만들지 않는 것**이 낫다.
+> 그리고 **「합쳐 봤다」는 「머지된 것을 봤다」가 아니다** — 로컬 시뮬레이션은 **내 해결안**이
+> OK 였다는 증거일 뿐이다. 이번 세션부터 **`CHANGELOG` 선두를 건드리는 PR 은 한 번에 하나.**
 
 > **야간 세션 총괄 (2026-09-01 01:24 → 02:30).** 열린 PR **5** (#129~#133).
 > **머지 순서 #129 → #130 → #131 → #132 → #133** · 뒤 셋에서 각각 `CHANGELOG` 충돌 1건
