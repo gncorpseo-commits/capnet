@@ -25,6 +25,11 @@ jobs:
         run: python3 -m unittest discover -s tests -v
       - name: 골든셋 sha 정합
         run: python3 scripts/check_golden_sha.py
+      # `run_tests.sh` 는 이것도 부르는데 CI 에는 없었다 (2026-09-02).
+      # **로컬에서만 도는 검사는 결국 안 도는 검사다** — 0.25초라 뺄 이유가 없다.
+      # 태그 없이 `HEAD` 로도 돈다.
+      - name: 제출 zip 사전 검증 (G9)
+        run: bash scripts/check_release.sh
       - name: 출품 패키지 기계 점검 (SD-005)
         run: python3 scripts/check_submission.py --verbose --skip-tree
 

@@ -17,7 +17,9 @@
 #   1. capreq 가 **Core 의 살아 있는 카탈로그**를 읽는가 (`/api/capabilities`)
 #   2. 문장 + 첨부 → 라우팅 → **Core 중개 업로드**(`input_id`) → 작업 → 완주
 #   3. 증적이 조회되는가 (assignment · node · 신뢰도메인·티어 경계)
-#   4. 첨부 **없는** 경로도 도는가
+#   4. **빈 첨부가 거절되는가** — 0 바이트를 「첨부 없음」으로 보면 이미지 능력이
+#      데모 데이터셋으로 흘러가 **남의 결과를 내 결과처럼** 돌려준다 (2026-09-02 회귀)
+#   5. 첨부 **없는** 경로도 도는가
 #
 # ## 무엇을 주장하지 않나
 #
@@ -149,7 +151,31 @@ print("  경계: 신뢰도메인 task=%s -> node=%s · 티어 capability=%s <= n
 PY
 
 echo
-echo "== 4) 첨부 없는 경로 =="
+echo "== 4) 빈 첨부는 거절되는가 (회귀) =="
+# **이 자리가 비어 있어서 결함이 살아 있었다 (2026-09-02).** 0 바이트 파일을 붙이면
+# `file_bytes` 가 `b""` 라 「첨부 없음」과 같아졌고, 이미지 능력은 allowlist 데모
+# 데이터셋으로 흘러가 **남의 결과를 사용자 파일의 결과처럼** 돌려줬다.
+# 단위 검사는 가짜 Core 를 쓴다 — 살아 있는 스택에서도 막히는지는 여기서만 본다.
+: > "$tmp/empty.txt"
+curl -sf -m 600 -X POST "$capreq/api/chat" \
+  -F 'message=위성 사진 종류를 판별해줘' \
+  -F 'execute=true' -F 'wait=true' \
+  -F "file=@$tmp/empty.txt;type=image/png" > "$tmp/empty.json" || {
+    echo "/api/chat 이 실패했다 — 배선" >&2; exit 1; }
+python3 - "$tmp/empty.json" <<'EMPTYCASE'
+import json, sys
+d = json.load(open(sys.argv[1]))
+if d.get("ok"):
+    raise SystemExit(f"빈 첨부가 통과했다: {d.get('capability_code')} · {d.get('execution_message')}")
+if d.get("task_id") or d.get("input_id"):
+    raise SystemExit("빈 첨부로 작업이 만들어졌다 — 데모 데이터가 대신 돌았을 수 있다")
+if "비어" not in (d.get("reason") or ""):
+    raise SystemExit(f"거절 이유가 빈 파일을 가리키지 않는다: {d.get('reason')!r}")
+print(f"  OK   거절        {d['reason']}")
+EMPTYCASE
+
+echo
+echo "== 5) 첨부 없는 경로 =="
 curl -sf -m 600 -X POST "$capreq/api/chat" \
   -F 'message=위성 사진 종류를 판별해줘' -F 'execute=false' > "$tmp/noatt.json" || {
     echo "첨부 없는 /api/chat 이 실패했다 — 배선" >&2; exit 1; }

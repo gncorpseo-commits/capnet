@@ -26,12 +26,40 @@ nh="$(ccurl -sf "$node/health")"
 if [[ $# -gt 0 ]]; then
   candidates=("$@")
 else
-  mapfile -t candidates < <(printf '%s' "$nh" | python3 -c '
-import json,sys,os
-h=json.load(sys.stdin)
-for w in h.get("weights",[]):
-    if not w["placeholder"]:
-        print(os.path.basename(w["path"]))')
+  # **이미지 arch 만 고른다.** 예전에는 non-placeholder 를 전부 후보로 봤는데,
+  # 규칙 기반 실행기가 들어오면서 `rule_extract.safetensors`(파라미터 0 · forward 없음)
+  # 까지 집어 `NotImplementedError` 로 죽었다 (2026-09-02 실측).
+  #
+  # 정본은 `apps/node/app/tiny_cnn.py` 의 `ARCH_MODALITY` 다 — 손으로 목록을 들지 않는다.
+  # 새 이미지 arch 가 생기면 여기 고칠 것 없이 따라온다.
+  # `python3 -` 는 **프로그램을** stdin 에서 읽는다. 그래서 여기서는 파이프를 못 쓴다 —
+  # health JSON 은 환경변수로 넘긴다.
+  mapfile -t candidates < <(NODE_HEALTH="$nh" python3 - "$root/apps/node/app/tiny_cnn.py" <<'PYFILTER'
+import json, os, re, sys
+
+src = open(sys.argv[1], encoding="utf-8").read()
+m = re.search(r"ARCH_MODALITY:[^{]*\{(.*?)\n\}", src, re.S)
+if not m:
+    raise SystemExit("ARCH_MODALITY 를 못 읽었다 — tiny_cnn.py 가 바뀌었으면 이 필터를 따라 고친다")
+# `"image_embed"` 는 안 걸린다 — 닫는 따옴표까지 본다.
+image = {a for a in re.findall(r'"(\w+)"\s*:\s*"image"', m.group(1))}
+if not image:
+    raise SystemExit("이미지 arch 를 하나도 못 찾았다")
+
+h = json.loads(os.environ["NODE_HEALTH"])
+skipped = []
+for w in h.get("weights", []):
+    if w["placeholder"]:
+        continue
+    if w.get("arch") not in image:
+        skipped.append(f"{os.path.basename(w['path'])}({w.get('arch')})")
+        continue
+    print(os.path.basename(w["path"]))
+if skipped:
+    # **몇 개를 왜 뺐는지 말한다.** 조용히 줄이면 분모가 달라진 것을 아무도 모른다.
+    print(f"  이미지 arch 가 아니라 뺀 것 {len(skipped)}개: {', '.join(skipped)}", file=sys.stderr)
+PYFILTER
+)
 fi
 
 if [[ ${#candidates[@]} -eq 0 ]]; then
