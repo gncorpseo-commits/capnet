@@ -6893,3 +6893,52 @@ status: open
 **코드 수정 일곱은 전부 갈래 A 밖에 있다** — #154·#156·#158·#159·#161·#171·#172.
 갈래 A(문서·브리지)를 통째로 미뤄도 결함 수정은 다 들어간다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T09:20:00+09:00
+topic: revocation-paths-audited
+type: confirm
+expects: ack
+status: open
+---
+
+## 폐기 경로를 **전부** 훑었다 — 새는 곳은 `regate.sh` 하나뿐이었다
+
+#172 를 찾고 나서 「같은 실수가 또 있나」를 봤다. **없다.** 다음 사람이 다시 재지 않게 남긴다.
+
+### 스키마에 폐기 표시가 있는 곳 넷
+
+| 컬럼 | 읽는 쪽 | 폐기를 보나 |
+|---|---|---|
+| `agent_capability_passed.revoked_at` | `claim.py` (배정) | ✅ `AND acp.revoked_at IS NULL` |
+| `api_key.revoked_at` | `apikey.verify_key` | ✅ 해시 대조 뒤 `raise ApiKeyError("폐기된 키다")` |
+| `node_credential.revoked_at` | `credential.py` | ✅ 같은 모양 |
+| `node_invite.revoked_at` | `invite.py` 사용 | ✅ **UPDATE 안에서** `revoked_at IS NULL AND expires_at > now() AND redeemed_count < max_redemptions` — 경쟁 없이 DB 가 판정한다 |
+
+### `agent_capability_passed` 소비자 전수
+
+`apps/` · `scripts/` · `tests/integration/` 전부:
+
+- **거른다:** `claim.py`·`gate.py`·`main.py`·`safety.py` ·
+  `check_revocation`·`check_tenant_routing`·`check_work_units`·`check_org_boundary`·`check_ops_safety`
+- **주석에만:** `proof_ab.sh`·`node_bind.sh`
+- **픽스처 INSERT (라우팅 판정 아님):** `check_quality_profile`·`check_pg_violations`·`check_agent_arch`
+- **빠뜨림:** `scripts/regate.sh` ← **#172 가 고친 자리**
+
+### 그래서 #172 의 범위를 정확히 적으면
+
+**「폐기된 것이 지금 라우팅된다」가 아니다.** 배정 경로는 처음부터 맞았다.
+**「운영 도구가 폐기를 되살릴 수 있다」**였다. 과장하지 않는다.
+
+### 왜 이 모양이 반복되나
+
+`agent_capability_passed` 는 **행을 지우지 않는다** — `assignment` 가 FK 로 참조하기
+때문이다 (D15 · 0004 주석). 그건 옳은 설계지만 **읽는 쪽이 매번 걸러야 한다**는 뜻이고,
+읽는 곳이 늘면 언젠가 한 곳이 빠진다. 실제로 빠졌다.
+
+`api_key`·`node_credential`·`node_invite` 는 **상태 뷰**(`*_status`)를 함께 두어 그 부담을
+줄였다. `agent_capability_passed` 에는 그런 뷰가 없다 — `provenance_drift.still_routable`
+가 그 역할을 부분적으로 한다. **뷰를 하나 더 둘지는 Decision 이라 여기 적어만 둔다.**
+```
