@@ -6107,3 +6107,97 @@ status: open
 실제 브라우저의 **CSS·레이아웃**, 파일 선택기의 **OS 상호작용**.
 Playwright 는 새 의존성이라 안 들였다 — **본 것만 말한다.**
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T03:10:00+09:00
+topic: retention-ttl-policy-evidence
+type: proposal
+expects: decision
+status: open
+---
+
+## 보강 — `retention-ttl-policy` 에 **사실 넷**을 더한다 (숫자 확정 없음)
+
+위 `retention-ttl-policy` 는 열려 있다. **숫자를 정하지 않았다.** 대신 Decision 을 내리는 데
+필요한 사실을 재서 붙인다. **셋 다 내 판단이 아니라 코드·DB 에서 나온 것이다.**
+
+### 사실 1 — **계약 샘플은 TTL 이 없다. 무기한이다.**
+
+`task_input_purge_due` 뷰가 이렇게 끝난다 (0013 B2):
+
+```sql
+ WHERE ti.storage_state = 'STORED'
+   -- 계약 샘플은 지우지 않는다 (B2).
+   AND NOT EXISTS (SELECT 1 FROM capability c WHERE c.sample_input_id = ti.id)
+```
+
+**「24h·7d·72h」 어디에도 안 걸린다.** 게이트가 그 바이트로 실추론해야 하니 맞는 설계다.
+문제는 **사용자 안내에 적을 때**다 — 「끝난 일의 파일은 7일 뒤 지웁니다」라고 쓰면
+**이 부분이 거짓**이 된다. 위 Proposal §3-2 가 묻는 것이 정확히 그 문장이다.
+
+### 사실 2 — 사용자가 올린 파일도 샘플이 될 수 있다
+
+`POST /v1/capabilities/{id}/sample` 은 `_require("admin", …)` 이다. **사용자가 스스로
+무기한으로 만들 수는 없다.** 그러나 관리자는 **그 능력으로 수집된 입력이면 무엇이든**
+고를 수 있고, 거기엔 사용자가 올린 것도 들어간다. 고른 순간 그 파일은 TTL 밖으로 나가고,
+**올린 사람은 그것을 모른다.**
+
+되돌릴 수는 있다 — `sample_input_id` 를 떼면 다시 대상이 된다
+(`check_input_purge` 가 그 전이를 이미 고정한다).
+
+### 사실 3 — 실측 (2026-09-02 · **개발 스택** · 재현하면 값이 다르다)
+
+```sql
+SELECT 'STORED', count(*) FROM task_input WHERE storage_state='STORED'
+UNION ALL SELECT 'PURGED', count(*) FROM task_input WHERE storage_state='PURGED'
+UNION ALL SELECT '샘플(무기한)', count(*) FROM capability WHERE sample_input_id IS NOT NULL
+UNION ALL SELECT 'due 뷰', count(*) FROM task_input_purge_due
+UNION ALL SELECT '이미 due', count(*) FROM task_input_purge_due WHERE due_at <= now();
+
+SELECT reason, count(*) FROM task_input_purge_due GROUP BY reason;
+```
+
+| | 값 |
+|---|---|
+| `task_input` 전체 | 60 |
+| `STORED` | **50** |
+| `PURGED` (바이트 지움 · 행은 남음) | 10 |
+| **계약 샘플 = 무기한** | **9** |
+| `purge_due` 뷰 | 41 (= 50 − 9 · 정확히 맞는다) |
+| 이미 `due` | 0 |
+
+`reason` 분포: `finished-7d` **39** · `orphan-24h` **2** · **`stale-72h` 0**.
+
+**이 숫자는 개발 스택의 것이고 그날그날 다르다.** 비율을 제품 주장으로 쓰지 않는다.
+여기 적는 이유는 하나다 — **셋 중 하나(`stale-72h`)가 이 데이터에서 한 번도 안 걸렸다.**
+확정하려는 세 숫자의 근거가 **고르지 않다**는 뜻이다.
+
+### 사실 4 — 되돌리기 비용은 **두 겹**이다
+
+| 무엇 | 비용 |
+|---|---|
+| 숫자만 바꾸기 | **싸다** — 정본이 뷰 하나다. 마이그레이션 한 장 (`CREATE OR REPLACE VIEW`) |
+| **사용자 안내에 적기** | **비싸다** — 적는 순간 약속이다. 줄이면 「지운다더니 더 갖고 있었다」, 늘리면 「7일이라더니 30일」 |
+
+그래서 §3 의 1·2·3 은 **같은 결정이 아니다.** 1 만 하고 2 를 미룰 수 있다.
+
+### 문구 초안 (**채택 아님** · 형태만 보이려는 것)
+
+> **파일은 언제 지워지나.** 작업이 끝나면 **7일 뒤** 파일 내용을 지웁니다.
+> 작업에 쓰이지 않은 업로드는 **24시간**, 끝나지 않은 작업의 파일은 **72시간**입니다.
+> **내용만 지우고 기록은 남깁니다** — 무엇을 언제 올렸고 어디서 돌았는지는 계속 답할 수 있습니다.
+> **예외:** 능력의 **계약 검사에 쓰이는 예시 파일**은 지우지 않습니다. 그 파일이 있어야
+> 「이 능력이 무엇을 받는지」를 다시 검증할 수 있습니다.
+
+마지막 줄이 사실 1·2 다. **그 줄 없이 적으면 안 된다.**
+
+### §3 에 넷째 질문을 더한다
+
+| # | 질문 |
+|---|---|
+| 4 | **샘플 무기한을 사용자에게 어떻게 말할까** — 위 초안처럼 예외로 적을까, 아니면 「샘플로 쓸 때 올린 사람에게 알린다」를 만들까 (후자는 **구현이 붙는다**) |
+
+**여전히 구현하지 않았다.** 숫자도, 안내 문구도, 알림도 손대지 않았다.
+```
