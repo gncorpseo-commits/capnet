@@ -240,8 +240,39 @@ def health() -> dict[str, Any]:
     }
 
 
+# Core 와 말이 통하는가.
+#
+# **실측 (2026-09-02).** `_fetch_my_assignments` 는 모든 예외를 삼키고 `[]` 를 돌려주고,
+# `_send_heartbeat` 는 `pass` 였다. 그래서 **Core 에 못 닿는 Node 와 한가한 Node 가
+# 구별되지 않았다** — Core 가 죽어도 Node 는 1초마다 한가한 척 돌기만 한다.
+# 바깥 루프의 `node: poll error` 도 안 뜬다. 안에서 이미 삼켰기 때문이다.
+#
+# 폴링이 1초 주기라 실패마다 찍으면 로그가 잠긴다. **상태가 바뀔 때만** 알린다.
+# 끊긴 곳마다 따로 센다 — 하트비트만 죽고 배정 조회는 되는 경우가 있다.
+_core_trouble: dict[str, dict[str, Any]] = {}
+
+
+def _note_core_error(where: str, exc: BaseException) -> None:
+    st = _core_trouble.get(where)
+    if st is None:
+        _core_trouble[where] = {"since": time.monotonic(), "count": 1}
+        print(f"node: Core 와 통신 실패 ({where}): {type(exc).__name__}: {exc}", flush=True)
+    else:
+        st["count"] += 1
+
+
+def _note_core_ok(where: str) -> None:
+    st = _core_trouble.pop(where, None)
+    if st is not None:
+        secs = time.monotonic() - st["since"]
+        print(
+            f"node: Core 복구됨 ({where}) — {secs:.0f}초 동안 {st['count']}회 실패",
+            flush=True,
+        )
+
+
 def _send_heartbeat(availability: str, metrics: dict[str, Any] | None = None) -> None:
-    """살아 있음을 Core에 알린다. 실패해도 조용히 넘어간다 — 다음 주기에 다시 보낸다."""
+    """살아 있음을 Core에 알린다. 실패하면 **상태가 바뀔 때만** 알리고 넘어간다."""
     if not NODE_ID:
         return
     url = f"{CORE_URL}/v1/internal/nodes/{NODE_ID}/heartbeat"
@@ -253,8 +284,10 @@ def _send_heartbeat(availability: str, metrics: dict[str, Any] | None = None) ->
     )
     try:
         urllib.request.urlopen(req, timeout=5).close()
-    except Exception:
-        pass
+    except Exception as exc:
+        _note_core_error("heartbeat", exc)
+    else:
+        _note_core_ok("heartbeat")
 
 
 def _fetch_my_assignments() -> list[dict[str, Any]]:
@@ -265,9 +298,13 @@ def _fetch_my_assignments() -> list[dict[str, Any]]:
     req = urllib.request.Request(url, headers=_core_headers(), method="GET")
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
-            return json.loads(resp.read().decode()).get("assignments", [])
-    except Exception:
+            out = json.loads(resp.read().decode()).get("assignments", [])
+    except Exception as exc:
+        # **여기서 `[]` 를 돌려주면 「일이 없다」와 같아진다.** 그 둘은 다른 상태다.
+        _note_core_error("assignments", exc)
         return []
+    _note_core_ok("assignments")
+    return out
 
 
 def _my_assignment(assignment_id: uuid.UUID) -> dict[str, Any] | None:

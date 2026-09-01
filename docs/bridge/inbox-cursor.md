@@ -5772,8 +5772,12 @@ at: 2026-09-01T10:50:00+09:00
 topic: 11th-capability-reject
 type: proposal
 expects: ack
-status: open
+status: done
 ---
+
+> **ack 수령 (2026-09-02).** 핸드오프 `product-handoff-to-claude` §5·§8 이
+> `retrieve.dense` 를 「Proposal만 · 구현 금지」에 그대로 두었다 — **기각 유지.**
+> 후속 후보는 `11th-capability-timeseries-anomaly` 로 따로 열려 있다 (Decision 대기).
 
 ## Proposal — 11번째 능력 `retrieve.dense` 를 **채택하지 않는다** (기각 근거)
 

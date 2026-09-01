@@ -46,6 +46,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MAIN = ROOT / "apps" / "core" / "app" / "main.py"
 
 
+
 class TestSwallowedFailuresAreObserved(unittest.TestCase):
     """**삼키는 것은 되는데, 조용히 삼키는 것은 안 된다.**
 

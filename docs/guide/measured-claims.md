@@ -1,6 +1,6 @@
 # 측정 숫자는 재현 명령 없이 쓰지 않는다
 
-**파일:** `docs/guide/measured-claims.md` · **갱신: 2026-08-31**
+**파일:** `docs/guide/measured-claims.md` · **갱신: 2026-09-02**
 **정본이다.** `CLAUDE.md` 에는 한 줄과 이 링크만 둔다 — 두 곳에 적으면 갈라진다.
 
 관련: [`testing.md`](./testing.md) · [`../spec/capability-catalog.md`](../spec/capability-catalog.md) ·
@@ -80,6 +80,7 @@ DB 가 낡았을 때 30/60 (1회 · 밴드를 모른다) · 동기화 뒤 36 · 
 | 라우팅 홀드아웃 | `scripts/route_bench.py` |
 | 제출 패키지 조건 | `scripts/check_submission.py` · `scripts/check_release.sh` |
 | 능력 종단 | `scripts/product_demo.sh` · `scripts/*_demo.sh` |
+| **제품 입구 종단** | `scripts/capreq_demo.sh` (문장 + 첨부 → 라우팅 → Core 중개 → 증적) |
 
 새 숫자를 쓸 자리가 이 목록에 없으면, **숫자를 쓰기 전에 도구를 만든다.**
 
@@ -112,9 +113,9 @@ DB 가 낡았을 때 30/60 (1회 · 밴드를 모른다) · 동기화 뒤 36 · 
 | 순위 | 수단 | 예 |
 |---|---|---|
 | 1 | **정본 하나 + 파생** | `check_submission.REQUIRED_WEIGHTS` ↔ 체크리스트 · `summarize_result` ↔ `chat.html` 칸 |
-| 2 | **둘이면 기계가 대조** | `test_chat_html_unit` · `route_bench` live vs repo · `test_openapi_drift` |
+| 2 | **둘이면 기계가 대조** | `test_chat_html_unit` · `route_bench` live vs repo · `test_openapi_drift`(**메서드까지**) · `test_testing_doc`(문서 ↔ CI) |
 | **3** | **숫자는 재현 또는 금지** | **이 문서** |
-| 4 | **종단 한 번 돌리기** (발견) | `product_demo.sh` · capreq 종단 |
+| 4 | **종단 한 번 돌리기** (발견) | `product_demo.sh` · `capreq_demo.sh` |
 
 3 은 1·2 를 대신하지 못한다. 1 로 없앨 수 있으면 1 로 없앤다.
 
@@ -133,8 +134,13 @@ DB 가 낡았을 때 30/60 (1회 · 밴드를 모른다) · 동기화 뒤 36 · 
 
 ## 7. 이 규칙 자체는 검사되지 않는다
 
-지금은 **문서만**이다 (브리지 Decision §7-(c) = (A)). 카탈로그의 측정 숫자 여덟 곳 중
-일곱은 이미 `scripts/route_bench.py` 를 가리키고 있어, 검사를 붙일 값이 크지 않다고 봤다.
+지금은 **문서만**이다 (브리지 Decision §7-(c) = (A)). 카탈로그의 측정 숫자는
+**대부분 이미** `scripts/route_bench.py` 를 가리키고 있어, 검사를 붙일 값이 크지 않다고 봤다.
+
+> **처음에는 여기에 「여덟 곳 중 일곱」이라고 적혀 있었다 (2026-09-02 정정).**
+> 그건 **손으로 센 개수**다 — 카탈로그가 자랄 때마다 낡고, 아무도 다시 세지 않는다.
+> **이 문서 자신의 §2·§5 가 금지하는 모양**이다 (「자라는 개수는 문서에 고정하지 않는다」).
+> 새 숫자로 바꾸지 않고 **뺐다** — 바꾸면 같은 일이 다음 달에 또 난다.
 
 **그래서 이 문서 자신이 §5-3 의 예다** — 적혀만 있고 기계가 잇지 않는 줄이다.
 지키지 않는 커밋이 나오면 그때 **좁은 검사**를 별 Proposal 로 올린다:
