@@ -6201,3 +6201,87 @@ SELECT reason, count(*) FROM task_input_purge_due GROUP BY reason;
 
 **여전히 구현하지 않았다.** 숫자도, 안내 문구도, 알림도 손대지 않았다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T04:00:00+09:00
+topic: silent-truncation
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — **계약 상한에서 잘린 것을 사용자가 모른다**
+
+**구현하지 않았다.** 「결과가 무엇을 덮었나」는 **제품 주장**이고, 고치는 길 하나는
+`output_schema`(= 계약)를 건드린다.
+
+### 1. 실측 (2026-09-02 · 살아 있는 스택)
+
+같은 내용을 **위치만 바꿔** 두 번 보냈다. 파일 9,031바이트 · `text.ner` ·
+계약 `preprocess.max_chars = 8000`.
+
+| 파일 | 이메일 위치 | 결과 |
+|---|---|---|
+| `head.txt` | 앞 (offset 5) | `entities: [{email, "buried@example.dev"}]` |
+| `tail.txt` | 뒤 (offset ~9,005) | **`entities: []`** |
+
+재현:
+
+```bash
+python3 -c "open('/tmp/tail.txt','w').write('x'*9000 + '\n연락처: buried@example.dev\n')"
+curl -s -X POST "$CAPREQ/api/chat" -F 'message=이메일 찾아줘' \
+     -F 'execute=true' -F 'wait=true' -F 'file=@/tmp/tail.txt;type=text/plain'
+```
+
+**1,031자를 안 봤다는 말이 어디에도 없다.** 화면에는 「찾은 것 없음」만 뜬다.
+사용자는 **자기 파일에 이메일이 없다**고 읽는다.
+
+### 2. 왜 이게 이 저장소의 기준에 걸리나
+
+`safety.pii` 는 「탐지가 아니라 참고다 · **놓친 것이 없다고 말하지 않는다**」를 등록
+설명에 적고 `patterns_checked` 를 함께 낸다. **무엇을 보고 그렇게 말했는지**를 낸다는 규율이다.
+
+잘림은 그 규율의 **다른 축**이다 — 규칙이 아니라 **범위**를 안 말한다.
+`patterns_checked` 가 「무엇으로 봤나」라면, 여기 빠진 것은 **「어디까지 봤나」**다.
+
+### 3. 어디서 잘리나 (코드)
+
+`app/infer_text.read_text` → `normalize(text, form=form, max_chars=max_chars)`.
+**조용히 자른다.** 예외도 표식도 없다. 계약이 선언한 값을 그대로 적용하는 것이므로
+**동작 자체는 맞다** — 빠진 것은 **그 사실이 밖으로 안 나온다**는 것뿐이다.
+
+영향 범위: `max_chars` 를 쓰는 텍스트 실행기 전부
+(`text.ner`·`text.extract`·`text.rank`·`text.classify`·`safety.pii`).
+`table`/`series` 쪽 `max_rows` 도 같은 모양일 것으로 본다 — **재 보지 않았다.**
+
+### 4. 고르는 길 넷 — 값과 비용
+
+| # | 무엇 | 비용 | 무엇을 못 하나 |
+|---|---|---|---|
+| **A** | **capreq 화면에만** 적는다 — 「이 능력은 앞부분 8,000자만 봅니다」 | **싸다.** 계약 무관 · 입구 한 곳 | API 를 직접 쓰는 쪽은 여전히 모른다 |
+| **B** | 결과에 **`examined_chars`·`truncated`** 를 넣는다 | **비싸다** — `output_schema` = 계약. 게이트가 다시 돌아야 하고 실행기 5개가 바뀐다 | — |
+| **C** | 상한을 넘으면 **거절**한다 | 중간 | **되돌리기 비싸다.** 지금 도는 요청이 깨진다 |
+| **D** | 아무것도 안 한다 | 0 | 이 실측이 그대로 남는다 |
+
+**나는 A 를 먼저, B 는 따로 본다.** 근거:
+
+- A 는 **새 주장을 만들지 않는다.** 계약이 이미 선언한 `max_chars` 를 **읽어서 보여 줄**
+  뿐이다. capreq 는 `/api/capabilities` 로 `input_schema` 를 이미 받고 있다
+- B 는 옳지만 **계약 변경**이다. 게이트·실행기 다섯·검사가 같이 움직인다.
+  D-out(출력 계약 검증)이 이미 있어 **모양이 틀리면 걸린다** — 그래서 싸게 못 넣는다
+- C 는 **제품 약속을 좁힌다.** 「큰 파일은 앞부분만 본다」에서 「큰 파일은 안 받는다」로
+  바뀌는 것이라 Decision 급이다
+
+### 5. 묻는 것
+
+| # | 질문 |
+|---|---|
+| 1 | **A 를 지금 할까?** (capreq 화면에 계약 상한 표시 · 새 주장 0) |
+| 2 | B 를 **별 Wave 로 열까**, 아니면 안 할까 |
+| 3 | `table`/`series` 의 `max_rows` 도 **같이 재 볼까** (아직 안 쟀다) |
+
+**1 이 「예」면 그것만 구현한다.** 화면 문구는 Decision 을 받고 적는다 —
+Wave Q 에서 「고르라고 권하지 않는다」가 Decision 이었던 것과 같은 자리다.
+```
