@@ -5542,6 +5542,18 @@ status: open
 holdout 튜닝 · 정책 숫자(24h·7d·72h) · `CLAUDE.md` changeset 규칙 · `route_bench` CI ·
 Playwright npm.
 
+### 종단 한 번 (2026-09-01 · 이 세션)
+
+**Step 0 + Wave S 를 합친 상태**에서 돌렸다 — 충돌 0.
+
+| 무엇 | 결과 |
+|---|---|
+| `run_tests` (합친 상태) | **392** OK |
+| `scripts/product_demo.sh` | **exit 0** |
+| `scripts/pii_demo.sh` | **exit 0** |
+
+**숫자를 새로 적지 않는다** — 통과/실패만이다 (`measured-claims.md`).
+
 ### 여전히 못 보는 것
 
 실제 브라우저의 **CSS·레이아웃**, 파일 선택기의 **OS 상호작용**. **본 것만 말한다.**
