@@ -52,9 +52,6 @@ python -m capreq route "이 사진 분류해줘" --core http://127.0.0.1:8000
 # 대화형 CLI
 python -m capreq chat --core http://127.0.0.1:8000
 
-# 웹 챗봇
-python -m capreq serve --core http://127.0.0.1:8000 --port 8090
-
 # 웹 챗봇 (파일 첨부 → Core 중개 업로드 → Task)
 python -m capreq serve --core http://127.0.0.1:8000 --port 8090
 # 브라우저 http://127.0.0.1:8090/ — + 버튼·드래그앤드롭으로 파일 첨부
@@ -65,6 +62,17 @@ python -m capreq serve --core http://127.0.0.1:8000 --port 8090
 python -m capreq route "이미지 분류해줘" --core http://127.0.0.1:8000 --execute \
   --dataset eurosat-rgb --case ic1-0001
 ```
+
+### **CLI 로는 파일을 붙일 수 없다**
+
+`route`·`chat` 에는 파일 인자가 **없다.** 첨부는 `serve` 의 multipart 경로
+(`POST /api/chat` 의 `file` 파트)뿐이다 — 그 길만 Core 중개 업로드로 이어진다 (D8′).
+
+위 `--dataset eurosat-rgb --case ic1-0001` 은 **자기 파일을 보내는 것이 아니다.**
+저장소에 이미 있는 **allowlist 데모 골든셋**에서 한 장을 고르는 것이고,
+**이미지 능력에만** 있다. 이걸 업로드로 읽으면 「내 파일이 돌았다」고 오해한다.
+
+종단으로 확인하려면 `bash scripts/capreq_demo.sh` 를 쓴다.
 
 능력이 해석됐으나 백엔드가 못 돌리면 **해석은 남기고** 실행 실패를 명시한다.
 
