@@ -46,6 +46,7 @@
 - [사용 안내 (쉬운 버전)](./guide/user-guide-ko.md)
 - [마이그레이션 운용](./guide/migrations.md) — SD-007 · 기존 볼륨 업그레이드 경로
 - [검증 체계 (테스트·CI)](./guide/testing.md) — 무엇을 자동으로 막는가
+- `scripts/check_release.sh` — **제출 zip 사전 검증** (크기·필수 파일·금지 산출물). 태그 없이 `HEAD` 로도 돈다 · `run_tests` 가 매번 부른다
 - [측정 숫자 규칙](./guide/measured-claims.md) — 재현 명령 없이 숫자를 쓰지 않는다 (무엇을 **못** 막는지도 적혀 있다)
 - [Node 운영](./guide/operate-node.md) — 등록·증서·바인딩·능력 호출 (v제품-1)
 - [제품 배포 런북](./guide/operate-production.md) — **정문을 닫고 올린다.** 강제 모드·부트스트랩 순서·한계
@@ -63,7 +64,6 @@
 - [제품 유통 목표](./design/product-distribution.md) — 범위·세대·금지 (D19)
 - [안전 사슬](./design/safety-chain.md) — **Node 등록 → Agent 사용**. 13칸 관문·구멍·보장/불보장
 - [단계 6 실행기 준비](./design/step6-executors.md) — **준비 문서.** 실행기를 더 얹기 전에 닫아야 할 구멍 셋(`structured` 출력 검증 · 작업 접수 · 학습 데이터 라이선스)과 추천 순서
-- `scripts/check_release.sh` — **제출 zip 사전 검증** (크기·필수 파일·금지 산출물). 태그 없이 `HEAD` 로도 돈다 · `run_tests` 가 매번 부른다
 - [남의 Agent 격리](./design/foreign-agent-isolation.md) — F1/F2/F3 위협 모델 · Phase 3 격리 초안
 - [node_credential 설계 초안](./design/node-credential-draft.md) (**DDL 미적용**)
 

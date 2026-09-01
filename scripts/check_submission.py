@@ -119,11 +119,48 @@ def check_no_pretrained() -> None:
           f"사전학습 미사용 선언 (meta {checked}건)", "; ".join(bad[:3]))
 
 
+def _pyproject_deps(path: Path) -> list[str]:
+    """`pyproject.toml` 의 **런타임·extra 의존성** 이름만.
+
+    `tomllib` 는 표준 라이브러리다 (3.11+) — 이 스크립트의 「의존성 설치 없음」 규약을
+    깨지 않는다. 처음엔 정규식으로 짰다가 `[tool.setuptools] packages.find` 의
+    `where = ["src"]` 와 `package-data` 까지 의존성으로 집었다. **파서를 쓴다.**
+
+    `[build-system] requires` 는 안 본다 — 빌드 도구는 배포물에 안 들어간다.
+    """
+    import tomllib
+
+    with path.open("rb") as fh:
+        doc = tomllib.load(fh)
+    project = doc.get("project") or {}
+    specs: list[str] = list(project.get("dependencies") or [])
+    for extra in (project.get("optional-dependencies") or {}).values():
+        specs.extend(extra)
+    names: list[str] = []
+    for raw in specs:
+        name = re.split(r"[\[=<>!~;\s]", raw)[0].strip().lower()
+        if name:
+            names.append(name)
+    return names
+
+
 def check_deps_declared(files: list[str]) -> None:
-    """의존성이 THIRD-PARTY-LICENSES.md 에 적혀 있는가 (CLAUDE.md 저장소 규칙)."""
+    """의존성이 THIRD-PARTY-LICENSES.md 에 적혀 있는가 (CLAUDE.md 저장소 규칙).
+
+    **`capreq/pyproject.toml` 이 빠져 있었다 (2026-09-02).** 검사는 `apps/core`·`apps/node`
+    의 `requirements.txt` 만 봤는데, `capreq` 는 저장소에 함께 배포되는 모듈이고
+    자기 의존성을 `pyproject.toml` 로 선언한다 (`httpx` · extra 로 `fastapi`·`uvicorn`·
+    `python-multipart`).
+
+    지금은 그 넷이 전부 고지돼 있어 **통과하고 있었다** — 구멍이 잠재해 있었을 뿐이다.
+    `CLAUDE.md` 는 「의존성을 추가하는 커밋에서 한 줄을 같이 넣는다. **예외 없음**」이라고
+    적는데, 검사가 보는 범위에 예외가 있었다.
+    """
     declared = (ROOT / "THIRD-PARTY-LICENSES.md").read_text(encoding="utf-8").lower()
     missing: list[str] = []
-    for req in ("apps/core/requirements.txt", "apps/node/requirements.txt"):
+    seen = 0
+    for req in ("apps/core/requirements.txt", "apps/node/requirements.txt",
+                "apps/train/requirements.txt"):
         p = ROOT / req
         if not p.is_file():
             continue
@@ -132,9 +169,23 @@ def check_deps_declared(files: list[str]) -> None:
             if not line or line.startswith("#"):
                 continue
             name = re.split(r"[\[=<>!~;]", line)[0].strip().lower()
-            if name and name not in declared:
+            if name:
+                seen += 1
+                if name not in declared:
+                    missing.append(name)
+    for proj in ("capreq/pyproject.toml",):
+        p = ROOT / proj
+        if not p.is_file():
+            continue
+        for name in _pyproject_deps(p):
+            seen += 1
+            if name not in declared:
                 missing.append(name)
-    check(not missing, "의존성이 THIRD-PARTY-LICENSES 에 있다", ", ".join(sorted(set(missing))))
+    # **0개를 훑으며 통과하는 상태를 막는다.** 경로가 바뀌면 조용해지는 것이 이 검사의
+    # 원래 실패 방식이었다.
+    check(seen > 5 and not missing,
+          f"의존성이 THIRD-PARTY-LICENSES 에 있다 ({seen}건 확인)",
+          ", ".join(sorted(set(missing))))
 
 
 def check_secrets(files: list[str]) -> None:

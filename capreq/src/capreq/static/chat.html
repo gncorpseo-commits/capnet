@@ -119,12 +119,17 @@ function add(role, text, cls) {
 let knownCaps = null;
 
 async function loadCaps() {
+  // **실패를 캐시하지 않는다.** 전에는 실패 시 `knownCaps = []` 를 넣었는데,
+  // JS 에서 `[]` 는 **truthy** 라 `if (knownCaps)` 가 참이 된다 — 한 번 실패하면
+  // 페이지를 새로 고칠 때까지 목록이 영영 안 떴다 (2026-09-02).
   if (knownCaps) return knownCaps;
   try {
     const d = await fetch("/api/capabilities").then(r => r.json());
     knownCaps = Array.isArray(d.items) ? d.items : [];
   } catch (e) {
-    knownCaps = [];   // 못 받아도 화면이 무너지지 않는다
+    // **null 을 돌려준다.** 「못 받았다」와 「받았는데 0개다」는 다른 상태다 —
+    // 빈 배열로 뭉뚱그리면 부르는 쪽이 그 둘을 구별할 수 없다.
+    return null;
   }
   return knownCaps;
 }
@@ -311,6 +316,11 @@ function renderRouting(box, res) {
 // 못 고른 자리에서 사용자를 막다른 골목에 두지 않는다.
 // **고르라고 권하지 않는다** — 있는 것을 보여 줄 뿐이고, 고르는 것은 여전히 라우터다.
 function renderWhatYouCanAsk(box, caps) {
+  if (caps === null) {
+    // 못 받았으면 **그렇게 말한다.** 아무것도 안 그리면 「할 수 있는 일이 없다」로 읽힌다.
+    box.appendChild(el("div", "sub2", "능력 목록을 불러오지 못했습니다 — Core 연결을 확인하세요."));
+    return;
+  }
   if (!caps || !caps.length) return;
   box.appendChild(el("div", "sub2", `지금 할 수 있는 일 ${caps.length}가지 — 다시 말해 보세요.`));
   const rows = caps.map(c => {

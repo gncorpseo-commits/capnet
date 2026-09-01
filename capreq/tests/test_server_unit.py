@@ -88,6 +88,58 @@ class ServerCase(unittest.TestCase):
         server.OllamaClient, server.CapNetAdapter = self._llm, self._core
 
 
+class TestEmptyAttachment(ServerCase):
+    """**「붙였다」와 「내용이 있다」는 다르다.**
+
+    2026-09-02 실측: 0 바이트 파일을 붙이면 `file_bytes` 가 `b""` 라 **첨부 없음과
+    같아졌다.** 이미지 능력이면 allowlist 데모 경로로 흘러가
+
+        {"input_id": null, "result_label": "annual_crop", "execution_ok": true}
+
+    가 나온다 — **사용자 파일은 안 돌았는데 초록으로 끝난다.** `7936a0f`(첨부가 통째로
+    버려진 버그)와 같은 계열이고, 그때와 같은 이유로 검사가 없었다.
+    """
+
+    route_to = ("image.classify", 1)
+
+    def test_empty_file_is_rejected_not_ignored(self) -> None:
+        r = self.client.post(
+            "/api/chat",
+            data={"message": "위성 사진 판별해줘", "execute": "true", "wait": "true"},
+            files={"file": ("empty.png", b"", "image/png")},
+        )
+        d = r.json()
+        self.assertFalse(d["ok"], d)
+        self.assertIn("비어 있다", d["reason"])
+        self.assertIn("empty.png", d["reason"], "어느 파일인지 안 말해 준다")
+
+    def test_empty_file_never_reaches_the_demo_path(self) -> None:
+        """**이게 핵심이다.** 데모 데이터셋으로 대신 돌면 남의 결과를 내 결과로 준다."""
+        self.client.post(
+            "/api/chat",
+            data={"message": "위성 사진 판별해줘", "execute": "true", "wait": "true"},
+            files={"file": ("empty.png", b"", "image/png")},
+        )
+        self.assertEqual(self.core.tasks, [], f"작업이 만들어졌다: {self.core.tasks}")
+        self.assertEqual(self.core.uploads, [], "빈 바이트를 올렸다")
+
+    def test_no_message_and_no_file_is_rejected_without_calling_the_llm(self) -> None:
+        """고를 근거가 없다. 로컬 LLM 은 CPU 에서 분 단위라 부르지 않는다."""
+        d = self.client.post("/api/chat", data={"message": "", "execute": "false"}).json()
+        self.assertFalse(d["ok"], d)
+        self.assertIsNone(d["capability_code"])
+
+    def test_empty_message_with_a_real_file_still_works(self) -> None:
+        """파일만 붙이는 것은 정상 사용이다 — 같이 막으면 안 된다."""
+        d = self.client.post(
+            "/api/chat",
+            data={"message": "", "execute": "false"},
+            files={"file": ("in.png", b"\x89PNG", "image/png")},
+        ).json()
+        self.assertTrue(d["ok"], d)
+        self.assertEqual(d["capability_code"], "image.classify")
+
+
 class TestAttachment(ServerCase):
     def test_multipart_file_reaches_core(self) -> None:
         """이 검사가 없어서 첨부가 통째로 버려지는 것을 못 잡았다."""
