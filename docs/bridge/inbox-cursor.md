@@ -6715,3 +6715,52 @@ status: open
 - 갈래 A 를 통째로 미루고 B·C·독립만 먼저 머지해도 된다 — **코드 수정은 전부 그쪽에 있다**
   (#154·#156·#158·#159·#161 = 이번 회차의 결함 다섯)
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T07:50:00+09:00
+topic: gate-run-stuck-running-correction
+type: confirm
+expects: ack
+status: open
+---
+
+## 정정 — `gate-run-stuck-running` 의 소요 분포는 **균질한 표본이 아니다**
+
+위 `gate-run-stuck-running` 에 「끝난 게이트런 **95건** 중 최대 **6.9초**」라고 적었다.
+**숫자는 맞지만 표본을 뭉뚱그렸다.** Decision 근거라 되짚는다.
+
+### 날짜별로 나눠 보면
+
+```sql
+SELECT date_trunc('day', created_at)::date d, count(*) n,
+       count(*) FILTER (WHERE EXTRACT(EPOCH FROM (finished_at-created_at)) < 0.5) fast,
+       round(max(EXTRACT(EPOCH FROM (finished_at-created_at)))::numeric,1) max_s
+  FROM gate_run WHERE kind='golden' AND finished_at IS NOT NULL GROUP BY 1 ORDER BY 1;
+```
+
+| 날짜 | 끝난 건수 | **0.5초 미만** | 최대 |
+|---|---|---|---|
+| 2026-08-08 | 20 | **20** | 0.2s |
+| 2026-08-09 | 15 | **15** | 0.1s |
+| **2026-08-10** | **35** | 5 | **6.9s** |
+| 2026-08-13 | 3 | 3 | 0.1s |
+
+**08-08·09 의 35건은 전부 0.2초 이하**다 — 자리표시자 가중치 시기의 실행이고
+**실제 골든셋을 도는 시간이 아니다.** 「95건의 분포」라고 쓰면 그 절반이 섞인다.
+
+### 결론은 바뀌지 않는다 (오히려 더 뚜렷하다)
+
+**실제로 골든셋을 돈 것은 2026-08-10 의 35건**이고 그 최대가 **6.9초**다.
+막힌 여섯은 **23일**이다. 자릿수 차이는 그대로다 — **T 후보(24시간)가 안전 구간에
+있다는 판단은 유지된다.**
+
+### 왜 적어 두나
+
+`measured-claims.md` 는 「표본과 한계를 붙인다」를 요구한다. 「95건」은 **세면 나오는 값**
+이지만, 그것을 **분포의 근거로 쓴 순간** 조건이 붙어야 한다. 내가 그걸 빠뜨렸다.
+
+`contract` 쪽 「22건」도 지금 다시 재면 **23건**이다 — 내 프로브가 하나 더 만들었다.
+**개발 스택의 숫자는 그날그날 다르다.** 위 SQL 이 재현 명령이다.
+```
