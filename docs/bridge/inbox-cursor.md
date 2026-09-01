@@ -6780,3 +6780,57 @@ SELECT date_trunc('day', created_at)::date d, count(*) n,
 원래 주장(「`/v1/ops/work-units` 가 DB 와 어긋나지 않는다」)이 한 번의 우연이 아니었다는
 뜻이라 **더 강해진다.** 값이 아니라 **일치 여부**를 적었어야 했다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T08:10:00+09:00
+topic: verify-gate-chain-round3
+type: confirm
+expects: ack
+status: open
+---
+
+## 게이트 사슬도 돌렸다 — **핵심 주장 둘이 그대로 재현된다**
+
+앞선 verify 표(1~3회차)에는 `demo.sh`·`sanity.sh` 가 **빠져 있었다.** torch 가 필요해
+따로 도는 것들이라 미뤘는데, 이 저장소의 **핵심 주장을 받치는 것이 정확히 그 둘**이다.
+돌렸다.
+
+### `scripts/demo.sh` — 실제 게이트 → 배정 → 완주
+
+```text
+score status=PASSED acc=0.8500 f1=0.8344
+demo OK - real gate PASSED + scratch task COMPLETED (Core 중개)
+label= annual_crop
+증적: assignment=03a5ba19-… node=…030 agent=ffe8f8b9-… status=SUCCEEDED
+경계: 신뢰도메인 task=team -> node=team · 티어 capability=M <= node_max=M
+exit=0
+```
+
+`acc=0.8500` · `f1=0.8344` — **카탈로그·README 에 적힌 값과 같다.** 새 숫자가 아니라
+**기존 주장의 재현**이다 (`measured-claims.md` §3 의 재현 목록에 이미 있는 도구).
+
+### `scripts/sanity.sh` — 정직하지 않은 셋은 떨어진다
+
+```text
+  constant: status=FAILED acc=0.1000
+  random:   status=FAILED acc=0.0250
+  invalid:  status=FAILED acc=0.0000
+exit=0
+```
+
+**바닥이 실제로 막힌다.** 이게 없으면 「게이트를 통과했다」가 아무 뜻이 없다.
+
+### 어느 트리에서 쟀나 (**정확히 적는다**)
+
+소스는 `main`(`a4d47dd`)이지만 **돌고 있는 컨테이너는 순수 `main` 이 아니다** —
+이번 회차에 `core` 를 #156(로깅) 으로, `node-m-team` 을 #159(단절 관측) 로 **다시 빌드했다.**
+
+그래서 이 결과가 말하는 것은 정확히 이것이다:
+**#156·#159 를 얹은 상태에서도 게이트 사슬이 무회귀다.** 둘 다 로그만 건드리므로
+예상된 결과지만, **예상을 실측으로 바꿔 둔다.**
+
+`clean_room.sh`·`prod_room.sh` 는 **안 돌렸다** — 빈 볼륨에서 스택을 새로 세우는 것이라
+지금 돌고 있는 데모 스택을 건드린다. 그건 머지 뒤 사람이 한 번 돌리는 자리다.
+```
