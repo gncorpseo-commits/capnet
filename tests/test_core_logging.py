@@ -46,6 +46,74 @@ ROOT = Path(__file__).resolve().parents[1]
 MAIN = ROOT / "apps" / "core" / "app" / "main.py"
 
 
+
+class TestSwallowedFailuresAreObserved(unittest.TestCase):
+    """**삼키는 것은 되는데, 조용히 삼키는 것은 안 된다.**
+
+    `complete.py` 가 정한 규약은 두 절반이다 — 「`audit_log` 삽입 실패는 **관측 공백으로
+    남기고** Task 를 뒤집지 않는다」. 호출부가 `logger.warning(..., exc_info=True)` 를 남긴다.
+
+    `gate.py` 의 폐기 경로는 「complete.py 와 같은 규약」이라 적어 놓고 `pass` 만 했다 —
+    **관측 절반이 빠져 있었다** (2026-09-02). 능력이 폐기됐는데 그 사실이 `audit_log` 에도
+    로그에도 없는 상태가 될 수 있었다.
+    """
+
+    def swallow_sites(self) -> list[tuple[str, str]]:
+        import ast
+
+        out: list[tuple[str, str]] = []
+        for path in sorted((ROOT / "apps" / "core" / "app").glob("*.py")):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.ExceptHandler):
+                    continue
+                if any(isinstance(x, ast.Raise) for x in ast.walk(node)):
+                    continue
+                logs = any(
+                    isinstance(x, ast.Attribute)
+                    and x.attr in ("info", "warning", "error", "exception", "debug")
+                    for x in ast.walk(node)
+                )
+                prints = any(
+                    isinstance(x, ast.Call) and getattr(x.func, "id", "") == "print"
+                    for x in ast.walk(node)
+                )
+                if not logs and not prints:
+                    out.append((path.name, f"{path.name}:{node.lineno}"))
+        return out
+
+    def test_gate_revoke_audit_swallow_is_logged(self) -> None:
+        """폐기는 됐는데 `audit_log` 에도 로그에도 없는 상태를 막는다.
+
+        `complete.py` 자신은 삼키지 않는다 — 삼킴은 `main.py` 호출부에 있고
+        거기서는 `logger.warning(..., exc_info=True)` 를 남긴다. 빠져 있던 것은
+        `gate.py` 쪽 한 자리다.
+        """
+        src = (ROOT / "apps" / "core" / "app" / "gate.py").read_text(encoding="utf-8")
+        self.assertIn("logging.getLogger", src, "gate.py 에 로거가 없다")
+        self.assertIn("audit_log insert failed", src, "삼킨 것을 알리지 않는다")
+
+    def test_known_silent_sites_do_not_grow(self) -> None:
+        """조용한 자리가 **늘지 않는가.**
+
+        전부 없애자는 것이 아니다 — 제어 흐름으로 쓰는 것(`FileNotFoundError → False`)은
+        정상이다. 이 검사는 **새로 느는 것**을 보게 하려는 것이다.
+        """
+        sites = {s for _f, s in self.swallow_sites()}
+        allowed = {
+            # 제어 흐름 — 「시작할 수 없다」를 None 으로 알린다. 호출부가 4xx 로 바꾼다.
+            "gate.py:210",
+            # 파일이 없으면 「없다」가 답이다 — 예외가 아니다.
+            "inputs.py:182",
+            # 롤백 뒤 stderr 로 알리고 종료 코드 1 을 낸다 (CLI 라 print 가 맞다).
+            "migrate.py:265",
+        }
+        new = sorted(sites - allowed)
+        self.assertEqual(
+            new, [], f"조용히 삼키는 자리가 늘었다 — 로그를 남기거나 여기 근거와 함께 적는다: {new}"
+        )
+
+
 class TestCoreConfiguresLogging(unittest.TestCase):
     def setUp(self) -> None:
         self.text = MAIN.read_text(encoding="utf-8")
