@@ -5980,8 +5980,11 @@ at: 2026-09-02T00:40:00+09:00
 topic: track-a-post-wave-x
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-02).** 큐 ①~⑥ 을 그대로 갔다 — Wave Y #147 · Wave Z #148 ·
+> 브리지 ack #149 · 이 Step 0. **④ 는 열어 둔 것이 결과다** (`timeseries.anomaly` 구현 0).
 
 ## Next — Wave X 뒤 · main `fd8750d`
 
@@ -6000,4 +6003,107 @@ status: open
 
 - U·V·W·X **CHANGELOG 한 PR** 로 몰아 적기 (선두 1건)
 - `skipped` 건수 가시화 (verify 블록 ⑨ 후보)
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T02:30:00+09:00
+topic: verify-post-wave-y-z
+type: confirm
+expects: ack
+status: open
+---
+
+## 종단 verify — Wave Y·Z·ack 을 얹은 트리에서
+
+세 PR(#147·#148·#149)을 `main`(`a4d47dd`) 위에 **전부 머지한 트리**에서 쟀다.
+
+| 무엇 | 결과 |
+|---|---|
+| 세 PR 머지 | **충돌 0** |
+| `bash scripts/run_tests.sh` | **420 OK** (건너뜀 7) |
+| `capreq/tests` (`node` + `capreq[server]`) | **68 OK · 건너뜀 0** |
+| `python3 scripts/check_submission.py` | **통과** |
+| `tests/test_changelog_integrity.py` | **4 OK** |
+| `tests/integration/check_input_purge.py` | **17/17** |
+| `scripts/product_demo.sh` | **exit 0** |
+| `scripts/pii_demo.sh` | **exit 0** |
+| `scripts/demo_violations.sh` | **exit 0** |
+| `scripts/capreq_demo.sh` | **exit 0** |
+
+**실패 0.**
+
+### 배너가 실제로 달라졌다 (Wave Z)
+
+```text
+전부 통과.
+  다만 7건은 **건너뛰었다** — 그 환경에 없는 것이 있다는 뜻이다.
+  사유 목록: tests/test_skip_reasons.py 의 ALLOWED · 전부 돌리는 법: docs/guide/testing.md §2·§4.6
+```
+
+이전에는 마지막 줄이 「전부 통과.」 하나였다. 건너뛴 7건은 전부 `psycopg 없음` 이다.
+
+### `capreq_demo` 가 문서대로 흔들렸다
+
+이번 실행은 `text.ner@1` 로 갔다. **바로 앞 실행(#145 작성 시)은 `text.extract@1` 이었다** —
+같은 문장, 같은 첨부다. 스크립트가 이것을 실패로 세지 않는 것이 의도이고,
+그 설계가 실제 상황에서 값을 했다.
+
+**정확도를 주장하지 않는다** — 이 표는 전부 통과/실패다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T02:40:00+09:00
+topic: track-a-post-wave-y-z
+type: next
+expects: decision
+status: open
+---
+
+## Next — Wave Y·Z 뒤
+
+`main` = **`a4d47dd`** · 열린 PR **셋** (#147 Y · #148 Z · #149 ack) + 이 Step 0.
+`run_tests` **420** (셋 다 얹은 트리) · capreq **68 (건너뜀 0)**.
+
+### 스택 관계 (머지 순서가 자유롭도록 미리 얹었다)
+
+    이 Step 0 ⊃ #147(Y) · #149(ack)
+    #148(Z) 은 독립 — 파일이 안 겹친다
+
+어느 순서로 머지해도 충돌 0 이다. 프로브로 확인했다.
+
+### 이번 회차에 **하지 않은 것**과 이유
+
+| 무엇 | 왜 |
+|---|---|
+| `timeseries.anomaly` 구현 | **(a) 채택 Decision 대기.** 핸드오프 §8 이 명시 |
+| `retrieve.dense` | ack 받은 기각 — 유지 |
+| 라우팅 정확도 새 숫자 | 핸드오프 §8 |
+| `test_doc_counts` 날짜 검사 완화 | **검사를 임의로 약화시키지 않는다.** 마찰만 보고했다 |
+
+### 열린 Decision 셋 — 값이 큰 순서로
+
+1. **`11th-capability-timeseries-anomaly`** — (a) 채택 (b) 문턱 (c) 이름.
+   **(a) 가 「아니오」면 나머지는 필요 없다.** 다음 후보로 `image.quality`(#7) 를
+   같은 이름 검사에 걸어 볼 수 있다고 적어 뒀다.
+2. **`changelog-changeset-rule`** — 이번 회차에 **대가가 실측됐다** (U·V·W·X 가 기록
+   없이 머지 → Wave Y 로 되찾음). 규율을 `CLAUDE.md` 에 올릴지, 다른 모양으로 바꿀지.
+3. **`retention-ttl-policy`** — 24h·7d·72h. 검사(`check_input_purge` 17/17)는 이미 있고
+   **숫자만 미확정**이다.
+
+### 다음 세션 후보 (Decision 없이 되는 것)
+
+| # | 무엇 | 왜 지금인가 |
+|---|---|---|
+| 1 | `README`·`user-guide` 가 `capreq_demo.sh` 를 가리키는가 | 새 도구가 문서에 없으면 아무도 안 돌린다 |
+| 2 | `measured-claims.md` 예시 드리프트 | 「능력 9종 · 2026-08-31」 예시가 낡았는지 |
+| 3 | `retention-ttl-policy` inbox **보강만** | 숫자 확정 없이 근거만 |
+
+### 여전히 못 보는 것 (그대로)
+
+실제 브라우저의 **CSS·레이아웃**, 파일 선택기의 **OS 상호작용**.
+Playwright 는 새 의존성이라 안 들였다 — **본 것만 말한다.**
 ```
