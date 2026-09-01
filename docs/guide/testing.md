@@ -1,6 +1,6 @@
 # 검증 체계 (테스트 · CI)
 
-> 갱신: 2026-08-10 (초판)
+> 갱신: 2026-09-01 (초판 2026-08-10)
 > 무엇이 증거로 인정되는가 · 무엇을 자동으로 막는가.
 
 ---
@@ -32,24 +32,52 @@ python3 -m unittest discover -s tests -v
 **의존성이 없다.** 표준 라이브러리 `unittest` 만 쓴다 — 이 리포에는 pip 가 없는 개발 환경이 있고,
 새 의존성은 `CLAUDE.md` 상 먼저 물어야 한다. pytest 가 필요해지면 그때 논의한다.
 
-예외는 **`capreq/tests`** 하나다. capreq 는 독립 모듈이라 자기 런타임(`httpx`)이 있고,
+예외는 **`capreq/tests`** 하나다. capreq 는 독립 모듈이라 자기 런타임이 있고,
 그 테스트는 `tests/` 밖에 있어 위 명령에 잡히지 않는다. 따로 돌린다:
 
 ```bash
+pip install "httpx>=0.27" "fastapi>=0.110" "python-multipart>=0.0.9"
 PYTHONPATH=capreq/src python3 -m unittest discover -s capreq/tests -p "test_*.py"
 ```
 
-`run_tests.sh` 가 이것을 부르지 않는 것은 의도다 — `httpx` 가 없는 환경에서 전체 검증이
+**세 개를 다 깔아야 한다.** 이 줄은 CI 의 `capreq` 잡과 **글자 그대로 같아야 하고**,
+`tests/test_testing_doc.py` 가 그것을 본다.
+
+> 여기가 실제로 어긋나 있었다 (2026-09-01). 이 문서는 오래 **`httpx` 하나**만 적었는데
+> 서버 경로 검사가 들어오면서 CI 는 셋을 깔게 됐다. 문서대로 `httpx` 만 깔고 돌리면
+> `python-multipart` 가 없어 **첨부 검사 3건이 실패한다** — 제품이 아니라 설치가 틀린 것인데,
+> 그걸 제품 결함으로 오해하기 딱 좋다. 실제로 이번에 그렇게 오해했다.
+
+`node` 도 필요하다 — 없으면 렌더러·흐름 프로브 6건이 **skip 된다** (§4.6).
+`skip 은 통과가 아니다.` 숫자를 적을 때는 건너뛴 개수를 같이 적는다.
+
+`run_tests.sh` 가 이것을 부르지 않는 것은 의도다 — 이 셋이 없는 환경에서 전체 검증이
 통째로 실패하면 안 된다. CI 는 잡을 따로 둬서 항상 돌린다 (§4).
 
 ---
 
 ## 3. 지금 있는 것
 
-| 파일 | 수 | 무엇을 |
-|------|-----|--------|
-| `tests/test_migrate_lint.py` | 33 | 금지 패턴 · 주석 오탐 · `INSERT … SELECT` 정상 통과 · 허용 표식의 **범위** · 파일명/번호 규칙 |
-| `tests/test_golden_sha.py` | 15 | 정본화 방식 · 선언부 4곳 일치 · 케이스 40건 · 파서가 조용히 통과하지 않는지 · `split=holdout` 유지 |
+**개수도, 파일 목록도 여기 적지 않는다.** 이 표는 한때 파일 **둘**만 적고 있었는데
+그 사이 `tests/` 는 **스물아홉**이 됐다 (2026-09-01 실측). 손으로 세는 목록은 반드시 낡는다 —
+`test_doc_counts` 가 통합 검사 개수를 못박지 못하게 하는 것과 같은 이유다.
+
+무엇이 있는지는 **파일이 말한다**:
+
+```bash
+ls tests/test_*.py
+python3 -m unittest discover -s tests -v    # 이름과 docstring 이 곧 목록이다
+```
+
+처음 둘은 이 문서가 생긴 이유라 남겨 둔다 — **왜** 그것부터 짰는지가 §1 이다.
+
+| 파일 | 무엇을 |
+|------|--------|
+| `tests/test_migrate_lint.py` | 금지 패턴 · 주석 오탐 · `INSERT … SELECT` 정상 통과 · 허용 표식의 **범위** · 파일명/번호 규칙 |
+| `tests/test_golden_sha.py` | 정본화 방식 · 선언부 4곳 일치 · 파서가 조용히 통과하지 않는지 · `split=holdout` 유지 |
+
+여기 이름이 적힌 파일이 실제로 있는지는 `tests/test_testing_doc.py` 가 본다.
+**이름을 바꾸면 문서가 걸린다.**
 
 ### 골든 픽스처를 따로 두지 않았다
 
@@ -78,7 +106,7 @@ PYTHONPATH=capreq/src python3 -m unittest discover -s capreq/tests -p "test_*.py
 | job | 무엇을 |
 |-----|--------|
 | **unit** | `tests/` 단위 테스트 + `check_golden_sha.py` + `check_submission.py`. **의존성 설치 없음** |
-| **capreq** | `capreq/tests` — `httpx` 만 설치한다. 잡을 따로 둔 이유는 위 `unit` 의 「설치 없음」을 지키기 위해서다 |
+| **capreq** | `capreq/tests` — `httpx`·`fastapi`·`python-multipart` 와 `node` 를 설치한다 (§2 와 같은 줄). 잡을 따로 둔 이유는 위 `unit` 의 「설치 없음」을 지키기 위해서다 |
 | **migrate** | postgres 서비스로 **실제 적용**. 마이그레이션 6단계 + **통합 검사 전부**(검사마다 깨끗한 DB) |
 
 > 통합 검사 **개수를 적지 않는다.** 능력·강제 경로를 더할 때마다 느는 값이라
@@ -183,6 +211,22 @@ PYTHONPATH=capreq/src python3 scripts/route_bench.py --set holdout --repeats 5
 **「없으면 skip」은 「없으면 조용히 통과」와 다르다.** skip 은 **몇 개가 건너뛰어졌는지**
 출력에 남고, 프로브가 **몇 종을 단언했는지**도 파이썬 쪽에서 다시 본다
 (`test_probe_actually_asserted_things`). 0 건을 통과시키는 상태를 막는 것이 핵심이다.
+
+**그래도 가려졌다 (2026-09-01).** 환경이 바뀌어 `node` 가 사라졌고, capreq 스위트가
+**68 → 50 ran / 6 skipped** 로 줄었다. 빠진 6건이 바로 위 표의 실행 프로브 —
+문자열 검사가 못 잡는 것을 잡으라고 넣은 것들이다. 출력에 `skipped=6` 이라 적혀 있었지만
+**아무도 그 숫자를 읽지 않았다.** `OK` 는 초록색이고 skip 은 회색이다.
+
+그래서 사유를 **허가제**로 만들었다 — `tests/test_skip_reasons.py`.
+
+- 새 `skip` 의 사유 문자열은 `ALLOWED` 에 **왜 괜찮은지**와 함께 적어야 한다
+- 안 쓰이는 사유가 남으면 걸린다 (지운 검사의 흔적)
+- **개수는 못박지 않는다** — 환경마다 다른 것이 정상이다
+
+묻게 하려는 것은 하나다: **이건 그 환경에 없는 것인가, 아니면 깨진 검사를 덮는 것인가?**
+
+숫자를 적을 때는 **건너뛴 개수를 같이 적는다.** 「capreq 68」과 「capreq 68 (건너뜀 6)」은
+다른 말이다.
 
 ---
 
