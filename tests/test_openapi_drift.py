@@ -9,9 +9,14 @@
 
 ## 무엇을 지키나
 
-1. `include_in_schema=False` 가 아닌 모든 라우트는 `openapi.yaml` 에 있다
-2. `openapi.yaml` 의 모든 경로는 실제 라우트다 (지운 API 가 문서에 남지 않는다)
+1. `include_in_schema=False` 가 아닌 모든 라우트는 `openapi.yaml` 에 있다 — **메서드까지**
+2. `openapi.yaml` 의 모든 항목은 실제 라우트다 (지운 API 가 문서에 남지 않는다) — **메서드까지**
 3. 두 사본(`apps/core/` · `docs/spec/`)이 같다
+
+**경로만 보던 때의 구멍 (2026-09-01).** 처음에는 **경로**만 봤다. 그래서 이미 문서에 있는
+경로에 **메서드를 하나 더 붙이면 아무것도 걸리지 않았다** — Wave I 가
+`PATCH /v1/capabilities/{id}` 를 더했을 때 이 검사는 조용했고, 문서에는 **손으로** 넣었다.
+다음에 그러면 빠진다. 지금은 `(메서드, 경로)` 쌍으로 본다.
 
 ## 왜 파싱을 손으로 하나
 
@@ -37,6 +42,10 @@ ROUTE_RE = re.compile(r'^@app\.(get|post|put|patch|delete)\(\s*"([^"]+)"([^)]*)\
 PATH_RE = re.compile(r'^  (/\S*?):\s*$', re.M)
 
 
+# 경로 블록 안의 메서드 — 네 칸 들여쓴 `get:` 같은 줄
+METHOD_RE = re.compile(r"^    (get|post|put|patch|delete):\s*$", re.M)
+
+
 def routes() -> list[tuple[str, bool]]:
     """(경로, 문서화 대상인가) 목록."""
     src = MAIN.read_text(encoding="utf-8")
@@ -46,8 +55,28 @@ def routes() -> list[tuple[str, bool]]:
     ]
 
 
+def route_ops() -> list[tuple[str, str, bool]]:
+    """(메서드, 경로, 문서화 대상인가) 목록. **경로만 보면 메서드 추가가 새어 나간다.**"""
+    src = MAIN.read_text(encoding="utf-8")
+    return [
+        (method, path, "include_in_schema=False" not in rest)
+        for method, path, rest in ROUTE_RE.findall(src)
+    ]
+
+
 def spec_paths() -> set[str]:
     return set(PATH_RE.findall(SPEC.read_text(encoding="utf-8")))
+
+
+def spec_ops() -> set[tuple[str, str]]:
+    """openapi 가 문서화한 `(메서드, 경로)` 쌍."""
+    text = SPEC.read_text(encoding="utf-8")
+    parts = re.split(r"^  (/\S*?):\s*$", text, flags=re.M)
+    ops: set[tuple[str, str]] = set()
+    for i in range(1, len(parts), 2):
+        path, body = parts[i], parts[i + 1]
+        ops.update((method, path) for method in METHOD_RE.findall(body))
+    return ops
 
 
 class OpenApiDrift(unittest.TestCase):
@@ -56,6 +85,29 @@ class OpenApiDrift(unittest.TestCase):
         missing = sorted({p for p, public in routes() if public} - documented)
         self.assertEqual(
             missing, [], f"openapi.yaml 에 없는 라우트 {len(missing)}개: {missing}"
+        )
+
+    def test_every_public_operation_is_documented(self) -> None:
+        """**메서드까지** 본다 — 이미 있는 경로에 `PATCH` 를 붙여도 걸린다."""
+        documented = spec_ops()
+        missing = sorted(
+            (m, p) for m, p, public in route_ops() if public and (m, p) not in documented
+        )
+        self.assertEqual(
+            missing, [], f"openapi.yaml 에 없는 (메서드, 경로) {len(missing)}개: {missing}"
+        )
+
+    def test_no_phantom_operations(self) -> None:
+        """문서에만 있는 메서드 — 지운 동작이 남으면 붙이는 쪽이 헛짚는다.
+
+        `include_in_schema=False` 인 라우트도 **실재하므로** 여기서는 센다
+        (`/openapi.yaml` 이 그 예다 — 스펙을 내려 주는 자기 자신이라 자동 스키마에서는
+        빼지만 손으로 쓴 문서에는 적어 둔다).
+        """
+        real = {(m, p) for m, p, _ in route_ops()}
+        phantom = sorted(spec_ops() - real)
+        self.assertEqual(
+            phantom, [], f"라우트가 없는 openapi 항목 {len(phantom)}개: {phantom}"
         )
 
     def test_no_phantom_paths(self) -> None:
@@ -77,6 +129,8 @@ class OpenApiDrift(unittest.TestCase):
         """검사가 0개를 비교하며 통과하는 상태를 막는다."""
         self.assertGreater(len(routes()), 20)
         self.assertGreater(len(spec_paths()), 20)
+        self.assertGreater(len(route_ops()), 20)
+        self.assertGreater(len(spec_ops()), 20)
 
 
 if __name__ == "__main__":
