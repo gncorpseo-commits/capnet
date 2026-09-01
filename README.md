@@ -46,6 +46,11 @@ bash scripts/demo_violations.sh   # 규칙 위반 6종을 DB가 거절하는지
 `product_demo.sh` 하나만 봐도 된다 — health → 카탈로그 → 능력만 요청(기기 주소 없음) →
 결과·배정 증적 → `GET /v1/ops/work-units` 까지 순서대로 찍는다. **`.ps1` 판은 없다.**
 
+**사람이 쓰는 입구까지 보려면** `bash scripts/capreq_demo.sh` — 위 넷은 전부 Core 를 **직접**
+부른다. `capreq_demo.sh` 는 브라우저에서 하는 것과 같은 길로 간다: 문장을 쓰고 파일을 붙이면
+라우터가 능력을 고르고, 파일은 Core 를 거쳐 올라가고, 승인된 Node 에서 돌고, 증적이 남는다.
+**Ollama 와 살아 있는 스택이 필요해 위 넷과 달리 준비물이 있다.**
+
 **Windows** — 동명 `.ps1`
 
 ```powershell
@@ -149,6 +154,7 @@ AI 에이전트 스토어는 이미 많다. CapNet이 다루는 건 그 앞의 �
 | `score_n300` / `compare_ab` | n=300 채점 · paired 비교 (숫자는 STATE) |
 | `train_scratch` | EuroSAT scratch → safetensors |
 | `route_bench.py` | 라우팅을 반복해 **어디로 갔는지 센다** (수동 · Ollama 필요 · 정확도 주장 아님) |
+| **`capreq_demo.sh`** | **제품 입구 종단** — 문장 + 첨부 → 라우팅 → Core 중개 업로드 → 증적 (수동 · Ollama + 살아 있는 스택 필요). 종료 코드 **1 = 배선 · 2 = 라우팅 빗나감** |
 
 가중치가 없으면 `scripts/train_scratch.ps1`(또는 `.sh`). EuroSAT zip은 `scripts/download_eurosat.*`로 받고 저장소에 동봉하지 않는다. claim은 Core만 · `INSERT … SELECT`.
 
