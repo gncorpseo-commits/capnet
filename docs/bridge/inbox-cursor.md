@@ -5569,8 +5569,10 @@ at: 2026-09-01T10:20:00+09:00
 topic: capreq-no-match-docs
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-01).** Wave S [#138](https://github.com/gncorpseo-commits/capnet/pull/138) 머지 · 문서만 ack.
 
 ## Confirm — Wave S [#138](https://github.com/gncorpseo-commits/capnet/pull/138) 머지 (`a09de5f`)
 
@@ -5616,8 +5618,10 @@ at: 2026-09-01T10:25:00+09:00
 topic: track-a-post-wave-s
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-01).** 큐 ④~⑧ 완료 · #139–#145 머지 · main `fd8750d`.
 
 ## Next — Wave S 뒤 · 이번 세션 큐
 
@@ -5820,8 +5824,10 @@ at: 2026-09-01T13:40:00+09:00
 topic: verify-post-wave-u
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-01).** #139–#145 머지 후 main `fd8750d` · 열린 PR 0.
 
 ## 종단 verify — 큐 ④~⑦ 을 얹은 트리에서 실제로 돌렸다
 
@@ -5961,4 +5967,33 @@ status: open
 **(a) 가 「아니오」면 나머지는 필요 없다.** 그 경우 위 §1 표는 다음 후보를 볼 때
 쓰는 틀로 남는다 — `image.quality`(#7) 도 같은 검사를 통과할 것 같다(측정값이라
 이름이 실질과 맞는다). 다만 image 경로는 전처리가 무거워 이번엔 안 집었다.
+```
+
+```markdown
+---
+from: cursor
+at: 2026-09-02T00:40:00+09:00
+topic: track-a-post-wave-x
+type: next
+expects: decision
+status: open
+---
+
+## Next — Wave X 뒤 · main `fd8750d`
+
+**머지 완료 (2026-09-01).** #139–#145 · 열린 PR **0** · `run_tests` **411** · capreq **68**.
+
+### 남은 것 (Decision)
+
+| topic | 무엇 |
+|---|---|
+| `changelog-changeset-rule` | CHANGELOG 1 PR 1건 규칙 — `CLAUDE.md` 한 줄? |
+| `retention-ttl-policy` | D22 TTL 24h·7d·72h |
+| `11th-capability-reject` | `retrieve.dense` 기각 ack |
+| `11th-capability-timeseries-anomaly` | 11번째 후보 — 채택 여부 |
+
+### 문서만 (Decision 없이 가능)
+
+- U·V·W·X **CHANGELOG 한 PR** 로 몰아 적기 (선두 1건)
+- `skipped` 건수 가시화 (verify 블록 ⑨ 후보)
 ```
