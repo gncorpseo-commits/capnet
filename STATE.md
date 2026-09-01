@@ -25,8 +25,8 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–X 완료 (2026-09-01).** main HEAD = **`fd8750d`** · **실행 능력 10종** ·
-> `run_tests` **411** · capreq **68** (건너뜀 0).
+> **Wave A–AG 완료 (2026-09-02).** main HEAD = **`905c576`** · **실행 능력 10종** ·
+> `run_tests` **453** · capreq **72** (건너뜀 0) · 열린 PR **0**.
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -70,19 +70,58 @@
 > | **W** | [#144](https://github.com/gncorpseo-commits/capnet/pull/144) | skip 사유 허가제 (V 를 포함) | `2a8d36a` |
 > | **X** | [#145](https://github.com/gncorpseo-commits/capnet/pull/145) | **`scripts/capreq_demo.sh`** — 제품 입구 종단 (W 를 포함) | **`fd8750d`** |
 > | — | [#146](https://github.com/gncorpseo-commits/capnet/pull/146) | 브리지·STATE (Wave T–X 닫기) | **`a4d47dd`** |
-> | **Y** | [#147](https://github.com/gncorpseo-commits/capnet/pull/147) | `CHANGELOG` — U·V·W·X 몰아쓰기 + 갱신일 4줄 | **PR 대기** |
-> | **Z** | [#148](https://github.com/gncorpseo-commits/capnet/pull/148) | 건너뛴 건수를 배너까지 | **PR 대기** |
-> | — | [#149](https://github.com/gncorpseo-commits/capnet/pull/149) | 브리지 — 핸드오프 전사 · 기각 블록 닫기 (코드 0) | **PR 대기** |
-> | — | [#150](https://github.com/gncorpseo-commits/capnet/pull/150) | 브리지·STATE (Wave Y·Z 닫기 · verify) | **PR 대기** |
-> | — | [#151](https://github.com/gncorpseo-commits/capnet/pull/151) | README·사용자 가이드가 `capreq_demo.sh` 를 가리키게 | **PR 대기** |
-> | — | [#152](https://github.com/gncorpseo-commits/capnet/pull/152) | `measured-claims.md` 가 손으로 센 개수를 못박고 있었다 | **PR 대기** |
-> | — | [#153](https://github.com/gncorpseo-commits/capnet/pull/153) | 브리지 — 보존 TTL 사실 넷 (숫자 확정 0) | **PR 대기** |
-> | **AA** | [#154](https://github.com/gncorpseo-commits/capnet/pull/154) | **빈 파일을 붙이면 데모 데이터가 대신 돌았다** | **PR 대기** |
-> | — | [#155](https://github.com/gncorpseo-commits/capnet/pull/155) | 브리지 — 조용한 잘림 Proposal (구현 0) | **PR 대기** |
-> | **AB** | [#156](https://github.com/gncorpseo-commits/capnet/pull/156) | **Core 의 로그가 한 줄도 안 나오고 있었다** | **PR 대기** |
-> | — | [#157](https://github.com/gncorpseo-commits/capnet/pull/157) | 브리지 — 2회차 verify | **PR 대기** |
-> | **AC** | [#158](https://github.com/gncorpseo-commits/capnet/pull/158) | gate 폐기가 관측 절반을 빠뜨렸다 | **PR 대기** |
-> | **AD** | [#159](https://github.com/gncorpseo-commits/capnet/pull/159) | **Core 와 끊긴 Node 가 한가한 Node 처럼 보였다** | **PR 대기** |
+> | **Y** | [#147](https://github.com/gncorpseo-commits/capnet/pull/147) | `CHANGELOG` — U·V·W·X 몰아쓰기 + 갱신일 4줄 | `74d47b9` |
+> | **Z** | [#148](https://github.com/gncorpseo-commits/capnet/pull/148) | 건너뛴 건수를 배너까지 | `592a09e` |
+> | — | [#149](https://github.com/gncorpseo-commits/capnet/pull/149) | 브리지 — 핸드오프 전사 · 기각 블록 닫기 (코드 0) | `3bb0245` |
+> | — | [#150](https://github.com/gncorpseo-commits/capnet/pull/150) | 브리지·STATE (Wave Y·Z 닫기 · verify) | **닫음** (#166·#173 대체) |
+> | — | [#151](https://github.com/gncorpseo-commits/capnet/pull/151) | README·사용자 가이드가 `capreq_demo.sh` 를 가리키게 | `707eaaa` |
+> | — | [#152](https://github.com/gncorpseo-commits/capnet/pull/152) | `measured-claims.md` 가 손으로 센 개수를 못박고 있었다 | `45a62e8` |
+> | — | [#153](https://github.com/gncorpseo-commits/capnet/pull/153) | 브리지 — 보존 TTL 사실 넷 (숫자 확정 0) | `efc747f` |
+> | **AA** | [#154](https://github.com/gncorpseo-commits/capnet/pull/154) | **빈 파일을 붙이면 데모 데이터가 대신 돌았다** | `39477d9` |
+> | — | [#155](https://github.com/gncorpseo-commits/capnet/pull/155) | 브리지 — 조용한 잘림 Proposal (구현 0) | `a95f8fc` |
+> | **AB** | [#156](https://github.com/gncorpseo-commits/capnet/pull/156) | **Core 의 로그가 한 줄도 안 나오고 있었다** | `6919557` |
+> | — | [#157](https://github.com/gncorpseo-commits/capnet/pull/157) | 브리지 — 2회차 verify | **닫음** (#163 대체) |
+> | **AC** | [#158](https://github.com/gncorpseo-commits/capnet/pull/158) | gate 폐기가 관측 절반을 빠뜨렸다 | `ddbd12b` |
+> | **AD** | [#159](https://github.com/gncorpseo-commits/capnet/pull/159) | **Core 와 끊긴 Node 가 한가한 Node 처럼 보였다** | `780e327` |
+> | **AE** | [#161](https://github.com/gncorpseo-commits/capnet/pull/161) | **카탈로그를 한 번 못 받으면 영영 안 받았다** | `36e586b` |
+> | — | [#162](https://github.com/gncorpseo-commits/capnet/pull/162) | 빈 첨부 회귀를 종단 스크립트에 | `9de5245` |
+> | — | [#163](https://github.com/gncorpseo-commits/capnet/pull/163)–[#166](https://github.com/gncorpseo-commits/capnet/pull/166) | 브리지 (gate_run · D27 · 3회차 verify · 실패 이유) | `59be37b`·`be352b1`·`fbe0fec` |
+> | — | [#167](https://github.com/gncorpseo-commits/capnet/pull/167)–[#170](https://github.com/gncorpseo-commits/capnet/pull/170) | 문서 (INDEX 자리 · capreq README · 러너 가드 · 머지 안내) | `1a10557`·`f738c0e`·`905c576` |
+> | **AF** | [#171](https://github.com/gncorpseo-commits/capnet/pull/171) | **`pass_rate.sh` 가 규칙 가중치를 이미지 후보로 집어 죽었다** | `d5cfbc9` |
+> | **AG** | [#172](https://github.com/gncorpseo-commits/capnet/pull/172) | **`regate.sh` 가 폐기된 증서를 재게이트 대상으로 집었다** | `3f3c435` |
+
+> **4회차 (2026-09-02) — 실제 결함 일곱.** 스물여섯을 `a4d47dd` 위에 전부 머지한
+> 트리에서 쟀다: 충돌 0 · `run_tests` **453** · capreq **72 (건너뜀 0)** ·
+> `check_submission` 통과 · `check_input_purge` **17/17** · 데모 넷 **exit 0** ·
+> 열린 PR **전부 CI 3/3 SUCCESS**.
+>
+> **일곱 다 한 문장이다 — 「못 했다」를 「없다」·「됐다」로 뭉뚱그린다.**
+>
+> | # | 무엇 |
+> |---|---|
+> | #154 | 빈 파일 첨부 → 데모 데이터가 대신 돌았다 (`input_id=null` 인데 `label=annual_crop`) |
+> | #156 | Core 의 로그가 한 줄도 안 나왔다 (`grep -c "gc:"` → 0) |
+> | #158 | gate 폐기가 「같은 규약」이라 적고 관측 절반을 빠뜨렸다 |
+> | #159 | Core 와 끊긴 Node 가 한가한 Node 처럼 보였다 |
+> | #161 | 카탈로그를 한 번 못 받으면 영영 안 받았다 (`[]` 는 JS 에서 truthy) |
+> | #171 | `pass_rate.sh` 가 규칙 가중치를 이미지 후보로 집어 죽었다 |
+> | **#172** | **`regate.sh` 가 폐기된 증서를 재게이트 대상으로 집었다** |
+>
+> **#172 가 가장 무겁다.** 폐기된 것을 재게이트하면 `UPSERT_AC_PASSED` 가
+> `gate_run_id` 를 옮겨 **폐기가 되돌려질 수 있다.** 안 터진 것은 Node 에 그 가중치가
+> 없어 건너뛰었기 때문 — **우연이지 방어가 아니었다.** 폐기는 안전 주장 중 하나다.
+>
+> **게이트 사슬은 무회귀다** — `demo.sh` `acc=0.8500 f1=0.8344` · `sanity.sh` 바닥 셋
+> FAILED · `proof_ab.sh` AGREE · `pass_rate.sh` 11/16 · `regate.sh` 대상 없음.
+> 앞선 verify 표 셋에 이것들이 빠져 있어서 이번에 채웠다.
+>
+> **머지 완료 (2026-09-02).** #147–#178(닫음 4) · 열린 PR **0** · main **`905c576`**.
+> 브리지 `verify-round4-and-merge-guide-v2` 가 정본이었다.
+>
+> **열린 Decision 일곱:** `11th-capability-timeseries-anomaly` ·
+> `changelog-changeset-rule`(대가가 **네 번째로** 실측됐다 — 스물여섯 중 하나만 썼다) ·
+> `retention-ttl-policy`(+evidence) · `silent-truncation` · `gate-run-stuck-running` ·
+> `failure-reason-not-surfaced` · Next.
 
 > **2회차 (2026-09-02) — 실제 결함 넷.** 열세 PR 을 `a4d47dd` 위에 전부 머지한 트리에서
 > 쟀다 — 충돌 0 · `run_tests` **440** · capreq **72 (건너뜀 0)** ·
