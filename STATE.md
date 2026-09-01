@@ -73,6 +73,41 @@
 > | **Y** | [#147](https://github.com/gncorpseo-commits/capnet/pull/147) | `CHANGELOG` — U·V·W·X 몰아쓰기 + 갱신일 4줄 | **PR 대기** |
 > | **Z** | [#148](https://github.com/gncorpseo-commits/capnet/pull/148) | 건너뛴 건수를 배너까지 | **PR 대기** |
 > | — | [#149](https://github.com/gncorpseo-commits/capnet/pull/149) | 브리지 — 핸드오프 전사 · 기각 블록 닫기 (코드 0) | **PR 대기** |
+> | — | [#150](https://github.com/gncorpseo-commits/capnet/pull/150) | 브리지·STATE (Wave Y·Z 닫기 · verify) | **PR 대기** |
+> | — | [#151](https://github.com/gncorpseo-commits/capnet/pull/151) | README·사용자 가이드가 `capreq_demo.sh` 를 가리키게 | **PR 대기** |
+> | — | [#152](https://github.com/gncorpseo-commits/capnet/pull/152) | `measured-claims.md` 가 손으로 센 개수를 못박고 있었다 | **PR 대기** |
+> | — | [#153](https://github.com/gncorpseo-commits/capnet/pull/153) | 브리지 — 보존 TTL 사실 넷 (숫자 확정 0) | **PR 대기** |
+> | **AA** | [#154](https://github.com/gncorpseo-commits/capnet/pull/154) | **빈 파일을 붙이면 데모 데이터가 대신 돌았다** | **PR 대기** |
+> | — | [#155](https://github.com/gncorpseo-commits/capnet/pull/155) | 브리지 — 조용한 잘림 Proposal (구현 0) | **PR 대기** |
+> | **AB** | [#156](https://github.com/gncorpseo-commits/capnet/pull/156) | **Core 의 로그가 한 줄도 안 나오고 있었다** | **PR 대기** |
+> | — | [#157](https://github.com/gncorpseo-commits/capnet/pull/157) | 브리지 — 2회차 verify | **PR 대기** |
+> | **AC** | [#158](https://github.com/gncorpseo-commits/capnet/pull/158) | gate 폐기가 관측 절반을 빠뜨렸다 | **PR 대기** |
+> | **AD** | [#159](https://github.com/gncorpseo-commits/capnet/pull/159) | **Core 와 끊긴 Node 가 한가한 Node 처럼 보였다** | **PR 대기** |
+
+> **2회차 (2026-09-02) — 실제 결함 넷.** 열세 PR 을 `a4d47dd` 위에 전부 머지한 트리에서
+> 쟀다 — 충돌 0 · `run_tests` **440** · capreq **72 (건너뜀 0)** ·
+> `check_submission` 통과 · `check_input_purge` **17/17** · 데모 넷 **exit 0**.
+>
+> **넷 다 같은 모양이다 — 「초록으로 끝나는데 실은 안 보고 있었다」.**
+>
+> | # | 무엇 | 어떻게 드러났나 |
+> |---|---|---|
+> | #154 | 빈 파일을 붙이면 **데모 데이터가 대신 돌았다** | `input_id=null` 인데 `label=annual_crop` · `confidence=0.99` |
+> | #156 | **Core 의 로그가 한 줄도 안 나왔다** | `docker compose logs core \| grep -c "gc:"` → **0** |
+> | #158 | gate 폐기가 「complete.py 와 같은 규약」이라 적고 **관측 절반을 빠뜨렸다** | `except: pass` — 로거조차 없었다 |
+> | #159 | **Core 와 끊긴 Node 가 한가한 Node 처럼 보였다** | `except: return []` = 「일이 없다」와 같은 값 |
+>
+> **#156 이 가장 넓다.** `gc: purged=N freed=N bytes` 는 **D22 보존 정책이 도는 유일한
+> 증거**이고, `gc: pass failed`·`worker: claim failed` 는 **예외 경로**다 — 둘 다
+> 「죽지 않는다」로 삼키고 로그로만 알리는데 그 로그가 없었다.
+>
+> **되짚은 것.** #156 을 찾는 도중 「exhausted task 가 QUEUED 로 멈췄다」고 잘못 봤다.
+> GC 주기가 300초라 안 돈 것이었고, 로그가 없어서 멈춘 것처럼 보였다.
+> **틀린 진단이 진짜 결함을 가리켰다.**
+>
+> **Decision 넷이 열려 있다:** `11th-capability-timeseries-anomaly` ·
+> `changelog-changeset-rule`(이번에 **대가가 또 실측됐다** — PR 열셋 중 **한 개만**
+> CHANGELOG 를 쓸 수 있었다) · `retention-ttl-policy`(+evidence) · `silent-truncation`.
 
 > **Wave Y·Z (2026-09-02) · PR 대기.** 셋을 `a4d47dd` 위에 전부 머지한 트리에서 쟀다 —
 > 충돌 0 · `run_tests` **420** · capreq **68 (건너뜀 0)** · `check_submission` 통과 ·
