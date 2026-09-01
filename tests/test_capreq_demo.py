@@ -76,11 +76,38 @@ class TestScriptShape(unittest.TestCase):
 
 
 class TestDocsPointAtIt(unittest.TestCase):
+    """**세 곳이 가리켜야 한다.** 만든 사람 말고는 아무도 이 도구를 모른다.
+
+    실제로 그랬다 — #145 가 머지된 뒤에도 `capreq_demo.sh` 는 `testing.md` **한 곳**에만
+    있었다. `README` 의 실행 스크립트 표에도, 사용자 가이드 §1.5 에도 없었다.
+    **읽는 사람이 셋 다 다르다** — 검사하는 사람 · 저장소를 처음 여는 사람 · 제품을 쓰는 사람.
+
+    실패 메시지에 문서 전문을 쏟지 않는다 — 읽을 수 없는 출력은 검사를 죽인다.
+    """
+
+    TOOL = "scripts/capreq_demo.sh"
+
+    def points(self, rel: str) -> bool:
+        return self.TOOL in (ROOT / rel).read_text(encoding="utf-8")
+
     def test_testing_guide_lists_it(self) -> None:
-        """CI 밖 도구는 문서에 적히지 않으면 아무도 안 돌린다 (§4.6)."""
-        guide = (ROOT / "docs" / "guide" / "testing.md").read_text(encoding="utf-8")
-        # 실패 메시지에 문서 전문을 쏟지 않는다 — 읽을 수 없는 출력은 검사를 죽인다.
-        self.assertTrue("scripts/capreq_demo.sh" in guide, "testing.md §4.6 이 이 도구를 안 가리킨다")
+        """CI 밖 도구는 검증 문서에 적히지 않으면 아무도 안 돌린다 (§4.6)."""
+        self.assertTrue(self.points("docs/guide/testing.md"), "testing.md §4.6 이 안 가리킨다")
+
+    def test_readme_lists_it(self) -> None:
+        """저장소를 처음 여는 사람은 `README` 의 스크립트 표를 본다."""
+        self.assertTrue(self.points("README.md"), "README 실행 스크립트 표에 없다")
+
+    def test_user_guide_lists_it(self) -> None:
+        """제품을 쓰는 사람은 `product_demo.sh` 옆에서 이것을 찾는다."""
+        self.assertTrue(
+            self.points("docs/guide/user-guide-ko.md"), "user-guide-ko.md §1.5 에 없다"
+        )
+
+    def test_user_guide_says_routing_is_not_a_score(self) -> None:
+        """**같은 문장이 매번 같은 능력으로 가지 않는다.** 그걸 안 적으면 성적으로 읽힌다."""
+        guide = (ROOT / "docs" / "guide" / "user-guide-ko.md").read_text(encoding="utf-8")
+        self.assertIn("매번 같지 않습니다", guide, "라우팅이 흔들린다는 것을 안 적었다")
 
 
 class TestProbeActuallyReadsTheScript(unittest.TestCase):
