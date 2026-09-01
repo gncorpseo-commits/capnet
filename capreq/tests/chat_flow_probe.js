@@ -267,13 +267,27 @@ async function main() {
     check(!bubble.textContent.includes("지금 할 수 있는 일"), "매칭되면 목록을 안 보여 준다");
   }
   {
-    // 카탈로그를 못 받아도 화면이 무너지지 않는다.
+    // 카탈로그를 못 받아도 화면이 무너지지 않는다 — 그리고 **못 받았다고 말한다.**
     knownCapsReset();
     routes["/api/capabilities"] = () => Promise.reject(new Error("Core 없음"));
     chatPost({ ok: false, reason: "확신 부족", capability_code: null, capability_version: null });
     const bubble = await submit({ message: "?????" });
     check(bubble.textContent.includes("(미매칭)"), "카탈로그를 못 받아도 미매칭은 그린다");
-    check(!bubble.textContent.includes("지금 할 수 있는 일"), "없으면 목록 줄을 안 만든다");
+    check(!bubble.textContent.includes("지금 할 수 있는 일"), "0가지라고 말하지 않는다");
+    check(bubble.textContent.includes("불러오지 못했"),
+          "**못 받았다고 말한다** — 아무것도 안 그리면 「할 수 있는 일이 없다」로 읽힌다");
+  }
+  {
+    // **실패를 캐시하지 않는다.** `[]` 는 JS 에서 truthy 라, 예전에는 한 번 실패하면
+    // 새로 고칠 때까지 영영 다시 안 받았다.
+    calls.length = 0;
+    routes["/api/capabilities"] = () => reply({ items: [
+      { code: "text.ner", version: 1, name: "structural text ner", description: "타입 span" },
+    ] });
+    chatPost({ ok: false, reason: "또 모름", capability_code: null, capability_version: null });
+    const bubble = await submit({ message: "?????" });
+    check(calls.some((c) => c.url === "/api/capabilities"), "**실패한 뒤에는 다시 받아 본다**");
+    check(bubble.textContent.includes("지금 할 수 있는 일 1가지"), "복구되면 그때는 그린다");
   }
 
   console.log("\n===== 결과: 통과 " + passed + " · 실패 " + failed + " =====");

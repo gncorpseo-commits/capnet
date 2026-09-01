@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from typing import Any
 
 import psycopg
 from psycopg import errors as pg_errors
+
+logger = logging.getLogger(__name__)
 
 START_SQL = """
 INSERT INTO gate_run (
@@ -524,7 +527,13 @@ def revoke_capability(
         )
     except pg_errors.Error:
         # 증적 보조 기록 실패가 폐기 자체를 뒤집지 않는다 (complete.py 와 같은 규약).
-        pass
+        # **그 규약의 나머지 절반은 「관측 공백을 남긴다」이다** — `complete.py` 쪽은
+        # 호출부에서 `logger.warning(..., exc_info=True)` 를 남기는데 여기만 조용했다.
+        # 폐기는 됐는데 그 사실이 `audit_log` 에 없는 상태이므로, 최소한 로그에는 남긴다.
+        logger.warning(
+            "audit_log insert failed for capability revoke; revoke itself already committed",
+            exc_info=True,
+        )
     return out
 
 
