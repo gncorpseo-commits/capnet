@@ -5419,8 +5419,12 @@ at: 2026-09-01T02:45:00+09:00
 topic: no-match-dead-end
 type: confirm
 expects: ack
-status: open
+status: done
 ---
+
+> **ack · 닫음 (2026-09-01).** #134 `82720e8`. §5 두 갈래 accept —
+> 미매칭 시 카탈로그 표시 OK · **「고르게 권하지 않는다」는 선 유지**(추천·정렬을 넣으려면
+> **그때** Decision). **새 제품 주장 0** 확인.
 
 ## Confirm — Wave Q [#134](https://github.com/gncorpseo-commits/capnet/pull/134) · **이번 야간의 첫 제품 개선**
 
@@ -5475,4 +5479,82 @@ status: open
 
 - 미매칭 화면에 카탈로그를 보여 주는 것 (새 주장은 아니지만 **화면에 없던 것**이다)
 - 「고르라고 권하지 않는다」는 선 — 추천·정렬을 넣자는 판단이면 말해 달라
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T03:05:00+09:00
+topic: track-a-post-wave-r
+type: next
+expects: decision
+status: open
+---
+
+## Next — Wave R 뒤 · **머지 뒤에야 보이는 것이 있다**
+
+`main` = **`f1dd4c8`** · 열린 PR 0 · `run_tests` **392** · capreq **66** ·
+`check_submission` **28/28** · `check_input_purge` **17/17** · **실행 능력 10종.**
+
+### Wave M~R 이 전부 들어갔다
+
+| Wave | 무엇 | main |
+|---|---|---|
+| M | `chat.html` 렌더러 + 흐름 프로브 (**npm 0**) | `0b4f38c` |
+| N | `route_bench` 가 10종을 덮게 (`IMPLEMENTED` 파생) | `074871c` |
+| O | `check_input_purge` (D22 선행 조건) | `834280c` |
+| P | `testing.md` §4.6 | `10eba27` |
+| Q | 미매칭 시 카탈로그 표시 | `82720e8` |
+| — | 브리지·STATE | `e0df548` |
+| **R** | **`CHANGELOG` 중복 되돌림 + 무결성 검사** | **`f1dd4c8`** |
+
+### 이번에 배운 것 — **「합쳐 봤다」와 「머지된 것을 봤다」는 다르다**
+
+야간에 PR 다섯을 동시에 열면서 `CHANGELOG` 충돌 셋을 **미리 알리고 해결법까지 적었다.**
+로컬에서 다섯을 합쳐 `run_tests` 388 을 확인하기도 했다. **그런데 머지된 결과는 달랐다** —
+파일 중간에 두 번째 `# Changelog` 헤더가 생기고 Wave M·N·O 가 **159줄 되풀이**됐고,
+**CI 는 초록이었다**(아무도 그 파일의 **모양**을 안 봤다).
+
+`git pull` 의 diffstat(`7601 +/-`)이 이상해서 알아챘다. #136 이 되돌리고
+`test_changelog_integrity.py` 로 못 박았다.
+
+**교훈 둘:**
+
+1. **머지 전 시뮬레이션은 머지 결과의 증거가 아니다.** 「합쳐서 OK」는 그때의 내 해결안이
+   OK 였다는 뜻이지, 남이 푼 결과가 OK 라는 뜻이 아니다
+2. **동시에 같은 줄을 건드리는 PR 을 여러 개 열지 않는다.** 충돌을 잘 설명하는 것보다
+   **충돌을 만들지 않는 것**이 낫다 — 이번 세션부터 **CHANGELOG 선두를 건드리는 PR 은 한 번에 하나**
+
+### 이번 세션 큐 (master 지시)
+
+| # | 무엇 | 상태 |
+|---|---|---|
+| 1 | **Step 0** — Wave Q·R 닫기 · `STATE.md` `f1dd4c8` (**CHANGELOG 손대지 않음**) | 이 PR |
+| 2 | **Wave S** — capreq 미매칭 UX **문서만** | 다음 |
+| 3 | (선택) 하나만 | 시간 남으면 |
+
+**머지 순서: Step 0 → Wave S.** 둘은 **파일이 겹치지 않는다** — Step 0 은 `CHANGELOG` 를
+건드리지 않고, Wave S 는 브리지·`STATE` 를 건드리지 않는다. **이번엔 그렇게 갈랐다.**
+
+### Decision 없이 시작하지 않는 것 (그대로)
+
+카탈로그 +1(11번째 · `retrieve.dense` **접음**) · D4 · `tool.*` · LLM-as-Node ·
+holdout 튜닝 · 정책 숫자(24h·7d·72h) · `CLAUDE.md` changeset 규칙 · `route_bench` CI ·
+Playwright npm.
+
+### 종단 한 번 (2026-09-01 · 이 세션)
+
+**Step 0 + Wave S 를 합친 상태**에서 돌렸다 — 충돌 0.
+
+| 무엇 | 결과 |
+|---|---|
+| `run_tests` (합친 상태) | **392** OK |
+| `scripts/product_demo.sh` | **exit 0** |
+| `scripts/pii_demo.sh` | **exit 0** |
+
+**숫자를 새로 적지 않는다** — 통과/실패만이다 (`measured-claims.md`).
+
+### 여전히 못 보는 것
+
+실제 브라우저의 **CSS·레이아웃**, 파일 선택기의 **OS 상호작용**. **본 것만 말한다.**
 ```
