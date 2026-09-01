@@ -69,6 +69,33 @@
 > | **V** | [#143](https://github.com/gncorpseo-commits/capnet/pull/143) | `testing.md` ↔ CI 의존성 드리프트 | `3dbd82a` |
 > | **W** | [#144](https://github.com/gncorpseo-commits/capnet/pull/144) | skip 사유 허가제 (V 를 포함) | `2a8d36a` |
 > | **X** | [#145](https://github.com/gncorpseo-commits/capnet/pull/145) | **`scripts/capreq_demo.sh`** — 제품 입구 종단 (W 를 포함) | **`fd8750d`** |
+> | — | [#146](https://github.com/gncorpseo-commits/capnet/pull/146) | 브리지·STATE (Wave T–X 닫기) | **`a4d47dd`** |
+> | **Y** | [#147](https://github.com/gncorpseo-commits/capnet/pull/147) | `CHANGELOG` — U·V·W·X 몰아쓰기 + 갱신일 4줄 | **PR 대기** |
+> | **Z** | [#148](https://github.com/gncorpseo-commits/capnet/pull/148) | 건너뛴 건수를 배너까지 | **PR 대기** |
+> | — | [#149](https://github.com/gncorpseo-commits/capnet/pull/149) | 브리지 — 핸드오프 전사 · 기각 블록 닫기 (코드 0) | **PR 대기** |
+
+> **Wave Y·Z (2026-09-02) · PR 대기.** 셋을 `a4d47dd` 위에 전부 머지한 트리에서 쟀다 —
+> 충돌 0 · `run_tests` **420** · capreq **68 (건너뜀 0)** · `check_submission` 통과 ·
+> `check_input_purge` **17/17** · `product_demo`·`pii_demo`·`demo_violations`·`capreq_demo`
+> **exit 0**. 실패 0.
+>
+> **Y 는 규율이 남긴 빚을 갚은 것이다.** `CHANGELOG` 선두를 한 PR 만 건드리는 규율(#136
+> 교훈) 때문에 U·V·W·X 가 **항목 없이** 머지됐다. 규율은 통했지만(충돌 0) **뒤따르는
+> Wave 가 기록을 못 쓴다**는 대가가 실측으로 드러났고, 그 값을
+> 브리지 `changelog-changeset-rule` Decision 에 얹었다.
+>
+> **갱신일 네 줄은 검사가 요구했다.** `test_doc_counts.TestDocDatesAreNotAncient` 가
+> STATE·런북·카탈로그·체크리스트의 갱신일을 최신 `CHANGELOG` 이상으로 요구한다.
+> **날짜를 소급해 피하지 않았다** — #142–#145 는 실제로 `2026-09-02 00:39` 에 머지됐다.
+> 셋을 훑어 낡은 줄이 없음을 확인하고 날짜만 맞췄다.
+>
+> **Z 는 #144 의 짝이다.** #144 가 skip **사유**를 허가제로 만들었고, Z 는 **건수**를
+> 배너까지 끌어올린다. 「`OK (skipped=7)` 은 초록이고 사람은 마지막 줄을 본다」가
+> 실제로 6건을 가렸던 것에 대한 나머지 절반이다.
+>
+> **Decision 대기 (구현 0):** `11th-capability-timeseries-anomaly` (채택·문턱·이름) ·
+> `changelog-changeset-rule` · `retention-ttl-policy`.
+> `retrieve.dense` 기각은 **ack 수령 — 유지**.
 >
 > **머지 (2026-09-01).** #139–#145 일곱 PR · 열린 PR **0**. #139↔#141 은 `inbox-cursor.md`
 > 끝에서 충돌 — 머지 전 해결. `CHANGELOG` 선두는 #140 만 (#136 교훈 · 충돌 0).

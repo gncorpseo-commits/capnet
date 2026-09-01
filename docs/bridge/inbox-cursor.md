@@ -5980,8 +5980,11 @@ at: 2026-09-02T00:40:00+09:00
 topic: track-a-post-wave-x
 type: next
 expects: decision
-status: open
+status: done
 ---
+
+> **닫음 (2026-09-02).** 큐 ①~⑥ 을 그대로 갔다 — Wave Y #147 · Wave Z #148 ·
+> 브리지 ack #149 · 이 Step 0. **④ 는 열어 둔 것이 결과다** (`timeseries.anomaly` 구현 0).
 
 ## Next — Wave X 뒤 · main `fd8750d`
 
@@ -6000,4 +6003,201 @@ status: open
 
 - U·V·W·X **CHANGELOG 한 PR** 로 몰아 적기 (선두 1건)
 - `skipped` 건수 가시화 (verify 블록 ⑨ 후보)
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T02:30:00+09:00
+topic: verify-post-wave-y-z
+type: confirm
+expects: ack
+status: open
+---
+
+## 종단 verify — Wave Y·Z·ack 을 얹은 트리에서
+
+세 PR(#147·#148·#149)을 `main`(`a4d47dd`) 위에 **전부 머지한 트리**에서 쟀다.
+
+| 무엇 | 결과 |
+|---|---|
+| 세 PR 머지 | **충돌 0** |
+| `bash scripts/run_tests.sh` | **420 OK** (건너뜀 7) |
+| `capreq/tests` (`node` + `capreq[server]`) | **68 OK · 건너뜀 0** |
+| `python3 scripts/check_submission.py` | **통과** |
+| `tests/test_changelog_integrity.py` | **4 OK** |
+| `tests/integration/check_input_purge.py` | **17/17** |
+| `scripts/product_demo.sh` | **exit 0** |
+| `scripts/pii_demo.sh` | **exit 0** |
+| `scripts/demo_violations.sh` | **exit 0** |
+| `scripts/capreq_demo.sh` | **exit 0** |
+
+**실패 0.**
+
+### 배너가 실제로 달라졌다 (Wave Z)
+
+```text
+전부 통과.
+  다만 7건은 **건너뛰었다** — 그 환경에 없는 것이 있다는 뜻이다.
+  사유 목록: tests/test_skip_reasons.py 의 ALLOWED · 전부 돌리는 법: docs/guide/testing.md §2·§4.6
+```
+
+이전에는 마지막 줄이 「전부 통과.」 하나였다. 건너뛴 7건은 전부 `psycopg 없음` 이다.
+
+### `capreq_demo` 가 문서대로 흔들렸다
+
+이번 실행은 `text.ner@1` 로 갔다. **바로 앞 실행(#145 작성 시)은 `text.extract@1` 이었다** —
+같은 문장, 같은 첨부다. 스크립트가 이것을 실패로 세지 않는 것이 의도이고,
+그 설계가 실제 상황에서 값을 했다.
+
+**정확도를 주장하지 않는다** — 이 표는 전부 통과/실패다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T02:40:00+09:00
+topic: track-a-post-wave-y-z
+type: next
+expects: decision
+status: open
+---
+
+## Next — Wave Y·Z 뒤
+
+`main` = **`a4d47dd`** · 열린 PR **셋** (#147 Y · #148 Z · #149 ack) + 이 Step 0.
+`run_tests` **420** (셋 다 얹은 트리) · capreq **68 (건너뜀 0)**.
+
+### 스택 관계 (머지 순서가 자유롭도록 미리 얹었다)
+
+    이 Step 0 ⊃ #147(Y) · #149(ack)
+    #148(Z) 은 독립 — 파일이 안 겹친다
+
+어느 순서로 머지해도 충돌 0 이다. 프로브로 확인했다.
+
+### 이번 회차에 **하지 않은 것**과 이유
+
+| 무엇 | 왜 |
+|---|---|
+| `timeseries.anomaly` 구현 | **(a) 채택 Decision 대기.** 핸드오프 §8 이 명시 |
+| `retrieve.dense` | ack 받은 기각 — 유지 |
+| 라우팅 정확도 새 숫자 | 핸드오프 §8 |
+| `test_doc_counts` 날짜 검사 완화 | **검사를 임의로 약화시키지 않는다.** 마찰만 보고했다 |
+
+### 열린 Decision 셋 — 값이 큰 순서로
+
+1. **`11th-capability-timeseries-anomaly`** — (a) 채택 (b) 문턱 (c) 이름.
+   **(a) 가 「아니오」면 나머지는 필요 없다.** 다음 후보로 `image.quality`(#7) 를
+   같은 이름 검사에 걸어 볼 수 있다고 적어 뒀다.
+2. **`changelog-changeset-rule`** — 이번 회차에 **대가가 실측됐다** (U·V·W·X 가 기록
+   없이 머지 → Wave Y 로 되찾음). 규율을 `CLAUDE.md` 에 올릴지, 다른 모양으로 바꿀지.
+3. **`retention-ttl-policy`** — 24h·7d·72h. 검사(`check_input_purge` 17/17)는 이미 있고
+   **숫자만 미확정**이다.
+
+### 다음 세션 후보 (Decision 없이 되는 것)
+
+| # | 무엇 | 왜 지금인가 |
+|---|---|---|
+| 1 | `README`·`user-guide` 가 `capreq_demo.sh` 를 가리키는가 | 새 도구가 문서에 없으면 아무도 안 돌린다 |
+| 2 | `measured-claims.md` 예시 드리프트 | 「능력 9종 · 2026-08-31」 예시가 낡았는지 |
+| 3 | `retention-ttl-policy` inbox **보강만** | 숫자 확정 없이 근거만 |
+
+### 여전히 못 보는 것 (그대로)
+
+실제 브라우저의 **CSS·레이아웃**, 파일 선택기의 **OS 상호작용**.
+Playwright 는 새 의존성이라 안 들였다 — **본 것만 말한다.**
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T03:10:00+09:00
+topic: retention-ttl-policy-evidence
+type: proposal
+expects: decision
+status: open
+---
+
+## 보강 — `retention-ttl-policy` 에 **사실 넷**을 더한다 (숫자 확정 없음)
+
+위 `retention-ttl-policy` 는 열려 있다. **숫자를 정하지 않았다.** 대신 Decision 을 내리는 데
+필요한 사실을 재서 붙인다. **셋 다 내 판단이 아니라 코드·DB 에서 나온 것이다.**
+
+### 사실 1 — **계약 샘플은 TTL 이 없다. 무기한이다.**
+
+`task_input_purge_due` 뷰가 이렇게 끝난다 (0013 B2):
+
+```sql
+ WHERE ti.storage_state = 'STORED'
+   -- 계약 샘플은 지우지 않는다 (B2).
+   AND NOT EXISTS (SELECT 1 FROM capability c WHERE c.sample_input_id = ti.id)
+```
+
+**「24h·7d·72h」 어디에도 안 걸린다.** 게이트가 그 바이트로 실추론해야 하니 맞는 설계다.
+문제는 **사용자 안내에 적을 때**다 — 「끝난 일의 파일은 7일 뒤 지웁니다」라고 쓰면
+**이 부분이 거짓**이 된다. 위 Proposal §3-2 가 묻는 것이 정확히 그 문장이다.
+
+### 사실 2 — 사용자가 올린 파일도 샘플이 될 수 있다
+
+`POST /v1/capabilities/{id}/sample` 은 `_require("admin", …)` 이다. **사용자가 스스로
+무기한으로 만들 수는 없다.** 그러나 관리자는 **그 능력으로 수집된 입력이면 무엇이든**
+고를 수 있고, 거기엔 사용자가 올린 것도 들어간다. 고른 순간 그 파일은 TTL 밖으로 나가고,
+**올린 사람은 그것을 모른다.**
+
+되돌릴 수는 있다 — `sample_input_id` 를 떼면 다시 대상이 된다
+(`check_input_purge` 가 그 전이를 이미 고정한다).
+
+### 사실 3 — 실측 (2026-09-02 · **개발 스택** · 재현하면 값이 다르다)
+
+```sql
+SELECT 'STORED', count(*) FROM task_input WHERE storage_state='STORED'
+UNION ALL SELECT 'PURGED', count(*) FROM task_input WHERE storage_state='PURGED'
+UNION ALL SELECT '샘플(무기한)', count(*) FROM capability WHERE sample_input_id IS NOT NULL
+UNION ALL SELECT 'due 뷰', count(*) FROM task_input_purge_due
+UNION ALL SELECT '이미 due', count(*) FROM task_input_purge_due WHERE due_at <= now();
+
+SELECT reason, count(*) FROM task_input_purge_due GROUP BY reason;
+```
+
+| | 값 |
+|---|---|
+| `task_input` 전체 | 60 |
+| `STORED` | **50** |
+| `PURGED` (바이트 지움 · 행은 남음) | 10 |
+| **계약 샘플 = 무기한** | **9** |
+| `purge_due` 뷰 | 41 (= 50 − 9 · 정확히 맞는다) |
+| 이미 `due` | 0 |
+
+`reason` 분포: `finished-7d` **39** · `orphan-24h` **2** · **`stale-72h` 0**.
+
+**이 숫자는 개발 스택의 것이고 그날그날 다르다.** 비율을 제품 주장으로 쓰지 않는다.
+여기 적는 이유는 하나다 — **셋 중 하나(`stale-72h`)가 이 데이터에서 한 번도 안 걸렸다.**
+확정하려는 세 숫자의 근거가 **고르지 않다**는 뜻이다.
+
+### 사실 4 — 되돌리기 비용은 **두 겹**이다
+
+| 무엇 | 비용 |
+|---|---|
+| 숫자만 바꾸기 | **싸다** — 정본이 뷰 하나다. 마이그레이션 한 장 (`CREATE OR REPLACE VIEW`) |
+| **사용자 안내에 적기** | **비싸다** — 적는 순간 약속이다. 줄이면 「지운다더니 더 갖고 있었다」, 늘리면 「7일이라더니 30일」 |
+
+그래서 §3 의 1·2·3 은 **같은 결정이 아니다.** 1 만 하고 2 를 미룰 수 있다.
+
+### 문구 초안 (**채택 아님** · 형태만 보이려는 것)
+
+> **파일은 언제 지워지나.** 작업이 끝나면 **7일 뒤** 파일 내용을 지웁니다.
+> 작업에 쓰이지 않은 업로드는 **24시간**, 끝나지 않은 작업의 파일은 **72시간**입니다.
+> **내용만 지우고 기록은 남깁니다** — 무엇을 언제 올렸고 어디서 돌았는지는 계속 답할 수 있습니다.
+> **예외:** 능력의 **계약 검사에 쓰이는 예시 파일**은 지우지 않습니다. 그 파일이 있어야
+> 「이 능력이 무엇을 받는지」를 다시 검증할 수 있습니다.
+
+마지막 줄이 사실 1·2 다. **그 줄 없이 적으면 안 된다.**
+
+### §3 에 넷째 질문을 더한다
+
+| # | 질문 |
+|---|---|
+| 4 | **샘플 무기한을 사용자에게 어떻게 말할까** — 위 초안처럼 예외로 적을까, 아니면 「샘플로 쓸 때 올린 사람에게 알린다」를 만들까 (후자는 **구현이 붙는다**) |
+
+**여전히 구현하지 않았다.** 숫자도, 안내 문구도, 알림도 손대지 않았다.
 ```
