@@ -5812,3 +5812,60 @@ status: open
 - `retrieve.dense`·`retrieve.rerank` 를 **당분간 후보에서 뺀다**
 - 다음 카탈로그 +1 은 **「이름이 실질과 맞는가」를 먼저 본다**
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-01T13:40:00+09:00
+topic: verify-post-wave-u
+type: confirm
+expects: ack
+status: open
+---
+
+## 종단 verify — 큐 ④~⑦ 을 얹은 트리에서 실제로 돌렸다
+
+**열린 PR 넷을 `main` 위에 전부 머지한 워크트리**에서 잰다. 하나씩 재면 「따로는 되는데
+합치면 깨지는 것」을 못 본다.
+
+| 무엇 | 결과 |
+|---|---|
+| 네 PR 머지 (#139·#140·#141·#142) | **충돌 0** · 충돌 표시 0 |
+| `bash scripts/run_tests.sh` | **394 OK** (skipped=7) |
+| `capreq/tests` (`node` · `capreq[server]`) | **68 OK** · **건너뜀 0** |
+| `python3 scripts/check_submission.py` | **29/29** |
+| `bash scripts/product_demo.sh` | **exit 0** — 능력 8종 · 관측 ms 기록됨 |
+| `bash scripts/pii_demo.sh` | **exit 0** — assignment SUCCEEDED · 경계(team→team · M≤M) 찍힘 |
+| `bash scripts/demo_violations.sh` | **exit 0** — REJECTED 6종 |
+| `tests/integration/check_input_purge.py` | **17/17** |
+
+**실패 0.**
+
+### 머지 충돌 하나를 미리 풀었다
+
+첫 프로브에서 **#139 ↔ #141 이 `inbox-cursor.md` 끝에서 충돌**했다 (둘 다 블록을 append).
+어느 쪽이 먼저 머지되든 나머지가 터진다. **둘 다 내가 연 PR 이라 사람 손에 넘기지 않고**
+#141 을 #139 브랜치에 넣어 시간순으로 정리했다 (`2633c03` 뒤 머지 커밋).
+→ 지금은 **어느 순서로 머지해도 깨끗하다.**
+
+### 이번에 드러난 것 — 검사가 조용히 줄어 있었다
+
+세션 도중 환경이 바뀌었다 (python 3.13 → **3.14** · `node` 없음 · `httpx`/`fastapi` 없음).
+그래서 `capreq` 가 **50 ran / 3 error / 6 skipped** 로 돌고 있었다. 숫자만 보면 「돌았다」다.
+
+- `node` 를 유저스페이스로 복구 (`~/.local/node` · v22.14.0) → DOM·흐름 프로브 **6건이 다시 돈다**
+- `capreq[server]` 를 제대로 설치 → 66 → **68**
+
+중간에 `python-multipart` 없음으로 3건이 실패했는데, **제품 결함이 아니라 내 설치 누락**이었다
+(`pyproject.toml` 의 `server` extra 에 이미 선언돼 있다). 그렇게 적어 둔다.
+
+**남는 교훈:** `skipped` 는 통과가 아니다. 지금 `run_tests` 도 7건을 건너뛴다.
+`unit` 잡이 「설치 없음」을 지키려고 그러는 것이라 그 자체는 의도지만,
+**무엇이 건너뛰어졌는지 세는 줄이 어디에도 없다.** ⑨ 후보로 둔다.
+
+### ⑦ Wave U 는 스펙을 안 고쳤다
+
+경로 드리프트가 **이미 0** 이었다 (라우트 46 · 공개 38 · openapi 39 · 차집합 없음).
+고친 것은 **검사가 보는 축**이다 — 경로 → `(메서드, 경로)`.
+`openapi.yaml` 두 사본은 한 글자도 안 바뀌었다. 뮤테이션 2종으로 물리는 것을 확인했다.
+```
