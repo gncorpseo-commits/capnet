@@ -7744,6 +7744,7 @@ status: open
 | **#187** | 방 검사 둘도 **0건이면 「전부 재현된다」** 였다 | 결함 · #186 위 |
 | **#189** | **모르는 모달리티는 데모 이미지로 떨어졌다** — 기본값을 뒤집는다 | 결함 · #187 위 |
 | **#190** | **안 푼 머지가 초록이었다** — 충돌 마커를 문서에서 본다 | 결함 · #189 위 |
+| **#191** | **실행기가 없는 모달리티는 이미지 분류기로 떨어졌다** | 결함 · #190 위 |
 | — | **#188** (이 PR) — Step 0 · 브리지 (코드 0) | 문서 |
 
 **넷이 6회차의 연장이지만 결이 갈린다:**
@@ -7754,6 +7755,7 @@ status: open
 | #186 | **깨진 입력** — `["label", 5]` 가 `[]` 로 뭉개져 「선언 안 함」과 구분이 사라졌다 |
 | #189 | **모르는 값** — 포함식이라 기본값이 「데모 데이터로 떨어진다」였다 |
 | #190 | **안 푼 머지** — 충돌 마커가 남은 문서로도 전부 초록이었다 |
+| #191 | **모르는 값 (실행기 쪽)** — `else` 가 이미지 분류기라 새 모달리티가 그리로 |
 
 **#186·#189 는 0건이 아니다.** 6회차가 「0을 없다로 뭉갠다」였다면 이번은
 **「모르는 것·깨진 것을 안전한 쪽으로 뭉갠다」**다. 같은 뿌리의 다른 가지다.
@@ -7783,6 +7785,11 @@ status: open
 | 손으로 적은 모달리티 목록 (`main._run`) | ❌ **포함식이라 기본값이 「데모 데이터」였다 → #189** |
 | `ARCH_MODALITY` ↔ `ARCH_REGISTRY` 동기 | ✅ `test_text_modality` 가 **이미 못박는다** (실측: 양쪽 11키 동일) |
 | 문서의 **머지 충돌 마커** | ❌ **초록으로 지나갔다 → #190** (코드는 파서·`bash -n` 이 이미 잡는다) |
+| Node 실행기 분기의 마지막 `else` | ❌ **이름 없는 모달리티가 이미지 분류기로 → #191** |
+| 카탈로그 「구현됨」 10종 ↔ 등록 경로 | ✅ **전부 있다** (데모 9 + seed 1). 실측해서 확인했다 |
+| 권한 판정 `assert_role` | ✅ **양쪽 닫힌 실패** — 모르는 역할 → 순위 0 · 모르는 요구 → 99 |
+| capreq 라우터의 실패 경로 | ✅ 카탈로그 0건 · JSON 파싱 실패 · allowlist 밖 · 낮은 confidence **전부 `rejected=True` + 사유** |
+| `openapi.yaml` 두 사본 | ✅ `test_arch_registry` 가 **전문 동일**을 못박는다 (실측: 동일) |
 
 > **`measured-claims.md` §7 은 「지키지 않는 커밋이 나오면 좁은 검사를 Proposal 로
 > 올린다」고 적는다. 아직 안 나왔다** — 그래서 **검사를 만들지 않았다.**
@@ -7825,40 +7832,27 @@ Ran 500 tests · FAILED (errors=5, skipped=2)      ← skip 이 7 에서 2 로 �
 `changelog-changeset-rule` · `golden-leakage-claim-unreproducible` · Next ·
 **`output-required-undeclared-policy`**.
 
-### 머지 안내 — **다섯을 두 번에**
+### 머지 안내 — **여섯을 두 번에**
 
-> **이 안내를 이 세션에서 두 번 고쳤다** (셋 → 다섯). PR 이 늘 때마다 낡는다.
+> **이 안내를 이 세션에서 세 번 고쳤다** (셋 → 다섯 → 여섯). PR 이 늘 때마다 낡는다.
 > 다시 계산하는 명령은 `merge-guide-round6` 블록에 그대로 있다 (`--limit 100` 필수).
-
-실측:
-
-```text
-3  toma/conflict-markers-pass-silently  <- unknown-modality-falls-to-demo-data
-                                           room-zero-checks-floor
-                                           broken-contract-turns-off-key-check
-2  toma/unknown-modality-falls-to-demo-data  <- room-zero-checks-floor
-                                                broken-contract-turns-off-key-check
-1  toma/room-zero-checks-floor  <- broken-contract-turns-off-key-check
-0  toma/state-step0-round7
-0  toma/broken-contract-turns-off-key-check
-```
 
 | 갈래 | 꼭대기 | 함께 들어가는 것 |
 |---|---|---|
-| **A · 결함 넷** | **#190** | #189 · #187 · #186 |
+| **A · 결함 다섯** | **#191** | #190 · #189 · #187 · #186 |
 | **B · 문서** | **#188** (이 PR) | — |
 
-**최소 머지 = `#190` · `#188`** (2번 · 순서 무관).
+**최소 머지 = `#191` · `#188`** (2번 · 순서 무관).
 
 둘을 `main`(`7b1b065`) 위에 함께 얹어 쟀다:
 
 | 무엇 | 결과 |
 |---|---|
 | 충돌 | **0** |
-| `run_tests` | **525 OK (건너뜀 7)** |
+| `run_tests` | **531 OK (건너뜀 7)** |
 | `check_submission` | **28/28** |
-| `CHANGELOG` 선두 | **중복 0** — #190 → #189 → #187 → #186 차례 |
-| 열린 PR 다섯 | **전부 CI 3/3 SUCCESS** |
+| `CHANGELOG` 항목 | **133** · 선두 다섯 중복 0 (#191→#190→#189→#187→#186) |
+| 열린 PR 여섯 | **전부 CI 3/3 SUCCESS** |
 
 프로브 브랜치는 `git branch -D` 로 지웠다.
 
@@ -7883,8 +7877,8 @@ CONFLICT (content): Merge conflict in docs/history/CHANGELOG.md
 2. **`pip` 있는 세션** — capreq **72** 실제 재기
 3. ~~깨진 입력이 검사를 끄는 자리~~ — **전수했다.** `inputs`·`preprocess` 는 이미
    거절/던지기고, 남은 것은 `complete.py`(#186) 하나였다
-4. **기본값이 위험한 쪽인 자리** 계속 — #189 가 그 첫 사례다.
-   「모르면 데모」·「모르면 통과」·「모르면 image」 꼴을 더 찾는다
+4. ~~기본값이 위험한 쪽인 자리~~ — **둘 찾아 고쳤다** (#189 입력 선택 · #191 실행기 선택).
+   권한·라우터·게이트는 전부 닫힌 실패였다 (위 표)
 5. 마크다운 말고 **다른 조용한 문서 경로** — `openapi.yaml` 응답 스키마는
    메서드·경로만 대조된다 (`test_openapi_drift`). 응답 **모양** 드리프트는 아직 밖이다
 ```
