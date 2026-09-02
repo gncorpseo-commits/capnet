@@ -1,5 +1,49 @@
 # Changelog
 
+## 라우트가 **인증 없이 들어와도 아무것도 안 걸렸다** — 2026-09-02
+
+인증 검사가 **엔드포인트마다 임시로** 붙어 있었다 — `test_arch_registry` 가
+`POST /v1/arches` 를, `test_capability_patch_wiring` 이 `PATCH /v1/capabilities/{id}` 를
+본다. **새 라우트를 인증 없이 넣으면 아무것도 안 걸린다.**
+
+`scripts/prod_room.sh` 가 몇 개를 실제로 눌러 보지만 **Docker 가 있어야** 돌고,
+보는 것도 **손으로 고른 여섯 개**다.
+
+### 실측 — 오늘은 새는 곳이 없다
+
+`ast` 로 Core 라우트를 전수했다:
+
+| | 수 |
+|---|---|
+| Core 라우트 | **46** |
+| 인증 헬퍼를 부른다 | **40** |
+| 공개 | **6** — 전부 `GET` |
+
+공개 여섯: `/` · `/health` · `/openapi.yaml` · `GET /v1/capabilities`(둘) ·
+`/v1/datasets`. STATE 가 적은 「공개는 `/health`·카탈로그·allowlist만」
+(2026-08-14 · D24 read-auth)과 **정확히 일치**한다.
+
+> **처음 훑었을 때 11개가 「인증 없음」으로 나왔다.** 스캐너가
+> `_assert_node_matches` 를 몰라서였다 — `/v1/internal/…` 다섯은 전부 그걸로
+> Node 증서를 보고 URL 의 `node_id` 까지 대조한다 (SD-010).
+> **도구를 못 믿고 코드를 열어 확인했다.**
+
+### 무엇을 고정하나
+
+1. 모든 라우트가 **인증 헬퍼를 부르거나** `PUBLIC` 에 **근거와 함께** 적혀 있다
+2. **쓰기(POST·PUT·PATCH·DELETE)는 공개가 하나도 없다**
+3. `PUBLIC` 에 유령(실재하지 않는 라우트)이 없다
+
+**역할의 높낮이는 안 본다** (`admin` 인지 `developer` 인지) — 그건 엔드포인트마다
+다르고 개별 검사가 이미 있다. 여기서 보는 것은 **인증을 거치기는 하는가** 하나다.
+
+### 무엇으로 쟀나
+
+`tests/test_every_route_declares_its_auth.py` **7건.** `fastapi` 없이 돈다.
+
+**뮤테이션 2종이 물렸다** — 인증 없는 새 조회 라우트를 넣기(1건) ·
+기존 라우트에서 `_require` 를 떼기(1건).
+
 ## **실행기가 없는 모달리티는 이미지 분류기로 떨어졌다** — 2026-09-02
 
 [#189](https://github.com/gncorpseo-commits/capnet/pull/189)가 **입력 선택**의
