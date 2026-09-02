@@ -7511,3 +7511,74 @@ status: open
    규약이 갈린다.** 심각도는 낮다 (그 엔드포인트는 무인증이라 서버가 죽으면 위 줄이 이미 빨갛다)
 3. **`clean_room`·`prod_room` 에 0건 바닥** — 위 표의 ⚠️ 한 줄. 싸다
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-03T00:10:00+09:00
+topic: merge-guide-round6
+type: confirm
+expects: ack
+status: open
+---
+
+## 머지 안내 — **넷을 두 번에**
+
+지난 회차에 이 안내를 네 번 고쳐 적었다. 그래서 **숫자보다 명령을 먼저** 둔다.
+
+### 다시 계산하는 명령 (정본)
+
+```bash
+git fetch origin
+for b in $(gh pr list --limit 100 --json headRefName -q '.[].headRefName'); do
+  n=0
+  for o in $(gh pr list --limit 100 --json headRefName -q '.[].headRefName'); do
+    [ "$o" = "$b" ] && continue
+    git merge-base --is-ancestor "origin/$o" "origin/$b" 2>/dev/null && n=$((n+1))
+  done
+  echo "$n $b"
+done | sort -rn
+```
+
+**`--limit 100` 을 반드시 붙인다** — 기본 상한 30 에 조용히 잘린다.
+
+### 지금 상태 (2026-09-03 · 4 PR)
+
+실측 결과 그대로:
+
+```text
+1  toma/integration-runner-zero-checks  <- toma/leakage-check-cannot-claim-clean
+1  toma/bridge-round6-close             <- toma/state-wave-ah-al-sync
+0  toma/state-wave-ah-al-sync
+0  toma/leakage-check-cannot-claim-clean
+```
+
+| 갈래 | 꼭대기 | 함께 들어가는 것 |
+|---|---|---|
+| **A · 결함** | **#181** (통합 러너 0건) | **#180** (누출 검사 0건) |
+| **B · 문서·브리지** | **#182** (6회차 닫음) | **#179** (STATE 동기화) |
+
+### 최소 머지 목록 (**2번** · 순서 무관)
+
+    #181  #182
+
+### 둘을 `main`(`6179f42`) 위에 함께 얹어 쟀다
+
+| 무엇 | 결과 |
+|---|---|
+| 충돌 | **0** |
+| `run_tests` | **482 OK (건너뜀 7)** |
+| `check_submission` | **28/28** |
+| `CHANGELOG` 선두 | **중복 0** — #181 → #180 순으로 두 항목이 차례로 선다 |
+| 부분 검사 종료 코드 | `exit=3` (합친 트리에서 재확인) |
+
+`_probe_merge` 브랜치로 재고 **지웠다** (`git branch -D`).
+
+### `CHANGELOG` — 넷 중 **둘**이 선두를 건드린다
+
+#180 · #181 이 각각 한 항목씩 쓴다. **규율대로 갈라 쌓았기 때문에** 충돌이 없다 —
+#181 을 #180 **위에** 얹어 두 항목이 차례로 서게 했다. `changelog-changeset-rule`
+Decision 에 **여섯 번째 사례**로 얹어 둔다: 이번에는 **쌓기로 대가를 피했다.**
+
+#179 · #182 는 `CHANGELOG` 를 안 건드린다 (브리지·STATE).
+```
