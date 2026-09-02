@@ -25,7 +25,7 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`34d943f`** (#197 STATE·handoff) · **실행 능력 10종** · 열린 PR **0**.
+> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`2cbb936`** (#198 자율 모드 전문) · **실행 능력 10종** · 열린 PR **0**.
 >
 > **자율 모드:** [`docs/bridge/autonomous-mode.md`](docs/bridge/autonomous-mode.md) (전문) ·
 > [`docs/bridge/handoff-long-mode-claude.md`](docs/bridge/handoff-long-mode-claude.md) (WSL 붙여넣기).
