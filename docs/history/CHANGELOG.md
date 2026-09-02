@@ -1,5 +1,51 @@
 # Changelog
 
+## purge 가 **한 행도 안 바꾸고 「지웠다」** 고 답했다 — 2026-09-02
+
+`POST /v1/inputs/{id}/purge` 가 이랬다:
+
+```python
+marked = mark_purged(conn, input_id)      # STORED 인 것만 → 0행이면 None
+removed = purge_blob(input_id)
+return {**(marked or row), "purged_now": True, "file_removed": removed}
+```
+
+`mark_purged` 가 `None` 이어도 — **UPDATE 가 한 행도 안 바꿔도** — `purged_now: True`
+였다. 더 나쁜 것은 `marked or row` 다. 위에서 읽어 둔 **옛 행**을 함께 실어 보내
+응답이 **자기모순**이 됐다:
+
+```json
+{"storage_state": "STORED", "bytes_purged_at": null, "purged_now": true}
+```
+
+### 가상의 경우가 아니다
+
+`storage_state` 는 `STORED` · `PURGED` 둘뿐이고(0011) 위에 `PURGED` 조기 반환이 있다.
+그러니 `marked is None` 은 **경쟁**뿐이다 — 읽은 뒤 UPDATE 전에 다른 쪽이 지웠다.
+
+그 「다른 쪽」이 **같은 프로세스의 배경 스레드**다. `_gc_loop` 가 주기적으로
+`task_input_purge_due` 를 훑어 같은 `mark_purged` 를 부른다.
+
+**바이트는 어느 쪽이든 지워지므로 데이터 피해는 없다.** 거짓말한 것은 **응답**이다.
+
+### 바뀐 것
+
+0행이면 사실을 **다시 읽어** `purged_now: False` 로 돌려준다.
+`storage_state` 도 그때의 진짜 값(`PURGED`)이 나간다. 로그도 남긴다.
+성공 응답은 이제 `marked` **하나만** 펼친다 — 대체값이 없다.
+
+### 무엇으로 쟀나
+
+`tests/test_purge_does_not_claim_it_purged.py` **3건.** `app.main` 은 fastapi 를
+import 하므로 의존성 없는 환경에서 **모듈을 못 불러온다** — 그래서 `ast` 로 본다
+(표준 라이브러리로 파싱된다).
+
+**뮤테이션 2종이 물렸다** — 경쟁 분기를 `if False` 로 죽이니 **1건 실패**,
+`marked or row` 를 되돌리니 **2건 실패**.
+
+DB 를 띄우는 쪽은 `tests/integration/check_input_purge.py` 가 이미 `mark_purged` 의
+「STORED 만 바꾼다」를 고정하고 있다 (CI 의 migrate 잡).
+
 ## 통합 검사 **0개도 초록**이었다 — 2026-09-02
 
 `scripts/run_integration.sh` 는 `tests/integration/check_*.py` 를 glob 으로 집는데,
