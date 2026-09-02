@@ -7809,6 +7809,8 @@ Ran 500 tests · FAILED (errors=5, skipped=2)      ← skip 이 7 에서 2 로 �
 
 ### 머지 안내 — **셋을 두 번에**
 
+실측 (`--limit 100` 필수 · 명령은 `merge-guide-round6` 블록에 그대로 있다):
+
 ```text
 1  toma/room-zero-checks-floor  <- toma/broken-contract-turns-off-key-check
 0  toma/broken-contract-turns-off-key-check
@@ -7818,9 +7820,24 @@ Ran 500 tests · FAILED (errors=5, skipped=2)      ← skip 이 7 에서 2 로 �
 | 갈래 | 꼭대기 | 함께 |
 |---|---|---|
 | **A · 결함** | **#187** | **#186** |
-| **B · 문서** | **이 PR** | — |
+| **B · 문서** | **#188** (이 PR) | — |
 
-**다시 계산하는 명령은 `merge-guide-round6` 블록에 그대로 있다** (`--limit 100` 필수).
+**최소 머지 = `#187` · `#188`** (2번 · 순서 무관).
+
+둘을 `main`(`7b1b065`) 위에 함께 얹어 쟀다:
+
+| 무엇 | 결과 |
+|---|---|
+| 충돌 | **0** |
+| `run_tests` | **508 OK (건너뜀 7)** |
+| `check_submission` | **28/28** |
+| `CHANGELOG` 선두 | **중복 0** — #187 → #186 순으로 두 항목이 차례로 |
+| 열린 PR 셋 | **전부 CI 3/3 SUCCESS** |
+
+`_probe4` 브랜치로 재고 **지웠다** (`git branch -D`).
+
+`CHANGELOG` 는 **셋 중 둘**이 선두를 건드린다 (#186 · #187). 6회차처럼
+**쌓기로 충돌을 피했다** — `changelog-changeset-rule` **일곱 번째 사례**.
 
 ### 다음 큐 (Decision 없이)
 
