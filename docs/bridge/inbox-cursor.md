@@ -7349,3 +7349,165 @@ PYTHONPATH=capreq/src python3 -m unittest discover -s capreq/tests -p "test_*.py
 `retention-ttl-policy` · `11th-capability-timeseries-anomaly` ·
 `changelog-changeset-rule` · Next. **정본은 `track-a-post-round5`.**
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T23:30:00+09:00
+topic: golden-leakage-claim-unreproducible
+type: proposal
+expects: decision
+status: open
+---
+
+## 보고서의 **「겹침 0/300」** 을 심사위원이 재현하면 **300건을 안 본 초록**이 나왔다
+
+#180 에서 도구를 고쳤다. **문구는 안 건드렸다** — 제출 산출물의 주장이라 Decision 이다.
+
+### 무슨 일이 있었나
+
+`docs/ops/contest-report-draft.md` · `contest-report-form-draft.md` 가 이렇게 적는다:
+
+> 개발 중 **골든셋이 학습셋과 겹친 것**을 스스로 발견해 홀드아웃 분할로 고쳤다
+> (겹침 **0/300**, `scripts/check_golden_leakage.py` 로 검증).
+
+그 도구를 **신선한 클론에서 시키는 대로 돌리면** 이렇게 끝났다:
+
+```text
+  docs/spec/golden/manifest-image-classify-v1.json  cases=40  in_train=0  clean
+  (건너뜀 - 없음) data/golden-n300/manifest-image-classify-n300.json
+  (건너뜀 - 없음) data/golden-n300-holdout/manifest-image-classify-n300.json
+  (건너뜀 - 없음) data/golden-n300-train/manifest-image-classify-n300.json
+
+겹침 없음. 골든셋은 홀드아웃이다.
+exit=0
+```
+
+**n300 매니페스트 셋은 `data/` 아래라 저장소에 추적되지 않는다** (SD-003 · 용량).
+그 중 하나가 문구의 근거인 `golden-n300-holdout` 이다.
+
+| 매니페스트 | git 추적 |
+|---|---|
+| `docs/spec/golden/manifest-image-classify-v1.json` (40건) | yes |
+| `data/golden-n300/…` · `-holdout/…` · `-train/…` | **NO** |
+
+**초록은 40건에 대한 것이었고, 문구는 300건을 말한다.**
+
+### 도구 쪽은 고쳤다 (#180 · Decision 아님)
+
+이제 저 자리는 **`3` = 부분 검사**로 끝나고 못 본 것을 이름으로 찍는다.
+`0` 은 「지정한 것을 전부 보고 겹침 없음」일 때만 나온다.
+
+**남은 것은 문구다.** 도구가 정직해졌으니 이제 문구가 도구보다 앞서 있다.
+
+### 왜 내가 못 정하나
+
+`v0.1.0-contest` 태그로 **제출이 고정돼 있고**, 저 문장은 심사 대상 산출물의
+**보장 문구**다. 고칠지 · 고친다면 어디까지인지는 제품 주장 판단이다.
+
+### 고를 것 (하나)
+
+| 안 | 무엇 | 대가 |
+|---|---|---|
+| **A** | **재현 절차만 보강.** 문구는 그대로 두고 「n300 을 보려면 `extract_golden_n300` 를 먼저 돌린다」를 보고서 재현 절에 한 줄. **주장 변경 0** | 제출본과 저장소가 갈린다 (이미 그렇다) |
+| **B** | 문구를 **「데모 40건은 저장소에서 재현 가능 · n300 은 추출 후」** 로 쪼갠다 | 제출 산출물 본문 수정 |
+| **C** | `golden-n300-holdout` 매니페스트**만** 추적한다 (케이스 이미지 말고 **매니페스트 JSON 한 개**) | `data/` 정책에 예외 하나. 크기는 작다 (sha 목록) |
+| D | 아무것도 안 한다 | 도구는 이제 `3` 으로 정직하다. 문구만 앞서 있다 |
+
+**C 를 권한다** — 「재현되는 증거」가 이 저장소의 주장 방식이고, 매니페스트는
+이미지가 아니라 **sha 목록**이라 용량 논거가 약하다. 다만 `data/` 추적 정책을
+건드리므로 물어본다.
+
+### 안 물어보는 것
+
+`#180` 의 도구 수정 자체 (버그 수정) · 종료 코드 `3` 신설 (내 도구 배선).
+둘 다 이미 PR 로 올렸다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T23:45:00+09:00
+topic: round6-close
+type: next
+expects: ack
+status: open
+---
+
+## 6회차 닫음 — **머지 뒤 첫 세션** · 결함 둘 + Step 0
+
+### 지금 (전부 재현 명령 붙임)
+
+| 무엇 | 값 | 재현 |
+|---|---|---|
+| `main` HEAD | **`6179f42`** | `git log -1 --oneline` |
+| 열린 PR | **3** (#179 #180 #181) | `gh pr list --state open --limit 100` |
+| `main` 의 `run_tests` | **472 OK (건너뜀 7)** | `bash scripts/run_tests.sh` |
+| **#181 까지 쌓은 트리** | **482 OK (건너뜀 7)** | 같은 명령 · `toma/integration-runner-zero-checks` 에서 |
+| `check_submission` | **28/28** | 위 배너 안 (양쪽 다) |
+
+**어디서 잰 숫자인지 같이 적는다.** `482` 는 `main` 의 값이 아니다 —
+세 PR 이 검사 **10건**을 더한다 (#180 +7 · #181 +3). 지난 회차에 `453` 을
+`main` 값처럼 적어 둔 것이 이번 #179 가 고친 자리다. **같은 실수를 반복하지 않는다.**
+
+**`--limit 100` 을 붙였다** (지난 회차에 기본 30 에 잘렸던 자리).
+
+### 한 일
+
+| PR | 무엇 | 갈래 |
+|---|---|---|
+| **#179** | STATE 가 **머지 전 숫자**를 현재형으로 쥐고 있었다 (`453`·`905c576`) | Step 0 · 코드 0 |
+| **#180** | **누출 검사가 아무것도 안 보고 「깨끗하다」** 고 말했다 | 결함 |
+| **#181** | **통합 검사 0개도 초록**이었다 (CI 가 부른다) | 결함 · #180 위 |
+
+**#180 · #181 은 한 문장이다 — 「0건을 보고 성공을 단언한다」.**
+지난 회차의 열과 같은 계열인데, 이번 둘은 **검사 도구 자신**이 그랬다.
+
+세 PR 모두 CI 초록 (#181 은 마지막 확인 시점에 진행 중이었다).
+
+### 전수한 것 — **없다고 확인한 자리**
+
+같은 「0건 성공」을 다른 검사에서도 찾았다. **더 없다:**
+
+| 도구 | 0건일 때 | 판정 |
+|---|---|---|
+| `check_submission.py` | 이미 막혀 있다 (`0개 대조로 통과 금지` · 두 자리) | ✅ |
+| `check_golden_sha.py` | 케이스 0건이면 매니페스트 sha 가 달라져 **선언부 4곳과 어긋난다** | ✅ 사슬이 막는다 |
+| `pass_rate.sh` | `100.0 * passed / 0` → ZeroDivisionError → `set -e` | ✅ 시끄럽다 |
+| `clean_room.sh` · `prod_room.sh` | `chk` 호출이 **인라인 하드코딩**이라 0건은 눈에 보이는 편집 | ⚠️ 낮음 |
+| `regate.sh` | `총 0건` 을 세어 찍는다 | ✅ |
+
+파이썬 조용한 삼킴(`except: pass`·`return []`) **12곳도 전수했다 — 전부 정상**이다
+(좁은 예외 · 의도가 머리말에 적혀 있다). 폐기 경로는 `revocation-paths-audited` 에서
+이미 전수돼 있어 **다시 재지 않았다.**
+
+### 못 본 것 (숨기지 않는다)
+
+**이 세션은 지난 세션보다 환경이 좁다.**
+
+| 무엇 | 왜 |
+|---|---|
+| `capreq/tests` **72** | `pip` 가 없어 `httpx`·`fastapi` 미설치 → 모듈 셋이 임포트에서 죽는다 (`52 ran · errors=3`). **「72」로 옮겨 적지 않았다** |
+| `clean_room.sh` · `prod_room.sh` | **Docker 불가** (`docker info` 실패). 지난 회차에는 됐다 |
+| `demo.sh` · `capreq_demo.sh` 등 종단 | 같은 이유 + Ollama 없음 |
+| 실제 브라우저 CSS·레이아웃 | 그대로 |
+
+**「지난번에 됐으니 된다」로 적지 않았다.** 이번에 안 되는 것은 안 된다고 적는다 —
+그게 이번 회차가 고친 결함 둘의 교훈이다.
+
+### 열린 Decision — **여덟** (하나 늘었다)
+
+기존 일곱 그대로 + **`golden-leakage-claim-unreproducible`** (바로 위 블록).
+
+`silent-truncation` · `gate-run-stuck-running` · `failure-reason-not-surfaced` ·
+`retention-ttl-policy` · `11th-capability-timeseries-anomaly` ·
+`changelog-changeset-rule` · Next · **`golden-leakage-claim-unreproducible`**.
+
+### 다음 큐 셋 (Decision 없이 되는 것)
+
+1. **`clean_room`·`prod_room`·종단 데모** — Docker 가 되는 세션에서 돌린다. 이번에 못 봤다
+2. **`call.html` 의 데이터셋 폴백** — `/v1/datasets` 실패 시 하드코딩 `eurosat-rgb` 를
+   서버가 준 것처럼 보여 준다. 바로 위 줄(`c-cap`)은 에러를 보여 주는데 **같은 함수 안에서
+   규약이 갈린다.** 심각도는 낮다 (그 엔드포인트는 무인증이라 서버가 죽으면 위 줄이 이미 빨갛다)
+3. **`clean_room`·`prod_room` 에 0건 바닥** — 위 표의 ⚠️ 한 줄. 싸다
+```
