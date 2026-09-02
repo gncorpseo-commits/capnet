@@ -907,7 +907,7 @@ at: 2026-09-02T01:00:00+09:00
 topic: product-handoff-post-wave-x
 type: decision
 expects: implement
-status: open
+status: done
 ---
 
 ## 받은 것 — 핸드오프 `product-handoff-to-claude` (Wave X 머지 후)

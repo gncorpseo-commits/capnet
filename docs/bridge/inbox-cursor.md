@@ -6517,7 +6517,7 @@ at: 2026-09-02T06:20:00+09:00
 topic: track-a-post-round3
 type: next
 expects: decision
-status: open
+status: done
 ---
 
 ## Next — 3회차 뒤
@@ -6664,7 +6664,7 @@ at: 2026-09-02T07:30:00+09:00
 topic: merge-guide-23-prs
 type: confirm
 expects: ack
-status: open
+status: done
 ---
 
 ## 머지 안내 — **23개를 11번에** (실측한 포함 관계)
@@ -7002,7 +7002,7 @@ at: 2026-09-02T11:00:00+09:00
 topic: merge-guide-v3-final
 type: confirm
 expects: ack
-status: open
+status: done
 ---
 
 ## 머지 안내 v3 — **30개를 16번에** (정본 · 앞의 v1·v2 는 낡았다)
@@ -7133,7 +7133,7 @@ at: 2026-09-02T12:20:00+09:00
 topic: merge-guide-v4-and-how-to-recompute
 type: confirm
 expects: ack
-status: open
+status: done
 ---
 
 ## 머지 안내 v4 — **32개를 18번에** · 그리고 **다시 계산하는 법**
@@ -7276,4 +7276,76 @@ status: open
 
 이번 회차에 고친 결함 열이 전부 **「안 보고 있으면서 본다고 믿는 것」**이었다.
 내가 **「못 돌린다」고 넘겨짚은 것**도 같은 종류의 실수다 — 머리말 한 줄이면 알 수 있었다.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T22:10:00+09:00
+topic: merge-landed-state-resynced
+type: confirm
+expects: ack
+status: open
+---
+
+## 머지가 끝났다 — **STATE 가 쥐고 있던 숫자 둘이 낡아 있었다**
+
+머지 라운드가 끝난 뒤 처음 도는 세션이다. `main` 을 당겨 **다시 쟀다.**
+
+### 지금 상태 (실측)
+
+| 무엇 | 값 | 재현 |
+|---|---|---|
+| `main` HEAD | **`6179f42`** | `git log -1 --oneline` |
+| 열린 PR | **0** | `gh pr list --state open --limit 100` |
+| `main` 에 들어간 것 | **28개** (#147–#178 중 · 닫음 4: #150 #157 #160 #165) | `git rev-list --count a4d47dd..6179f42` |
+| `run_tests` | **472 OK (건너뜀 7)** | `bash scripts/run_tests.sh` |
+| `check_submission` | **28/28** | 위 배너 안 |
+
+### STATE 가 틀리게 쥐고 있던 것
+
+| 자리 | 적혀 있던 값 | 실측 |
+|---|---|---|
+| 「Wave A–AG 완료」 머리 | `main` **`905c576`** | **`6179f42`** |
+| 같은 줄 | `run_tests` **453** | **472** |
+| 「머지 완료」 줄 | `main` **`905c576`** | **`6179f42`** |
+
+**틀린 게 아니라 낡은 것이다** — `453`·`905c576` 은 **머지 전 스물여섯 트리**에서 잰
+값이고, 그때는 맞았다. 그 뒤 `#173`·`#174`–`#178` 여섯이 더 들어오면서 어긋났다.
+그런데 STATE 는 「Wave A–AG 완료 · main = …」이라고 **현재형으로** 적고 있었다.
+**과거의 측정을 현재 상태로 적어 두면 낡는다** — 이번 회차가 고친 열과 같은 모양이라
+같은 규율로 고쳤다: **숫자 옆에 재현 명령을 붙였다.**
+
+### capreq 72 는 **내가 못 쟀다** (그래서 그렇게 적었다)
+
+```text
+PYTHONPATH=capreq/src python3 -m unittest discover -s capreq/tests -p "test_*.py"
+→ Ran 52 tests · FAILED (errors=3)
+```
+
+`pip` 가 없는 환경이라 `httpx`·`fastapi` 가 없고, **모듈 셋이 임포트에서 통째로 죽는다**
+(`test_capnet_unit` · `test_router_unit` · `test_server_unit`). 20건이 안 돌았다.
+
+**`72` 라고 옮겨 적지 않았다.** 정본은 CI 의 `capreq` 잡이고, STATE 에는
+「이 환경에서 못 쟀다 + 왜 + 정본은 어디」를 적었다. `docs/guide/testing.md` §2 가
+설치 줄을 이미 갖고 있다. **skip 이 아니라 ERROR 라 초록으로 넘어가지는 않는다** —
+다만 `Ran 52` 만 읽고 「52 통과」로 적으면 20건이 사라진 걸 모른다. 그것이
+`skipped=6` 을 아무도 안 읽은 #144 와 같은 자리다.
+
+### 이번 PR 이 한 것 (코드 0)
+
+- `STATE.md` — Wave 표에 **#173 · AH–AL(#174–#178) 여섯 줄** 추가 · 위 숫자 둘 정정
+- 낡은 브리지 블록 **넷** `status: done` — `merge-guide-23-prs` ·
+  `merge-guide-v3-final` · `merge-guide-v4-and-how-to-recompute` · `track-a-post-round3`
+  (**머지가 끝나 소용을 다했다** — ack 를 받아서가 아니다)
+- `inbox-claude` 의 `product-handoff-post-wave-x` → `done` (#149 가 이미 이행했다)
+
+**ack 대기 중인 confirm 블록 여덟은 건드리지 않았다.** 받지 않은 ack 를
+받은 것처럼 적지 않는다.
+
+### 열린 Decision 일곱은 그대로다
+
+`silent-truncation` · `gate-run-stuck-running` · `failure-reason-not-surfaced` ·
+`retention-ttl-policy` · `11th-capability-timeseries-anomaly` ·
+`changelog-changeset-rule` · Next. **정본은 `track-a-post-round5`.**
 ```
