@@ -14,13 +14,17 @@
 
 **포함식이라 기본값이 「골든 폴백」이었다.** 목록에 없으면 데모 데이터로 돈다.
 오늘은 그 목록이 정확히 `ARCH_MODALITY` 값에서 이미지 둘을 뺀 것이라 맞다.
-문제는 **자라는 방향**이다:
+문제는 **자라는 방향**이다.
 
-- `ARCH_MODALITY` 에 새 모달리티를 더하고 **이 목록을 안 고치면** → 골든 폴백
-- DB `agent_arch` 에는 있는데 `ARCH_MODALITY` 에 없는 arch → `_modality_of` 가
-  `"image"` 로 떨어뜨린다 → 역시 골든 폴백
+**새는 길은 하나다** — `ARCH_MODALITY` 에 새 모달리티를 더하고 **이 목록을 안 고치는**
+것. 그러면 그 능력은 **사용자 입력을 요구하는 대신 로컬 골든 이미지로 떨어진다.**
 
-둘 다 **사용자 입력 대신 데모 이미지가 돌고, 그럴듯한 결과가 나온다.**
+> **다른 하나는 이미 막혀 있다 (실측).** 「arch 가 `ARCH_MODALITY` 에 없다」는 경우도
+> `_modality_of` 가 `"image"` 로 떨어뜨리지만, 그 뒤 `build_model` 이
+> `unknown arch …` 로 던지고 `_run` 이 **422** 로 바꾼다. 게다가
+> `tests/test_text_modality` 가 `ARCH_REGISTRY == ARCH_MODALITY` 를 **이미 못박는다.**
+> **조용한 오답이 아니라 시끄러운 실패다** — 과장하지 않는다.
+
 [#154](https://github.com/gncorpseo-commits/capnet/pull/154)(빈 첨부 → 데모 데이터가
 대신 돌았다)와 같은 모양이고, 손으로 적은 목록이 카탈로그를 못 따라간
 [#171](https://github.com/gncorpseo-commits/capnet/pull/171)과도 같은 자리다.

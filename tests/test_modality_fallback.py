@@ -13,14 +13,17 @@
         cid = _case_id(input_ref)          # ← 로컬 골든셋(EuroSAT 이미지)으로 떨어진다
 
 **포함식이라 기본값이 「골든 폴백」이었다.** 오늘 그 목록은 정확히
-`ARCH_MODALITY` 값에서 이미지 둘을 뺀 것이라 **맞다.** 문제는 자라는 방향이다:
+`ARCH_MODALITY` 값에서 이미지 둘을 뺀 것이라 **맞다.** 문제는 자라는 방향이다.
 
-| 어긋나는 길 | 결과 |
-|---|---|
-| `ARCH_MODALITY` 에 새 모달리티를 더하고 이 목록을 안 고친다 | **골든 폴백** |
-| DB `agent_arch` 에는 있는데 `ARCH_MODALITY` 에 없는 arch | `_modality_of` 가 `"image"` 로 → **골든 폴백** |
+**새는 길은 하나다** — `ARCH_MODALITY` 에 새 모달리티를 더하고 **이 목록을 안 고치면**,
+그 능력은 **사용자 입력을 요구하는 대신 로컬 골든 이미지로 떨어진다.**
 
-둘 다 **사용자 입력 대신 데모 이미지가 돌고, 그럴듯한 결과가 나온다** —
+> **처음에 「길이 둘」이라고 적었다가 정정했다.** 「arch 가 `ARCH_MODALITY` 에 없다」는
+> 쪽도 `_modality_of` 가 `"image"` 로 떨어뜨리지만, 그 뒤 `build_model` 이
+> `unknown arch …` 로 던지고 `_run` 이 **422** 로 바꾼다. 게다가 바로 아래
+> `tests/test_text_modality` 가 `ARCH_REGISTRY == ARCH_MODALITY` 를 **이미 못박는다**
+> (실측: 오늘 양쪽 11키가 동일). **조용한 오답이 아니라 시끄러운 실패다.**
+
 [#154](https://github.com/gncorpseo-commits/capnet/pull/154)(빈 첨부 → 데모 데이터)와
 같은 모양이고, 손으로 적은 목록이 카탈로그를 못 따라간
 [#171](https://github.com/gncorpseo-commits/capnet/pull/171)과 같은 자리다.
