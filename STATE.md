@@ -25,7 +25,7 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–AP 완료 (2026-09-02).** main HEAD = **`d37b319`** (#184·#182 머지 후) · **실행 능력 10종** · 열린 PR **0**.
+> **Wave A–AP 완료 (2026-09-02).** main HEAD = **`0ab2230`** (#179 STATE) · **실행 능력 10종** · 열린 PR **0**.
 >
 > `run_tests` **487 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh`.
 > capreq 는 **이 환경에서 못 쟀다** — `pip` 가 없어 `httpx`·`fastapi` 가 빠지고
