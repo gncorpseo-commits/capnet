@@ -7742,11 +7742,25 @@ status: open
 |---|---|---|
 | **#186** | **깨진 계약이 「Node 는 칸 이름을 주장 못 한다」를 스스로 껐다** | 결함 |
 | **#187** | 방 검사 둘도 **0건이면 「전부 재현된다」** 였다 | 결함 · #186 위 |
-| — | 이 PR — Step 0 · 브리지 (코드 0) | 문서 |
+| **#189** | **모르는 모달리티는 데모 이미지로 떨어졌다** — 기본값을 뒤집는다 | 결함 · #187 위 |
+| **#190** | **안 푼 머지가 초록이었다** — 충돌 마커를 문서에서 본다 | 결함 · #189 위 |
+| — | **#188** (이 PR) — Step 0 · 브리지 (코드 0) | 문서 |
 
-**둘 다 6회차의 연장이다 — 「0건·0행이면 검사가 꺼진다」.**
-다만 **#186 은 결이 하나 더 있다:** 0건이 아니라 **깨진 입력**이 검사를 껐다.
-`["label", 5]` 가 `[]` 로 뭉개지면서 「선언 안 함」과 구분이 사라졌다.
+**넷이 6회차의 연장이지만 결이 갈린다:**
+
+| PR | 무엇이 검사를 껐나 |
+|---|---|
+| #187 | **0건** — 한 건도 안 돌리고 「전부 재현된다」 |
+| #186 | **깨진 입력** — `["label", 5]` 가 `[]` 로 뭉개져 「선언 안 함」과 구분이 사라졌다 |
+| #189 | **모르는 값** — 포함식이라 기본값이 「데모 데이터로 떨어진다」였다 |
+| #190 | **안 푼 머지** — 충돌 마커가 남은 문서로도 전부 초록이었다 |
+
+**#186·#189 는 0건이 아니다.** 6회차가 「0을 없다로 뭉갠다」였다면 이번은
+**「모르는 것·깨진 것을 안전한 쪽으로 뭉갠다」**다. 같은 뿌리의 다른 가지다.
+
+**#190 은 내가 만들다 발견했다** — #189 갈래와 #187 갈래가 `CHANGELOG` 선두를
+동시에 집어 충돌했고, **그 마커가 남은 트리에서 `run_tests` 가 518 OK 로 통과했다.**
+`test_changelog_integrity` 는 「잘못 푼 머지」를 보는데 **「안 푼 머지」는 그 밖**이었다.
 
 ### 전수한 것 — **없다고 확인한 자리** (다시 재지 않게)
 
@@ -7765,6 +7779,10 @@ status: open
 | **측정 숫자 ↔ 재현 명령** (`measured-claims.md` §1) | ✅ **위반 0.** 규칙 시행(#125 `2a40af0`) 뒤 카탈로그·STATE 에 들어온 측정 숫자는 전부 도구를 명시한다 |
 | `clean_room`·`prod_room` 0건 바닥 | ❌ **비어 있었다 → #187** |
 | **깨진 입력 → 기본값으로 검사 꺼짐** (#186 의 결) | **`complete.py` 하나뿐.** `inputs.allowed_media_types`·`preprocess.resolve_preprocess`·`resolve_text_preprocess` 는 **이미 거절/던지기**로 돼 있다 |
+| 넓은 `except Exception` — Core·Node·capreq 전부 | ✅ 전부 실패로 **기록**하거나 재던지거나 로그+계속 (`contract_check` 넷은 `checks[…]=False` + `notes` 에 예외를 적는다) |
+| 손으로 적은 모달리티 목록 (`main._run`) | ❌ **포함식이라 기본값이 「데모 데이터」였다 → #189** |
+| `ARCH_MODALITY` ↔ `ARCH_REGISTRY` 동기 | ✅ `test_text_modality` 가 **이미 못박는다** (실측: 양쪽 11키 동일) |
+| 문서의 **머지 충돌 마커** | ❌ **초록으로 지나갔다 → #190** (코드는 파서·`bash -n` 이 이미 잡는다) |
 
 > **`measured-claims.md` §7 은 「지키지 않는 커밋이 나오면 좁은 검사를 Proposal 로
 > 올린다」고 적는다. 아직 안 나왔다** — 그래서 **검사를 만들지 않았다.**
@@ -7807,41 +7825,66 @@ Ran 500 tests · FAILED (errors=5, skipped=2)      ← skip 이 7 에서 2 로 �
 `changelog-changeset-rule` · `golden-leakage-claim-unreproducible` · Next ·
 **`output-required-undeclared-policy`**.
 
-### 머지 안내 — **셋을 두 번에**
+### 머지 안내 — **다섯을 두 번에**
 
-실측 (`--limit 100` 필수 · 명령은 `merge-guide-round6` 블록에 그대로 있다):
+> **이 안내를 이 세션에서 두 번 고쳤다** (셋 → 다섯). PR 이 늘 때마다 낡는다.
+> 다시 계산하는 명령은 `merge-guide-round6` 블록에 그대로 있다 (`--limit 100` 필수).
+
+실측:
 
 ```text
-1  toma/room-zero-checks-floor  <- toma/broken-contract-turns-off-key-check
-0  toma/broken-contract-turns-off-key-check
+3  toma/conflict-markers-pass-silently  <- unknown-modality-falls-to-demo-data
+                                           room-zero-checks-floor
+                                           broken-contract-turns-off-key-check
+2  toma/unknown-modality-falls-to-demo-data  <- room-zero-checks-floor
+                                                broken-contract-turns-off-key-check
+1  toma/room-zero-checks-floor  <- broken-contract-turns-off-key-check
 0  toma/state-step0-round7
+0  toma/broken-contract-turns-off-key-check
 ```
 
-| 갈래 | 꼭대기 | 함께 |
+| 갈래 | 꼭대기 | 함께 들어가는 것 |
 |---|---|---|
-| **A · 결함** | **#187** | **#186** |
+| **A · 결함 넷** | **#190** | #189 · #187 · #186 |
 | **B · 문서** | **#188** (이 PR) | — |
 
-**최소 머지 = `#187` · `#188`** (2번 · 순서 무관).
+**최소 머지 = `#190` · `#188`** (2번 · 순서 무관).
 
 둘을 `main`(`7b1b065`) 위에 함께 얹어 쟀다:
 
 | 무엇 | 결과 |
 |---|---|
 | 충돌 | **0** |
-| `run_tests` | **508 OK (건너뜀 7)** |
+| `run_tests` | **525 OK (건너뜀 7)** |
 | `check_submission` | **28/28** |
-| `CHANGELOG` 선두 | **중복 0** — #187 → #186 순으로 두 항목이 차례로 |
-| 열린 PR 셋 | **전부 CI 3/3 SUCCESS** |
+| `CHANGELOG` 선두 | **중복 0** — #190 → #189 → #187 → #186 차례 |
+| 열린 PR 다섯 | **전부 CI 3/3 SUCCESS** |
 
-`_probe4` 브랜치로 재고 **지웠다** (`git branch -D`).
+프로브 브랜치는 `git branch -D` 로 지웠다.
 
-`CHANGELOG` 는 **셋 중 둘**이 선두를 건드린다 (#186 · #187). 6회차처럼
-**쌓기로 충돌을 피했다** — `changelog-changeset-rule` **일곱 번째 사례**.
+### `CHANGELOG` — **쌓기를 안 하면 이렇게 충돌한다**
+
+#189 를 `main` 에서 딴 **독립 브랜치**로 열었더니 #187 갈래와 선두가 부딪쳤다:
+
+```text
+CONFLICT (content): Merge conflict in docs/history/CHANGELOG.md
+```
+
+**머지하는 사람이 다시 풀게 두지 않고 #189 안에서 풀었다** (#187 을 얹고
+네 항목을 최신순으로). 그 뒤 #190 은 처음부터 쌓았다.
+
+`changelog-changeset-rule` Decision 에 **일곱 번째 사례**로 얹는다 —
+6회차가 「쌓으면 대가를 피한다」였다면 이번은 **「안 쌓으면 이렇게 된다」**는
+반대쪽 증거다. **그리고 그 충돌이 #190 을 낳았다.**
 
 ### 다음 큐 (Decision 없이)
 
 1. **Docker 있는 세션** — `clean_room`·`prod_room`(#187 이 바꾼 꼬리 포함) · 종단 데모
 2. **`pip` 있는 세션** — capreq **72** 실제 재기
-3. 같은 계열 계속 — **깨진 입력이 검사를 끄는 자리**(#186 의 결) 를 다른 파서에서도 찾기
+3. ~~깨진 입력이 검사를 끄는 자리~~ — **전수했다.** `inputs`·`preprocess` 는 이미
+   거절/던지기고, 남은 것은 `complete.py`(#186) 하나였다
+4. **기본값이 위험한 쪽인 자리** 계속 — #189 가 그 첫 사례다.
+   「모르면 데모」·「모르면 통과」·「모르면 image」 꼴을 더 찾는다
+5. 마크다운 말고 **다른 조용한 문서 경로** — `openapi.yaml` 응답 스키마는
+   메서드·경로만 대조된다 (`test_openapi_drift`). 응답 **모양** 드리프트는 아직 밖이다
 ```
