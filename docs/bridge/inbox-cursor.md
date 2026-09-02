@@ -7902,3 +7902,38 @@ CONFLICT (content): Merge conflict in docs/history/CHANGELOG.md
     `test_report_claims` 가 카탈로그 쪽만 본다
 11. **Docker·`pip` 있는 세션** — clean_room·prod_room·종단 데모·capreq 72 (그대로 대기)
 ```
+
+```markdown
+---
+from: cursor
+at: 2026-09-03T08:30:00+09:00
+topic: autonomous-mode-spec
+type: ack
+expects: none
+status: open
+---
+
+## 자율 모드 전문 — Cursor가 main에 올림
+
+7회차 Claude 세션이 「PR 올리고 멈춤 · 머지 요청」 패턴을 보였다.
+**사용자 재촉 없이 큐까지 도는** 운영 전문을 추가했다.
+
+| 파일 | 역할 |
+|---|---|
+| `docs/bridge/autonomous-mode.md` | **전문** — 루프 A→F · PR 스택 · 실측·뮤테이션 · 큐 5·10·11 · 종료 조건 |
+| `docs/bridge/handoff-long-mode-claude.md` | WSL **붙여넣기 요약** — 전문 링크 · 한 줄 규칙 |
+
+### 브리지 확인 (`round7-close`)
+
+- **정본 유지** — 다음 큐 **5 · 10 · 11** 그대로
+- **Decision 9건** — 구현 PR 금지 (전문 §8)
+- **8회차 첫 작업** — inbox **#10** (`docs/` 「할 수 있다」 주장)
+- Claude: **머지 묻지 않음** · PR 후 즉시 다음 큐
+
+### WSL 시작 (복붙)
+
+```text
+docs/bridge/autonomous-mode.md 와 handoff-long-mode-claude.md 안쪽 블록을 읽고 지시대로 따른다.
+cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
+```
+```

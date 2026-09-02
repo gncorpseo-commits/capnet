@@ -25,7 +25,10 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`757c133`** (#188 STATE) · **실행 능력 10종** · 열린 PR **0**.
+> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`34d943f`** (#197 STATE·handoff) · **실행 능력 10종** · 열린 PR **0**.
+>
+> **자율 모드:** [`docs/bridge/autonomous-mode.md`](docs/bridge/autonomous-mode.md) (전문) ·
+> [`docs/bridge/handoff-long-mode-claude.md`](docs/bridge/handoff-long-mode-claude.md) (WSL 붙여넣기).
 >
 > `run_tests` **571 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` (#196·#188 합친 트리).
 > capreq 는 **이 환경에서 못 쟀다** — `pip` 가 없어 `httpx`·`fastapi` 가 빠지고
@@ -117,6 +120,7 @@
 > | **AY** | [#195](https://github.com/gncorpseo-commits/capnet/pull/195) | capreq 루프백 전제가 못박혀 있지 않았다 | **닫음** (#196) |
 > | **AZ** | [#196](https://github.com/gncorpseo-commits/capnet/pull/196) | **시크릿이 로그·출력으로 나가는 쪽을 안 봤다** | `e211ab3` |
 > | — | [#188](https://github.com/gncorpseo-commits/capnet/pull/188) | Step 0 — STATE · 7회차 브리지 (코드 0) | **`757c133`** |
+> | — | [#197](https://github.com/gncorpseo-commits/capnet/pull/197) | STATE·handoff — 7회차 머지 후 HEAD (코드 0) | **`34d943f`** |
 
 > **7회차 (2026-09-02) — 결함·예방 열.** #186–#196(닫음 9) · #188 을 `7b1b065` 위에 머지.
 > 충돌 0 · `run_tests` **571 (건너뜀 7)** · `check_submission` **28/28** ·
