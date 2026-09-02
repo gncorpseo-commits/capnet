@@ -1,5 +1,46 @@
 # Changelog
 
+## 데이터셋 목록을 **못 받으면 화면이 하나 지어냈다** — 2026-09-02
+
+`call.html` 의 `loadOptions()` 가 이랬다:
+
+```js
+try {
+  const caps = await api("/v1/capabilities");
+  …
+} catch (e) { $("c-cap").innerHTML = `<option>${esc(e.message)}</option>`; }   // 에러를 올린다
+try {
+  const ds = await api("/v1/datasets");
+  $("c-dataset").innerHTML = (ds.items || []).map(…).join("");
+} catch { $("c-dataset").innerHTML = '<option>eurosat-rgb</option>'; }          // 지어낸다
+```
+
+**같은 함수 안에서 규약이 갈려 있었다.** 능력 목록은 못 받으면 에러를 보여 주는데,
+데이터셋은 **서버가 준 적 없는 `eurosat-rgb`** 를 서버가 준 것처럼 보여 줬다.
+
+빈 목록도 마찬가지였다 — `[].map().join("")` 은 `""` 라 `<select>` 가 통째로 비는데,
+바로 위 `c-cap` 에는 `|| '(없음)'` 이 있었다.
+
+**심각도는 낮다.** `/v1/datasets` 는 무인증이라 서버가 죽으면 위 줄이 이미 빨갛다.
+그래도 고친다 — 이번 회차가 고친 것이 전부 **「못 했는데 됐다고 말한다」** 이고,
+이건 그 계열의 마지막 한 자리였다.
+
+### 바뀐 것
+
+실패하면 **에러 메시지**를, 빈 목록이면 **`(없음)`** 을 보여 준다 — `c-cap` 과 같은 규약.
+
+### 무엇으로 쟀나
+
+`tests/test_ui_invariants.py` **2건 추가** (총 10건).
+**`catch` 블록 안에 도메인 값 리터럴이 있는지**를 본다 — 중괄호 균형으로 블록을
+잘라 내고 `eurosat-rgb`·`image.classify` 같은 값을 찾는다. 에러 메시지나 `(없음)` 은
+서버 데이터가 아니라 대상이 아니다.
+
+`test_catch_probe_actually_sees_catches` 를 함께 넣었다 — **`catch` 를 하나도 못 찾으면
+위 검사가 0건을 훑고 통과한다.** 이번 회차가 고친 것과 같은 함정이라 검사 자신에게도 적용했다.
+
+**뮤테이션이 물렸다** — 옛 폴백을 되돌리자 실패했다.
+
 ## purge 가 **한 행도 안 바꾸고 「지웠다」** 고 답했다 — 2026-09-02
 
 `POST /v1/inputs/{id}/purge` 가 이랬다:
