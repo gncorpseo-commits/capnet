@@ -25,9 +25,9 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–AP 완료 (2026-09-02).** main HEAD = **`7b1b065`** (#185 핸드오프) · **실행 능력 10종**.
+> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`757c133`** (#188 STATE) · **실행 능력 10종** · 열린 PR **0**.
 >
-> `run_tests` **487 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh`.
+> `run_tests` **571 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` (#196·#188 합친 트리).
 > capreq 는 **이 환경에서 못 쟀다** — `pip` 가 없어 `httpx`·`fastapi` 가 빠지고
 > 모듈 셋이 임포트에서 죽는다 (`52 ran · errors=3`). 정본은 CI 의 `capreq` 잡 ·
 > 설치·재현은 [`docs/guide/testing.md`](docs/guide/testing.md) §2. **「못 쟀다」를 안 적고
@@ -105,27 +105,37 @@
 > | **AO** | [#183](https://github.com/gncorpseo-commits/capnet/pull/183) | **purge 가 0행인데 「지웠다」고 답했다** | **닫음** (#184) |
 > | **AP** | [#184](https://github.com/gncorpseo-commits/capnet/pull/184) | **데이터셋 목록 실패 시 화면이 하나 지어냈다** | `cbf0a86` |
 > | — | [#182](https://github.com/gncorpseo-commits/capnet/pull/182) | 브리지 — 6회차 닫음 · 머지 안내 (코드 0) | `d37b319` |
-> | — | [#185](https://github.com/gncorpseo-commits/capnet/pull/185) | STATE 갱신 · **장기 모드 핸드오프 문서** 신설 (코드 0) | **`7b1b065`** |
+> | — | [#185](https://github.com/gncorpseo-commits/capnet/pull/185) | STATE 갱신 · **장기 모드 핸드오프 문서** 신설 (코드 0) | `7b1b065` |
+> | **AQ** | [#186](https://github.com/gncorpseo-commits/capnet/pull/186) | **깨진 계약이 「Node 는 칸 이름을 주장 못 한다」를 스스로 껐다** | **닫음** (#196) |
+> | **AR** | [#187](https://github.com/gncorpseo-commits/capnet/pull/187) | 방 검사 둘도 **0건이면 「전부 재현된다」** 였다 | **닫음** (#196) |
+> | **AS** | [#189](https://github.com/gncorpseo-commits/capnet/pull/189) | 모르는 모달리티가 데모 이미지로 떨어졌다 | **닫음** (#196) |
+> | **AT** | [#190](https://github.com/gncorpseo-commits/capnet/pull/190) | 안 푼 머지(충돌 마커)가 초록이었다 | **닫음** (#196) |
+> | **AU** | [#191](https://github.com/gncorpseo-commits/capnet/pull/191) | 실행기 없는 모달리티가 이미지 분류기로 떨어졌다 | **닫음** (#196) |
+> | **AV** | [#192](https://github.com/gncorpseo-commits/capnet/pull/192) | 라우트가 인증 없이 들어와도 안 걸렸다 | **닫음** (#196) |
+> | **AW** | [#193](https://github.com/gncorpseo-commits/capnet/pull/193) | 라우트 역할이 조용히 내려가도 안 걸렸다 | **닫음** (#196) |
+> | **AX** | [#194](https://github.com/gncorpseo-commits/capnet/pull/194) | Node 라우트 전수 밖 — 고친 뒤 못박지 않았다 | **닫음** (#196) |
+> | **AY** | [#195](https://github.com/gncorpseo-commits/capnet/pull/195) | capreq 루프백 전제가 못박혀 있지 않았다 | **닫음** (#196) |
+> | **AZ** | [#196](https://github.com/gncorpseo-commits/capnet/pull/196) | **시크릿이 로그·출력으로 나가는 쪽을 안 봤다** | `e211ab3` |
+> | — | [#188](https://github.com/gncorpseo-commits/capnet/pull/188) | Step 0 — STATE · 7회차 브리지 (코드 0) | **`757c133`** |
 
-> **7회차 — PR 대기 (2026-09-02).** main `7b1b065` 위에 **셋**. 전부 같은 계열의 연장이다.
+> **7회차 (2026-09-02) — 결함·예방 열.** #186–#196(닫음 9) · #188 을 `7b1b065` 위에 머지.
+> 충돌 0 · `run_tests` **571 (건너뜀 7)** · `check_submission` **28/28** ·
+> 열린 PR **전부 CI 3/3 SUCCESS**.
 >
-> | PR | 무엇 | 갈래 |
-> |---|---|---|
-> | **AQ** [#186](https://github.com/gncorpseo-commits/capnet/pull/186) | **깨진 계약이 「Node 는 칸 이름을 주장 못 한다」를 스스로 껐다** | 결함 |
-> | **AR** [#187](https://github.com/gncorpseo-commits/capnet/pull/187) | 방 검사 둘도 **0건이면 「전부 재현된다」** 였다 | 결함 · #186 위 |
-> | — | 이 PR | Step 0 — STATE 동기화 · 브리지 (코드 0) | 문서 |
+> **열 PR이 한 문장으로 묶인다 — 「안 본 것·못 박은 것·기본값 위험」을 초록으로 지나간다.**
 >
-> `run_tests` **508 OK (건너뜀 7)** (#187 까지 쌓은 트리) · `check_submission` **28/28**.
+> | # | 무엇 |
+> |---|---|
+> | #186 | 깨진 `required` 가 검사를 꺼서 Node 가 아무 칸이나 보고해도 증적에 적혔다 |
+> | #187 | `clean_room`·`prod_room` 이 통과 0 · 실패 0 도 초록 |
+> | #189 | 모르는 모달리티 → 데모 이미지 (기본값 위험) |
+> | #190 | 문서 충돌 마커가 검사 없이 초록 |
+> | #191 | 실행기 없는 모달리티 → 이미지 분류기 |
+> | #192–#195 | Core·Node·capreq 라우트·역할·루프백 — **고친 뒤 못박지 않음** |
+> | **#196** | **시크릿 ↔ 로그·출력 경로 전수·핀 없음** |
 >
-> **#186 이 제일 무겁다.** `output_schema.required` 가 `["label", 5]` 처럼 깨져 있으면
-> `_required_keys` 가 `[]` 를 돌려주고, 부르는 쪽의 `if required and …` 가 통째로 꺼져
-> **Node 가 아무 칸이나 보고해도 그대로 증적에 적혔다.** 게다가 `_output_key` 가
-> 계약과 무관한 `"vector"` 로 떨어져 **「게이트가 검증한 출력」과 「증적에 남는 출력」이
-> 갈라졌다** — 그 갈라짐을 막으려고 있는 코드가 계약이 깨지면 스스로 열렸다.
-> **오늘 새고 있지는 않다** (능력 10종 전부 `required` 를 문자열 목록으로 선언).
->
-> **이 환경에서 못 본 것:** `pip`·Docker 없음 → capreq 72 · `clean_room`·`prod_room` ·
-> 종단 데모 · 실제 브라우저. **「지난번 됐으니 된다」로 적지 않는다.**
+> **머지:** 코드 갈래 **#196** 하나 · 문서 **#188**. 브리지 `round7-close` 가 정본.
+> **열린 Decision 아홉** (+ `output-required-undeclared-policy`).
 
 > **6회차 (2026-09-02) — 실제 결함 넷.** #180–#184(닫음 3) · #182 를 `6179f42` 위에 머지한
 > 트리에서 쟀다: 충돌 0 · `run_tests` **487 (건너뜀 7)** · `check_submission` **28/28** ·
