@@ -7684,6 +7684,24 @@ WARNING output keys unchecked assignment=… — 계약에 required 가 없다 �
 이미 도는 스택을 깨지 않는다. `output_schema` 에는 지금 **CHECK 가 하나도 없다**
 (`JSONB NOT NULL` 뿐) — 등록 API 도 `dict[str, Any]` 로만 받는다.
 
+### 이 저장소는 **이미 세 곳에서 같은 답을 골랐다**
+
+`complete.py` 만 예외였다는 뜻이라, 여기 적어 둔다.
+
+| 자리 | 선언이 없거나 깨졌을 때 | 근거 (그 파일의 말) |
+|---|---|---|
+| `inputs.allowed_media_types` + `assert_media_type` | **거절** — 「받을 형식을 선언하지 않은 능력은 업로드를 받지 않는다」 | *「처음에는 「선언이 없으면 검사하지 않는다」였다 … 결과는 **아무 MIME 이나 받는 구멍**이었다 (D8′ 위반)」* |
+| `preprocess.resolve_preprocess` | **던진다** | 계약 게이트가 실패로 기록 |
+| `preprocess.resolve_text_preprocess` | **던진다** | *「조용히 기본값으로 떨어지면 **「선언한 대로 돌았다」가 거짓**이 된다」* |
+| **`complete._required_keys`** (전) | **`[]` → 검사 꺼짐** | — |
+
+**`inputs.py` 가 특히 가깝다.** 입력 쪽은 「선언 없으면 **입구에서** 거절」로
+이미 정해져 있다 — 그게 안 **B** 다. 출력 쪽만 다른 답을 갖고 있을 이유가
+있는지가 이 Decision 의 실질이다.
+
+`preprocess.py` 두 함수는 **「깨진 것은 던진다」**로 이미 정해져 있고,
+**#186 이 출력 쪽을 거기에 맞춘 것**이다 (그래서 그건 안 물었다).
+
 ### 지금 새고 있나 — **아니다**
 
 능력 **10종 전부** `required` 를 문자열 목록으로 선언한다 (데모 9 + seed 1).
@@ -7746,6 +7764,7 @@ status: open
 | `scripts/lib/http.sh` | ✅ 얇은 래퍼 · 실패 판정은 호출자 `-sf` |
 | **측정 숫자 ↔ 재현 명령** (`measured-claims.md` §1) | ✅ **위반 0.** 규칙 시행(#125 `2a40af0`) 뒤 카탈로그·STATE 에 들어온 측정 숫자는 전부 도구를 명시한다 |
 | `clean_room`·`prod_room` 0건 바닥 | ❌ **비어 있었다 → #187** |
+| **깨진 입력 → 기본값으로 검사 꺼짐** (#186 의 결) | **`complete.py` 하나뿐.** `inputs.allowed_media_types`·`preprocess.resolve_preprocess`·`resolve_text_preprocess` 는 **이미 거절/던지기**로 돼 있다 |
 
 > **`measured-claims.md` §7 은 「지키지 않는 커밋이 나오면 좁은 검사를 Proposal 로
 > 올린다」고 적는다. 아직 안 나왔다** — 그래서 **검사를 만들지 않았다.**
