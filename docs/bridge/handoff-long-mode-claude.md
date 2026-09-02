@@ -35,7 +35,7 @@
 
 | 항목 | 값 |
 |---|---|
-| main HEAD | `34d943f` (#197) — `git log -1` 로 재확인 |
+| main HEAD | `2cbb936` (#198) — `git log -1` 로 재확인 |
 | 열린 PR | **0** (새 작업 시작 시) |
 | 실행 능력 | **10종** |
 | `run_tests` | **571 OK (건너뜀 7)** — `bash scripts/run_tests.sh` |
@@ -194,6 +194,6 @@ tail -n 120 docs/bridge/inbox-cursor.md   # round7-close · 다음 큐
 
 | 날짜 | main | 비고 |
 |---|---|---|
-| 2026-09-03 | (PR 후) | `autonomous-mode.md` 전문 · handoff 요약 갱신 |
+| 2026-09-03 | `2cbb936` | `autonomous-mode.md` 전문 · handoff 요약 (#198) |
 | 2026-09-03 | `34d943f` | 자율 루프·실측 규율·8회차 큐 (#192/#196 교훈 반영) |
 | 2026-09-02 | `757c133` | 7회차 머지 (#196·#188) · Decision 9 |
