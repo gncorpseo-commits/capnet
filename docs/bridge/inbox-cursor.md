@@ -7491,9 +7491,26 @@ status: open
 | `clean_room.sh` · `prod_room.sh` | `chk` 호출이 **인라인 하드코딩**이라 0건은 눈에 보이는 편집 | ⚠️ 낮음 |
 | `regate.sh` | `총 0건` 을 세어 찍는다 | ✅ |
 
+**Core·Node 쪽도 같은 눈으로 봤다 — 여기도 #183 하나뿐이었다:**
+
+| 자리 | 0건일 때 | 판정 |
+|---|---|---|
+| `score_gate.py` | 케이스 0건 → `per_class_recall={}` → `min_recall=0.0` → **FAILED**. `accuracy` 도 `if total else 0.0` | ✅ 이중 방어 |
+| Core 의 gate finish | `cases_total != golden_set_size` 를 거부한다 | ✅ 계약이 한 번 더 |
+| `contract_check.py` 선언 검사 경로 | torch 없는 Node 는 선언만 본다 — **`notes` 에 「샘플 추론은 하지 않았다」·「출력 값은 검증하지 않았다」를 적는다** | ✅ 안 한 것을 말한다 |
+| `inputs.py` 의 `mark_purged`·`timeout_stale_tasks` | 전부 `RETURNING` + `None`/개수 반환 | ✅ |
+| **`main.py` 의 `input_purge`** | `marked` 가 `None` 인데 `purged_now: True` | ❌ **#183 이 고쳤다** |
+
+Core 의 `UPDATE` **전수**(`apikey`·`complete`·`credential`·`invite`·`capability`·
+`registry`·`inputs`·`claim`·`gate`) 중 **응답이 0행을 성공으로 말한 곳은 `input_purge` 하나**다.
+나머지는 `RETURNING` 결과를 그대로 쓰거나 조건부 `UPDATE` 에 판정을 맡긴다.
+
 파이썬 조용한 삼킴(`except: pass`·`return []`) **12곳도 전수했다 — 전부 정상**이다
 (좁은 예외 · 의도가 머리말에 적혀 있다). 폐기 경로는 `revocation-paths-audited` 에서
 이미 전수돼 있어 **다시 재지 않았다.**
+
+JS 쪽 `catch` **23곳**도 훑었다. 하나 빼고 전부 **에러를 화면에 올린다.**
+그 하나가 아래 「다음 큐」 2번(`call.html` 의 데이터셋 폴백)이다.
 
 ### 못 본 것 (숨기지 않는다)
 
