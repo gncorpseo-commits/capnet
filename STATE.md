@@ -25,8 +25,13 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–AG 완료 (2026-09-02).** main HEAD = **`905c576`** · **실행 능력 10종** ·
-> `run_tests` **453** · capreq **72** (건너뜀 0) · 열린 PR **0**.
+> **Wave A–AL 완료 (2026-09-02).** main HEAD = **`6179f42`** · **실행 능력 10종** · 열린 PR **0**.
+>
+> `run_tests` **472 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh`.
+> capreq 는 **이 환경에서 못 쟀다** — `pip` 가 없어 `httpx`·`fastapi` 가 빠지고
+> 모듈 셋이 임포트에서 죽는다 (`52 ran · errors=3`). 정본은 CI 의 `capreq` 잡 ·
+> 설치·재현은 [`docs/guide/testing.md`](docs/guide/testing.md) §2. **「못 쟀다」를 안 적고
+> 넘어가면 그것이 바로 이번 회차가 고친 결함 열과 같은 모양이다.**
 >
 > | Wave | PR | 내용 | main |
 > |------|-----|------|------|
@@ -89,6 +94,12 @@
 > | — | [#167](https://github.com/gncorpseo-commits/capnet/pull/167)–[#170](https://github.com/gncorpseo-commits/capnet/pull/170) | 문서 (INDEX 자리 · capreq README · 러너 가드 · 머지 안내) | `1a10557`·`f738c0e`·`905c576` |
 > | **AF** | [#171](https://github.com/gncorpseo-commits/capnet/pull/171) | **`pass_rate.sh` 가 규칙 가중치를 이미지 후보로 집어 죽었다** | `d5cfbc9` |
 > | **AG** | [#172](https://github.com/gncorpseo-commits/capnet/pull/172) | **`regate.sh` 가 폐기된 증서를 재게이트 대상으로 집었다** | `3f3c435` |
+> | — | [#173](https://github.com/gncorpseo-commits/capnet/pull/173) | 브리지·STATE — 4회차 (코드 0) | **`6179f42`** |
+> | **AH** | [#174](https://github.com/gncorpseo-commits/capnet/pull/174) | **라이선스 고지 검사가 capreq 를 안 보고 있었다** | `94519b1` |
+> | **AI** | [#175](https://github.com/gncorpseo-commits/capnet/pull/175) | **SBOM 에 capreq 의존성 둘이 빠져 있었다** | `a1f550b` |
+> | **AJ** | [#176](https://github.com/gncorpseo-commits/capnet/pull/176) | EuroSAT 아카이브 sha 가 열 곳에 손으로 적혀 있고 대조가 없었다 | `af25fde` |
+> | **AK** | [#177](https://github.com/gncorpseo-commits/capnet/pull/177) | **CI 가 `check_release` 를 안 불렀다** — 로컬에서만 도는 검사 | `ede8d7d` |
+> | **AL** | [#178](https://github.com/gncorpseo-commits/capnet/pull/178) | capreq 빌드 잔여물이 무시되지 않았다 | `767a764` |
 
 > **4회차 (2026-09-02) — 실제 결함 일곱.** 스물여섯을 `a4d47dd` 위에 전부 머지한
 > 트리에서 쟀다: 충돌 0 · `run_tests` **453** · capreq **72 (건너뜀 0)** ·
@@ -115,7 +126,9 @@
 > FAILED · `proof_ab.sh` AGREE · `pass_rate.sh` 11/16 · `regate.sh` 대상 없음.
 > 앞선 verify 표 셋에 이것들이 빠져 있어서 이번에 채웠다.
 >
-> **머지 완료 (2026-09-02).** #147–#178(닫음 4) · 열린 PR **0** · main **`905c576`**.
+> **머지 완료 (2026-09-02).** #147–#178 중 **28개** 머지 (닫음 4: #150 #157 #160 #165) ·
+> 열린 PR **0** · main **`6179f42`**. 머지 뒤 실측 = `run_tests` **472 (건너뜀 7)**
+> — 위 「453」은 **머지 전 스물여섯 트리**의 숫자였다.
 > 브리지 `verify-round4-and-merge-guide-v2` 가 정본이었다.
 >
 > **열린 Decision 일곱:** `11th-capability-timeseries-anomaly` ·
