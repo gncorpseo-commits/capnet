@@ -25,15 +25,15 @@ Decision에 막히면 inbox 블록만 올리고 **다른 줄로 넘어간다** (
 
 ---
 
-## 1. 지금 어디인가 (2026-09-02 · 6회차 머지 완료)
+## 1. 지금 어디인가 (2026-09-02 · 7회차 머지 완료)
 
 | 항목 | 값 |
 |---|---|
-| main HEAD | `0ab2230` (#179 STATE) |
+| main HEAD | `757c133` (#188 STATE) |
 | 열린 PR | **0** |
 | 실행 능력 | **10종** (D27: `retrieve.*` 구현 금지) |
-| `run_tests` | **487 OK (건너뜀 7)** — `bash scripts/run_tests.sh` |
-| Wave | **A–AP** (#147–#184, 닫음 7) |
+| `run_tests` | **571 OK (건너뜀 7)** — `bash scripts/run_tests.sh` |
+| Wave | **A–AZ** (#186–#196 스택 + #188) |
 
 **첫 액션 — 재확인:**
 ```bash
@@ -45,8 +45,8 @@ bash scripts/run_tests.sh 2>&1 | tail -5
 tail -n 300 docs/bridge/inbox-cursor.md
 ```
 
-**6회차 테마:** 「0건·0행·0개」를 「없다·됐다·깨끗하다」로 뭉뚱그린다 (#180–#184).  
-**브리지 정본:** `track-a-post-round6` · `merge-guide-round6` (inbox-cursor 끝).
+**7회차 테마:** 「안 본 것·못 박은 것·기본값 위험」을 초록으로 지나간다 (#186–#196).  
+**브리지 정본:** `round7-close` · `output-required-undeclared-policy` (inbox-cursor 끝).
 
 ---
 
@@ -74,7 +74,7 @@ tail -n 300 docs/bridge/inbox-cursor.md
 
 ---
 
-## 4. 열린 Decision **여덟** — 구현 PR 금지
+## 4. 열린 Decision **아홉** — 구현 PR 금지
 
 | topic | 막힌 것 |
 |---|---|
@@ -83,9 +83,10 @@ tail -n 300 docs/bridge/inbox-cursor.md
 | `failure-reason-not-surfaced` | 실패 이유 노출 (C 권장) |
 | `retention-ttl-policy` | 24h·7d·72h + 샘플 무기한 문구 |
 | `11th-capability-timeseries-anomaly` | 11번째 능력 채택 |
-| `changelog-changeset-rule` | CLAUDE.md 개정 (6회차: 쌓기 사례) |
-| **`golden-leakage-claim-unreproducible`** | 보고서 「겹침 0/300」 재현 불가 — 문구 Decision |
-| Next | inbox `track-a-post-round6` |
+| `changelog-changeset-rule` | CLAUDE.md 개정 (7회차: 안 쌓으면 충돌 사례) |
+| `golden-leakage-claim-unreproducible` | 보고서 「겹침 0/300」 재현 불가 |
+| **`output-required-undeclared-policy`** | 깨진 required → 거절 vs 경고 (#186 · B 권장) |
+| Next | inbox `round7-close` |
 
 **D27:** `retrieve.*` 구현 금지.
 
@@ -149,4 +150,4 @@ tail -n 300 docs/bridge/inbox-cursor.md
 
 | 날짜 | main | 비고 |
 |---|---|---|
-| 2026-09-02 | `0ab2230` | 6회차 머지 (#179–#184) · Decision 8 |
+| 2026-09-02 | `757c133` | 7회차 머지 (#196·#188) · Decision 9 · run_tests 571 |
