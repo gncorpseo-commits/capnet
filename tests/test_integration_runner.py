@@ -28,6 +28,9 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -65,6 +68,56 @@ class TestNothingIsSilentlySkipped(unittest.TestCase):
     def test_probe_actually_finds_things(self) -> None:
         """0개를 비교하며 통과하는 상태를 막는다. **개수는 못박지 않는다.**"""
         self.assertGreater(len(list(INTEGRATION.glob(PATTERN))), 5)
+
+
+class TestZeroChecksIsNotPass(unittest.TestCase):
+    """**하나도 못 찾으면 실패해야 한다.**
+
+    위 검사들은 「패턴을 벗어난 파일 하나」를 막는다. 그런데 **전부가 안 잡히는 경우**는
+    따로였다 — 루프가 안 돌고 끝에서 「통과 0 · 실패 0」이 찍힌 뒤 `exit 0` 이었다.
+
+    CI 의 `integration` 잡이 이 스크립트를 그대로 부른다. glob 이 한 번 빗나가면
+    **통합 검사 0개로 초록**이 된다. `find` 는 디렉터리가 없어도 프로세스 치환 안이라
+    `set -e` 에 안 걸리므로, 스크립트 스스로 세는 수밖에 없다.
+
+    postgres 없이 돈다 — 가드가 `psql` 보다 먼저다. 그것 자체가 이 검사의 요구사항이다.
+    """
+
+    def _run_in_fake_root(self, files: list[str]) -> subprocess.CompletedProcess[str]:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "scripts").mkdir()
+            (root / "tests" / "integration").mkdir(parents=True)
+            for name in files:
+                (root / "tests" / "integration" / name).write_text("", encoding="utf-8")
+            dst = root / "scripts" / RUNNER.name
+            dst.write_text(RUNNER.read_text(encoding="utf-8"), encoding="utf-8")
+            dst.chmod(0o755)
+            return subprocess.run(
+                ["bash", str(dst)],
+                capture_output=True,
+                text=True,
+                timeout=60,
+                # psql 까지 가면 안 된다. 가더라도 진짜 DB 를 건드리지 않게 막아 둔다.
+                env={**os.environ, "PGHOST": "127.0.0.1", "PGPORT": "1"},
+            )
+
+    def test_empty_integration_dir_fails(self) -> None:
+        r = self._run_in_fake_root([])
+        self.assertNotEqual(r.returncode, 0, f"0건인데 통과했다:\n{r.stdout}\n{r.returncode}")
+        self.assertIn("하나도 못 찾았다", r.stderr + r.stdout)
+
+    def test_only_off_pattern_files_fails(self) -> None:
+        """`check_` 로 시작하지 않는 이름만 있으면 = 0건이다."""
+        r = self._run_in_fake_root(["revocation_check.py", "helpers.py"])
+        self.assertNotEqual(r.returncode, 0, f"패턴 밖 파일만 있는데 통과했다:\n{r.stdout}")
+        self.assertIn("하나도 못 찾았다", r.stderr + r.stdout)
+
+    def test_guard_runs_before_psql(self) -> None:
+        """가드가 DB 준비보다 뒤면 「postgres 가 없어서」로 실패가 뭉개진다."""
+        r = self._run_in_fake_root([])
+        blob = r.stderr + r.stdout
+        self.assertNotIn("psql", blob, f"psql 까지 갔다 — 가드가 늦다:\n{blob}")
 
 
 if __name__ == "__main__":

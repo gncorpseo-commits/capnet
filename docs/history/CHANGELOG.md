@@ -1,5 +1,170 @@
 # Changelog
 
+## 데이터셋 목록을 **못 받으면 화면이 하나 지어냈다** — 2026-09-02
+
+`call.html` 의 `loadOptions()` 가 이랬다:
+
+```js
+try {
+  const caps = await api("/v1/capabilities");
+  …
+} catch (e) { $("c-cap").innerHTML = `<option>${esc(e.message)}</option>`; }   // 에러를 올린다
+try {
+  const ds = await api("/v1/datasets");
+  $("c-dataset").innerHTML = (ds.items || []).map(…).join("");
+} catch { $("c-dataset").innerHTML = '<option>eurosat-rgb</option>'; }          // 지어낸다
+```
+
+**같은 함수 안에서 규약이 갈려 있었다.** 능력 목록은 못 받으면 에러를 보여 주는데,
+데이터셋은 **서버가 준 적 없는 `eurosat-rgb`** 를 서버가 준 것처럼 보여 줬다.
+
+빈 목록도 마찬가지였다 — `[].map().join("")` 은 `""` 라 `<select>` 가 통째로 비는데,
+바로 위 `c-cap` 에는 `|| '(없음)'` 이 있었다.
+
+**심각도는 낮다.** `/v1/datasets` 는 무인증이라 서버가 죽으면 위 줄이 이미 빨갛다.
+그래도 고친다 — 이번 회차가 고친 것이 전부 **「못 했는데 됐다고 말한다」** 이고,
+이건 그 계열의 마지막 한 자리였다.
+
+### 바뀐 것
+
+실패하면 **에러 메시지**를, 빈 목록이면 **`(없음)`** 을 보여 준다 — `c-cap` 과 같은 규약.
+
+### 무엇으로 쟀나
+
+`tests/test_ui_invariants.py` **2건 추가** (총 10건).
+**`catch` 블록 안에 도메인 값 리터럴이 있는지**를 본다 — 중괄호 균형으로 블록을
+잘라 내고 `eurosat-rgb`·`image.classify` 같은 값을 찾는다. 에러 메시지나 `(없음)` 은
+서버 데이터가 아니라 대상이 아니다.
+
+`test_catch_probe_actually_sees_catches` 를 함께 넣었다 — **`catch` 를 하나도 못 찾으면
+위 검사가 0건을 훑고 통과한다.** 이번 회차가 고친 것과 같은 함정이라 검사 자신에게도 적용했다.
+
+**뮤테이션이 물렸다** — 옛 폴백을 되돌리자 실패했다.
+
+## purge 가 **한 행도 안 바꾸고 「지웠다」** 고 답했다 — 2026-09-02
+
+`POST /v1/inputs/{id}/purge` 가 이랬다:
+
+```python
+marked = mark_purged(conn, input_id)      # STORED 인 것만 → 0행이면 None
+removed = purge_blob(input_id)
+return {**(marked or row), "purged_now": True, "file_removed": removed}
+```
+
+`mark_purged` 가 `None` 이어도 — **UPDATE 가 한 행도 안 바꿔도** — `purged_now: True`
+였다. 더 나쁜 것은 `marked or row` 다. 위에서 읽어 둔 **옛 행**을 함께 실어 보내
+응답이 **자기모순**이 됐다:
+
+```json
+{"storage_state": "STORED", "bytes_purged_at": null, "purged_now": true}
+```
+
+### 가상의 경우가 아니다
+
+`storage_state` 는 `STORED` · `PURGED` 둘뿐이고(0011) 위에 `PURGED` 조기 반환이 있다.
+그러니 `marked is None` 은 **경쟁**뿐이다 — 읽은 뒤 UPDATE 전에 다른 쪽이 지웠다.
+
+그 「다른 쪽」이 **같은 프로세스의 배경 스레드**다. `_gc_loop` 가 주기적으로
+`task_input_purge_due` 를 훑어 같은 `mark_purged` 를 부른다.
+
+**바이트는 어느 쪽이든 지워지므로 데이터 피해는 없다.** 거짓말한 것은 **응답**이다.
+
+### 바뀐 것
+
+0행이면 사실을 **다시 읽어** `purged_now: False` 로 돌려준다.
+`storage_state` 도 그때의 진짜 값(`PURGED`)이 나간다. 로그도 남긴다.
+성공 응답은 이제 `marked` **하나만** 펼친다 — 대체값이 없다.
+
+### 무엇으로 쟀나
+
+`tests/test_purge_does_not_claim_it_purged.py` **3건.** `app.main` 은 fastapi 를
+import 하므로 의존성 없는 환경에서 **모듈을 못 불러온다** — 그래서 `ast` 로 본다
+(표준 라이브러리로 파싱된다).
+
+**뮤테이션 2종이 물렸다** — 경쟁 분기를 `if False` 로 죽이니 **1건 실패**,
+`marked or row` 를 되돌리니 **2건 실패**.
+
+DB 를 띄우는 쪽은 `tests/integration/check_input_purge.py` 가 이미 `mark_purged` 의
+「STORED 만 바꾼다」를 고정하고 있다 (CI 의 migrate 잡).
+
+## 통합 검사 **0개도 초록**이었다 — 2026-09-02
+
+`scripts/run_integration.sh` 는 `tests/integration/check_*.py` 를 glob 으로 집는데,
+**하나도 못 찾았을 때를 세지 않았다.** 루프가 안 돌고 끝에서 이렇게 끝난다:
+
+```text
+  서버 127.0.0.1:5432 · 검사 0개
+  …
+===== 통합 검사: 통과 0 · 실패 0 =====
+검사끼리 상태를 공유하지 않는다 — 순서를 바꿔도 같은 결과다.
+exit=0
+```
+
+**CI 의 `integration` 잡이 이 스크립트를 그대로 부른다.** glob 이 한 번 빗나가면
+(디렉터리 이름 변경 · 패턴 변경 · 체크아웃 누락) **통합 검사 0개로 CI 가 초록**이 된다.
+
+[#169](https://github.com/gncorpseo-commits/capnet/pull/169) 는 **「파일 하나가
+패턴을 벗어나면 조용히 안 돈다」** 를 막았다. 그런데 **전부가 안 잡히는 경우**는
+그 검사 밖이었다 — `test_probe_actually_finds_things` 는 러너가 아니라 **파이썬
+쪽에서** glob 을 세므로, 러너 자신이 0건일 때 어떻게 끝내는지는 아무도 안 봤다.
+
+`find` 는 디렉터리가 없어도 **프로세스 치환 안이라 `set -e` 에 안 걸린다.**
+
+### 바뀐 것
+
+`checks` 가 비면 `psql` 보다 **먼저** 멈춘다 (`exit 1`).
+「0건은 통과가 아니다」와 경로·패턴을 찍는다.
+
+### 무엇으로 쟀나
+
+`tests/test_integration_runner.py` **3건 추가** (총 6건). 임시 트리에 러너를 복사하고
+**실제로 돌린다** — postgres 없이 돈다는 것 자체가 요구사항이라 그것도 단언한다
+(`test_guard_runs_before_psql`). 가드가 늦으면 「postgres 가 없어서」로 실패가 뭉개진다.
+
+**뮤테이션이 물렸다** — 가드를 `if false` 로 죽이자 **3건이 실패**했고, 그 출력이
+고치기 전 동작을 그대로 보여 줬다: `검사 0개` → psql 로 진행.
+
+## 누출 검사가 **아무것도 안 보고 「깨끗하다」** 고 말했다 — 2026-09-02
+
+`scripts/check_golden_leakage.py` 는 없는 매니페스트를 `(건너뜀 - 없음)` 한 줄로 넘기고
+**종료 코드에 반영하지 않았다.** 그래서 넷이 다 없어도 이렇게 끝났다:
+
+```text
+$ python3 scripts/check_golden_leakage.py --manifest NO_SUCH.json
+  (건너뜀 - 없음) NO_SUCH.json
+
+겹침 없음. 골든셋은 홀드아웃이다.
+exit=0
+```
+
+**가정이 아니다.** 기본 매니페스트 넷 중 **셋은 `data/` 아래라 저장소에 추적되지 않는다**
+(용량). 즉 **신선한 클론에서 시키는 대로 돌리면 늘 저 자리**였고, 하필 그 셋 중 하나가
+`data/golden-n300-holdout/…` 이다. 결과보고서는 이 도구로 **「겹침 0/300 검증」** 을
+주장한다 — 따라 돌린 사람은 **40건만 본 초록**을 받고 300건을 확인했다고 믿게 된다.
+
+### 무엇을 바꿨나
+
+| 상황 | 전 | 후 |
+|---|---|---|
+| 본 것이 **0건** | `0` · 「겹침 없음」 | **`1`** · 「답할 수 없다」 |
+| **일부만** 봤다 | `0` · 「겹침 없음」 | **`3`** · 못 본 목록을 이름으로 찍는다 |
+| 케이스 0건 매니페스트 | `clean` 로 셈 | **못 본 것**으로 셈 |
+| `zip_path` 없는 케이스 | 경고만 · 결과 무영향 | **못 본 것**으로 셈 |
+| 겹침 발견 | `2` | `2` (그대로) |
+| 전부 보고 안 겹침 | `0` | `0` — 다만 **몇 종을 봤는지 같이 찍는다** |
+
+`data/` 를 만든 이 환경에서 기본 실행은 그대로 `2` 다 (n300·n300-train 은 **일부러**
+학습셋이다). 신선한 클론은 이제 `3` — 「40건은 깨끗하다, 300건은 못 봤다」.
+
+### 무엇으로 쟀나
+
+`tests/test_golden_leakage_honesty.py` **7건.** EuroSAT zip 없이 도는 순수 함수
+`run_manifests` 를 직접 부른다. **뮤테이션 3종이 전부 물렸다** — 없는 파일 무시 /
+`zip_path` 없는 케이스 무시 / 옛 문구 복귀. 셋 다 검사가 잡았다.
+
+이 도구는 `run_tests.sh` 에도 CI 에도 **없다.** EuroSAT zip(94MB)이 저장소에 없어
+CI 가 돌릴 수 없기 때문이다 — 그래서 **정직성 쪽만** 단위 검사로 고정했다.
+
 ## 검사가 조용히 줄어 있었다 — 네 건을 몰아 적는다 (Wave U·V·W·X) — 2026-09-02
 
 **동작 변경 0.** 네 PR 모두 코드를 안 고쳤다 — 검사·문서·도구만이다.

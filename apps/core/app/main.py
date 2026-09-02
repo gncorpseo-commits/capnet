@@ -1205,9 +1205,23 @@ def input_purge(input_id: uuid.UUID, authorization: str | None = Header(default=
         if row["storage_state"] == "PURGED":
             return {**row, "purged_now": False}
         marked = mark_purged(conn, input_id)
+        if marked is None:
+            # **UPDATE 가 0행이다 — 내가 지운 것이 아니다.**
+            #
+            # 위에서 읽은 뒤 여기 오기까지 사이에 다른 쪽이 이미 지웠다는 뜻이다.
+            # 가상의 경우가 아니다 — GC 가 **같은 프로세스의 배경 스레드**로 돌고
+            # (`_gc_loop`), `task_input_purge_due` 에 걸린 입력을 언제든 집는다.
+            #
+            # 예전에는 여기서도 `purged_now: True` 를 돌려줬다. 그것도 문제지만
+            # 더 나쁜 것은 `marked or row` 로 **읽어 둔 옛 행**을 함께 실어 보낸 것이다 —
+            # 응답이 `storage_state: STORED` 와 `purged_now: true` 를 **동시에** 말했다.
+            # 「못 했다」를 「됐다」로 뭉뚱그리는 자리라 사실을 다시 읽어 돌려준다.
+            raced = get_input(conn, input_id) or row
+            logger.info("input purge raced id=%s — 다른 쪽이 이미 지웠다", input_id)
+            return {**raced, "purged_now": False}
     removed = purge_blob(input_id)
     logger.info("input purged id=%s file_removed=%s", input_id, removed)
-    return {**(marked or row), "purged_now": True, "file_removed": removed}
+    return {**marked, "purged_now": True, "file_removed": removed}
 
 
 class SampleBody(BaseModel):

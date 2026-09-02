@@ -80,8 +80,15 @@ async function loadOptions() {
   } catch (e) { $("c-cap").innerHTML = `<option>${esc(e.message)}</option>`; }
   try {
     const ds = await api("/v1/datasets");
-    $("c-dataset").innerHTML = (ds.items || []).map(d => `<option>${esc(d)}</option>`).join("");
-  } catch { $("c-dataset").innerHTML = '<option>eurosat-rgb</option>'; }
+    // 빈 목록도 말한다 — 빈 <select> 는 「없다」가 아니라 「모른다」로 보인다.
+    $("c-dataset").innerHTML = (ds.items || []).map(d => `<option>${esc(d)}</option>`).join("")
+      || '<option value="">(없음)</option>';
+  } catch (e) {
+    // **못 받았으면 못 받았다고 한다.** 여기는 `eurosat-rgb` 를 박아 넣고 있었다 —
+    // 서버가 준 적 없는 값을 서버가 준 것처럼 보여 줬다. 바로 위 c-cap 은
+    // 처음부터 에러를 올렸으니 **같은 함수 안에서 규약이 갈려 있었다.**
+    $("c-dataset").innerHTML = `<option value="">${esc(e.message)}</option>`;
+  }
 }
 
 $("c-adv").onclick = () => {
