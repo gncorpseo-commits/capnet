@@ -507,10 +507,24 @@ def _run(
                         )
                 except TextResourceLimitExceeded as exc:
                     raise ResourceLimitExceeded(str(exc)) from exc
-            else:
+            elif modality == "image":
                 label, confidence = predict_image(
                     path, image_path, arch=arch, max_params=max_params,
                     preprocess=preprocess,
+                )
+            else:
+                # **여기가 예전에는 `else: predict_image(...)` 였다.**
+                #
+                # 어휘(`ARCH_MODALITY`)에 새 모달리티를 더하고 위에 분기를 안 만들면
+                # 그 능력이 **조용히 이미지 분류기로 떨어졌다.** arch 는 등록돼 있으니
+                # `build_model` 도 통과한다 — 「무엇으로 돌았나」가 증적과 갈라진다.
+                #
+                # 이름 없는 모달리티는 **실행기가 없는 것**이다. 그렇게 말한다.
+                # (`arch=None` 인 legacy Agent 는 `_modality_of` 가 `"image"` 로
+                #  떨어뜨리므로 위 분기로 간다 — 종전 동작 그대로다.)
+                raise HTTPException(
+                    status_code=501,
+                    detail=f"{modality} 실행기가 이 Node 에 없다 (arch={arch!r})",
                 )
         except ResourceLimitExceeded as exc:
             # 조용히 도는 것보다 터뜨리는 편이 낫다 — Core 가 FAILED 로 기록한다.

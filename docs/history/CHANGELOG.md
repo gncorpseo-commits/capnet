@@ -1,5 +1,54 @@
 # Changelog
 
+## **실행기가 없는 모달리티는 이미지 분류기로 떨어졌다** — 2026-09-02
+
+[#189](https://github.com/gncorpseo-commits/capnet/pull/189)가 **입력 선택**의
+불안전한 기본값을 뒤집었다. **실행기 선택에도 같은 것이 남아 있었다:**
+
+```python
+elif modality in ("text", "text_embed"):
+    ...
+else:
+    label, confidence = predict_image(...)      # ← 이름 없는 것은 전부 여기로
+```
+
+**기본값이 「이미지 분류기」였다.** 실측하면 오늘 `else` 로 가는 것은 `image` 하나뿐이라
+맞다:
+
+```text
+실행기 분기가 이름으로 잡는 모달리티:
+  image_embed, series, table_extract, text, text_embed,
+  text_extract, text_ner, text_pii, text_rank
+어휘 전체:  위 아홉 + image
+이름 없이 else 로 가는 것:  ['image']
+```
+
+**문제는 자라는 방향이다.** `ARCH_MODALITY` 에 새 모달리티를 더하고 위에 분기를
+안 만들면 그 능력이 **조용히 이미지 분류기로 돈다.** arch 는 등록돼 있으니
+`build_model` 도 통과한다 — 「무엇으로 돌았나」가 증적과 갈라진다.
+
+### 바뀐 것
+
+`else` 를 **`elif modality == "image"`** 로 이름 붙이고, 남는 `else` 는 **501** 로
+「실행기가 이 Node 에 없다」고 말한다.
+
+**동작 변경 0.** `arch=None` 인 legacy Agent 는 `_modality_of` 가 `"image"` 로
+떨어뜨리므로 이름 붙은 분기로 간다 — 종전 그대로다.
+
+### 무엇으로 쟀나
+
+`tests/test_executor_dispatch_covers_vocabulary.py` **6건.** `ARCH_MODALITY` 와
+실행기 분기를 **양쪽 다 파싱해 집합으로 대조한다** (`torch`·`fastapi` 없이 돈다).
+분기가 부르는 `app.infer*` 모듈이 실재하는지도 본다.
+
+**뮤테이션 2종이 물렸다** — 남는 `else` 를 다시 `predict_image` 로(1건) ·
+어휘에 `audio` 만 더하고 분기를 안 만들기(1건).
+
+> **이 검사가 처음에 자기 주석에 걸렸다.** 「예전에는 `predict_image` 로
+> 떨어졌다」고 적은 **설명 문단**이 위반으로 잡혔다. `_srcguard.code_only` 로
+> 주석을 빼서 고쳤다 — 이 저장소에서 **여섯 번째** 같은 사고다.
+> **설명을 지워야 통과하는 검사를 만들지 않는다.**
+
 ## **안 푼 머지가 초록이었다** — 충돌 마커를 문서에서 본다 — 2026-09-02
 
 **이번 세션에 실측했다.** 머지 프로브가 `CHANGELOG.md` 에서 충돌했고,
