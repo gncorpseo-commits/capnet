@@ -98,8 +98,52 @@ class UiInvariants(unittest.TestCase):
             self.assertIn('src="/ui/app.js"', s, f"{p.name}: app.js 를 안 쓴다")
             self.assertNotIn("async function api(", s, f"{p.name}: api() 를 다시 정의한다")
 
+    def test_catch_never_invents_server_data(self) -> None:
+        """**못 받았으면 못 받았다고 한다.** 실패 자리에 서버 값을 박아 넣지 않는다.
+
+        `call.html` 의 데이터셋 목록이 그랬다 (2026-09-02):
+
+            } catch { $("c-dataset").innerHTML = '<option>eurosat-rgb</option>'; }
+
+        `/v1/datasets` 를 못 받아도 **서버가 준 적 없는 `eurosat-rgb`** 를
+        서버가 준 것처럼 보여 줬다. 바로 위 `c-cap` 은 처음부터 에러를 올렸으니
+        **같은 함수 안에서 규약이 갈려 있었다.**
+
+        여기서 보는 것은 **`catch` 블록 안에 도메인 값 리터럴이 있는가** 하나다.
+        에러 메시지·빈 표시(`(없음)`)는 서버 데이터가 아니므로 대상이 아니다.
+        """
+        # 실제 데이터셋·능력 코드. 화면이 이것을 **스스로 만들어 내면** 안 된다.
+        invented = ("eurosat-rgb", "image.classify", "text.classify", "safety.pii")
+        for p in PAGES:
+            s = code(p)
+            for m in re.finditer(r"\bcatch\b[^{]*\{", s):
+                # 중괄호 균형으로 블록 끝을 찾는다 — 정규식 하나로는 못 자른다.
+                i = s.index("{", m.start())
+                depth, j = 0, i
+                while j < len(s):
+                    if s[j] == "{":
+                        depth += 1
+                    elif s[j] == "}":
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    j += 1
+                block = s[i : j + 1]
+                for bad in invented:
+                    self.assertNotIn(
+                        bad,
+                        block,
+                        f"{p.name}: catch 안에서 `{bad}` 를 지어낸다 — "
+                        "못 받은 것을 받은 것처럼 보여 준다",
+                    )
+
     def test_finder_actually_finds_things(self) -> None:
         self.assertGreaterEqual(len(PAGES), 4)
+
+    def test_catch_probe_actually_sees_catches(self) -> None:
+        """`catch` 를 하나도 못 찾으면 위 검사는 0건을 훑고 통과한다."""
+        total = sum(len(re.findall(r"\bcatch\b", code(p))) for p in PAGES)
+        self.assertGreater(total, 5, f"catch 를 {total}개밖에 못 찾았다 — 검사가 헛돈다")
 
 
 if __name__ == "__main__":

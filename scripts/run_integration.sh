@@ -51,6 +51,20 @@ if [[ ${#checks[@]} -eq 0 ]]; then
     < <(find "$root/tests/integration" -name 'check_*.py' | sort)
 fi
 
+# **0건이면 통과가 아니다.**
+#
+# 여기가 비면 아래 루프가 안 돌고 끝에서 「통과 0 · 실패 0」이 찍힌 뒤 exit 0 이었다.
+# CI 의 integration 잡이 이 스크립트를 그대로 부르므로, glob 이 한 번 빗나가면
+# **통합 검사 0개로 초록**이 된다. #169 는 「이름이 패턴을 벗어나면 조용히 안 돈다」를
+# 막았지만, **전부가 안 잡히는 경우**는 여전히 조용했다.
+#
+# find 는 디렉터리가 없어도 프로세스 치환 안이라 set -e 에 안 걸린다 — 그래서 여기서 본다.
+if [[ ${#checks[@]} -eq 0 ]]; then
+  echo "통합 검사를 하나도 못 찾았다 — $root/tests/integration/check_*.py" >&2
+  echo "0건은 통과가 아니다. 경로·패턴을 확인한다 (docs/guide/testing.md §4.5)." >&2
+  exit 1
+fi
+
 echo "통합 검사 — 검사마다 깨끗한 DB (템플릿 복제)"
 echo "  서버 ${PGHOST}:${PGPORT} · 검사 ${#checks[@]}개"
 

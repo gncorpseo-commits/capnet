@@ -617,10 +617,15 @@ docker compose up --build -d
 bash scripts/proof_ab.sh                        # §2 — 실게이트 + 교차 할당
 bash scripts/sanity.sh                          # §5 — floor 3종 FAILED
 bash scripts/pass_rate.sh <후보 8개>            # §4.3 — 통과율
-python3 scripts/check_golden_leakage.py         # §4.4(가) — 누출 검사 (exit 2 = 겹침)
+python3 scripts/check_golden_leakage.py         # §4.4(가) — 누출 검사 (2=겹침 · 3=부분 검사)
 ```
 
 `check_golden_leakage.py`는 표준 라이브러리만 쓰며 호스트에서 바로 돈다.
+
+> **`3` 이면 아직 답이 아니다.** n=300 매니페스트는 `data/` 아래라 저장소에 없어서
+> (바로 아래 SD-003), 신선한 클론에서는 데모 40건만 보고 `3` 으로 끝난다.
+> **이 절이 근거로 드는 「0/300」을 재현하려면 `scripts/extract_golden_n300.sh` 를 먼저 돌린다.**
+> 예전에는 이 자리에서 `0` 과 「겹침 없음」이 나왔다 — 300건을 안 보고도 초록이었다.
 학습셋 정의는 `train_scratch.list_images()` 규칙을 그대로 복제했고,
 골든 출처는 manifest의 `zip_path`를 쓴다.
 

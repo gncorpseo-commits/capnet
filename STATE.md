@@ -25,9 +25,9 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–AL 완료 (2026-09-02).** main HEAD = **`6179f42`** · **실행 능력 10종** · 열린 PR **0**.
+> **Wave A–AP 완료 (2026-09-02).** main HEAD = **`d37b319`** (#184·#182 머지 후) · **실행 능력 10종** · 열린 PR **0**.
 >
-> `run_tests` **472 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh`.
+> `run_tests` **487 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh`.
 > capreq 는 **이 환경에서 못 쟀다** — `pip` 가 없어 `httpx`·`fastapi` 가 빠지고
 > 모듈 셋이 임포트에서 죽는다 (`52 ran · errors=3`). 정본은 CI 의 `capreq` 잡 ·
 > 설치·재현은 [`docs/guide/testing.md`](docs/guide/testing.md) §2. **「못 쟀다」를 안 적고
@@ -100,6 +100,28 @@
 > | **AJ** | [#176](https://github.com/gncorpseo-commits/capnet/pull/176) | EuroSAT 아카이브 sha 가 열 곳에 손으로 적혀 있고 대조가 없었다 | `af25fde` |
 > | **AK** | [#177](https://github.com/gncorpseo-commits/capnet/pull/177) | **CI 가 `check_release` 를 안 불렀다** — 로컬에서만 도는 검사 | `ede8d7d` |
 > | **AL** | [#178](https://github.com/gncorpseo-commits/capnet/pull/178) | capreq 빌드 잔여물이 무시되지 않았다 | `767a764` |
+> | **AM** | [#180](https://github.com/gncorpseo-commits/capnet/pull/180) | **누출 검사가 아무것도 안 보고 「깨끗하다」고 말했다** | **닫음** (#184) |
+> | **AN** | [#181](https://github.com/gncorpseo-commits/capnet/pull/181) | **통합 검사 0개도 초록이었다** | **닫음** (#184) |
+> | **AO** | [#183](https://github.com/gncorpseo-commits/capnet/pull/183) | **purge 가 0행인데 「지웠다」고 답했다** | **닫음** (#184) |
+> | **AP** | [#184](https://github.com/gncorpseo-commits/capnet/pull/184) | **데이터셋 목록 실패 시 화면이 하나 지어냈다** | `cbf0a86` |
+> | — | [#182](https://github.com/gncorpseo-commits/capnet/pull/182) | 브리지 — 6회차 닫음 · 머지 안내 (코드 0) | `d37b319` |
+
+> **6회차 (2026-09-02) — 실제 결함 넷.** #180–#184(닫음 3) · #182 를 `6179f42` 위에 머지한
+> 트리에서 쟀다: 충돌 0 · `run_tests` **487 (건너뜀 7)** · `check_submission` **28/28** ·
+> 열린 PR **전부 CI 3/3 SUCCESS**.
+>
+> **넷 다 같은 모양 — 「0건·0행·0개」를 「없다·됐다·깨끗하다」로 뭉뚱그린다.**
+>
+> | # | 무엇 |
+> |---|---|
+> | #180 | 누출 검사가 건너뛴 매니페스트를 보고도 exit 0 · 「겹침 없음」 |
+> | #181 | 통합 러너가 검사 0개인데도 초록 |
+> | #183 | purge 가 rowcount 0인데 「purged」 |
+> | **#184** | **call.html 이 datasets API 실패 시 가짜 목록을 그림** |
+>
+> **머지 (2026-09-02).** 코드 갈래 **#184** 하나(#180–#183 스택) · 브리지 **#182** ·
+> STATE **#179**. `CHANGELOG` 선두 네 항목(#180→#184 순) — `changelog-changeset-rule` Decision
+> **여섯 번째 사례**(쌓기로 대가 회피). 브리지 `track-a-post-round6` 가 정본.
 
 > **4회차 (2026-09-02) — 실제 결함 일곱.** 스물여섯을 `a4d47dd` 위에 전부 머지한
 > 트리에서 쟀다: 충돌 0 · `run_tests` **453** · capreq **72 (건너뜀 0)** ·

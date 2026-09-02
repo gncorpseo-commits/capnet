@@ -24,7 +24,12 @@ scripts/extract_golden_n300.ps1   # 또는 .sh · extract 기본 split=holdout
 ```text
 python scripts/check_golden_leakage.py
 # 데모·홀드아웃 매니페스트는 clean 이어야 한다 (학습셋 = HOLDOUT=1 가정)
+# 종료 코드: 0 = 지정한 것을 전부 보고 겹침 없음 · 2 = 겹침 · 3 = 부분 검사 · 1 = 실행 오류
 ```
+
+> **`3` 이 흔한 값이다.** 기본 매니페스트 넷 중 셋은 `data/` 아래라 **저장소에 없다**.
+> 신선한 클론에서 그냥 돌리면 40건짜리 하나만 보고 `3` 으로 끝난다 — 그게 정직한 답이다.
+> **n300 홀드아웃까지 보려면 위 `extract_golden_n300` 를 먼저 돌려 `data/` 를 만든다.**
 
 sha 정합 검사 (**골든셋을 교체하면 반드시**):
 
