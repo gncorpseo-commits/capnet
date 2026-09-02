@@ -7431,7 +7431,7 @@ at: 2026-09-02T23:45:00+09:00
 topic: round6-close
 type: next
 expects: ack
-status: open
+status: done
 ---
 
 ## 6회차 닫음 — **머지 뒤 첫 세션** · 결함 넷 + Step 0
@@ -7558,7 +7558,7 @@ at: 2026-09-03T00:10:00+09:00
 topic: merge-guide-round6
 type: confirm
 expects: ack
-status: open
+status: done
 ---
 
 ## 머지 안내 — **넷을 두 번에**
@@ -7635,4 +7635,177 @@ done | sort -rn
 Decision 이 그 값을 보고 정하면 된다.
 
 #179 · #182 는 `CHANGELOG` 를 안 건드린다 (브리지·STATE).
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T09:00:00+09:00
+topic: output-required-undeclared-policy
+type: proposal
+expects: decision
+status: open
+---
+
+## 계약이 **출력 칸을 선언하지 않으면** 어떻게 할까
+
+#186 에서 `complete.py` 의 구멍 하나를 고쳤다. **남은 반쪽이 정책이라 물어본다.**
+
+### 무엇을 이미 고쳤나 (Decision 아님 · #186)
+
+`output_schema.required` 가 `["label", 5]` 처럼 **깨져 있으면** `_required_keys` 가
+조용히 `[]` 를 돌려줬다. 그래서 두 가지가 동시에 꺼졌다 —
+칸 검사(`if required and …`)와, `_output_key` 가 계약 대신 `"vector"` 로 떨어지는 것.
+
+이제 **깨진 것은 `BrokenOutputContract` → 422** 다. **버그 수정이라 안 물었다.**
+
+### 남은 것 — **선언이 아예 없을 때** (`required` 가 `null` 이거나 `[]`)
+
+지금은 **그대로 받는다.** #186 이 바꾼 것은 「받았다는 사실을 로그로 남긴다」뿐이다:
+
+```text
+WARNING output keys unchecked assignment=… — 계약에 required 가 없다 · 받은 칸 ['foo']
+```
+
+**왜 내가 못 정하나:** 「Node 가 칸 이름을 주장할 수 있는가」는 **제품 보장 문구**다
+(절대규칙 4 의 이웃). 그리고 **되돌리기가 비싸다** — 거절로 바꾸면 `required` 를
+선언 안 한 능력이 있는 스택에서 **완료가 통째로 막힌다.**
+
+### 고를 것
+
+| 안 | 무엇 | 대가 |
+|---|---|---|
+| **A** | **지금 그대로** — 받되 로그로 남긴다 (#186 이 이미 한 것) | 「Node 는 칸을 주장 못 한다」가 **일부만** 참. 로그를 아무도 안 읽으면 그대로 |
+| **B** | `required` 미선언 능력은 **등록에서 거절** (`POST /v1/capabilities` 400) | 앞에서 막아 완료 경로가 단순해진다. **기존 스택에 미선언 능력이 있으면 등록만 막고 완료는 그대로** |
+| **C** | 완료에서 **거절** (422) | 가장 엄격. **되돌리기 비싸다** — 미선언 능력의 작업이 전부 실패한다 |
+| D | DB CHECK 로 못박는다 | 절대규칙 1 상 **제약 추가**는 허용. 다만 기존 행이 있으면 마이그레이션이 막힌다 |
+
+**B 를 권한다.** 「모양은 계약이 정한다」를 **입구에서** 세우는 쪽이고,
+이미 도는 스택을 깨지 않는다. `output_schema` 에는 지금 **CHECK 가 하나도 없다**
+(`JSONB NOT NULL` 뿐) — 등록 API 도 `dict[str, Any]` 로만 받는다.
+
+### 지금 새고 있나 — **아니다**
+
+능력 **10종 전부** `required` 를 문자열 목록으로 선언한다 (데모 9 + seed 1).
+#186 이 그 관계를 검사로 못 박았다 (`test_every_demo_output_schema_declares_required` ·
+**개수는 안 박는다**). **나기 전에 막는 이야기다.**
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-02T09:30:00+09:00
+topic: round7-close
+type: next
+expects: ack
+status: open
+---
+
+## 7회차 닫음 — **핸드오프 문서대로 돈 첫 세션**
+
+`docs/bridge/handoff-long-mode-claude.md` 를 읽고 그 안의 지시대로 돌았다.
+**첫 액션(숫자 재확인)이 실제로 값을 했다** — 아래 「전수」가 거기서 나왔다.
+
+### 지금 (전부 재현 명령)
+
+| 무엇 | 값 | 재현 |
+|---|---|---|
+| `main` HEAD | **`7b1b065`** | `git log -1 --oneline` |
+| 세션 시작 시 열린 PR | **0** | `gh pr list --state open --limit 100` |
+| `main` 의 `run_tests` | **487 OK (건너뜀 7)** | `bash scripts/run_tests.sh` |
+| **#187 까지 쌓은 트리** | **508 OK (건너뜀 7)** | 같은 명령 |
+| `check_submission` | **28/28** | 위 배너 안 |
+
+**`487` 은 핸드오프가 적어 둔 값과 같았다** — 낡지 않았다.
+
+### 한 일
+
+| PR | 무엇 | 갈래 |
+|---|---|---|
+| **#186** | **깨진 계약이 「Node 는 칸 이름을 주장 못 한다」를 스스로 껐다** | 결함 |
+| **#187** | 방 검사 둘도 **0건이면 「전부 재현된다」** 였다 | 결함 · #186 위 |
+| — | 이 PR — Step 0 · 브리지 (코드 0) | 문서 |
+
+**둘 다 6회차의 연장이다 — 「0건·0행이면 검사가 꺼진다」.**
+다만 **#186 은 결이 하나 더 있다:** 0건이 아니라 **깨진 입력**이 검사를 껐다.
+`["label", 5]` 가 `[]` 로 뭉개지면서 「선언 안 함」과 구분이 사라졌다.
+
+### 전수한 것 — **없다고 확인한 자리** (다시 재지 않게)
+
+핸드오프 5-A-2 대로 `ast`·grep 으로 훑고 **의심스러운 것은 돌려서** 봤다.
+
+| 훑은 것 | 결과 |
+|---|---|
+| **`all()`/`any()` 공허 참** — 리포 전체 62곳 | **결함 하나** (`complete.py` → #186). 나머지는 전부 `and xs` 같은 0건 가드가 있다 |
+| `contract_check.py` · `fingerprint.py` | ✅ `and media` 가드 · **「텐서가 하나도 없다」 예외**까지 있다 |
+| `score_gate.py` | ✅ 케이스 0건 → `min_recall 0.0` → **FAILED**. Core 의 gate finish 가 `cases_total != golden_set_size` 로 한 겹 더 |
+| `safety.py` (`/v1/ops/safety`) | ✅ 기기 0대여도 `routable_pairs == 0` 경고가 떠 **`ok=false`** |
+| 통합 검사 15개의 `check(all(...))` | ✅ 앞선 `check` 가 목록 비었음을 먼저 잡는다 |
+| **단위 테스트 56개** — 루프 안에만 단언이 있는 것 | ✅ 발견 컬렉션을 도는 넷은 전부 `test_finder_actually_finds_things` 류 바닥이 있다 |
+| 데모 `*_demo.sh` 의 `ccurl -s` 18곳 | ✅ 전부 HTTP 코드를 **실제로 검사**한다 (`[[ "$code" == "200" \|\| … ]] \|\| exit 1`) |
+| `scripts/lib/http.sh` | ✅ 얇은 래퍼 · 실패 판정은 호출자 `-sf` |
+| **측정 숫자 ↔ 재현 명령** (`measured-claims.md` §1) | ✅ **위반 0.** 규칙 시행(#125 `2a40af0`) 뒤 카탈로그·STATE 에 들어온 측정 숫자는 전부 도구를 명시한다 |
+| `clean_room`·`prod_room` 0건 바닥 | ❌ **비어 있었다 → #187** |
+
+> **`measured-claims.md` §7 은 「지키지 않는 커밋이 나오면 좁은 검사를 Proposal 로
+> 올린다」고 적는다. 아직 안 나왔다** — 그래서 **검사를 만들지 않았다.**
+> 문서가 미리 정해 둔 조건을 지킨다.
+
+### 못 본 것 (숨기지 않는다)
+
+| 무엇 | 왜 |
+|---|---|
+| capreq **72** | `pip` 없음 → `httpx`·`fastapi` 미설치. 정본은 CI |
+| `clean_room` · `prod_room` **끝까지** | **Docker 불가** (`docker info` 실패). #187 은 꼬리 두 줄만 바꿨고 `bash -n` + 함수 단위 실행으로 덮었다 |
+| 종단 데모 · `capreq_demo.sh` | 같은 이유 + Ollama 없음 |
+| `/v1/inputs/{id}/purge` · 완료 API 를 **띄워서** | `psycopg`·`fastapi` 없음. **CI 의 migrate 잡이 본다** |
+| 실제 브라우저 CSS·레이아웃 | 그대로 |
+
+**핸드오프 §3 이 「Docker 없으면 지난번 됐으니 금지」라고 적어 둔 그대로 했다.**
+
+### 내가 같은 함정에 빠진 것 (적어 둔다)
+
+#186 의 검사를 쓰면서 `sys.modules["psycopg"]` **스텁을 남긴 채** 끝냈다.
+그러자 psycopg 가 진짜로 필요한 다른 검사들이 그 스텁을 집어:
+
+```text
+Ran 500 tests · FAILED (errors=5, skipped=2)      ← skip 이 7 에서 2 로 줄었다
+```
+
+**내 검사가 다른 검사를 껐다** — 이번 회차가 고치는 것과 같은 모양이다.
+넣은 것만 되돌리도록 고쳤고 경위를 검사 머리말에 남겼다.
+
+또 하나: #186 의 **뮤테이션 하나가 처음에 안 물렸다** (로그 분기). 검사가
+`_required_keys` 만 보고 있었다. **「안 물린다」를 넘기지 않고** 가짜 커넥션을
+만들어 `complete_assignment` 까지 덮었다.
+
+### 열린 Decision — **아홉** (하나 늘었다)
+
+기존 여덟 + **`output-required-undeclared-policy`** (바로 위 블록 · **B 권장**).
+
+`silent-truncation` · `gate-run-stuck-running` · `failure-reason-not-surfaced` ·
+`retention-ttl-policy` · `11th-capability-timeseries-anomaly` ·
+`changelog-changeset-rule` · `golden-leakage-claim-unreproducible` · Next ·
+**`output-required-undeclared-policy`**.
+
+### 머지 안내 — **셋을 두 번에**
+
+```text
+1  toma/room-zero-checks-floor  <- toma/broken-contract-turns-off-key-check
+0  toma/broken-contract-turns-off-key-check
+0  toma/state-step0-round7
+```
+
+| 갈래 | 꼭대기 | 함께 |
+|---|---|---|
+| **A · 결함** | **#187** | **#186** |
+| **B · 문서** | **이 PR** | — |
+
+**다시 계산하는 명령은 `merge-guide-round6` 블록에 그대로 있다** (`--limit 100` 필수).
+
+### 다음 큐 (Decision 없이)
+
+1. **Docker 있는 세션** — `clean_room`·`prod_room`(#187 이 바꾼 꼬리 포함) · 종단 데모
+2. **`pip` 있는 세션** — capreq **72** 실제 재기
+3. 같은 계열 계속 — **깨진 입력이 검사를 끄는 자리**(#186 의 결) 를 다른 파서에서도 찾기
 ```
