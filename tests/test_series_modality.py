@@ -151,12 +151,18 @@ class TestDispatch(unittest.TestCase):
         self.assertIn("from app.infer_series import forecast_series", code)
 
     def test_no_local_golden_fallback(self) -> None:
-        """이미지 밖 모달리티에는 로컬 골든 폴백이 없다 — 입력은 Core 중개로만 (D8′)."""
-        code = code_only(ROOT / "apps" / "node" / "app" / "main.py")
-        self.assertIn(
-            '"text", "text_embed", "series", "table_extract", "text_ner", "text_extract"',
-            code,
-        )
+        """이미지 밖 모달리티에는 로컬 골든 폴백이 없다 — 입력은 Core 중개로만 (D8′).
+
+        예전에는 `main.py` 의 **포함식**을 통째로 문자열 대조했다. 그 목록이
+        `app/modality.py` 로 옮겨지면서 **뜻이 뒤집혔다** — 이제 폴백을 가진 쪽만
+        적고 나머지는 거절이 기본이다. 불변식은 그대로고 보는 자리만 옮긴다.
+        """
+        fallback = code_only(ROOT / "apps" / "node" / "app" / "modality.py")
+        for name in ("series", "text", "text_embed", "table_extract"):
+            with self.subTest(modality=name):
+                self.assertNotIn(
+                    f'"{name}"', fallback, f"{name} 에 로컬 골든셋 폴백이 열려 있다"
+                )
 
 
 class TestNoPerformanceClaim(unittest.TestCase):

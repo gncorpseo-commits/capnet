@@ -146,6 +146,19 @@ User request is for weather information and music playback, which are not suppor
 **Core 를 못 부르면 그 줄만 없다** — 화면은 그대로 뜬다. 카탈로그는 **한 번만** 받아 두고
 다시 받지 않는다.
 
+> ### 이 서버에는 **인증이 없다** — 그래서 루프백에만 뜬다
+>
+> `capreq serve` 의 `--host` 기본값은 **`127.0.0.1`** 이다 (`gemma` 도 같다).
+> 운영자가 자기 기계에서 띄우는 도구라 그렇게 둔다.
+>
+> **`--host 0.0.0.0` 으로 열면 인증 없는 창구가 망에 뜬다.** capreq 는 운영자의
+> `CAPNET_API_KEY` 를 헤더에 실어 Core 를 부르므로(`adapters/capnet.py`),
+> 열린 capreq 는 **키를 가진 대리인**이 된다 — 망에 닿는 누구나 그 키로
+> 작업을 만들고 남의 결과를 조회할 수 있다.
+>
+> 막지는 않는다 (일부러 열어야 할 때가 있다). 다만 **기본값이 말없이 바뀌지 않도록**
+> `tests/test_capreq_binds_loopback.py` 가 못박는다.
+
 터미널에서 같은 것을 보려면:
 
 ```bash
