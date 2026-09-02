@@ -69,6 +69,116 @@ def requires_core_input(modality: str) -> bool:
 **불변식은 옳다 — 보는 자리만 낡았다.** 그래서 지우지 않고 같은 불변식을 새 기제에
 물렸다 (「이 모달리티는 폴백 목록에 없다」). **옮긴 뒤에도 물리는지 따로 확인했다** —
 폴백 집합에 네 이름을 넣자 넷 다 다시 실패했다.
+## 방 검사 둘도 **0건이면 「전부 재현된다」** 였다 — 2026-09-02
+
+`clean_room.sh` · `prod_room.sh` 가 이렇게 끝났다:
+
+```bash
+printf '===== 결과: 통과 %d · 실패 %d =====\n' "$pass" "$fail"
+[ "$fail" -eq 0 ] || exit 1
+echo "…에서 전부 재현된다."
+```
+
+`pass=0 · fail=0` 이면 `fail -eq 0` 이 참이라 **「전부 재현된다」를 찍고 `exit 0`** 한다.
+
+이 회차가 고쳐 온 것의 **셋째 사례**다 — [#180](https://github.com/gncorpseo-commits/capnet/pull/180)
+(누출 검사가 0건을 보고 「깨끗하다」) · [#181](https://github.com/gncorpseo-commits/capnet/pull/181)
+(통합 러너가 0개를 보고 「통과 0 · 실패 0」).
+
+**#180·#181 보다 가볍다. 과장하지 않는다.** 두 스크립트의 `chk`/`step` 호출은
+**인라인 하드코딩**이라 0건이 되려면 스무 줄 넘게 지워야 한다 — glob 이 빗나가는
+#181 과는 다르다. 다만 `set -e` 가 없는 `prod_room` 은 앞 단계가 죽어도 계속 가므로
+「빠져나갔는데 초록」이 아주 먼 이야기는 아니다.
+
+### 왜 함수로 뺐나 — **검사할 수 있게**
+
+두 스크립트는 **Docker 가 있어야 끝까지 돈다.** 판정이 맨 끝에 인라인으로 있으면
+그 줄을 **검사할 방법이 없다** (이 세션에는 Docker 가 없다).
+
+판정 한 줄을 `scripts/lib/tally.sh` 의 `tally_verdict` 로 빼면 **그냥 부를 수 있다.**
+두 스크립트가 같은 꼬리를 복사해 갖고 있던 것도 함께 없앴다.
+
+```text
+tally_verdict 0 0 → exit 1 · 「0건은 통과가 아니다」  (전에는 exit 0 + 성공 문구)
+tally_verdict 3 0 → exit 0 · 성공 문구
+tally_verdict 2 1 → exit 1 · 성공 문구 없음
+```
+
+### 무엇으로 쟀나
+
+`tests/test_room_tally.py` **8건.** 함수를 `bash -c` 로 **실제로 부른다** — Docker 불필요.
+두 스크립트가 그것을 쓰는지, 옛 인라인 판정이 남지 않았는지, `bash -n` 이 통과하는지도 본다
+(`source` 를 잘못 넣으면 **Docker 가 있는 곳에서만** 터진다).
+
+**뮤테이션 2종이 물렸다** — 0건 바닥을 `if false` 로 죽이니 **2건 실패** ·
+`clean_room` 을 옛 인라인 판정으로 되돌리니 **1건 실패**.
+
+**두 스크립트를 끝까지 돌려 보지는 못했다** (Docker 없음). 바꾼 것은 꼬리 두 줄이고,
+`bash -n` 과 함수 단위 실행으로 덮었다. **「지난번 됐으니 된다」로 적지 않는다.**
+
+## **깨진 계약이 「Node 는 칸 이름을 주장 못 한다」를 스스로 껐다** — 2026-09-02
+
+`complete.py` 는 Node 가 보고한 출력 칸이 계약과 **정확히 같아야** 받는다:
+
+```python
+required = set(_required_keys(conn, assignment_id))
+given = set(output)
+if required and given != required:      # ← required 가 비면 통째로 꺼진다
+    raise OutputKeysMismatch(...)
+```
+
+그리고 `_required_keys` 는 **「선언 안 함」과 「선언이 깨졌다」를 구분하지 않았다:**
+
+```python
+if isinstance(required, list) and all(isinstance(k, str) for k in required):
+    return required
+return []                                # ← ["label", 5] 도 여기로 떨어졌다
+```
+
+실측 (스텁 커넥션으로 실제 함수를 돌려서):
+
+| `output_schema.required` | 옛 `_required_keys` | 옛 `_output_key` |
+|---|---|---|
+| `["label"]` | `["label"]` | `"label"` |
+| **`["label", 5]`** | **`[]`** | **`"vector"`** |
+| **`"label"`** (문자열) | **`[]`** | **`"vector"`** |
+
+계약 하나가 깨져 있으면 **두 가지가 동시에 조용히** 일어났다:
+
+1. 칸 검사가 통째로 꺼져 **Node 가 아무 칸이나 보고해도 그대로 증적에 적혔다**
+2. `_output_key` 가 계약과 무관한 `"vector"` 로 떨어져 **「게이트가 검증한 출력」과
+   「증적에 남는 출력」이 갈라졌다** — 바로 그 갈라짐을 막으려고 있는 코드가,
+   계약이 깨지면 **스스로 열렸다**
+
+**오늘 새고 있지는 않다.** 등록된 능력 10종은 전부 `required` 를 문자열 목록으로
+선언한다 (데모 9 + seed 1). **나기 전에 막는다** — #169 와 같은 자리다.
+
+### 바뀐 것
+
+- **깨진 `required` → `BrokenOutputContract`** (`OutputKeysMismatch` 의 하위형이라
+  `main.py` 가 이미 잡아 **422**). 배선 변경 0
+- **선언이 아예 없는 것**(`None`·`[]`)은 **동작 그대로** — 다만
+  `logger.warning("output keys unchecked …")` 로 **안 봤다는 사실을 남긴다**.
+  「required 가 없으면 거절할지」는 정책이라 브리지 Decision 으로 올린다
+
+### 무엇으로 쟀나
+
+`tests/test_broken_contract_does_not_disable_check.py` **13건.** DB 없이 돈다 —
+`complete.py` 의 `psycopg` 는 주석에만 쓰이므로 빈 모듈로 세우고, 세 질의를
+SQL 본문으로 갈라 주는 가짜 커넥션으로 **`complete_assignment` 를 그대로 돌린다.**
+
+**뮤테이션 3종이 물렸다** — 옛 `_required_keys` 복귀(**14건 실패**) ·
+`BrokenOutputContract` 상속 끊기(1건) · 로그 분기 `if False`(1건).
+
+> **세 번째는 처음에 안 물렸다.** 그때 검사는 `_required_keys` 만 보고 있었고
+> 로그 분기는 밖이었다. **「뮤테이션이 안 물린다」를 그냥 넘기지 않고** 가짜 커넥션을
+> 만들어 `complete_assignment` 까지 덮었다.
+
+> **내 검사가 다른 검사를 껐다 (같은 회차 · 같은 모양).** 처음에는
+> `sys.modules["psycopg"]` 에 스텁을 **남긴 채** 끝냈다. 그러자 psycopg 가 진짜로
+> 필요한 검사들이 그 스텁을 집어 **`run_tests` 가 skip 7 → 2 로 줄고 5건이 에러**가 났다.
+> 넣었던 것만 되돌리도록 고쳤다. **이번 회차가 고치는 것과 정확히 같은 실수를
+> 내가 검사에서 했다** — 적어 둔다.
 
 ## 데이터셋 목록을 **못 받으면 화면이 하나 지어냈다** — 2026-09-02
 

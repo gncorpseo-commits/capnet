@@ -7,10 +7,13 @@ audit_log 삽입 실패는 관측 공백으로 남기고 Task를 FAILED로 뒤�
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from typing import Any
 
 import psycopg
+
+logger = logging.getLogger(__name__)
 
 LEASE_DETAIL_SQL = """
 SELECT a.id, a.task_id, a.agent_id, a.capability_id, a.node_id, a.status,
@@ -147,12 +150,41 @@ class OutputKeysMismatch(ValueError):
     """Node 가 계약과 다른 칸을 보고했다. 받아 적지 않는다."""
 
 
+class BrokenOutputContract(OutputKeysMismatch):
+    """계약의 `output_schema.required` 가 **문자열 목록이 아니다.**
+
+    `OutputKeysMismatch` 를 상속한다 — 부르는 쪽(`main.py`)이 이미 그것을 잡아
+    422 로 돌려주고, 어느 쪽이든 **받아 적지 않는다**는 결론이 같기 때문이다.
+    """
+
+
 def _required_keys(conn: psycopg.Connection, assignment_id: uuid.UUID) -> list[str]:
+    """계약이 요구하는 출력 칸.
+
+    **「선언하지 않았다」와 「선언이 깨졌다」를 가른다.**
+
+    예전에는 둘 다 `[]` 였다. 그래서 `required` 가 `["label", 5]` 처럼 깨져 있으면
+    아래 두 가지가 **조용히** 일어났다:
+
+    1. 부르는 쪽의 `if required and given != required` 가 통째로 꺼져
+       **Node 가 아무 칸이나 보고해도 그대로 받아 적혔다**
+    2. `_output_key` 가 계약과 무관한 `"vector"` 로 떨어져
+       **「게이트가 검증한 출력」과 「증적에 남는 출력」이 갈라졌다** —
+       바로 그 갈라짐을 막으려고 이 코드가 있는데, 계약이 깨지면 스스로 열렸다
+
+    깨진 계약은 **거절한다.** 선언이 아예 없는 것(`None`·`[]`)은 그대로 `[]` 다 —
+    그쪽은 부르는 쪽이 「검사하지 않았다」를 남긴다.
+    """
     row = conn.execute(OUTPUT_KEY_SQL, {"assignment_id": str(assignment_id)}).fetchone()
     required = row["required"] if row else None
-    if isinstance(required, list) and all(isinstance(k, str) for k in required):
-        return required
-    return []
+    if required is None:
+        return []
+    if not isinstance(required, list) or not all(isinstance(k, str) for k in required):
+        raise BrokenOutputContract(
+            "계약의 output_schema.required 가 문자열 목록이 아니다: "
+            f"{json.dumps(required, ensure_ascii=False)}"
+        )
+    return required
 
 
 def _output_key(conn: psycopg.Connection, assignment_id: uuid.UUID) -> str:
@@ -200,7 +232,15 @@ def complete_assignment(
         # 받는다 — 다르면 게이트가 검증한 모양과 증적이 갈린다.
         required = set(_required_keys(conn, assignment_id))
         given = set(output)
-        if required and given != required:
+        if not required:
+            # 계약이 요구 칸을 선언하지 않았다 → **이 자리에서는 못 본다.**
+            # 예전에는 여기서 아무 말 없이 Node 의 칸을 그대로 받았다.
+            # 받는 것 자체는 그대로 두되(정책은 Decision), **안 봤다는 사실은 남긴다.**
+            logger.warning(
+                "output keys unchecked assignment=%s — 계약에 required 가 없다 · 받은 칸 %s",
+                assignment_id, sorted(given),
+            )
+        elif given != required:
             raise OutputKeysMismatch(
                 f"출력 칸이 계약과 다르다: 계약 {sorted(required)} · 보고 {sorted(given)}"
             )
