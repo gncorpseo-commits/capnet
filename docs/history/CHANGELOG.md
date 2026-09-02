@@ -1,5 +1,69 @@
 # Changelog
 
+## **깨진 계약이 「Node 는 칸 이름을 주장 못 한다」를 스스로 껐다** — 2026-09-02
+
+`complete.py` 는 Node 가 보고한 출력 칸이 계약과 **정확히 같아야** 받는다:
+
+```python
+required = set(_required_keys(conn, assignment_id))
+given = set(output)
+if required and given != required:      # ← required 가 비면 통째로 꺼진다
+    raise OutputKeysMismatch(...)
+```
+
+그리고 `_required_keys` 는 **「선언 안 함」과 「선언이 깨졌다」를 구분하지 않았다:**
+
+```python
+if isinstance(required, list) and all(isinstance(k, str) for k in required):
+    return required
+return []                                # ← ["label", 5] 도 여기로 떨어졌다
+```
+
+실측 (스텁 커넥션으로 실제 함수를 돌려서):
+
+| `output_schema.required` | 옛 `_required_keys` | 옛 `_output_key` |
+|---|---|---|
+| `["label"]` | `["label"]` | `"label"` |
+| **`["label", 5]`** | **`[]`** | **`"vector"`** |
+| **`"label"`** (문자열) | **`[]`** | **`"vector"`** |
+
+계약 하나가 깨져 있으면 **두 가지가 동시에 조용히** 일어났다:
+
+1. 칸 검사가 통째로 꺼져 **Node 가 아무 칸이나 보고해도 그대로 증적에 적혔다**
+2. `_output_key` 가 계약과 무관한 `"vector"` 로 떨어져 **「게이트가 검증한 출력」과
+   「증적에 남는 출력」이 갈라졌다** — 바로 그 갈라짐을 막으려고 있는 코드가,
+   계약이 깨지면 **스스로 열렸다**
+
+**오늘 새고 있지는 않다.** 등록된 능력 10종은 전부 `required` 를 문자열 목록으로
+선언한다 (데모 9 + seed 1). **나기 전에 막는다** — #169 와 같은 자리다.
+
+### 바뀐 것
+
+- **깨진 `required` → `BrokenOutputContract`** (`OutputKeysMismatch` 의 하위형이라
+  `main.py` 가 이미 잡아 **422**). 배선 변경 0
+- **선언이 아예 없는 것**(`None`·`[]`)은 **동작 그대로** — 다만
+  `logger.warning("output keys unchecked …")` 로 **안 봤다는 사실을 남긴다**.
+  「required 가 없으면 거절할지」는 정책이라 브리지 Decision 으로 올린다
+
+### 무엇으로 쟀나
+
+`tests/test_broken_contract_does_not_disable_check.py` **13건.** DB 없이 돈다 —
+`complete.py` 의 `psycopg` 는 주석에만 쓰이므로 빈 모듈로 세우고, 세 질의를
+SQL 본문으로 갈라 주는 가짜 커넥션으로 **`complete_assignment` 를 그대로 돌린다.**
+
+**뮤테이션 3종이 물렸다** — 옛 `_required_keys` 복귀(**14건 실패**) ·
+`BrokenOutputContract` 상속 끊기(1건) · 로그 분기 `if False`(1건).
+
+> **세 번째는 처음에 안 물렸다.** 그때 검사는 `_required_keys` 만 보고 있었고
+> 로그 분기는 밖이었다. **「뮤테이션이 안 물린다」를 그냥 넘기지 않고** 가짜 커넥션을
+> 만들어 `complete_assignment` 까지 덮었다.
+
+> **내 검사가 다른 검사를 껐다 (같은 회차 · 같은 모양).** 처음에는
+> `sys.modules["psycopg"]` 에 스텁을 **남긴 채** 끝냈다. 그러자 psycopg 가 진짜로
+> 필요한 검사들이 그 스텁을 집어 **`run_tests` 가 skip 7 → 2 로 줄고 5건이 에러**가 났다.
+> 넣었던 것만 되돌리도록 고쳤다. **이번 회차가 고치는 것과 정확히 같은 실수를
+> 내가 검사에서 했다** — 적어 둔다.
+
 ## 데이터셋 목록을 **못 받으면 화면이 하나 지어냈다** — 2026-09-02
 
 `call.html` 의 `loadOptions()` 가 이랬다:
