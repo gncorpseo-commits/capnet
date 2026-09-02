@@ -158,8 +158,16 @@ class TestWiring(unittest.TestCase):
         self.assertIn("from app.infer_rank import rank_text", code)
 
     def test_runner_has_no_local_fallback(self) -> None:
-        """이미지 밖 모달리티는 입력이 Core 중개로만 온다 (D8′)."""
-        self.assertIn('"text_rank",', code_only(NODE_MAIN))
+        """이미지 밖 모달리티는 입력이 Core 중개로만 온다 (D8′).
+
+        보는 자리가 `main.py` 의 포함식에서 `app/modality.py` 의 **폴백 목록**으로
+        옮겨졌다 — 뜻이 뒤집혀 이제 폴백을 가진 쪽만 적는다. 불변식은 그대로다.
+        """
+        self.assertNotIn(
+            '"text_rank"',
+            code_only(ROOT / "apps" / "node" / "app" / "modality.py"),
+            "text_rank 에 로컬 골든셋 폴백이 열려 있다",
+        )
 
     def test_contract_gate_covers_the_modality(self) -> None:
         code = code_only(CONTRACT)

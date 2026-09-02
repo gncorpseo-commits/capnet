@@ -145,9 +145,15 @@ class TestModalityDispatch(NodeApp):
         self.assertIn("from app.infer_text import", code)
 
     def test_text_has_no_local_golden_fallback(self) -> None:
-        """텍스트에는 `caseId` → 로컬 골든 폴백이 없다 — 입력은 Core 중개로만 (D8′)."""
-        src = (ROOT / "apps" / "node" / "app" / "main.py").read_text(encoding="utf-8")
-        self.assertIn("text 실행에는 Core 가 중개한 입력이 필요하다", src)
+        """텍스트에는 `caseId` → 로컬 골든 폴백이 없다 — 입력은 Core 중개로만 (D8′).
+
+        예전에는 **오류 문구**를 못박았다 (`"text 실행에는 …"`). 그 문구는 이제
+        모달리티 이름을 끼워 만들고, 판단은 `app/modality.py` 가 갖는다.
+        **문구 대신 불변식**을 본다 — 텍스트에는 폴백이 없다.
+        """
+        fallback = code_only(ROOT / "apps" / "node" / "app" / "modality.py")
+        self.assertNotIn('"text"', fallback, "text 에 로컬 골든셋 폴백이 열려 있다")
+        self.assertNotIn('"text_embed"', fallback)
 
 
 class TestNoQualityClaim(NodeApp):

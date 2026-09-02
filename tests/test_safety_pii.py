@@ -169,7 +169,18 @@ class TestWiring(unittest.TestCase):
         self.assertIn("from app.infer_pii import scan_pii", code)
 
     def test_runner_has_no_local_fallback(self) -> None:
-        self.assertIn('"text_pii",', code_only(NODE_MAIN))
+        """이미지 밖 모달리티는 입력이 Core 중개로만 온다 (D8′).
+
+        예전에는 `main.py` 의 **포함식**(Core 입력을 요구하는 모달리티 나열)에
+        이름이 있는지를 봤다. 그 목록은 `app/modality.py` 로 옮겨지면서 **뜻이
+        뒤집혔다** — 이제 **폴백을 가진 쪽**만 적는다. 불변식은 그대로고,
+        여기서 보는 자리만 옮긴다.
+        """
+        self.assertNotIn(
+            '"text_pii"',
+            code_only(ROOT / "apps" / "node" / "app" / "modality.py"),
+            "text_pii 에 로컬 골든셋 폴백이 열려 있다",
+        )
 
     def test_contract_gate_covers_the_modality(self) -> None:
         self.assertIn("text_pii", code_only(CONTRACT))

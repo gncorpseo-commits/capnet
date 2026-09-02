@@ -1,5 +1,71 @@
 # Changelog
 
+## **모르는 모달리티는 데모 이미지로 떨어졌다** — 기본값을 뒤집는다 — 2026-09-02
+
+Node 가 「Core 중개 입력이 없을 때」를 이렇게 갈랐다:
+
+```python
+elif modality in (
+    "text", "text_embed", "series", "table_extract", "text_ner", "text_extract",
+    "text_rank", "text_pii",
+):
+    raise HTTPException(400, "text 실행에는 Core 가 중개한 입력이 필요하다")
+else:
+    cid = _case_id(input_ref)          # ← 로컬 골든셋(EuroSAT 이미지)으로 떨어진다
+```
+
+**포함식이라 기본값이 「골든 폴백」이었다.** 목록에 없으면 데모 데이터로 돈다.
+
+### 오늘은 맞다 — 문제는 자라는 방향이다
+
+실측: `ARCH_MODALITY` 의 값 **10종** 중 목록에 없는 것은 `image` · `image_embed` 둘뿐이라
+지금은 정확히 맞다. **새는 길은 둘이다:**
+
+| 어긋나는 길 | 결과 |
+|---|---|
+| `ARCH_MODALITY` 에 새 모달리티를 더하고 **이 목록을 안 고친다** | **골든 폴백** |
+| DB `agent_arch` 에는 있는데 `ARCH_MODALITY` 에 없는 arch | `_modality_of` 가 `"image"` 로 → **골든 폴백** |
+
+둘 다 **사용자 입력 대신 데모 이미지가 돌고, 그럴듯한 결과가 나온다** —
+[#154](https://github.com/gncorpseo-commits/capnet/pull/154)(빈 첨부 → 데모 데이터가
+대신 돌았다)와 같은 모양이고, 손으로 적은 목록이 카탈로그를 못 따라간
+[#171](https://github.com/gncorpseo-commits/capnet/pull/171)과 같은 자리다.
+
+### 바뀐 것 — **기본값을 뒤집었다**
+
+`apps/node/app/modality.py` 신설. **폴백을 가진 쪽**만 적는다:
+
+```python
+GOLDEN_FALLBACK_MODALITIES = frozenset({"image", "image_embed"})
+
+def requires_core_input(modality: str) -> bool:
+    return modality not in GOLDEN_FALLBACK_MODALITIES
+```
+
+모르는 모달리티는 **거절**이 기본이다. **동작 변경 0** — 오늘 어휘 10종의 판정은
+전부 그대로다 (검사가 열 종을 하나씩 확인한다).
+
+**왜 별 모듈인가.** `main.py` 는 `fastapi` 를, `tiny_cnn.py` 는 `torch` 를 import 한다 —
+둘 다 의존성 없는 단위 검사에서 불러올 수 없다. 이 판단만 표준 라이브러리로 떼면
+검사가 **실제로 호출**할 수 있다.
+
+### 무엇으로 쟀나
+
+`tests/test_modality_fallback.py` **10건.** `app/modality.py` 를 **실제로 불러
+호출한다.** `ARCH_MODALITY` 는 정규식으로 읽는다 (`test_pass_rate_script` 와 같은 이유).
+
+**뮤테이션 3종이 물렸다** — 판정을 옛 포함식으로 되돌리기(**5건**) ·
+폴백 집합에 이미지 아닌 것 넣기(2건) · 어휘에 없는 유령 넣기(2건).
+
+### 기존 검사 넷을 **지우지 않고 옮겼다**
+
+`test_safety_pii` · `test_text_rank` · `test_series_modality` · `test_text_modality` 가
+**옛 포함식의 문자열**을 못박고 있어서 처음에 넷 다 실패했다.
+
+**불변식은 옳다 — 보는 자리만 낡았다.** 그래서 지우지 않고 같은 불변식을 새 기제에
+물렸다 (「이 모달리티는 폴백 목록에 없다」). **옮긴 뒤에도 물리는지 따로 확인했다** —
+폴백 집합에 네 이름을 넣자 넷 다 다시 실패했다.
+
 ## 데이터셋 목록을 **못 받으면 화면이 하나 지어냈다** — 2026-09-02
 
 `call.html` 의 `loadOptions()` 가 이랬다:

@@ -18,6 +18,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from safetensors import safe_open
 
+# 표준 라이브러리만 쓴다 — torch·fastapi 없이도 검사가 이 판단을 부를 수 있게 뗐다.
+from app.modality import requires_core_input
+
 app = FastAPI(title="CapNet Node", version="0.2.0")
 
 CORE_URL = os.environ.get("CORE_URL", "http://127.0.0.1:8000").rstrip("/")
@@ -382,14 +385,19 @@ def _run(
         if meta is not None:
             fetched = _fetch_input(*meta)
             image_path = fetched
-        elif modality in (
-            "text", "text_embed", "series", "table_extract", "text_ner", "text_extract",
-            "text_rank", "text_pii",
-        ):
-            # 이미지 밖 모달리티에는 로컬 골든셋 폴백이 없다 — 입력은 Core 중개로만 온다 (D8′).
+        elif requires_core_input(modality):
+            # 로컬 골든셋 폴백이 **있는** 쪽(`app.modality`)만 적고 나머지는 거절한다.
+            #
+            # 예전에는 반대였다 — 「Core 입력을 요구하는 모달리티」를 여기 손으로
+            # 나열했고, **목록에 없으면 골든 폴백**이었다. 그러면 새 모달리티가
+            # 들어오거나 arch 가 `ARCH_MODALITY` 에 없을 때(→ `_modality_of` 가
+            # `"image"` 로 떨어뜨린다) **사용자 입력 대신 데모 이미지가 돈다.**
             raise HTTPException(
                 status_code=400,
-                detail="text 실행에는 Core 가 중개한 입력이 필요하다 (inputSha)",
+                detail=(
+                    f"{modality} 실행에는 Core 가 중개한 입력이 필요하다 (inputSha) — "
+                    "로컬 골든셋 폴백은 이미지 모달리티에만 있다 (D8′)"
+                ),
             )
         else:
             cid = _case_id(input_ref)
