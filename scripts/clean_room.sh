@@ -15,6 +15,8 @@
 #   운영 프로젝트(ai-agent-store)의 컨테이너·볼륨. 포트도 겹치지 않게 띄운다.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# 판정 한 줄은 prod_room 과 공유한다 — 0건을 통과로 세지 않게.
+source "$root/scripts/lib/tally.sh"
 proj="${CLEAN_ROOM_PROJECT:-capnet-cleanroom}"
 core_port="${CLEAN_ROOM_CORE_PORT:-18800}"
 node_port="${CLEAN_ROOM_NODE_PORT:-18801}"
@@ -104,6 +106,5 @@ step "Node 온보딩" bash -c '
   echo "$out" | tail -4
   echo "$out" | grep -q "NODE_CREDENTIAL_FILE"'
 
-printf '\n===== 결과: 통과 %d · 실패 %d =====\n' "$pass" "$fail"
-[[ "$fail" -eq 0 ]] || exit 1
-echo "깨끗한 환경에서 전부 재현된다."
+printf '\n'
+tally_verdict "$pass" "$fail" "깨끗한 환경에서 전부 재현된다." || exit 1

@@ -8,6 +8,8 @@
 # 부트스트랩 순서는 docs/guide/operate-production.md.
 set -uo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+# 판정 한 줄은 clean_room 과 공유한다 — 0건을 통과로 세지 않게.
+source "$root/scripts/lib/tally.sh"
 proj=capnet-prod
 core_port=18830
 node_port=18831
@@ -224,6 +226,4 @@ echo "    rc=$rc"
 chk "demo.sh 강제 모드 통과" test "$rc" = "0"
 
 echo
-printf '===== 결과: 통과 %d · 실패 %d =====\n' "$pass" "$fail"
-[ "$fail" -eq 0 ] || exit 1
-echo "제품 프로파일에서 전부 재현된다."
+tally_verdict "$pass" "$fail" "제품 프로파일에서 전부 재현된다." || exit 1
