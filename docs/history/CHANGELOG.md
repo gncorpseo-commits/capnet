@@ -1,5 +1,63 @@
 # Changelog
 
+## 절대 규칙 여섯을 **기계가 전수한다** — 2026-09-03
+
+큐 14–19. `CLAUDE.md` 의 절대 규칙은 「이것을 어기면 프로젝트의 핵심 주장이 무너진다」고
+적혀 있다. 그런데 **지키는 것은 사람의 기억**이었다.
+
+전수했다. **오늘 새는 곳은 없다** — 그리고 그것이 이 검사를 만드는 이유다
+(7회차 #192–#196 과 같은 자리: 「오늘 0 · 지키는 것이 없어서 → 검사」).
+
+| 규칙 | 무엇 | 오늘 |
+|---|---|---|
+| **5** | pickle · `.pt` · `.pth` 로드 | **0건** — 로드는 전부 `safetensors.torch.load_file` |
+| **2** | `assignment` · `gate_run` INSERT | **5자리 전부** `INSERT … SELECT` |
+| **4** | Node 가 자기 등급을 주장 | **0건** — 소진은 초대장, 등록은 admin |
+| **8** | 게이트가 제출자 Node 에서 | **0건** — 앱 가드 + `ck_gate_runner_team` + `INSERT … SELECT` |
+| **7** | 자유 업로드 · 서명 URL · `fileToken` | **0건** — 금지 문구가 **주석에만** 있다 |
+| **3** | `compute_tier` 앱 문자열 비교 | **0건** |
+
+재현:
+
+```bash
+python3 -m unittest tests.test_absolute_rules_are_enforced -v
+```
+
+### `grep` 으로 재면 **금지 문구 자체가 위반으로 잡힌다**
+
+`apps/core/app/main.py:433` 은 이렇게 **적는다**:
+
+```text
+금지되는 것은 「자유 업로드」가 아니라 **비통제 수집**(서명 URL·fileToken)이다.
+```
+
+`grep -i fileToken` 은 이 줄을 위반으로 센다. **규칙을 적어 둔 것과 쓴 것은 다르다.**
+그래서 문자열·호출·인자 이름을 `ast` 로 보고 **주석과 docstring 은 세지 않는다.**
+`_live_strings` 가 그 경계이고, 그 경계가 너무 넓지 않은지도 검사한다
+(`test_docstrings_are_actually_excluded`).
+
+### 규칙 4 가 가장 좁은 자리
+
+`POST /v1/nodes/redeem` 은 **관리 키 없이 열린 유일한 쓰기 경로**다.
+그래서 셋을 함께 못박는다 — 요청 모델에 등급 필드가 **없다** ·
+핸들러가 `invite["trust_domain"]` 을 읽고 `body.trust_domain` 을 **안 읽는다** ·
+`is_gate_runner=False` 로 만든다.
+
+### 무엇을 **안** 봤나
+
+규칙 1(schema 제약 약화)·6(사전학습 가중치)은 여기서 안 본다 —
+`test_migrate_lint`·`test_license_coverage`·`check_submission` 이 이미 본다.
+**겹쳐 두면 어느 검사가 진짜로 지키는지 흐려진다.**
+
+### 뮤테이션 — **9종 전부 물렸다**
+
+`torch.load` 로 가중치 읽기 · `.pth` 경로 상수 두기 · `assignment` 를 `VALUES` 로 INSERT ·
+소진 본문에 `trust_domain` 필드 넣기 · **소진 핸들러가 초대장 대신 본문을 읽기** ·
+소진이 게이트러너를 만들게 하기 · `registry` 의 team 가드 제거 ·
+서명 URL 파라미터 추가 · `compute_tier` 를 `<` 로 비교.
+
+`run_tests` **642 OK (건너뜀 7)** · `check_submission` **28/28**.
+
 ## 고쳤다고 **주석에만** 적힌 자리 — 둘은 아무도 안 돌려 봤다 — 2026-09-03
 
 큐 #33. 「`TODO`/`FIXME`/`이전에는` 주석 중 못박힌 검사가 없는 과거 버그」를 전수했다.
