@@ -1,5 +1,90 @@
 # Changelog
 
+## 고쳤다고 **주석에만** 적힌 자리 — 둘은 아무도 안 돌려 봤다 — 2026-09-03
+
+큐 #33. 「`TODO`/`FIXME`/`이전에는` 주석 중 못박힌 검사가 없는 과거 버그」를 전수했다.
+
+### 실측 — `TODO`·`FIXME` 는 **진짜 0건**
+
+```bash
+grep -rnE "TODO|FIXME|XXX|HACK" --include=*.py --include=*.sh apps/ scripts/ capreq/src tests/
+```
+
+걸린 것은 전부 `mktemp -t capnet-XXXXXX` 였다. **미뤄 둔 일이 코드에 없다.**
+
+### 과거 버그 주석 **열넷** — 열둘은 이미 못박혀 있었다
+
+| 자리 | 못박은 검사 |
+|---|---|
+| `complete.py:166` 깨진 `required` | `test_broken_contract_does_not_disable_check` |
+| `complete.py:237` 「안 봤다」 경고 | 같은 검사 (#186 이 뮤테이션 안 물려 추가한 자리) |
+| `main.py:1217` `purged_now: True` | `test_purge_does_not_claim_it_purged` |
+| `main.py:1548` 클라이언트가 claim 직접 | `test_route_roles_are_pinned` |
+| `apikey.py:5` 관리 API 무인증 | `test_every_route_declares_its_auth` |
+| `node/main.py:516` `else: predict_image` | `test_executor_dispatch_covers_vocabulary` |
+| `node/main.py:570` `if NODE_ID and …` | `test_node_routes_are_pinned` (#194) |
+| `capreq/server.py:142` 빈 첨부 | capreq 단위 + `capreq_demo.sh` |
+| … 그 외 넷 | 있음 |
+
+**둘은 없었다.**
+
+```text
+grep -rl "assert_media_type\|allowed_media_types\|InputTooLarge" tests/   → 없음
+grep -rl "_report_failure" tests/ capreq/tests                           → 없음
+```
+
+### ① `inputs.py` — 문지기를 **한 번도 돌려 본 적이 없다**
+
+`apps/core/app/inputs.py` 는 Core 중개 수집(D8′)의 문지기다. 주석 둘이 과거 버그를 적는다:
+
+```text
+inputs.py:75   처음에는 「선언이 없으면 검사하지 않는다」였다
+inputs.py:111  처음에는 청크를 메모리에 모은 뒤 파일로 썼다. 상한이 256MiB 라 …
+```
+
+`test_docs_can_claims`(#200) 가 `"if allowed is None:" in inputs` 를 보지만 그건 **텍스트**다 —
+소스를 그대로 두고 동작만 바꾸면 통과한다.
+
+**이 파일은 돌릴 수 있었다.** 의존성이 `hashlib`·`os`·`uuid`·`pathlib` 뿐이고
+`psycopg` 는 타입 주석과 `except` 절에만 쓰인다. **돌릴 수 있는데 안 돌리고 있었다.**
+
+`test_input_contract_rejections_actually_run` (11건) — 형식 계약 거절 넷 ·
+`store_stream` 다섯(해시·크기 · **소비 중 파일이 자란다** · 상한에서 끊고 지운다 ·
+빈 입력 · 중간 예외) · 스텁 위생 둘.
+
+### 내 프로브가 **파이썬 파일 버퍼**를 재고 있었다 (적어 둔다)
+
+「받는 즉시 쓴다」를 8바이트 청크로 재니 `[0, 0, 0, 0, 0]` 이 나왔다.
+**결함을 하나 지어낼 뻔했다** — 구현은 이미 흘려 쓰고 있었고, `open(path, "wb")` 의
+기본 버퍼가 `close()` 전까지 디스크에 안 내보낸 것이다.
+
+**검사가 구현이 아니라 버퍼를 재고 있었다.** 실제 청크는 `inputs.CHUNK` = **1MiB** 다.
+버퍼보다 큰 청크로 바꾸니 그제야 이 검사가 보려는 것을 봤다.
+
+#201 의 「우연히 맞았다」와 같은 부류다 — **숫자가 이상하면 구현부터 의심하지 않는다.**
+
+### ② `node/main.py` — 실측 38건이 적힌 사고인데 핀이 없었다
+
+```text
+보고하지 않으면 실패가 lease 만료(60초)로만 드러나고 … 로그에만 쌓이고 증적에는 없다.
+실측으로 채널 불일치 38건이 그렇게 쌓였다.
+```
+
+`test_node_reports_failure_to_core` (7건) — 정의 · 실패 경로(`/fail`) · **`except` 절에서
+실제로 호출** · 보고 실패를 삼킴 · **Core 에 받는 라우트가 있음**.
+`fastapi` 가 필요해 `ast` 로 본다 (돌리는 것은 `prod_room`·통합 잡의 몫).
+
+### 뮤테이션 — **11종 전부 물렸다**
+
+입력 계약 여섯: 형식 미선언 통과 · **버퍼링 구현으로 복원** · 상한 판정을 끝까지 읽은 뒤로 ·
+거절 시 안 지움 · 빈 입력 수용 · 오류 문구에서 허용 목록 제거.
+
+Node 다섯: `except` 호출 삭제(정의만 남김) · 실패 경로를 완료 경로로 · `try` 제거 ·
+Core 라우트 제거 · 함수 통째 삭제.
+
+`run_tests` **623 OK (건너뜀 7)** · `check_submission` **28/28**.
+**건너뜀이 7 그대로다** — 내 `psycopg` 스텁이 다른 검사를 끄지 않았다 (#186 이 저지른 사고).
+
 ## 「동명 `.ps1`」이 동작은 달랐다 — 2026-09-03
 
 `clean_room.sh` 는 별도 프로젝트와 **다른 포트**(18800/18801)로 스택을 띄운 뒤
