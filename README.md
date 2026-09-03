@@ -73,7 +73,9 @@ powershell -ExecutionPolicy Bypass -File scripts/demo_violations.ps1
 curl -s localhost:8000/v1/nodes-liveness      # 어느 기기가 살아 있고 얼마나 바쁜지
 ```
 
-`scripts/demo.sh` **어디에도 기기 주소가 없다.** 사용자는 Core에 능력만 요구하고 결과를 받는다.
+`scripts/product_demo.sh` **어디에도 기기 주소가 없다** — 사용자 경로 전체가 Core 하고만 말한다.
+`demo.sh` 는 준비 단계에서 Node `/health` 를 직접 본다 (가중치 해시·`arch` 를 그 기기의 증언에서
+뽑는다 — 운영자 몫이다). **`POST /v1/tasks` 부터는** 그것도 Core 하고만 말한다.
 기기를 직접 부르면 거절된다.
 
 ```bash
