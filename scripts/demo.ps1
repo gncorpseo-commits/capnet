@@ -1,7 +1,10 @@
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$core = "http://127.0.0.1:8000"
-$node = "http://127.0.0.1:8001"
+# 주소를 환경에서 받는다 — `clean_room.sh`·`prod_room.sh` 가 격리 포트로 같은
+# 스크립트를 돌린다. 박아 두면 격리 방을 띄워 놓고도 **운영 스택**을 친다.
+# `.sh` 짝과 `proof_ab.ps1` 은 이미 이렇게 받는다.
+$core = if ($env:CORE_URL) { $env:CORE_URL } else { "http://127.0.0.1:8000" }
+$node = if ($env:NODE_URL) { $env:NODE_URL } else { "http://127.0.0.1:8001" }
 $capId = "00000000-0000-4000-8000-000000000010"
 $runnerId = "00000000-0000-4000-8000-000000000030"
 

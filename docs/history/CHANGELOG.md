@@ -1,5 +1,76 @@
 # Changelog
 
+## 「동명 `.ps1`」이 동작은 달랐다 — 2026-09-03
+
+`clean_room.sh` 는 별도 프로젝트와 **다른 포트**(18800/18801)로 스택을 띄운 뒤
+`demo.sh` 를 **그대로** 돌린다. `prod_room.sh` 도 같다(18830/18831).
+그게 되는 이유는 하나다 — **스크립트가 주소를 환경에서 받기 때문이다.**
+
+주소를 박아 두면 **격리 방을 띄워 놓고도 운영 스택을 친다.** 조용히, 초록으로.
+
+### 실측 — 23 중 2
+
+| | 수 |
+|---|---|
+| 주소를 쓰는 스크립트 | **23** |
+| 환경에서 받는다 | **21** |
+| **박아 뒀다** | **2** — `demo.ps1` · `smoke_w1.ps1` |
+
+재현:
+
+```bash
+python3 - <<'EOF'
+import pathlib, re
+ADDR=re.compile(r'(?:127\.0\.0\.1|localhost):(?:800[0-9]|8090)')
+SH=re.compile(r'\$\{(?:CORE_URL|NODE_URL|CAPREQ_URL)(?::-)?'); PS=re.compile(r'\$env:(?:CORE_URL|NODE_URL|CAPREQ_URL)')
+bad=[p.name for p in sorted(pathlib.Path("scripts").glob("*")) if p.suffix in (".sh",".ps1")
+     for t in [p.read_text(encoding="utf-8", errors="replace")]
+     if ADDR.search(t) and not (PS if p.suffix==".ps1" else SH).search(t)]
+print("박아 둔 스크립트:", bad or "없음")
+EOF
+```
+
+`.sh` 는 **20/20 전부** 받는다. `.ps1` 셋 중에서는 `proof_ab.ps1` 만 따라갔다.
+
+### 왜 어긋났나 — **고치고 짝을 안 따라갔다**
+
+`CHANGELOG` 에 이 줄이 있다:
+
+```text
+- `demo.sh`·`proof_ab.sh`·`pass_rate.sh` 를 `CORE_URL`/`NODE_URL` 로 파라미터화 —
+  주소가 박혀 있어
+```
+
+**같은 이름의 `.ps1` 짝은 그때 안 따라갔고, 그 뒤로 아무도 못 봤다.**
+`README` 는 「**Windows** — 동명 `.ps1`」이라고 적는다 — 동명인데 **동작이 다르다.**
+
+`proof_ab.ps1` 이 이미 쓰는 문법 그대로 두 줄을 맞췄다.
+
+### 지키는 검사 — `test_scripts_take_addresses_from_env` (6건)
+
+목록을 박지 않는다. **주소를 쓰는 스크립트를 훑어** 덮어쓰기 통로가 있는지 본다.
+주소를 안 쓰는 것(`sanity.ps1` 은 `docker exec` 만 한다)은 대상이 아니다.
+
+격리 방이 **실제로 그것에 기대고 있는지**도 같이 본다 —
+`export CORE_URL`/`NODE_URL` 과 **18xxx 격리 포트**. 방이 기본 포트로 돌아가면
+덮을 수 있어도 의미가 없다.
+
+**뮤테이션 6종 전부 물렸다** — `demo.ps1` 되돌리기 · **주소 박은 새 스크립트 투입** ·
+`.sh` 짝만 잃기 · 방이 `CORE_URL` 을 안 내보냄 · 방이 격리 포트를 버림 ·
+**패턴을 헐겁게 해 전부 통과시키기**.
+
+### 못 쟀다 (숨기지 않는다)
+
+**`.ps1` 을 실제로 돌리지 못했다** — 이 환경에 `pwsh` 가 없다.
+고친 두 줄은 같은 저장소 `proof_ab.ps1` 의 문법 그대로다.
+
+전수하면서 확인만 하고 **안 고친 것들** (전부 맞았다):
+`operate-node.md` 의 `credential_present` (Node `/health` 에 있다) ·
+촬영 런북·원고의 `8001`/`8002`/`8003` ↔ compose 서비스 대응 · `sanity.ps1`·
+`demo_violations.ps1` (HTTP 를 안 쓴다). 원고는 **Decision 대기라 손대지 않았다.**
+
+`run_tests` **605 OK (건너뜀 7)** · `check_submission` **28/28**.
+
 ## 제품 게이트가 **라우트 스물넷 중 다섯**만 눌러 보고 있었다 — 2026-09-03
 
 `prod_room.sh` 는 강제 모드(`compose.prod.yaml`)를 빈 볼륨에서 e2e 로 증명하는
