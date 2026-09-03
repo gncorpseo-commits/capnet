@@ -608,7 +608,11 @@ paths:
           application/json:
             schema:
               type: object
+              required: [nodeId]
               properties:
+                # 누가 보고했는지가 없으면 Core 가 배정 소유를 대조할 수 없다.
+                # 없이 보내면 422 다 — 문서가 이 칸을 빠뜨리고 있었다.
+                nodeId: { type: string, format: uuid }
                 reason: { type: string }
       responses:
         "200":

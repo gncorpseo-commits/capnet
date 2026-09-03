@@ -1,5 +1,55 @@
 # Changelog
 
+## 문서대로 보내면 **422** 였던 자리 — 2026-09-03
+
+큐 #24. 경로·메서드는 `#142` 가, 머리말(`info`)은 `#201` 이 못박았다.
+**요청 본문은 아직 밖이었다.** 전수했다.
+
+`requestBody` 스키마가 있는 오퍼레이션 **11** 중 **하나가 깨져 있었다**:
+
+```text
+POST /v1/internal/assignments/{assignment_id}/fail
+  문서:  properties: { reason }
+  모델:  FailBody(node_id: uuid.UUID = Field(alias="nodeId"), reason: str = "")
+```
+
+**`nodeId` 가 통째로 빠져 있었다.** 기본값이 없으니 필수다 —
+문서를 그대로 따라 `{"reason": "…"}` 만 보내면 **422** 다. `required:` 도 없었다.
+
+**Node 는 동작하고 있었다.** `_report_failure` 가 `nodeId` 를 보내기 때문이다.
+그래서 아무도 몰랐다 — **문서만 보고 붙이는 쪽만 막힌다.** 두 사본 다 고쳤다.
+
+### `populate_by_name` — 오탐 셋을 걸러 냈다
+
+첫 훑기는 셋을 더 잡았다: `SampleBody`(`input_id` vs `inputId`) ·
+`RevokeBody`(`agent_id` vs `agentId`) · 그리고 `credential_issue`(모델을 못 찾음).
+
+**앞의 둘은 틀린 것이 아니다** — 세 모델 다 `model_config = {"populate_by_name": True}` 라
+필드명도 alias 도 받는다. 표기를 한쪽으로 모으는 것은 **계약의 모양**이라 하지 않았다
+(`CLAUDE.md` 브리지절). 셋째는 `Body | None = None` 형태를 파서가 못 읽은 것이라 파서를 고쳤다.
+
+**「어긋난 것 넷」이라고 적지 않았다** — 실제로 깨진 것은 하나다.
+
+### 지키는 검사 — `test_openapi_request_schema_agrees` (7건)
+
+1. 문서가 적은 속성은 **모델이 받는 이름**이어야 한다 (필드명 **또는** alias)
+2. 모델의 **필수 필드**(기본값 없음)는 문서에 있어야 한다 — **이게 `nodeId` 를 잡았다**
+3. `required:` 의 이름도 모델이 받아야 한다 · 스키마가 있으면 핸들러가 실재해야 한다
+
+**`pyyaml` 을 쓰지 않는다.** CI 단위 잡에는 `pip install` 단계가 **없다**
+(`python3 -m unittest discover` 뿐). 처음 판은 `import yaml` 이었고 **로컬에서만 돌았을 것이다** —
+`test_openapi_drift` 가 같은 이유로 텍스트 파싱을 쓴다고 적어 둔 것을 뒤늦게 봤다.
+손파서로 바꾸고 **같은 11건이 나오는지 대조**했다.
+
+**응답 스키마는 안 본다** — 45개 중 0건이고 채우는 것은 `openapi-response-schemas`
+**Decision** 대기다 (#202). 부재를 못박으면 채우는 것을 막는다.
+
+**뮤테이션 6종 전부 물렸다** — `nodeId` 를 다시 빼기(**원래 상태**) · 모델에 새 필수 필드 추가 ·
+문서에 모델이 안 받는 속성 · `required` 에 없는 이름 · **필수 판정을 전부 「선택」으로** ·
+**파서 들여쓰기 규약 깨기**.
+
+`run_tests` **666 OK (건너뜀 7)** · `check_submission` **28/28**.
+
 ## `capreq` 도 버전을 **네 곳**에 흩어 두고 있었다 — 2026-09-03
 
 큐 #23. #201 이 Core 에서 같은 사고를 잡았다 — `openapi.yaml` 은 `0.3.0`,
