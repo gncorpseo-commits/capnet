@@ -110,7 +110,16 @@ $("c-submit").onclick = async () => {
   $("c-err").textContent = "";
   const caseId = $("c-case").value.trim();
   if (!caseId) { $("c-err").textContent = "케이스 ID가 필요하다."; return; }
-  const [code, version] = ($("c-cap").value || "image.classify|1").split("|");
+  // **못 고르면 못 고른다고 한다.** 여기는 `image.classify|1` 로 떨어지고 있었다 —
+  // 카탈로그를 못 받아 `(없음)` 이 떠 있어도 **사용자가 시키지 않은 능력**으로 작업이
+  // 만들어졌다. 바로 아래 데이터셋은 같은 함정을 이미 고쳤는데(#184·#189) 여기는
+  // `catch` 밖이라 검사도 못 봤다.
+  const capValue = $("c-cap").value;
+  if (!capValue) {
+    $("c-err").textContent = "능력을 고를 수 없다 — 카탈로그를 못 받았다.";
+    return;
+  }
+  const [code, version] = capValue.split("|");
   const agent = $("c-agent").value.trim();
 
   $("c-submit").disabled = true;

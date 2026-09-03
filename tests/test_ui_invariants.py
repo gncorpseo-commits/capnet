@@ -23,8 +23,13 @@ import re
 import unittest
 from pathlib import Path
 
-STATIC = Path(__file__).resolve().parents[1] / "apps" / "core" / "app" / "static"
+ROOT = Path(__file__).resolve().parents[1]
+STATIC = ROOT / "apps" / "core" / "app" / "static"
 PAGES = sorted(STATIC.glob("*.html"))
+
+# 서버 카탈로그가 주는 값. 화면이 이것을 **스스로 만들어 내면** 안 된다.
+# 두 검사가 같은 목록을 본다 — 갈리면 한쪽만 지켜진다.
+INVENTED = ("eurosat-rgb", "image.classify", "text.classify", "safety.pii")
 REDEEM = STATIC / "redeem.html"
 APP_JS = STATIC / "app.js"
 
@@ -98,6 +103,51 @@ class UiInvariants(unittest.TestCase):
             self.assertIn('src="/ui/app.js"', s, f"{p.name}: app.js 를 안 쓴다")
             self.assertNotIn("async function api(", s, f"{p.name}: api() 를 다시 정의한다")
 
+    def test_invented_list_is_real_and_not_empty(self) -> None:
+        """**목록을 비우면 위 두 검사가 공허하게 통과한다.**
+
+        실제로 그랬다 — 뮤테이션으로 `INVENTED = ()` 를 넣었더니 둘 다 초록이었다.
+        이 회차가 고쳐 온 「0건을 훑으며 통과」와 같은 모양을 **내 검사가 하고 있었다.**
+
+        그래서 목록이 **실물**인지 본다 — 카탈로그의 능력 코드이거나 allowlist 의
+        데이터셋 id 여야 한다. 비우면 여기서 걸리고, 가짜를 넣어도 걸린다.
+        """
+        self.assertTrue(INVENTED, "INVENTED 가 비었다 — 위 두 검사가 아무것도 안 본다")
+        catalog = (ROOT / "docs" / "spec" / "capability-catalog.md").read_text(encoding="utf-8")
+        allowlist = (ROOT / "apps" / "core" / "app" / "allowlist.py").read_text(encoding="utf-8")
+        for value in INVENTED:
+            with self.subTest(value=value):
+                self.assertTrue(
+                    f"`{value}`" in catalog or f'"{value}"' in allowlist,
+                    f"{value!r} 은 카탈로그에도 allowlist 에도 없다 — 실물이 아니다",
+                )
+
+    def test_no_domain_value_is_used_as_a_fallback(self) -> None:
+        """`||` **기본값**으로도 서버 값을 지어내지 않는다.
+
+        위 검사는 `catch` 블록만 봤다. 그래서 이것을 놓쳤다 (2026-09-03 · `call.html`):
+
+            const [code, version] = ($("c-cap").value || "image.classify|1").split("|");
+
+        `/v1/capabilities` 를 못 받아 `(없음)` 이 떠 있어도 **사용자가 시키지 않은
+        `image.classify` 로 작업이 만들어졌다.** 바로 아래 데이터셋은 같은 함정을
+        이미 고쳤는데(#184·#189), 이쪽은 `catch` 밖이라 **검사가 못 봤다.**
+
+        빈 값이면 **거절**하는 것이 맞다 — `caseId` 가 이미 그렇게 한다.
+        """
+        bad: list[str] = []
+        for p in PAGES:
+            s = code(p)
+            for m in re.finditer(r"\|\|\s*[\"']([^\"']+)[\"']", s):
+                literal = m.group(1)
+                if any(v in literal for v in INVENTED):
+                    line = s[: m.start()].count("\n") + 1
+                    bad.append(f"{p.name}:{line} — `|| {literal!r}`")
+        self.assertEqual(
+            [], bad,
+            "서버가 준 적 없는 값을 기본값으로 쓴다 — 빈 값이면 거절한다: " + "; ".join(bad),
+        )
+
     def test_catch_never_invents_server_data(self) -> None:
         """**못 받았으면 못 받았다고 한다.** 실패 자리에 서버 값을 박아 넣지 않는다.
 
@@ -112,8 +162,7 @@ class UiInvariants(unittest.TestCase):
         여기서 보는 것은 **`catch` 블록 안에 도메인 값 리터럴이 있는가** 하나다.
         에러 메시지·빈 표시(`(없음)`)는 서버 데이터가 아니므로 대상이 아니다.
         """
-        # 실제 데이터셋·능력 코드. 화면이 이것을 **스스로 만들어 내면** 안 된다.
-        invented = ("eurosat-rgb", "image.classify", "text.classify", "safety.pii")
+        invented = INVENTED
         for p in PAGES:
             s = code(p)
             for m in re.finditer(r"\bcatch\b[^{]*\{", s):
