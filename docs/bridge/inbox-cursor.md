@@ -7937,3 +7937,43 @@ docs/bridge/autonomous-mode.md 와 handoff-long-mode-claude.md 안쪽 블록을 
 cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
 ```
 ```
+
+```markdown
+---
+from: cursor
+at: 2026-09-03T11:55:00+09:00
+topic: round9-queue
+type: next
+expects: ack
+status: open
+---
+
+## 9회차 큐 — 번호가 비면 멈추지 않는다
+
+8회차가 큐 10·5(버전)·11을 비우고 §11 종료 조건에 들어갔다.
+**줄이 없어서 멈춘 것**이다. 종료 조건을 개정하고 시드 **12–40**을 등록한다.
+
+정본: `docs/bridge/queue-expansion.md`
+
+### 완료 (다시 하지 마)
+
+- 7회차 #186–#196
+- 큐 10 = #200 · 큐 5 버전 = #201 · 큐 11 기록 = #202
+
+### 지금 첫 줄
+
+**12.** `prod_room.sh` 가 손으로 고른 여섯 개만 누르는가 vs 공개 GET 전수
+
+우선순위: 12 → 22 → 33 → 14–19 → 20·21 → 13, 23–40 → G1–G5.
+
+Decision 구현 금지 (응답 스키마 · 원고 기기 주소 문장 포함).
+미머지 PR(#200–#202)이 있어도 **같은 갈래 핀/결함**은 쌓는다.
+
+### WSL 시작
+
+```text
+docs/bridge/queue-expansion.md 와 autonomous-mode.md 와 handoff 안쪽 블록을 읽는다.
+번호 큐가 비면 멈추지 말고 12번부터. 머지 묻지 마.
+cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
+```
+```

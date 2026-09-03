@@ -25,10 +25,12 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`2cbb936`** (#198 자율 모드 전문) · **실행 능력 10종** · 열린 PR **0**.
+> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`e927b65`** (#199) · **실행 능력 10종**.
 >
-> **자율 모드:** [`docs/bridge/autonomous-mode.md`](docs/bridge/autonomous-mode.md) (전문) ·
+> **자율 모드:** [`docs/bridge/queue-expansion.md`](docs/bridge/queue-expansion.md) (큐·종료 정본 · 시드 12–40) ·
+> [`docs/bridge/autonomous-mode.md`](docs/bridge/autonomous-mode.md) (루프) ·
 > [`docs/bridge/handoff-long-mode-claude.md`](docs/bridge/handoff-long-mode-claude.md) (WSL 붙여넣기).
+> **다음 줄: 큐 #12.** 8회차 PR #200·#201·#202 는 열린 채 쌓을 수 있다.
 >
 > `run_tests` **571 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` (#196·#188 합친 트리).
 > capreq 는 **이 환경에서 못 쟀다** — `pip` 가 없어 `httpx`·`fastapi` 가 빠지고
