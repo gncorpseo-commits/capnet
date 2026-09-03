@@ -10,6 +10,8 @@ set -uo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 # 판정 한 줄은 clean_room 과 공유한다 — 0건을 통과로 세지 않게.
 source "$root/scripts/lib/tally.sh"
+# 인증 프로브 판정 — 000(응답 없음)을 통과로 세지 않는다. §13·§14 가 쓴다.
+source "$root/scripts/lib/authprobe.sh"
 proj=capnet-prod
 core_port=18830
 node_port=18831
@@ -224,6 +226,56 @@ rc=$?
 tail -4 "${TMPDIR:-/tmp}/prod_demo.log"
 echo "    rc=$rc"
 chk "demo.sh 강제 모드 통과" test "$rc" = "0"
+
+# 경로 파라미터에 넣는 더미. **존재하지 않아도 된다** — 인증이 조회보다 먼저 오므로
+# 무인증이면 401 이어야 한다. 404 가 나오면 그건 인증 전에 DB 를 본 것이다.
+dummy=00000000-0000-4000-8000-0000000000ff
+capid=00000000-0000-4000-8000-000000000010
+
+echo
+echo "== 13) 공개 GET 전수 — 강제 모드에서도 열려 있어야 한다 =="
+# 제품 입구(capreq)는 **키 없이** 카탈로그를 읽어 라우팅한다. 그 전제가 강제 모드에서
+# 깨지면 입구가 통째로 죽는다. 지금까지 여기서 눌러 본 공개 GET 은 /health 하나였다.
+# 목록은 tests/test_prod_room_auth_probe.py 가 소스와 대조한다 — 빠뜨리면 검사가 잡는다.
+for path in \
+  "/" \
+  "/health" \
+  "/openapi.yaml" \
+  "/v1/capabilities" \
+  "/v1/capabilities/$capid" \
+  "/v1/datasets" ; do
+  c=$(code "$CORE_URL$path")
+  echo "    GET $path (키 없음) → HTTP $c"
+  chk "공개 GET $path" probe_verdict public "$c"
+done
+
+echo
+echo "== 14) 인증 GET 전수 — 무인증이면 전부 401 =="
+# ast 검사(test_every_route_declares_its_auth)는 「인증 헬퍼를 불렀는가」만 본다.
+# **강제 모드에서 실제로 401 이 나오는가**는 여기서만 잰다. 지금까지 넷뿐이었다.
+for path in \
+  "/v1/agents" \
+  "/v1/agents/$dummy" \
+  "/v1/api-keys" \
+  "/v1/arches" \
+  "/v1/inputs/$dummy" \
+  "/v1/internal/capabilities/$capid/sample" \
+  "/v1/internal/gate-runs/$dummy" \
+  "/v1/internal/inputs/$dummy/bytes" \
+  "/v1/internal/nodes/$dummy/assignments" \
+  "/v1/nodes" \
+  "/v1/nodes-credentials" \
+  "/v1/nodes-liveness" \
+  "/v1/nodes/invites" \
+  "/v1/nodes/$dummy" \
+  "/v1/ops/safety" \
+  "/v1/ops/status" \
+  "/v1/ops/work-units" \
+  "/v1/tasks/$dummy" ; do
+  c=$(code "$CORE_URL$path")
+  echo "    GET $path (키 없음) → HTTP $c"
+  chk "무인증 GET $path 401" probe_verdict authed "$c"
+done
 
 echo
 tally_verdict "$pass" "$fail" "제품 프로파일에서 전부 재현된다." || exit 1

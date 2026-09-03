@@ -46,6 +46,45 @@ PATH_RE = re.compile(r'^  (/\S*?):\s*$', re.M)
 METHOD_RE = re.compile(r"^    (get|post|put|patch|delete):\s*$", re.M)
 
 
+# openapi.yaml 머리말 — `info:` 블록의 두 칸 들여쓴 항목.
+_INFO_RE = re.compile(r"^info:\n((?:  \S.*\n|  .*\n)*?)^\S", re.M)
+
+
+def _spec_info(key: str) -> str | None:
+    """`info.<key>` 를 텍스트로 뽑는다 (pyyaml 없이 — 단위 잡은 의존성 0)."""
+    m = re.search(rf"^info:\n(?:.*\n)*?^  {re.escape(key)}:\s*(\S.*?)\s*$",
+                  SPEC.read_text(encoding="utf-8"), re.M)
+    return m.group(1).strip('"\'') if m else None
+
+
+def _app_kwarg(key: str) -> str | None:
+    """`app = FastAPI(...)` 의 키워드 인자. 주석 줄은 건너뛴다.
+
+    **범위를 괄호 균형으로 닫는다.** 처음에는 `^app = FastAPI\\((.*?)^\\)` 로 잡았는데,
+    호출을 한 줄로 접으면 그 정규식이 **파일 뒤쪽의 다른 `)`** 까지 훑었다 — 그래도
+    답이 맞아 통과했다. 우연히 맞는 파서는 다음번에 조용히 틀린다.
+    """
+    src = MAIN.read_text(encoding="utf-8")
+    start = src.find("app = FastAPI(")
+    if start < 0:
+        return None
+    i = start + len("app = FastAPI(")
+    depth = 1
+    while i < len(src) and depth:
+        if src[i] == "(":
+            depth += 1
+        elif src[i] == ")":
+            depth -= 1
+        i += 1
+    if depth:
+        return None
+    body = "\n".join(
+        ln for ln in src[start:i].splitlines() if not ln.strip().startswith("#")
+    )
+    kw = re.search(rf'\b{re.escape(key)}\s*=\s*"([^"]*)"', body)
+    return kw.group(1) if kw else None
+
+
 def routes() -> list[tuple[str, bool]]:
     """(경로, 문서화 대상인가) 목록."""
     src = MAIN.read_text(encoding="utf-8")
@@ -124,6 +163,29 @@ class OpenApiDrift(unittest.TestCase):
             SPEC_COPY.read_text(encoding="utf-8"),
             "apps/core/openapi.yaml 과 docs/spec/openapi.yaml 이 다르다",
         )
+
+    def test_version_agrees_with_the_app(self) -> None:
+        """정적 스펙과 **실행 중인 앱**이 같은 버전을 말하는가.
+
+        갈려 있었다 (2026-09-03 실측): `openapi.yaml` 은 `0.3.0`, `FastAPI(...)` 는
+        `0.2.0`. 같은 Core 인데 `GET /openapi.yaml` 과 `GET /openapi.json` 이 서로
+        다른 버전을 준다 — 붙이는 쪽은 어느 쪽을 믿어야 할지 알 수 없다.
+
+        경로·메서드는 이미 못박혀 있었지만 **머리말(`info`)은 아무도 안 봤다.**
+        """
+        self.assertEqual(_spec_info("version"), _app_kwarg("version"),
+                         "openapi.yaml info.version 과 FastAPI(version=) 가 다르다")
+
+    def test_title_agrees_with_the_app(self) -> None:
+        """제목이 갈리면 스펙 두 개가 **다른 서비스**로 읽힌다."""
+        self.assertEqual(_spec_info("title"), _app_kwarg("title"),
+                         "openapi.yaml info.title 과 FastAPI(title=) 가 다르다")
+
+    def test_info_parser_actually_finds_things(self) -> None:
+        """머리말을 못 읽으면 위 둘이 `None == None` 으로 조용히 통과한다."""
+        for key in ("title", "version"):
+            self.assertIsNotNone(_spec_info(key), f"openapi.yaml info.{key} 를 못 읽었다")
+            self.assertIsNotNone(_app_kwarg(key), f"FastAPI({key}=) 를 못 읽었다")
 
     def test_parser_actually_finds_things(self) -> None:
         """검사가 0개를 비교하며 통과하는 상태를 막는다."""

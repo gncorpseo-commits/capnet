@@ -115,7 +115,9 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="CapNet Core",
-    version="0.2.0",
+    # openapi.yaml 의 info.version 과 **같아야 한다** (test_openapi_drift 가 못박는다).
+    # 갈리면 `GET /openapi.yaml` 과 `GET /openapi.json` 이 같은 Core 를 다른 버전으로 부른다.
+    version="0.3.0",
     description="Capability 게이트·claim Core. 정적 YAML 초안은 GET /openapi.yaml (S4).",
 )
 
