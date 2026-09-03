@@ -1,5 +1,45 @@
 # Changelog
 
+## 카탈로그가 「구현됨」이라 적은 열 종이 **정말 등록되는가** — 2026-09-03
+
+큐 #27. `test_report_claims` 는 **원고가 부른 능력**이 카탈로그에서 「구현됨」인지 본다.
+**반대 방향은 아무도 안 봤다** — 카탈로그가 「구현됨」이라 적은 능력에
+**실제로 등록되는 길이 있는가.**
+
+길이 없으면 그 능력은 **문서에만 있다.** 심사위원이 재현하면 `GET /v1/capabilities` 에
+안 나오고, 그때 **나머지 아홉의 신뢰도까지** 같이 떨어진다.
+
+### 실측 — **10/10 길이 있다**
+
+| 능력 | 등록 경로 |
+|---|---|
+| `image.classify` | `call.sh` · `seed.sql` |
+| `image.embed` | `image_embed_demo.sh` |
+| `text.classify` | `text_demo.sh` |
+| `text.extract` | `text_extract_demo.sh` |
+| `text.ner` | `ner_demo.sh` · `product_demo.sh` |
+| `text.embed` | `embed_demo.sh` |
+| `text.rank` | `text_rank_demo.sh` |
+| `table.extract` | `table_demo.sh` |
+| `timeseries.forecast` | `series_demo.sh` |
+| `safety.pii` | `pii_demo.sh` |
+
+재현: `python3 -m unittest tests.test_catalog_has_a_registration_path -v`
+
+7회차 inbox 가 「전부 있다 (데모 9 + seed 1)」를 **손으로** 확인했다.
+같은 것을 기계가 하게 했다 — **손으로 센 것은 다음 줄이 늘 때 안 다시 센다.**
+
+### 무엇을 고정하지 않았나
+
+- **개수**(`10`). 자라는 값이라 못박으면 사람이 숫자만 고친다
+- 「구현됨이 **아닌**」 줄 — 선언만 있는 능력은 정상이다 (**D27 `retrieve.*`** 가 그 예다)
+- 그 데모가 **실제로 도는지** — Docker 가 필요하다. 보는 것은 **길의 존재**다
+
+**뮤테이션 4종 전부 물렸다** — 길 없는 능력을 「구현됨」으로 추가 ·
+기존 능력의 등록 경로 제거 · 표 파서 눈멀게 · **찾기를 항상 참으로**.
+
+`run_tests` **670 OK (건너뜀 7)** · `check_submission` **28/28**.
+
 ## 문서대로 보내면 **422** 였던 자리 — 2026-09-03
 
 큐 #24. 경로·메서드는 `#142` 가, 머리말(`info`)은 `#201` 이 못박았다.
