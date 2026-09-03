@@ -74,11 +74,16 @@ class TestUnreachableCoreIsReported(unittest.TestCase):
 
     def test_fetch_does_not_swallow_silently(self) -> None:
         """`[]` 만 돌려주면 「일이 없다」와 구별되지 않는다."""
-        for body in handler_bodies("_fetch_my_assignments"):
+        bodies = handler_bodies("_fetch_my_assignments")
+        # 바닥 — `except` 를 통째로 지우면 빈 목록이 되어 이 검사가 초록이 된다.
+        self.assertTrue(bodies, "_fetch_my_assignments 에 except 가 하나도 없다")
+        for body in bodies:
             self.assertIn("_note_core_error", body, "배정 조회 실패가 조용하다")
 
     def test_heartbeat_does_not_swallow_silently(self) -> None:
-        for body in handler_bodies("_send_heartbeat"):
+        bodies = handler_bodies("_send_heartbeat")
+        self.assertTrue(bodies, "_send_heartbeat 에 except 가 하나도 없다")
+        for body in bodies:
             self.assertIn("_note_core_error", body, "하트비트 실패가 조용하다")
 
     def test_reports_on_change_not_every_poll(self) -> None:

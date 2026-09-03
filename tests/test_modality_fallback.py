@@ -129,7 +129,10 @@ class TestFallbackSetIsJustified(unittest.TestCase):
 class TestTodaysVocabularyIsCovered(unittest.TestCase):
     def test_every_modality_is_decided(self) -> None:
         """어휘의 모든 값이 둘 중 하나로 확실히 간다 — 「모르겠다」가 없다."""
-        for name in sorted(vocabulary()):
+        vocab = sorted(vocabulary())
+        # 바닥 — 어휘가 비면 「전부 결정됐다」가 공허하게 참이 된다.
+        self.assertGreater(len(vocab), 5, f"모달리티 어휘가 비었다: {vocab}")
+        for name in vocab:
             with self.subTest(modality=name):
                 self.assertIsInstance(modality.requires_core_input(name), bool)
 

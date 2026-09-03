@@ -1,5 +1,662 @@
 # Changelog
 
+## Core 를 우회하는 스크립트는 **하나뿐이고, 문서가 그렇게 적는다** — 2026-09-03
+
+큐 #29. 제품 주장의 한 줄이다 — 「사용자는 기기 주소를 모른다. 기기는 Core 가
+배정하지 않은 실행을 거부한다.」 #200 이 그 주장을 **틀린 파일에 붙여 놓은 것**을 고쳤다.
+이건 그 옆자리다 — **말이 아니라 스크립트가 실제로 무엇을 부르는가.**
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| Node URL 을 **부르는** 스크립트 | **9** |
+| 그중 **`/health` 만** 부르는 것 | **8** |
+| **실행·claim 을 직접 부르는 것** | **1** — `smoke_w1.ps1` |
+
+`/health` 는 준비 단계다 — 가중치 해시·`arch` 를 **그 기기의 증언**에서 뽑는다(운영자 몫).
+남은 하나가 `POST $node/v1/execute` (212행)와 `POST $core/v1/internal/claim` (203행)을 부른다.
+
+**그건 결함이 아니다.** `README` 가 그 스크립트를 「**dummy 게이트 배관** + placeholder
+추론」이라고 적는다. `main.py:1548` 의 주석 「이전에는 클라이언트가 claim 을 직접
+호출하고 Node 에도 직접 접속했다」가 가리키는 **그 시절의 도구**이고, 그 사실이
+문서에 남아 있다. **「Core 우회 1건」이 아니라 「의도된 배관 smoke 하나」다.**
+
+### 탐지기가 **여섯 자리를 오탐했다** (적어 둔다 — 이번 회차 네 번째)
+
+처음 판은 `\$\{?(?:node|NODE_URL)\}?` 였다. 이것이 잡은 것들:
+
+```text
+$node_id                       UUID 변수
+"${node_port}:8001"            compose 포트
+$core + $node                  SBOM 목록
+\"$node\"                       JSON 본문의 node_id
+```
+
+**뒤에 `/` 를 요구하니 여섯이 한 번에 빠졌다** — 「Node 를 **언급**한다」와
+「Node 를 **부른다**」는 다르다. 그대로 뒀으면 **「우회 일곱 건」**이라고 적을 뻔했다.
+
+### 지키는 검사 — `test_scripts_go_through_core` (7건)
+
+`/health` 밖으로 Node 를 부르거나 `internal/claim` 을 부르는 스크립트는
+`PLUMBING` 에 **근거와 함께** 적혀 있어야 한다. 근거가 `README` 를 인용하므로
+**그 문장이 사라지면 근거도 빈다** — 검사가 그것도 본다.
+
+**뮤테이션 5종 전부 물렸다** — Node 를 직접 실행하는 새 스크립트 ·
+기존 데모가 claim 을 부름 · 근거 비우기 · **유령 항목** · 탐지기 눈멀게 하기.
+
+### 큐 #32 — **코드 없음** (같이 잰 것)
+
+compose 헬스체크 전수. **1건**이고 `pg_isready -U … -d …` 다 —
+**항상 성공하는 명령이 아니다** (DB 가 안 뜨면 실패한다). 다른 서비스에는 헬스체크가 없고,
+기동 순서는 `depends_on` 과 `migrate` 일회성 잡이 잡는다. **더할 것이 없다.**
+
+`run_tests` **692 OK (건너뜀 7)** · `check_submission` **28/28**.
+
+## 시크릿 검사가 **CI 워크플로는 안 보고 있었다** — 2026-09-03
+
+큐 #31. #196 이 「시크릿이 런타임 출력으로 나가는가」를 전수해 못박았다.
+그 검사가 훑는 범위는 이렇다:
+
+```python
+for p in sorted(tree.rglob("*.py")): ...
+for p in sorted((ROOT / "scripts").glob("*.sh")): ...
+```
+
+**`.github/workflows/*.yml` 은 범위 밖이었다.**
+
+그런데 Actions 로그는 **가장 나쁜 자리**다 — 공개 저장소에서 누구나 읽고,
+지워도 캐시·포크·알림에 남는다. `echo "${{ secrets.X }}"` 한 줄이면 끝난다.
+
+### 실측 — 오늘 새는 곳은 없다
+
+| 무엇 | 수 |
+|---|---|
+| 워크플로 파일 | **1** (`ci.yml`) |
+| `${{ secrets.* }}` 사용 | **0** |
+| 시크릿 낱말을 출력하는 `echo`/`printf`/`cat` | **0** |
+| `set -x` (블록의 모든 명령을 값과 함께 로그로) | **0** |
+
+`POSTGRES_PASSWORD: capnet` 은 **일회용 서비스 컨테이너**의 값이고 `echo` 되지 않는다.
+
+### 내 탐지기가 **이 저장소의 키 이름을 못 잡았다** (적어 둔다)
+
+처음 판은 `\b(?:secret|password|…|api[_-]?key)\b` 였다.
+그런데 **`CAPNET_API_KEY` 를 못 잡았다** — `_` 가 단어 문자라 `_API` 앞에 경계가 없다.
+
+**#196 이 「낱말 목록에 `cred` 가 없어 `$cred` 를 못 잡았다」로 겪은 것과 같은 함정이다.**
+검사를 짜면서 만든 `test_detector_discriminates` 가 그걸 잡았다 — 그 검사가 없었으면
+「CI 는 깨끗하다」를 **눈먼 탐지기로** 말할 뻔했다.
+
+### 무엇을 고정하지 않았나
+
+- `${{ secrets.* }}` **사용 자체**. 배포·토큰이 필요해질 수 있다 — 막는 것은 **출력**이다
+- 워크플로 안의 **리터럴 값**. 일회용 테스트 DB 비밀번호가 그렇고 그건
+  `check_submission.check_secrets` 의 몫이다 — 겹치면 어느 검사가 지키는지 흐려진다
+
+**뮤테이션 6종 전부 물렸다** — 시크릿 환경변수 `echo` · `secrets` 표현식 출력 ·
+`set -x` · `password` 를 `cat` · 훑는 범위 비우기 · **탐지기를 낱말 경계로 되돌리기**.
+
+### 큐 #13 — **코드 없음** (같이 잰 것)
+
+compose·Dockerfile 의 바인딩을 전수했다. **어긋난 곳 0.**
+
+| 자리 | 값 | 판정 |
+|---|---|---|
+| `apps/core/Dockerfile` · `apps/node/Dockerfile` | `--host 0.0.0.0` | **정상** — 컨테이너 안이고, 노출은 compose `ports:` 가 정한다 |
+| `capreq` `serve`·`gemma` `--host` | `127.0.0.1` | `test_capreq_binds_loopback` 이 못박는다 (#195) |
+| postgres 호스트 노출 | prod 오버레이가 `ports: !override []` | `prod_room` §1 이 실제로 누른다 |
+
+**세 축이 이미 덮여 있다.** 새 검사를 더하면 어느 것이 지키는지 흐려진다.
+
+`run_tests` **685 OK (건너뜀 7)** · `check_submission` **28/28**.
+
+## 화면이 **사용자가 시키지 않은 능력**으로 작업을 만들 수 있었다 — 2026-09-03
+
+큐 #28. `call.html` 의 제출 핸들러:
+
+```js
+const [code, version] = ($("c-cap").value || "image.classify|1").split("|");
+```
+
+`/v1/capabilities` 를 못 받으면 그 `<select>` 는 `(없음)`(값이 빈 문자열)이 된다.
+그대로 제출하면 **`image.classify@1` 로 작업이 만들어진다** — 사용자는 고른 적이 없다.
+
+**바로 아래 데이터셋은 같은 함정을 이미 고쳤다** (#184·#189 — 「못 받았으면 못 받았다고
+한다」). 능력 쪽은 남았고, `test_ui_invariants` 는 **`catch` 블록만** 봐서 못 잡았다 —
+이 폴백은 `catch` 밖에 있다.
+
+빈 값이면 **거절**하게 했다. `caseId` 가 이미 그렇게 한다.
+
+### 검사를 넓혔다 — `||` 기본값도 본다
+
+`test_no_domain_value_is_used_as_a_fallback` — `catch` 안이든 밖이든,
+**서버 카탈로그가 주는 값**을 `||` 기본값으로 쓰면 실패한다.
+두 검사가 같은 목록(`INVENTED`)을 본다 — 갈리면 한쪽만 지켜진다.
+
+### 내 검사가 **같은 함정에 빠져 있었다** (적어 둔다)
+
+뮤테이션으로 `INVENTED = ()` 를 넣었더니 **두 검사가 다 초록이었다.**
+목록을 비우면 아무것도 안 훑는다 — 이 회차 #210 이 고친 「0건을 훑으며 통과」를
+**내가 만든 검사가 하고 있었다.**
+
+바닥을 넣었다: `INVENTED` 는 **비어 있으면 안 되고**, 각 항목이 **카탈로그의 능력 코드**
+이거나 **allowlist 의 데이터셋 id** 여야 한다. 비워도, 가짜를 넣어도 걸린다.
+
+**뮤테이션 5종 전부 물렸다** — 원래 `||` 폴백으로 되돌리기 · 다른 페이지에 데이터셋
+폴백 심기 · `catch` 안에 능력 리터럴 · **목록 비우기** · **목록에 가짜 값 넣기**.
+
+`run_tests` **678 OK (건너뜀 7)** · `check_submission` **28/28**.
+
+## 「CI 가 본다」가 **거짓이었다** — 건너뛴 일곱은 어디에서도 안 돈다 — 2026-09-03
+
+큐 #26. `test_skip_reasons` 는 건너뛰는 **사유**를 허가 목록으로 관리한다.
+그 목록이 「어디서 도는가」를 **적기만** 하고, 아무도 대조하지 않았다.
+
+### 실측 — 두 사유가 거짓이었다
+
+```text
+"psycopg 없음 …"    적힌 근거: 「CI 의 migrate 잡에서는 실제로 돈다」
+"capreq 를 못 읽었다" 적힌 근거: (어디서 도는지 안 적음)
+```
+
+`ci.yml` 을 열었다:
+
+| 잡 | 무엇을 discover 하나 | 무엇을 설치하나 |
+|---|---|---|
+| `unit` | **`tests`** | **없음** |
+| `capreq` | `capreq/tests` | httpx · fastapi · multipart · **setup-node** |
+| `migrate` | `scripts/run_integration.sh` = **`tests/integration/check_*.py`** | psycopg · fastapi 등 |
+
+**`tests/` 를 보는 것은 `unit` 잡 하나뿐이고, 그 잡은 아무것도 설치하지 않는다.**
+migrate 잡이 돌리는 것은 `tests/integration/check_*.py` — **다른 파일**이다.
+
+그래서 건너뛴 일곱은 **CI 어디에서도 안 돈다**:
+
+| 사유 | 파일 | 실제로 도는 곳 |
+|---|---|---|
+| `psycopg 없음` (5) | `test_arch_registry` · `test_contract_checks_by_arch` · `test_capability_catalog` | **없음** |
+| `capreq 를 못 읽었다` (2) | `test_route_bench` | **없음** |
+| `node 가 없다` (2) | `capreq/tests/test_chat_render` | ✅ `capreq` 잡 (setup-node 있음) |
+
+**「CI 가 본다」고 적어 두면 그 순간부터 아무도 다시 안 센다.** 이 회차가 고쳐 온
+「보고 있다고 믿는데 안 보고 있다」와 정확히 같은 모양이다.
+
+### 고친 것 — 근거에 `runs_in` 을 붙였다
+
+`ALLOWED` 를 `사유 → (근거, runs_in)` 으로 바꿨다.
+`runs_in` 이 잡 이름이면 **`ci.yml` 이 그 트리를 discover 하는지 대조**하고,
+`None` 이면 근거에 **「안 돈다」가 적혀 있어야** 통과한다.
+
+**CI 를 고치지 않았다.** unit 잡에 의존성을 넣거나 migrate 잡에 `discover -s tests` 를
+더하는 것은 **config 변경**이라 (`CLAUDE.md`) 혼자 하지 않는다 — inbox 에 Proposal 로 올린다.
+여기서 한 것은 **거짓 주장을 사실로 맞추고, 다시 거짓이 될 수 없게** 한 것이다.
+
+### 내가 #207 에서 넣은 경고를 같이 지웠다
+
+`test_input_contract_rejections_actually_run` 머리말에 `grep … "a\|b"` 를 적었더니
+`SyntaxWarning: invalid escape sequence` 가 났다. **지금은 경고지만 다음 세대에서는 에러**다.
+docstring 을 raw 로 바꾸고, **검사 소스에 파이썬 경고가 남지 않는지** 보는 검사를 넣었다 —
+스위트가 경고를 흘리면 **진짜 경고가 묻힌다.**
+
+**뮤테이션 4종 전부 물렸다** — 「CI 가 본다」를 거짓으로 되돌리기 ·
+capreq 잡이 그 트리를 안 보게 하기 · **잘못된 이스케이프 다시 넣기** · `ci.yml` 잡 이름 바꾸기.
+
+`run_tests` **676 OK (건너뜀 7)** · `check_submission` **28/28**.
+
+## 카탈로그가 「구현됨」이라 적은 열 종이 **정말 등록되는가** — 2026-09-03
+
+큐 #27. `test_report_claims` 는 **원고가 부른 능력**이 카탈로그에서 「구현됨」인지 본다.
+**반대 방향은 아무도 안 봤다** — 카탈로그가 「구현됨」이라 적은 능력에
+**실제로 등록되는 길이 있는가.**
+
+길이 없으면 그 능력은 **문서에만 있다.** 심사위원이 재현하면 `GET /v1/capabilities` 에
+안 나오고, 그때 **나머지 아홉의 신뢰도까지** 같이 떨어진다.
+
+### 실측 — **10/10 길이 있다**
+
+| 능력 | 등록 경로 |
+|---|---|
+| `image.classify` | `call.sh` · `seed.sql` |
+| `image.embed` | `image_embed_demo.sh` |
+| `text.classify` | `text_demo.sh` |
+| `text.extract` | `text_extract_demo.sh` |
+| `text.ner` | `ner_demo.sh` · `product_demo.sh` |
+| `text.embed` | `embed_demo.sh` |
+| `text.rank` | `text_rank_demo.sh` |
+| `table.extract` | `table_demo.sh` |
+| `timeseries.forecast` | `series_demo.sh` |
+| `safety.pii` | `pii_demo.sh` |
+
+재현: `python3 -m unittest tests.test_catalog_has_a_registration_path -v`
+
+7회차 inbox 가 「전부 있다 (데모 9 + seed 1)」를 **손으로** 확인했다.
+같은 것을 기계가 하게 했다 — **손으로 센 것은 다음 줄이 늘 때 안 다시 센다.**
+
+### 무엇을 고정하지 않았나
+
+- **개수**(`10`). 자라는 값이라 못박으면 사람이 숫자만 고친다
+- 「구현됨이 **아닌**」 줄 — 선언만 있는 능력은 정상이다 (**D27 `retrieve.*`** 가 그 예다)
+- 그 데모가 **실제로 도는지** — Docker 가 필요하다. 보는 것은 **길의 존재**다
+
+**뮤테이션 4종 전부 물렸다** — 길 없는 능력을 「구현됨」으로 추가 ·
+기존 능력의 등록 경로 제거 · 표 파서 눈멀게 · **찾기를 항상 참으로**.
+
+`run_tests` **670 OK (건너뜀 7)** · `check_submission` **28/28**.
+
+## 문서대로 보내면 **422** 였던 자리 — 2026-09-03
+
+큐 #24. 경로·메서드는 `#142` 가, 머리말(`info`)은 `#201` 이 못박았다.
+**요청 본문은 아직 밖이었다.** 전수했다.
+
+`requestBody` 스키마가 있는 오퍼레이션 **11** 중 **하나가 깨져 있었다**:
+
+```text
+POST /v1/internal/assignments/{assignment_id}/fail
+  문서:  properties: { reason }
+  모델:  FailBody(node_id: uuid.UUID = Field(alias="nodeId"), reason: str = "")
+```
+
+**`nodeId` 가 통째로 빠져 있었다.** 기본값이 없으니 필수다 —
+문서를 그대로 따라 `{"reason": "…"}` 만 보내면 **422** 다. `required:` 도 없었다.
+
+**Node 는 동작하고 있었다.** `_report_failure` 가 `nodeId` 를 보내기 때문이다.
+그래서 아무도 몰랐다 — **문서만 보고 붙이는 쪽만 막힌다.** 두 사본 다 고쳤다.
+
+### `populate_by_name` — 오탐 셋을 걸러 냈다
+
+첫 훑기는 셋을 더 잡았다: `SampleBody`(`input_id` vs `inputId`) ·
+`RevokeBody`(`agent_id` vs `agentId`) · 그리고 `credential_issue`(모델을 못 찾음).
+
+**앞의 둘은 틀린 것이 아니다** — 세 모델 다 `model_config = {"populate_by_name": True}` 라
+필드명도 alias 도 받는다. 표기를 한쪽으로 모으는 것은 **계약의 모양**이라 하지 않았다
+(`CLAUDE.md` 브리지절). 셋째는 `Body | None = None` 형태를 파서가 못 읽은 것이라 파서를 고쳤다.
+
+**「어긋난 것 넷」이라고 적지 않았다** — 실제로 깨진 것은 하나다.
+
+### 지키는 검사 — `test_openapi_request_schema_agrees` (7건)
+
+1. 문서가 적은 속성은 **모델이 받는 이름**이어야 한다 (필드명 **또는** alias)
+2. 모델의 **필수 필드**(기본값 없음)는 문서에 있어야 한다 — **이게 `nodeId` 를 잡았다**
+3. `required:` 의 이름도 모델이 받아야 한다 · 스키마가 있으면 핸들러가 실재해야 한다
+
+**`pyyaml` 을 쓰지 않는다.** CI 단위 잡에는 `pip install` 단계가 **없다**
+(`python3 -m unittest discover` 뿐). 처음 판은 `import yaml` 이었고 **로컬에서만 돌았을 것이다** —
+`test_openapi_drift` 가 같은 이유로 텍스트 파싱을 쓴다고 적어 둔 것을 뒤늦게 봤다.
+손파서로 바꾸고 **같은 11건이 나오는지 대조**했다.
+
+**응답 스키마는 안 본다** — 45개 중 0건이고 채우는 것은 `openapi-response-schemas`
+**Decision** 대기다 (#202). 부재를 못박으면 채우는 것을 막는다.
+
+**뮤테이션 6종 전부 물렸다** — `nodeId` 를 다시 빼기(**원래 상태**) · 모델에 새 필수 필드 추가 ·
+문서에 모델이 안 받는 속성 · `required` 에 없는 이름 · **필수 판정을 전부 「선택」으로** ·
+**파서 들여쓰기 규약 깨기**.
+
+`run_tests` **666 OK (건너뜀 7)** · `check_submission` **28/28**.
+
+## `capreq` 도 버전을 **네 곳**에 흩어 두고 있었다 — 2026-09-03
+
+큐 #23. #201 이 Core 에서 같은 사고를 잡았다 — `openapi.yaml` 은 `0.3.0`,
+`FastAPI(version=)` 은 `0.2.0`. **같은 서비스가 두 버전을 말했다.**
+그 검사는 Core 두 자리만 못박았다. 나머지를 전수했다.
+
+| 어디 | 값 |
+|---|---|
+| `capreq/pyproject.toml` | `0.1.0` |
+| `capreq/src/capreq/__init__.py` `__version__` | `0.1.0` |
+| `server.py` `FastAPI(version=…)` | `0.1.0` **(리터럴)** |
+| `gemma_server.py` `FastAPI(version=…)` | `0.1.0` **(리터럴)** |
+
+재현:
+
+```bash
+grep -rnE "^version = |__version__|FastAPI\(.*version=" capreq/pyproject.toml capreq/src
+```
+
+**오늘은 넷 다 같다.** 그런데 맞추는 것이 없다 — 하나만 올리면 조용히 갈린다.
+**Core 가 실제로 그렇게 갈렸다.**
+
+### 고친 것 — 자리를 넷에서 둘로
+
+두 서버의 **리터럴을 없앴다.** 이제 `capreq.__version__` 하나에서 온다.
+남은 자리는 둘(`pyproject.toml` · `__init__.py`)이고 검사가 **같은지 본다.**
+
+`pyproject.toml` 은 빌드가 읽고 `__version__` 은 코드가 읽는다. 둘을 합치려면 동적 버전
+배관이 필요해 **한쪽이 움직이면 걸리게** 하는 쪽을 골랐다.
+
+### 무엇을 고정하지 않았나
+
+**버전 값 자체.** `0.1.0` 을 박으면 올릴 때마다 검사가 일을 시킨다 —
+`test_doc_counts` 가 적은 그 함정이다. 보는 것은 **서로 같은가** 하나다.
+
+Node(`apps/node/app/main.py`)의 `0.2.0` 은 **대조 상대가 없다** — 스펙 파일이 없어
+갈릴 자리가 없다. 짝이 생기면 그때 넣는다. **지금 넣으면 지킬 것이 없는 검사가 된다.**
+
+### 뮤테이션 **6종 전부 물렸다**
+
+`pyproject` 만 올리기 · `__version__` 만 올리기 · 서버가 리터럴로 되돌아가기 ·
+**임포트 없이 이름만 쓰기** · `version=` 을 빼기 · `__version__` 을 `"dev"` 로 바꾸기.
+
+### 못 쟀다
+
+`capreq` 단위 검사는 **로컬에서 못 돌린다** (`fastapi` 없음). 정본은 CI 의 `capreq` 잡이고,
+이 변경은 그 잡이 임포트하는 모듈 둘을 건드린다.
+
+`run_tests` **659 OK (건너뜀 7)** · `check_submission` **28/28**.
+
+## 검사가 **빈 목록을 돌며 초록**이 되지 않게 — 2026-09-03
+
+큐 #21. 이 회차들이 고쳐 온 결함의 **원형**이다 — #181 은 통합 러너가 0개를 돌고
+「통과 0 · 실패 0」을 찍었고, #187 은 방 판정이 같은 모양이었다.
+`for x in f(): self.assertX(...)` 는 **`f()` 가 비면 아무것도 안 보고 통과한다.**
+
+### 결론부터 — **실제로 초록이 되는 검사는 0건**이었다
+
+훑기를 세 번 좁혔다:
+
+```text
+테스트 함수 721 → 단언이 루프 안에만 75 → 계산된 컬렉션 31 → **호출 결과 8**
+```
+
+그리고 **훑기를 믿지 않고 대상을 비워서** 확인했다. 추출기가 아무것도 못 찾게 만들자
+`test_text_extract` 는 **21건 중 6건이 실패**했고, PII 규칙을 비우자 `test_safety_pii` 는
+**32건 중 11건이 실패**했다. **형제 검사가 받쳐 주고 있었다.**
+
+**「구멍 여덟」이라고 적지 않았다** — #192 가 「결함 11건」이라고 적지 않은 것과 같다.
+
+### 그래도 고친 이유
+
+받쳐 주는 것이 **다른 검사**라는 것은, **그 형제를 지우는 순간 조용히 구멍이 난다**는 뜻이다.
+호출 결과를 도는 여덟 자리에 바닥 한 줄씩 넣어 **스스로 서게** 했다.
+
+| 검사 | 무엇이 비면 초록이었나 |
+|---|---|
+| `test_migrate_lint::…lint_clean` | 마이그레이션 디렉터리를 못 읽을 때 |
+| `test_modality_fallback::…is_decided` | 모달리티 어휘가 빌 때 |
+| `test_node_core_unreachable` ×2 | **`except` 를 통째로 지웠을 때** |
+| `test_node_routes_are_pinned::…credential` | `health` 가 빈 dict 일 때 |
+| `test_pass_rate_script::…arch_names` | arch 목록이 빌 때 |
+| `test_safety_pii::…original_span` | 스캐너가 아무것도 못 찾을 때 |
+| `test_text_extract::…the_value` | 추출기가 아무것도 못 찾을 때 |
+
+### 넓게 잡은 첫 판은 **일흔다섯 자리에 잔소리**를 했다 (적어 둔다)
+
+처음 훑기는 리터럴 튜플(`for m in ("a", "b"):`)까지 「바닥 없음」으로 셌다.
+그대로 검사로 만들었으면 **일흔다섯 자리를 고치라고 요구**했을 것이고,
+그러면 사람이 **검사를 끄는 쪽**을 고른다.
+
+좁힌 기준 셋: **호출 결과만** · **같은 함수 안**만 · 개수는 못박지 않는다.
+그 좁힘 자체가 검사로 남아 있다 (`test_literal_loops_are_not_flagged`).
+
+### 지키는 검사 — `test_loop_tests_have_a_floor` (4건)
+
+**뮤테이션 5종 전부 물렸다** — 넣은 바닥 다시 빼기 · **바닥 없는 새 검사 파일 투입** ·
+탐지기를 헐겁게(전부 통과) · 훑는 범위 비우기 · **리터럴까지 잡는 잔소리 판**.
+마지막 둘이 양방향이다 — 헐거워져도, **과하게 잡아도** 실패한다.
+
+`run_tests` **653 OK (건너뜀 7)** · `check_submission` **28/28**.
+
+## 조용히 삼키는 자리 — 오늘은 없고, **근거 없이 늘 수 없게** 했다 — 2026-09-03
+
+큐 #20. 이 회차들이 고쳐 온 결함은 한 모양이다 — **아무것도 못 봤는데 초록으로 끝난다**
+(#180 누출 검사 0건 · #181 통합 러너 0개 · #187 방 판정 · #205 공개 프로브의 `000`).
+`except Exception: pass` 는 그 모양을 **한 줄로** 만든다.
+
+### 실측 — 결함 0건
+
+| 무엇 | 수 |
+|---|---|
+| 광범위 `except` (`Exception`·`BaseException`) | **25** |
+| **bare `except:`** | **0** |
+| 본문이 `pass`/`continue` **뿐** | **1** — `compare_ab.py` 의 stdout 인코딩 |
+| `contextlib.suppress(Exception)` | **1** — Node 실패 보고 |
+| 삼키고 **성공값**을 돌려주는 자리 | **0** |
+
+**스캐너를 믿지 않고 열셋을 다 열었다.** 나머지 스물셋은 전부 재던지거나 · 로그하거나 ·
+**실패 상태를 기록한다** — `checks[...] = False`(계약 게이트 넷) · `r.error = …`(부하 프로브) ·
+`ok=False`(capreq) · `_note_core_error`(Node). `db.py` 의 `return None` 하나가 성공값 후보로
+남았는데, 그것은 **경고를 남기고 직결로 폴백**하는 자리였다.
+
+### 스캐너가 `return 1` 을 **성공**으로 셌다 (적어 둔다)
+
+「삼키고 성공으로 끝나는 자리」를 `x.value in (True, 0)` 으로 걸렀더니
+`main()` 의 **실패 종료 코드** `return 1` 이 잡혔다 — 파이썬에서 `1 == True` 이기 때문이다.
+**뜻이 정반대인 것을 같은 것으로 셌다.**
+
+`is True` 로 고치고 나서야 후보가 `db.py` 하나로 좁혀졌다. 그대로 뒀으면
+「결함 셋」이라고 적을 뻔했다 — #192 가 「결함 11건」이라고 안 적은 것과 같은 자리다.
+
+### 지키는 검사 — `test_no_silent_exception_swallowing` (7건)
+
+**막지 않고 근거를 적게 만든다** (`test_every_route_declares_its_auth` 의 `PUBLIC` 과 같은 방식).
+
+1. **bare `except:` 는 0** — 어떤 근거로도 허용하지 않는다 (`KeyboardInterrupt` 까지 먹는다)
+2. `pass`/`continue` 뿐인 광범위 `except` 는 `ALLOWED` 에 **근거와 함께**
+3. `contextlib.suppress(Exception)` 도 같은 규율
+4. **유령 금지** — 사라진 자리가 목록에 남으면 다음 사람이 「허용된 거였지」로 넘어간다
+
+목록의 키는 **`(파일, 감싸는 함수)`** 다. 줄 번호로 잡으면 위쪽을 한 줄만 고쳐도 깨지고,
+그러면 사람이 검사를 고치게 된다.
+
+**뮤테이션 6종 전부 물렸다** — bare except 투입 · 근거 없는 `except: pass` ·
+근거 없는 `suppress` · **허용된 자리를 없애 유령 만들기** · 근거 비우기 · 훑는 범위 비우기.
+
+`run_tests` **649 OK (건너뜀 7)** · `check_submission` **28/28**.
+
+## 절대 규칙 여섯을 **기계가 전수한다** — 2026-09-03
+
+큐 14–19. `CLAUDE.md` 의 절대 규칙은 「이것을 어기면 프로젝트의 핵심 주장이 무너진다」고
+적혀 있다. 그런데 **지키는 것은 사람의 기억**이었다.
+
+전수했다. **오늘 새는 곳은 없다** — 그리고 그것이 이 검사를 만드는 이유다
+(7회차 #192–#196 과 같은 자리: 「오늘 0 · 지키는 것이 없어서 → 검사」).
+
+| 규칙 | 무엇 | 오늘 |
+|---|---|---|
+| **5** | pickle · `.pt` · `.pth` 로드 | **0건** — 로드는 전부 `safetensors.torch.load_file` |
+| **2** | `assignment` · `gate_run` INSERT | **5자리 전부** `INSERT … SELECT` |
+| **4** | Node 가 자기 등급을 주장 | **0건** — 소진은 초대장, 등록은 admin |
+| **8** | 게이트가 제출자 Node 에서 | **0건** — 앱 가드 + `ck_gate_runner_team` + `INSERT … SELECT` |
+| **7** | 자유 업로드 · 서명 URL · `fileToken` | **0건** — 금지 문구가 **주석에만** 있다 |
+| **3** | `compute_tier` 앱 문자열 비교 | **0건** |
+
+재현:
+
+```bash
+python3 -m unittest tests.test_absolute_rules_are_enforced -v
+```
+
+### `grep` 으로 재면 **금지 문구 자체가 위반으로 잡힌다**
+
+`apps/core/app/main.py:433` 은 이렇게 **적는다**:
+
+```text
+금지되는 것은 「자유 업로드」가 아니라 **비통제 수집**(서명 URL·fileToken)이다.
+```
+
+`grep -i fileToken` 은 이 줄을 위반으로 센다. **규칙을 적어 둔 것과 쓴 것은 다르다.**
+그래서 문자열·호출·인자 이름을 `ast` 로 보고 **주석과 docstring 은 세지 않는다.**
+`_live_strings` 가 그 경계이고, 그 경계가 너무 넓지 않은지도 검사한다
+(`test_docstrings_are_actually_excluded`).
+
+### 규칙 4 가 가장 좁은 자리
+
+`POST /v1/nodes/redeem` 은 **관리 키 없이 열린 유일한 쓰기 경로**다.
+그래서 셋을 함께 못박는다 — 요청 모델에 등급 필드가 **없다** ·
+핸들러가 `invite["trust_domain"]` 을 읽고 `body.trust_domain` 을 **안 읽는다** ·
+`is_gate_runner=False` 로 만든다.
+
+### 무엇을 **안** 봤나
+
+규칙 1(schema 제약 약화)·6(사전학습 가중치)은 여기서 안 본다 —
+`test_migrate_lint`·`test_license_coverage`·`check_submission` 이 이미 본다.
+**겹쳐 두면 어느 검사가 진짜로 지키는지 흐려진다.**
+
+### 뮤테이션 — **9종 전부 물렸다**
+
+`torch.load` 로 가중치 읽기 · `.pth` 경로 상수 두기 · `assignment` 를 `VALUES` 로 INSERT ·
+소진 본문에 `trust_domain` 필드 넣기 · **소진 핸들러가 초대장 대신 본문을 읽기** ·
+소진이 게이트러너를 만들게 하기 · `registry` 의 team 가드 제거 ·
+서명 URL 파라미터 추가 · `compute_tier` 를 `<` 로 비교.
+
+`run_tests` **642 OK (건너뜀 7)** · `check_submission` **28/28**.
+
+## 고쳤다고 **주석에만** 적힌 자리 — 둘은 아무도 안 돌려 봤다 — 2026-09-03
+
+큐 #33. 「`TODO`/`FIXME`/`이전에는` 주석 중 못박힌 검사가 없는 과거 버그」를 전수했다.
+
+### 실측 — `TODO`·`FIXME` 는 **진짜 0건**
+
+```bash
+grep -rnE "TODO|FIXME|XXX|HACK" --include=*.py --include=*.sh apps/ scripts/ capreq/src tests/
+```
+
+걸린 것은 전부 `mktemp -t capnet-XXXXXX` 였다. **미뤄 둔 일이 코드에 없다.**
+
+### 과거 버그 주석 **열넷** — 열둘은 이미 못박혀 있었다
+
+| 자리 | 못박은 검사 |
+|---|---|
+| `complete.py:166` 깨진 `required` | `test_broken_contract_does_not_disable_check` |
+| `complete.py:237` 「안 봤다」 경고 | 같은 검사 (#186 이 뮤테이션 안 물려 추가한 자리) |
+| `main.py:1217` `purged_now: True` | `test_purge_does_not_claim_it_purged` |
+| `main.py:1548` 클라이언트가 claim 직접 | `test_route_roles_are_pinned` |
+| `apikey.py:5` 관리 API 무인증 | `test_every_route_declares_its_auth` |
+| `node/main.py:516` `else: predict_image` | `test_executor_dispatch_covers_vocabulary` |
+| `node/main.py:570` `if NODE_ID and …` | `test_node_routes_are_pinned` (#194) |
+| `capreq/server.py:142` 빈 첨부 | capreq 단위 + `capreq_demo.sh` |
+| … 그 외 넷 | 있음 |
+
+**둘은 없었다.**
+
+```text
+grep -rl "assert_media_type\|allowed_media_types\|InputTooLarge" tests/   → 없음
+grep -rl "_report_failure" tests/ capreq/tests                           → 없음
+```
+
+### ① `inputs.py` — 문지기를 **한 번도 돌려 본 적이 없다**
+
+`apps/core/app/inputs.py` 는 Core 중개 수집(D8′)의 문지기다. 주석 둘이 과거 버그를 적는다:
+
+```text
+inputs.py:75   처음에는 「선언이 없으면 검사하지 않는다」였다
+inputs.py:111  처음에는 청크를 메모리에 모은 뒤 파일로 썼다. 상한이 256MiB 라 …
+```
+
+`test_docs_can_claims`(#200) 가 `"if allowed is None:" in inputs` 를 보지만 그건 **텍스트**다 —
+소스를 그대로 두고 동작만 바꾸면 통과한다.
+
+**이 파일은 돌릴 수 있었다.** 의존성이 `hashlib`·`os`·`uuid`·`pathlib` 뿐이고
+`psycopg` 는 타입 주석과 `except` 절에만 쓰인다. **돌릴 수 있는데 안 돌리고 있었다.**
+
+`test_input_contract_rejections_actually_run` (11건) — 형식 계약 거절 넷 ·
+`store_stream` 다섯(해시·크기 · **소비 중 파일이 자란다** · 상한에서 끊고 지운다 ·
+빈 입력 · 중간 예외) · 스텁 위생 둘.
+
+### 내 프로브가 **파이썬 파일 버퍼**를 재고 있었다 (적어 둔다)
+
+「받는 즉시 쓴다」를 8바이트 청크로 재니 `[0, 0, 0, 0, 0]` 이 나왔다.
+**결함을 하나 지어낼 뻔했다** — 구현은 이미 흘려 쓰고 있었고, `open(path, "wb")` 의
+기본 버퍼가 `close()` 전까지 디스크에 안 내보낸 것이다.
+
+**검사가 구현이 아니라 버퍼를 재고 있었다.** 실제 청크는 `inputs.CHUNK` = **1MiB** 다.
+버퍼보다 큰 청크로 바꾸니 그제야 이 검사가 보려는 것을 봤다.
+
+#201 의 「우연히 맞았다」와 같은 부류다 — **숫자가 이상하면 구현부터 의심하지 않는다.**
+
+### ② `node/main.py` — 실측 38건이 적힌 사고인데 핀이 없었다
+
+```text
+보고하지 않으면 실패가 lease 만료(60초)로만 드러나고 … 로그에만 쌓이고 증적에는 없다.
+실측으로 채널 불일치 38건이 그렇게 쌓였다.
+```
+
+`test_node_reports_failure_to_core` (7건) — 정의 · 실패 경로(`/fail`) · **`except` 절에서
+실제로 호출** · 보고 실패를 삼킴 · **Core 에 받는 라우트가 있음**.
+`fastapi` 가 필요해 `ast` 로 본다 (돌리는 것은 `prod_room`·통합 잡의 몫).
+
+### 뮤테이션 — **11종 전부 물렸다**
+
+입력 계약 여섯: 형식 미선언 통과 · **버퍼링 구현으로 복원** · 상한 판정을 끝까지 읽은 뒤로 ·
+거절 시 안 지움 · 빈 입력 수용 · 오류 문구에서 허용 목록 제거.
+
+Node 다섯: `except` 호출 삭제(정의만 남김) · 실패 경로를 완료 경로로 · `try` 제거 ·
+Core 라우트 제거 · 함수 통째 삭제.
+
+`run_tests` **623 OK (건너뜀 7)** · `check_submission` **28/28**.
+**건너뜀이 7 그대로다** — 내 `psycopg` 스텁이 다른 검사를 끄지 않았다 (#186 이 저지른 사고).
+
+## 「동명 `.ps1`」이 동작은 달랐다 — 2026-09-03
+
+`clean_room.sh` 는 별도 프로젝트와 **다른 포트**(18800/18801)로 스택을 띄운 뒤
+`demo.sh` 를 **그대로** 돌린다. `prod_room.sh` 도 같다(18830/18831).
+그게 되는 이유는 하나다 — **스크립트가 주소를 환경에서 받기 때문이다.**
+
+주소를 박아 두면 **격리 방을 띄워 놓고도 운영 스택을 친다.** 조용히, 초록으로.
+
+### 실측 — 23 중 2
+
+| | 수 |
+|---|---|
+| 주소를 쓰는 스크립트 | **23** |
+| 환경에서 받는다 | **21** |
+| **박아 뒀다** | **2** — `demo.ps1` · `smoke_w1.ps1` |
+
+재현:
+
+```bash
+python3 - <<'EOF'
+import pathlib, re
+ADDR=re.compile(r'(?:127\.0\.0\.1|localhost):(?:800[0-9]|8090)')
+SH=re.compile(r'\$\{(?:CORE_URL|NODE_URL|CAPREQ_URL)(?::-)?'); PS=re.compile(r'\$env:(?:CORE_URL|NODE_URL|CAPREQ_URL)')
+bad=[p.name for p in sorted(pathlib.Path("scripts").glob("*")) if p.suffix in (".sh",".ps1")
+     for t in [p.read_text(encoding="utf-8", errors="replace")]
+     if ADDR.search(t) and not (PS if p.suffix==".ps1" else SH).search(t)]
+print("박아 둔 스크립트:", bad or "없음")
+EOF
+```
+
+`.sh` 는 **20/20 전부** 받는다. `.ps1` 셋 중에서는 `proof_ab.ps1` 만 따라갔다.
+
+### 왜 어긋났나 — **고치고 짝을 안 따라갔다**
+
+`CHANGELOG` 에 이 줄이 있다:
+
+```text
+- `demo.sh`·`proof_ab.sh`·`pass_rate.sh` 를 `CORE_URL`/`NODE_URL` 로 파라미터화 —
+  주소가 박혀 있어
+```
+
+**같은 이름의 `.ps1` 짝은 그때 안 따라갔고, 그 뒤로 아무도 못 봤다.**
+`README` 는 「**Windows** — 동명 `.ps1`」이라고 적는다 — 동명인데 **동작이 다르다.**
+
+`proof_ab.ps1` 이 이미 쓰는 문법 그대로 두 줄을 맞췄다.
+
+### 지키는 검사 — `test_scripts_take_addresses_from_env` (6건)
+
+목록을 박지 않는다. **주소를 쓰는 스크립트를 훑어** 덮어쓰기 통로가 있는지 본다.
+주소를 안 쓰는 것(`sanity.ps1` 은 `docker exec` 만 한다)은 대상이 아니다.
+
+격리 방이 **실제로 그것에 기대고 있는지**도 같이 본다 —
+`export CORE_URL`/`NODE_URL` 과 **18xxx 격리 포트**. 방이 기본 포트로 돌아가면
+덮을 수 있어도 의미가 없다.
+
+**뮤테이션 6종 전부 물렸다** — `demo.ps1` 되돌리기 · **주소 박은 새 스크립트 투입** ·
+`.sh` 짝만 잃기 · 방이 `CORE_URL` 을 안 내보냄 · 방이 격리 포트를 버림 ·
+**패턴을 헐겁게 해 전부 통과시키기**.
+
+### 못 쟀다 (숨기지 않는다)
+
+**`.ps1` 을 실제로 돌리지 못했다** — 이 환경에 `pwsh` 가 없다.
+고친 두 줄은 같은 저장소 `proof_ab.ps1` 의 문법 그대로다.
+
+전수하면서 확인만 하고 **안 고친 것들** (전부 맞았다):
+`operate-node.md` 의 `credential_present` (Node `/health` 에 있다) ·
+촬영 런북·원고의 `8001`/`8002`/`8003` ↔ compose 서비스 대응 · `sanity.ps1`·
+`demo_violations.ps1` (HTTP 를 안 쓴다). 원고는 **Decision 대기라 손대지 않았다.**
+
+`run_tests` **605 OK (건너뜀 7)** · `check_submission` **28/28**.
+
 ## 제품 게이트가 **라우트 스물넷 중 다섯**만 눌러 보고 있었다 — 2026-09-03
 
 `prod_room.sh` 는 강제 모드(`compose.prod.yaml`)를 빈 볼륨에서 e2e 로 증명하는

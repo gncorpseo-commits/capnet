@@ -105,7 +105,10 @@ class TestOriginalTextDoesNotLeak(NodeApp):
         """어떤 라벨이든 **가려지지 않은 채로 나가면 안 된다.**"""
         text = ("ops@example.dev 010-1234-5678 900101-1234567 "
                 "4111111111111111 10.0.0.1 7f3a9c21-1b2c-4d3e-8f90-aabbccddeeff")
-        for f in self.scan(text)["findings"]:
+        found = self.scan(text)["findings"]
+        # 바닥 — 스캐너가 아무것도 못 찾으면 이 검사가 빈 목록을 돌며 초록이 된다.
+        self.assertTrue(found, f"{text!r} 에서 아무것도 못 찾았다")
+        for f in found:
             original = text[f["start"]:f["end"]]
             self.assertNotEqual(f["text"], original, f["label"])
             self.assertIn("*", f["text"], f["label"])
