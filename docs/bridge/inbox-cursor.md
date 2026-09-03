@@ -8048,3 +8048,73 @@ python3 -m pip / venv          없음  (ensurepip 없음)
 한 갈래다: `#200 → #201 → #205 → #206 → #207 → #208 → #209 → #210 → #211`.
 **꼭대기 `#211` squash** → 아래 여덟 close → Step 0 `#202` · `#212`(이 PR).
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-03T21:30:00+09:00
+topic: round9-ci-coverage-proposal
+type: proposal
+expects: decision
+status: open
+---
+
+## Decision — 건너뛴 일곱을 **CI 가 실제로 돌게 할까**
+
+#215 가 잰 것: `test_skip_reasons` 의 근거 「CI 의 migrate 잡에서는 실제로 돈다」가 **거짓**이었다.
+
+```text
+unit     잡 → discover -s tests          · 설치 없음
+capreq   잡 → discover -s capreq/tests   · httpx·fastapi·multipart·setup-node
+migrate  잡 → run_integration.sh (= tests/integration/check_*.py) · psycopg·fastapi
+```
+
+**`tests/` 를 보는 것은 `unit` 잡 하나뿐이고 그 잡은 아무것도 설치하지 않는다.**
+그래서 이 일곱은 **CI 어디에서도 안 돈다**:
+
+| 사유 | 파일 | 몇 건 |
+|---|---|---|
+| `psycopg 없음` | `test_arch_registry` · `test_contract_checks_by_arch` · `test_capability_catalog` | 5 |
+| `capreq 를 못 읽었다` | `test_route_bench` | 2 |
+
+#215 는 **근거를 사실로 맞추고 다시 거짓이 될 수 없게** 했다.
+**CI 는 안 고쳤다** — `CLAUDE.md` 가 「config 수정은 먼저 묻는다」고 적는다.
+
+| 안 | 내용 | 대가 |
+|---|---|---|
+| **A (권장)** | `migrate` 잡 끝에 `python3 -m unittest discover -s tests` 한 줄 | 그 잡은 이미 psycopg·fastapi 를 깔았다. **새 의존성 0** · 잡 0 · 몇 초. `unit` 잡의 「설치 없음」 규율은 **그대로** |
+| B | `unit` 잡에 psycopg·fastapi 설치 | 「의존성 설치가 없다」가 깨진다. 그 규율이 이 저장소의 검사 설계를 지탱한다 |
+| C | 새 `deps` 잡 | 잡 하나 · 체크아웃·설치 중복 |
+| D | 그대로 둔다 | 일곱이 계속 안 돈다. **다만 이제 그 사실이 적혀 있다** |
+
+**A 를 권한다.** `capreq` 를 못 읽는 둘은 A 로도 안 돈다 —
+`migrate` 잡에 `PYTHONPATH=…/capreq/src` 를 더하면 같이 살아난다(같은 줄에서).
+
+**Decision 전에는 `ci.yml` 을 건드리지 않았다.**
+
+### 다음 큐 (Decision 없이 · ≥3)
+
+30. 측정 숫자에 **재현 명령이 없는 신규** 카탈로그·STATE 줄 (`measured-claims` §7) — 위반 있으면 좁은 검사
+34. Core 코드 ↔ `schema.sql` **컬럼명** ast 대조 (DDL 변경 없음 · 드리프트만) — 불일치 표
+35. capreq 어댑터가 **키를 쿼리·URL 에 싣는가** (#195 옆 · `test_ui_invariants` 는 HTML 만 본다) — 핀
+36. 스크립트·문서가 `gh pr list` 를 **`--limit 100` 없이** 쓰는가 — 강제
+38. `test_*` 머리말의 「`fastapi` 없이 돈다」가 **실제 import 와 맞는가** — 거짓 머리말이면 정정
+39. 열린 `expects: decision` 목록 최신화 (문서 · 코드 0)
+40. WSL 에 `pip`/Docker 가 생겼는지 재측정 — 생겼으면 #11 본실행
+
+우선순위: **30 → 35 → 38 → 34 → 36 → 39 → 40** → G1–G5.
+
+### 9회차 스캐너 정정 **다섯** (규율 기록)
+
+| PR | 스캐너가 말한 것 | 실제 |
+|---|---|---|
+| #207 | 「받는 즉시 안 쓴다」 | **파이썬 파일 버퍼**를 재고 있었다 |
+| #209 | 「삼키고 성공으로 끝나는 자리 셋」 | `1 == True` — **실패 코드 `return 1`** 을 성공으로 셌다 |
+| #210 | 「바닥 없는 검사 75」 | 리터럴 튜플까지 셌다 → 호출 결과 **8** · 실제 초록 **0** |
+| #217 | 「CI 는 깨끗하다」 | 낱말 경계 때문에 **`CAPNET_API_KEY` 를 못 잡는** 탐지기였다 |
+| #218 | 「Core 우회 일곱 건」 | `$node_id`·포트 문자열까지 셌다 → **실제 1건** |
+
+**다섯 다 「결함」이라고 적기 전에 잡았다.**
+#216 에서는 **내가 만든 검사**가 「목록을 비우면 공허하게 통과」하는 것을 뮤테이션이 잡아
+바닥을 넣었다 — 「뮤테이션이 안 물리면 넘기지 마」가 실제로 작동했다.
+```

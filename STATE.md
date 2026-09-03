@@ -25,11 +25,11 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **9회차 (2026-09-03) — 시드 큐 12–23.** main HEAD = **`26b5d14`** (#204) ·
-> **실행 능력 10종** · 열린 PR **열둘** (8회차 #200–#202 + 9회차 #205–#212).
+> **9회차 (2026-09-03) — 시드 큐 12–33.** main HEAD = **`26b5d14`** (#204) ·
+> **실행 능력 10종** · 열린 PR **열여덟** (8회차 #200–#202 + 9회차 #205–#218).
 >
 > `queue-expansion.md`(#203) 가 종료 조건을 개정했다 — **번호 큐 소진 ≠ 종료.**
-> 시드 12–40 에서 **일곱 줄**을 처리했고 **둘은 코드가 필요 없다고 판정**했다.
+> 시드 12–40 에서 **열넷**을 처리했고 **넷은 코드가 필요 없다고 판정**했다.
 >
 > | 큐 | 결과 | PR |
 > |---|---|---|
@@ -40,16 +40,24 @@
 > | **20** | 조용히 삼키는 자리 — **결함 0** · 근거 없이 못 늘게 | [#209](https://github.com/gncorpseo-commits/capnet/pull/209) |
 > | **21** | 빈 목록 초록 — **실제 0** · 여덟 자리에 바닥 | [#210](https://github.com/gncorpseo-commits/capnet/pull/210) |
 > | **23** | `capreq` 버전이 **네 곳** — 둘로 줄이고 못박음 | [#211](https://github.com/gncorpseo-commits/capnet/pull/211) |
-> | **25** | **코드 없음** — `test_two_copies_match` 가 **전문 비교**라 머리말·서버 URL 이미 덮임 | — |
-> | **37** | **코드 없음** — 살아 있는 문서 주장이 없다. 기계 사슬은 #205 가 이었다 | — |
+| **24** | `openapi` 요청 본문 — **문서대로 보내면 422** (`nodeId` 누락) | [#213](https://github.com/gncorpseo-commits/capnet/pull/213) |
+> | **27** | 카탈로그 「구현됨」 10종 ↔ 등록 경로 — **10/10 있다** | [#214](https://github.com/gncorpseo-commits/capnet/pull/214) |
+> | **26** | 「CI 가 본다」가 **거짓** — 건너뛴 일곱은 어디에서도 안 돈다 | [#215](https://github.com/gncorpseo-commits/capnet/pull/215) |
+> | **28** | 화면이 **사용자가 시키지 않은 능력**으로 작업을 만들 수 있었다 | [#216](https://github.com/gncorpseo-commits/capnet/pull/216) |
+> | **31** | 시크릿 검사가 **CI 워크플로는 안 보고 있었다** | [#217](https://github.com/gncorpseo-commits/capnet/pull/217) |
+> | **29** | Core 우회는 **하나뿐**이고 문서가 그렇게 적는다 | [#218](https://github.com/gncorpseo-commits/capnet/pull/218) |
+> | **25 · 37 · 13 · 32** | **코드 없음** — 이미 덮였거나 살아 있는 주장이 없다 | — |
 >
-> `run_tests` **659 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` (#211 트리) ·
+> `run_tests` **692 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` (#218 트리) ·
 > `check_submission` **28/28** · 건너뜀 **한 번도 안 줄었다**.
 >
-> **이번 회차가 세 번 스스로를 정정했다** (실측 규율):
+> **이번 회차가 다섯 번 스스로를 정정했다** (실측 규율):
 > #207 프로브가 **파이썬 파일 버퍼**를 재고 있었고(결함을 지어낼 뻔) ·
 > #209 스캐너가 **`return 1`(실패 코드)을 성공으로** 셌고(`1 == True`) ·
-> #210 첫 훑기가 **일흔다섯 자리에 잔소리**를 했다(리터럴 튜플까지).
+> #210 첫 훑기가 **일흔다섯 자리에 잔소리**를 했고(리터럴 튜플까지) ·
+> #217 탐지기가 **`CAPNET_API_KEY` 를 못 잡았고**(낱말 경계) ·
+> #218 이 `$node_id`·포트 문자열까지 세어 **「우회 일곱 건」이 될 뻔했다**(실제 1건).
+> **다섯 다 「결함」이라고 적기 전에 잡았다.**
 >
 > **못 본 것:** `clean_room`·`prod_room` 본실행 · 종단 데모 — `docker info` 실패.
 > `.ps1` 실행 — `pwsh` 없음. `capreq` 단위 — `fastapi`·`pip` 없음(정본은 CI).
