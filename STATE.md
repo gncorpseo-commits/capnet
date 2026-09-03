@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-09-02** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
+> **갱신: 2026-09-03** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
 
 ---
 
@@ -25,7 +25,32 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`2cbb936`** (#198 자율 모드 전문) · **실행 능력 10종** · 열린 PR **0**.
+> **8회차 (2026-09-03) — 문서가 실물과 갈린 자리.** main HEAD = **`e927b65`** (#199) ·
+> **실행 능력 10종** · 열린 PR **셋** (#200 → #201 스택 · #202 Step 0).
+>
+> 큐 **#10 · #5 · #11** 을 처리했다 (`round7-close` 정본). 이번 회차가 잰 것은
+> **숫자가 아니라 문장**이다 — 측정 숫자는 이미 `test_shoot_docs`·`test_doc_counts` 가 본다.
+>
+> | 큐 | 결과 | PR |
+> |---|---|---|
+> | **#10** `docs/` 「할 수 있다」 주장 | 전수 · **어긋난 것 1종** (README 가 틀린 파일을 지목) | [#200](https://github.com/gncorpseo-commits/capnet/pull/200) |
+> | **#5** `openapi.yaml` 응답 스키마 | 응답 스키마는 **0건 = 부재**. 대신 `info` 드리프트를 잡음 | [#201](https://github.com/gncorpseo-commits/capnet/pull/201) |
+> | **#11** Docker·`pip` 세션 | **못 봤다** — 환경 없음. capreq **72** 만 CI 로그에서 확인 | — |
+>
+> `run_tests` **587 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` (#201 트리) ·
+> `check_submission` **28/28**. 건너뜀 7건 **변동 없음** (내 검사가 다른 검사를 끄지 않았다).
+>
+> **capreq 72:** CI 실행 [`33698004145`](https://github.com/gncorpseo-commits/capnet/actions/runs/33698004145)
+> 의 `capreq 단위 테스트` 잡이 `Ran 72 tests … OK`. 재현 —
+> `gh run view <id> --log | grep "Ran .* tests"`. **로컬에서는 못 쟀다** (`pip` 없음).
+>
+> **못 본 것:** `clean_room`·`prod_room` 끝까지 · 종단 데모 — `docker info` 실패.
+> `python3 -m pip` 없음 · `python3 -m venv` 는 `ensurepip` 가 없어 실패. 정본은 CI.
+>
+> **열린 Decision 열하나** — 기존 아홉 + `contest-report-device-address-claim` +
+> `openapi-response-schemas` (둘 다 [#202](https://github.com/gncorpseo-commits/capnet/pull/202) 블록).
+
+> **Wave A–AZ 완료 (2026-09-02).** `2cbb936` (#198 자율 모드 전문) 까지 · 실행 능력 10종.
 >
 > **자율 모드:** [`docs/bridge/autonomous-mode.md`](docs/bridge/autonomous-mode.md) (전문) ·
 > [`docs/bridge/handoff-long-mode-claude.md`](docs/bridge/handoff-long-mode-claude.md) (WSL 붙여넣기).

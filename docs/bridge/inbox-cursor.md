@@ -7937,3 +7937,147 @@ docs/bridge/autonomous-mode.md 와 handoff-long-mode-claude.md 안쪽 블록을 
 cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
 ```
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-03T14:10:00+09:00
+topic: round8-docs-vs-reality
+type: next
+expects: ack
+status: open
+---
+
+## 8회차 — 큐 #10 · #5 · #11 소진
+
+자율 모드 전문(#198)대로 **재촉 없이** 돌았다. `round7-close` 의 큐 셋을 순서대로 처리했다.
+
+| 큐 | 결과 | PR |
+|---|---|---|
+| **#10** `docs/` 「할 수 있다」 주장 | 전수 · **어긋난 것 1종** | #200 |
+| **#5** `openapi.yaml` 응답 스키마 | 응답 스키마 **0건 = 부재** · 대신 `info` 드리프트 | #201 (#200 위 스택) |
+| **#11** Docker·`pip` | **못 봤다** — 환경 없음. capreq **72** 만 CI 에서 확인 | — |
+
+`run_tests` **587 OK (건너뜀 7)** · `check_submission` **28/28** · 건너뜀 **변동 없음**.
+
+### #10 — README 가 **틀린 파일**을 가리키고 있었다
+
+```text
+README     「scripts/demo.sh 어디에도 기기 주소가 없다」
+실물        scripts/demo.sh:8   node="${NODE_URL:-http://127.0.0.1:8001}"
+           scripts/demo.sh:13  ccurl -sf "$node/health"
+```
+
+`demo.sh` 는 **준비 단계에서** Node 를 직접 부른다 — 가중치 해시·`arch` 를 그 기기의
+증언에서 뽑기 때문이고 **운영자 몫이라 정상**이다. `POST /v1/tasks` 부터는 Core 하고만
+말한다 (스크립트 자신의 주석 74–76행이 그렇게 적고 있었다). **README 만 그 구분을 안 했다.**
+
+기기 주소가 정말로 0건인 것은 `product_demo.sh` 다. **이름을 옳은 파일로 옮겼다.**
+
+나머지 주장 13종은 **전부 실물과 일치**했다 (스크립트 15종 실재 · 링크 0 깨짐 ·
+403 문구 · 오버레이 넷 · 위반 14종 · `REJECTED` 6건 · `text.ner` `none` ·
+「번호는 사진 과목에만」 · 형식 미선언 거절 · 「목록은 보여 주기만」 · capreq `serve` 기본 8090).
+
+### #5 — 같은 Core 가 **두 버전**을 말하고 있었다
+
+```text
+apps/core/openapi.yaml · docs/spec/openapi.yaml   info.version: 0.3.0
+apps/core/app/main.py:118  FastAPI(version=…)     0.2.0
+```
+
+`test_openapi_drift` 는 **경로·메서드**를 못박고 있었다 (#61 · #142). **머리말(`info`)은
+범위 밖**이었고 `#61` 때부터 내내 갈려 있었다. 앱을 스펙에 맞췄다.
+
+### 스캐너 한계 — **두 건 다 적어 둔다**
+
+1. `grep` 은 주석 안의 주소와 진짜 호출을 못 가른다 → 「참조 **0건**」이라는 **더 센 조건**으로 잡았다
+2. openapi 파서 첫 판 `^app = FastAPI\((.*?)^\)` 이 **자기 호출 밖**을 훑었다 —
+   호출을 한 줄로 접자 파일 뒤쪽의 다른 `)` 까지 갔고 **그런데도 답이 맞아 통과했다.**
+   「안 물린다」가 아니라 **「우연히 맞았다」** 라 더 나빴다. 괄호 균형으로 닫고
+   **호출 뒤에 미끼 `version=`** 을 두는 뮤테이션을 더했다.
+
+뮤테이션: #200 **8종** · #201 **7종** — 전부 물렸다. 둘 다 **주장 문장/호출 자체를 지우는**
+뮤테이션을 포함한다 (공허한 통과 막기).
+
+### #11 — 못 봤다 (숨기지 않는다)
+
+```text
+docker info                    실패
+python3 -m pip                 No module named pip
+python3 -m venv                ensurepip 없어 실패
+fastapi · pydantic · psycopg   없음
+```
+
+`clean_room`·`prod_room` 끝까지 · 종단 데모 — **못 봤다.** 정본은 CI.
+**capreq 72 는 확인했다** — CI 실행 `33698004145` 의 `capreq 단위 테스트` 잡이
+`Ran 72 tests … OK`. 재현 `gh run view <id> --log | grep "Ran .* tests"`.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-03T14:12:00+09:00
+topic: round8-two-decisions
+type: proposal
+expects: decision
+status: open
+---
+
+## Decision 둘 — 묶어서 한 블록
+
+둘 다 **내 버그 수정이 아니라** 제품 주장·스펙 모양이라 혼자 정하지 않는다.
+
+### ① `contest-report-device-address-claim`
+
+#200 이 고친 그 문장이 **원고에도 세 줄** 있다:
+
+| 파일 | 줄 |
+|---|---|
+| `docs/ops/contest-report-draft.md` | 31 · 292 |
+| `docs/ops/contest-report-form-draft.md` | 114 |
+
+문장은 **거짓**이다 (`demo.sh:8`). 그런데 원고는 **제출한 산출물**이고
+`test_report_claims` 가 「원고는 고쳐 쓰지 않는다」고 적는다. **그래서 손대지 않았다.**
+
+| 안 | 내용 | 대가 |
+|---|---|---|
+| **A (권장)** | 원고 세 줄도 `product_demo.sh` 로 고친다 | 원고 불변 원칙에 **예외**를 하나 연다 |
+| B | 원고는 그대로 두고 「출품 시점 표기」 주석만 단다 | 심사위원이 원고를 그대로 읽으면 여전히 거짓 |
+| C | 아무것도 안 한다 | 재현하면 8행에서 바로 드러난다 |
+
+**A 를 권한다.** 원고 불변은 「과소/과대 주장을 사후에 조작하지 않는다」를 위한 것이지
+**사실 오류를 남겨 두라는 것이 아니다.** 다만 그 구분을 여는 것이 Decision 이라 묻는다.
+A 로 가면 `test_report_claims` 머리말에 **「사실 오류 정정은 예외」** 를 같이 적겠다.
+
+### ② `openapi-response-schemas`
+
+실측 — `openapi.yaml` 오퍼레이션 **45건 · 2xx 응답 스키마 0건.** 전부 산문 `description` 뿐.
+
+재현:
+
+```bash
+python3 -c "
+import yaml
+s=yaml.safe_load(open('apps/core/openapi.yaml',encoding='utf-8'))
+ops=[(m,p) for p,o in s['paths'].items() for m in o if m in ('get','post','put','patch','delete')]
+sch=[(m,p) for m,p in ops if any((r or {}).get('content',{}).get(ct,{}).get('schema') for c,r in (s['paths'][p][m].get('responses') or {}).items() if str(c).startswith('2') for ct in ((r or {}).get('content') or {}))]
+print(f'오퍼레이션 {len(ops)}건 · 2xx 응답 스키마 있는 것 {len(sch)}건')"
+```
+
+**드리프트가 아니라 부재다.** 큐 #5 가 「소스 파싱으로는 약하다」고 미리 적어 둔 그대로라
+**45개를 손으로 써 넣지 않았다** — 아무도 안 지키는 **새 드리프트 면**이 하나 더 생긴다.
+
+| 안 | 내용 | 대가 |
+|---|---|---|
+| **A (권장)** | `app.openapi()` 추출본과 대조하는 **CI 잡**을 먼저 만들고, 그 다음에 스키마를 채운다 | CI 잡 하나 · 채우는 일은 그 뒤 |
+| B | 지금 45개를 손으로 쓴다 | 검증 없는 새 드리프트 면 |
+| C | 응답 스키마를 **안 쓴다**고 스펙 머리말에 명시하고 `/openapi.json` 을 정본으로 가리킨다 | 정적 스펙의 값이 줄어든다 |
+
+**A 를 권한다** — 이 저장소가 #61·#142 에서 이미 쓴 방식(맞추고 → 검사로 고정)과 같다.
+**둘 중 무엇이든 Decision 전에는 스펙 모양을 안 건드린다.**
+
+### 다음 큐 — 비었다
+
+`round7-close` 의 5·10·11 이 소진됐다. 위 Decision 둘이 정해지면 그것이 다음 Wave 다.
+그 전까지 할 수 있는 것으로는 **#11 을 Docker 있는 세션에서 다시 여는 것**만 남는다.
+```
