@@ -1,5 +1,74 @@
 # Changelog
 
+## 같은 Core 가 **두 버전**을 말하고 있었다 — 2026-09-03
+
+큐 #5 는 `openapi.yaml` 의 **응답 스키마** 드리프트를 보라고 했다. 재 보니
+드리프트 이전의 사실이 나왔고, 옆에서 **다른 드리프트**가 걸렸다.
+
+### 걸린 것 — `info` 는 아무도 안 보고 있었다
+
+| 어디 | 값 |
+|---|---|
+| `apps/core/openapi.yaml` · `docs/spec/openapi.yaml` | `info.version: 0.3.0` |
+| `apps/core/app/main.py:118` `FastAPI(version=…)` | **`0.2.0`** |
+
+같은 Core 인데 `GET /openapi.yaml` 은 `0.3.0`, `GET /openapi.json` 은 `0.2.0` 을 준다.
+붙이는 쪽은 어느 쪽을 믿어야 할지 알 수 없다.
+
+`test_openapi_drift` 는 **경로와 메서드**를 못박고 있었다 (#61 · #142). 머리말(`info`)은
+범위 밖이었다. `0.3.0` 은 `#61` 때부터 있었으니 그 사이 내내 갈려 있었다.
+
+**앱을 스펙에 맞췄다** (`0.2.0` → `0.3.0`). 스펙 두 사본은 이미 서로 같고
+(`test_openapi_drift.test_two_copies_match`) 문서가 정본이다.
+
+### 지키는 검사 — `test_openapi_drift` 에 3건
+
+`test_version_agrees_with_the_app` · `test_title_agrees_with_the_app` ·
+`test_info_parser_actually_finds_things`(파서가 눈멀어 `None == None` 으로 통과하는 것 방지).
+
+**뮤테이션 7종 전부 물렸다** — 앱 버전 되돌리기 · YAML 만 올리기 · 제목 바꾸기 ·
+`version=` 제거 · YAML `info.version` 삭제 · **호출을 한 줄로 접고 뒤에 미끼 두기** ·
+`FastAPI(` 호출 자체 제거.
+
+### 스캐너가 자기 호출 밖을 훑고 있었다 (적어 둔다)
+
+첫 파서는 `^app = FastAPI\((.*?)^\)` 였다. 호출을 **한 줄로 접자** 그 정규식이 파일
+뒤쪽의 **다른 `)`** 까지 훑었고, 그런데도 답이 맞아 **뮤테이션이 통과했다**.
+「물리지 않는다」가 아니라 **「우연히 맞았다」** 는 쪽이라 더 나빴다.
+범위를 **괄호 균형**으로 닫고, 호출 뒤에 미끼 `version=` 을 두는 뮤테이션을 더했다.
+
+### 응답 스키마 — **오늘 0건이다.** 고치지 않았다
+
+| 무엇 | 실측 |
+|---|---|
+| 문서화된 오퍼레이션 | **45건** |
+| `requestBody` 스키마 | 있다 |
+| **2xx 응답 스키마** | **0건** — 전부 산문 `description` 뿐 |
+
+재현:
+
+```bash
+python3 -c "
+import yaml
+s=yaml.safe_load(open('apps/core/openapi.yaml',encoding='utf-8'))
+ops=[(m,p) for p,o in s['paths'].items() for m in o if m in ('get','post','put','patch','delete')]
+sch=[(m,p) for m,p in ops if any((r or {}).get('content',{}).get(ct,{}).get('schema') for c,r in (s['paths'][p][m].get('responses') or {}).items() if str(c).startswith('2') for ct in ((r or {}).get('content') or {}))]
+print(f'오퍼레이션 {len(ops)}건 · 2xx 응답 스키마 있는 것 {len(sch)}건')"
+```
+
+**드리프트가 아니라 부재다.** 45개 응답 스키마를 **소스 파싱으로 손으로 써 넣는 것**은
+하지 않았다 — 그러면 아무도 안 지키는 새 드리프트 면을 하나 더 만드는 것이고,
+큐가 「소스 파싱으로는 약하다」고 미리 적어 둔 그대로다. 이건 스펙 **모양**을 정하는
+일이라 `inbox-cursor.md` 에 Proposal 로 올린다.
+
+### 못 쟀다 (숨기지 않는다)
+
+실제 스키마 추출(`app.openapi()`)은 **못 했다** — `fastapi`·`pydantic`·`psycopg` 없음 ·
+`pip` 없음 · `python3 -m venv` 는 `ensurepip` 가 없어 실패 · `docker info` 실패.
+정본은 CI 다.
+
+`run_tests` **587 OK (건너뜀 7)** · `check_submission` **28/28**.
+
 ## `README` 가 **틀린 파일**을 가리키고 있었다 — 2026-09-03
 
 측정 숫자(마이그레이션 세대·`acc=`)는 이미 전수했다. 남아 있던 것은 **서술형 주장**이다 —
