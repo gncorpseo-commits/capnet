@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-09-02** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
+> **갱신: 2026-09-03** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
 
 ---
 
@@ -25,7 +25,36 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`2c57c1e`** (#203 큐 확장 전문) · **실행 능력 10종**.
+> **9회차 (2026-09-03) — 시드 큐 12–23.** main HEAD = **`26b5d14`** (#204) ·
+> **실행 능력 10종** · 열린 PR **열둘** (8회차 #200–#202 + 9회차 #205–#212).
+>
+> `queue-expansion.md`(#203) 가 종료 조건을 개정했다 — **번호 큐 소진 ≠ 종료.**
+> 시드 12–40 에서 **일곱 줄**을 처리했고 **둘은 코드가 필요 없다고 판정**했다.
+>
+> | 큐 | 결과 | PR |
+> |---|---|---|
+> | **12** | `prod_room` 이 라우트 **24 중 5**만 눌렀다 (공개 GET 6→1 · 인증 GET 18→4) | [#205](https://github.com/gncorpseo-commits/capnet/pull/205) |
+> | **22** | 「동명 `.ps1`」이 주소를 박아 뒀다 — **23 중 2** | [#206](https://github.com/gncorpseo-commits/capnet/pull/206) |
+> | **33** | 과거 버그 주석 **14 중 2**가 미핀 (`inputs.py` · `_report_failure`) | [#207](https://github.com/gncorpseo-commits/capnet/pull/207) |
+> | **14–19** | 절대 규칙 여섯 전수 — **위반 0** · 기계가 잇는다 | [#208](https://github.com/gncorpseo-commits/capnet/pull/208) |
+> | **20** | 조용히 삼키는 자리 — **결함 0** · 근거 없이 못 늘게 | [#209](https://github.com/gncorpseo-commits/capnet/pull/209) |
+> | **21** | 빈 목록 초록 — **실제 0** · 여덟 자리에 바닥 | [#210](https://github.com/gncorpseo-commits/capnet/pull/210) |
+> | **23** | `capreq` 버전이 **네 곳** — 둘로 줄이고 못박음 | [#211](https://github.com/gncorpseo-commits/capnet/pull/211) |
+> | **25** | **코드 없음** — `test_two_copies_match` 가 **전문 비교**라 머리말·서버 URL 이미 덮임 | — |
+> | **37** | **코드 없음** — 살아 있는 문서 주장이 없다. 기계 사슬은 #205 가 이었다 | — |
+>
+> `run_tests` **659 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` (#211 트리) ·
+> `check_submission` **28/28** · 건너뜀 **한 번도 안 줄었다**.
+>
+> **이번 회차가 세 번 스스로를 정정했다** (실측 규율):
+> #207 프로브가 **파이썬 파일 버퍼**를 재고 있었고(결함을 지어낼 뻔) ·
+> #209 스캐너가 **`return 1`(실패 코드)을 성공으로** 셌고(`1 == True`) ·
+> #210 첫 훑기가 **일흔다섯 자리에 잔소리**를 했다(리터럴 튜플까지).
+>
+> **못 본 것:** `clean_room`·`prod_room` 본실행 · 종단 데모 — `docker info` 실패.
+> `.ps1` 실행 — `pwsh` 없음. `capreq` 단위 — `fastapi`·`pip` 없음(정본은 CI).
+
+> **8회차 (2026-09-03).** `2c57c1e` (#203 큐 확장 전문) 까지 · 실행 능력 10종.
 >
 > **자율 모드:** [`docs/bridge/queue-expansion.md`](docs/bridge/queue-expansion.md) (큐·종료 정본 · 시드 12–40) ·
 > [`docs/bridge/autonomous-mode.md`](docs/bridge/autonomous-mode.md) (루프) ·
