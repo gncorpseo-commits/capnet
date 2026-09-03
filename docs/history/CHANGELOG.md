@@ -1,5 +1,61 @@
 # Changelog
 
+## 「CI 가 본다」가 **거짓이었다** — 건너뛴 일곱은 어디에서도 안 돈다 — 2026-09-03
+
+큐 #26. `test_skip_reasons` 는 건너뛰는 **사유**를 허가 목록으로 관리한다.
+그 목록이 「어디서 도는가」를 **적기만** 하고, 아무도 대조하지 않았다.
+
+### 실측 — 두 사유가 거짓이었다
+
+```text
+"psycopg 없음 …"    적힌 근거: 「CI 의 migrate 잡에서는 실제로 돈다」
+"capreq 를 못 읽었다" 적힌 근거: (어디서 도는지 안 적음)
+```
+
+`ci.yml` 을 열었다:
+
+| 잡 | 무엇을 discover 하나 | 무엇을 설치하나 |
+|---|---|---|
+| `unit` | **`tests`** | **없음** |
+| `capreq` | `capreq/tests` | httpx · fastapi · multipart · **setup-node** |
+| `migrate` | `scripts/run_integration.sh` = **`tests/integration/check_*.py`** | psycopg · fastapi 등 |
+
+**`tests/` 를 보는 것은 `unit` 잡 하나뿐이고, 그 잡은 아무것도 설치하지 않는다.**
+migrate 잡이 돌리는 것은 `tests/integration/check_*.py` — **다른 파일**이다.
+
+그래서 건너뛴 일곱은 **CI 어디에서도 안 돈다**:
+
+| 사유 | 파일 | 실제로 도는 곳 |
+|---|---|---|
+| `psycopg 없음` (5) | `test_arch_registry` · `test_contract_checks_by_arch` · `test_capability_catalog` | **없음** |
+| `capreq 를 못 읽었다` (2) | `test_route_bench` | **없음** |
+| `node 가 없다` (2) | `capreq/tests/test_chat_render` | ✅ `capreq` 잡 (setup-node 있음) |
+
+**「CI 가 본다」고 적어 두면 그 순간부터 아무도 다시 안 센다.** 이 회차가 고쳐 온
+「보고 있다고 믿는데 안 보고 있다」와 정확히 같은 모양이다.
+
+### 고친 것 — 근거에 `runs_in` 을 붙였다
+
+`ALLOWED` 를 `사유 → (근거, runs_in)` 으로 바꿨다.
+`runs_in` 이 잡 이름이면 **`ci.yml` 이 그 트리를 discover 하는지 대조**하고,
+`None` 이면 근거에 **「안 돈다」가 적혀 있어야** 통과한다.
+
+**CI 를 고치지 않았다.** unit 잡에 의존성을 넣거나 migrate 잡에 `discover -s tests` 를
+더하는 것은 **config 변경**이라 (`CLAUDE.md`) 혼자 하지 않는다 — inbox 에 Proposal 로 올린다.
+여기서 한 것은 **거짓 주장을 사실로 맞추고, 다시 거짓이 될 수 없게** 한 것이다.
+
+### 내가 #207 에서 넣은 경고를 같이 지웠다
+
+`test_input_contract_rejections_actually_run` 머리말에 `grep … "a\|b"` 를 적었더니
+`SyntaxWarning: invalid escape sequence` 가 났다. **지금은 경고지만 다음 세대에서는 에러**다.
+docstring 을 raw 로 바꾸고, **검사 소스에 파이썬 경고가 남지 않는지** 보는 검사를 넣었다 —
+스위트가 경고를 흘리면 **진짜 경고가 묻힌다.**
+
+**뮤테이션 4종 전부 물렸다** — 「CI 가 본다」를 거짓으로 되돌리기 ·
+capreq 잡이 그 트리를 안 보게 하기 · **잘못된 이스케이프 다시 넣기** · `ci.yml` 잡 이름 바꾸기.
+
+`run_tests` **676 OK (건너뜀 7)** · `check_submission` **28/28**.
+
 ## 카탈로그가 「구현됨」이라 적은 열 종이 **정말 등록되는가** — 2026-09-03
 
 큐 #27. `test_report_claims` 는 **원고가 부른 능력**이 카탈로그에서 「구현됨」인지 본다.
