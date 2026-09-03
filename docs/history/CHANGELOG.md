@@ -1,5 +1,72 @@
 # Changelog
 
+## 제품 게이트가 **라우트 스물넷 중 다섯**만 눌러 보고 있었다 — 2026-09-03
+
+`prod_room.sh` 는 강제 모드(`compose.prod.yaml`)를 빈 볼륨에서 e2e 로 증명하는
+**제품 수용 게이트**다. 무엇을 실제로 누르는지 세어 봤다.
+
+| | 코드에 있는 것 | `prod_room` 이 누르던 것 |
+|---|---|---|
+| **공개 GET** | **6** | **1** (`/health`) |
+| **인증 GET** | **18** | **4** |
+
+재현:
+
+```bash
+python3 - <<'EOF'
+import sys, re, pathlib; sys.path.insert(0, "tests")
+from test_every_route_declares_its_auth import _routes, _authenticated, PUBLIC
+r = _routes()
+print("공개 GET", sum(1 for v,p,_n,_c in r if v=="GET" and (v,p) in PUBLIC))
+print("인증 GET", sum(1 for v,p,_n,c in r if v=="GET" and _authenticated(c)))
+EOF
+```
+
+### 왜 이게 구멍인가 — `ast` 는 **응답을 안 본다**
+
+`test_every_route_declares_its_auth` 는 「**인증 헬퍼를 불렀는가**」만 본다.
+**강제 모드에서 진짜 401 이 나오는가**를 재는 것은 `prod_room.sh` 뿐이다.
+그런데 그것이 손으로 고른 다섯 개만 눌렀다.
+
+반대 방향이 더 나쁘다. `PUBLIC` 주석은 `/v1/capabilities` 를 두고
+「제품 입구(capreq)가 **키 없이** 읽어 라우팅한다」고 적는다. **그 전제가 제품
+프로파일에서 참인지 아무도 재지 않았다.** 잠기면 입구가 통째로 죽는데도.
+
+**§13(공개 GET 6 전수) · §14(인증 GET 18 무인증 401 전수)** 를 넣었다.
+
+### `000` — 공개 프로브가 **조용히 초록**이 되는 자리
+
+`prod_room.sh` 의 `code()` 는 `curl` 이 실패하면 **`000`** 을 낸다.
+
+- 인증 프로브는 `= 401` 이라 `000` 이 실패로 떨어진다 — 안전했다
+- **공개 프로브는 「401 이 아니면 통과」다** — 그대로 썼으면 **Core 가 안 떠 있을 때
+  「공개 GET 여섯 개 정상」으로 초록**이었다
+
+이 회차들이 고쳐 온 것과 같은 모양이다 (0건·0행·공허 `any` 를 통과로 세기).
+**넣기 전에 잡았다.** 판정을 `scripts/lib/authprobe.sh` 로 빼고
+**응답이 아닌 것(`000`·빈 값·비숫자·세 자리 아님)은 먼저 실패**로 못박았다.
+
+`lib/tally.sh` 와 같은 이유로 함수로 뺐다 — `prod_room.sh` 는 Docker 가 있어야 돌지만
+**판정은 그냥 돌고**, `tests/test_prod_room_auth_probe.py` 가 `bash` 로 실제로 부른다.
+
+### 지키는 검사 — `test_prod_room_auth_probe` (12건)
+
+목록을 코드에 박지 않는다. **`ast` 로 라우트를 뽑아 `prod_room.sh` 의 `for path in` 과
+대조한다** — 라우트가 늘면 스크립트를 같이 고치게 된다.
+
+**뮤테이션 7종 전부 물렸다** — 공개 GET 하나 빼기 · 인증 GET 하나 빼기 ·
+판정에서 `000` 통과시키기 · 공개 판정이 `401` 도 통과시키기 ·
+**새 인증 GET 라우트를 코드에만 추가** · **§13 절 통째 삭제**(공허한 통과) ·
+판정을 인라인으로 되돌리기.
+
+### 못 쟀다 (숨기지 않는다)
+
+**`prod_room.sh` 를 실제로 돌리지 못했다** — `docker info` 실패. 잰 것은
+**「무엇을 누르기로 적었는가」와 「그 판정이 옳은가」** 둘이다. 판정 함수는 실제로
+불러서 표를 확인했고, 스크립트는 `bash -n` 까지다. 본실행은 Docker 있는 세션(큐 40).
+
+`run_tests` **599 OK (건너뜀 7)** · `check_submission` **28/28**.
+
 ## 같은 Core 가 **두 버전**을 말하고 있었다 — 2026-09-03
 
 큐 #5 는 `openapi.yaml` 의 **응답 스키마** 드리프트를 보라고 했다. 재 보니
