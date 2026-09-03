@@ -1,7 +1,8 @@
 # CapNet 자율 모드 — 운영 전문
 
 > **대상:** WSL Claude Code (구현·PR 전담) · Cursor/사람 (리뷰·main 머지)  
-> **정본:** 이 파일 + `handoff-long-mode-claude.md` 안쪽 붙여넣기 블록  
+> **정본:** 이 파일(루프·스택·실측) + [`queue-expansion.md`](./queue-expansion.md)(종료·시드 12–40·G 루프)  
+> **붙여넣기:** `handoff-long-mode-claude.md`  
 > **브리지:** `@docs/bridge/PROTOCOL.md` — Decision·Confirm은 여기와 별개로 유지
 
 ---
@@ -16,7 +17,7 @@
 
 | 역할 | 함 | 안 함 |
 |---|---|---|
-| **Claude** | 큐 소진까지 PR·검사·브리지 Step 0 | main merge/push · Decision 단독 확정 |
+| **Claude** | 시드·G가 빌 때까지 PR·검사·브리지 Step 0 | main merge/push · Decision 단독 확정 |
 | **Cursor/사람** | PR 리뷰 · main squash merge · Decision | 매 PR마다 「계속해」 재촉 |
 | **master** | main 머지 최종 | — |
 
@@ -27,7 +28,7 @@ main이 늦어도 **스택 브랜치**로 작업을 이어간다.
 
 ## 2. 한 줄 규칙
 
-**PR 올렸다고 멈추지 마. 머지를 묻지 마. 큐가 빌 때까지 돈다.**
+**PR 올렸다고 멈추지 마. 머지를 묻지 마. 번호 큐가 비면 시드·G에서 다음을 집어 적고 바로 착수한다.**
 
 ---
 
@@ -37,7 +38,7 @@ main이 늦어도 **스택 브랜치**로 작업을 이어간다.
 ┌──────────────────────────────────────────────────────────────┐
 │  A. 동기화                                                    │
 │     git fetch/pull main · gh pr list --limit 100              │
-│     inbox-cursor.md 끝(round7-close 등)에서 다음 큐 1개      │
+│     inbox 끝 · queue-expansion.md 시드에서 다음 큐 1개       │
 ├──────────────────────────────────────────────────────────────┤
 │  B. 실측                                                      │
 │     ast/스캐너 결과만 믿지 않음 — **코드 열어 확인**          │
@@ -55,8 +56,8 @@ main이 늦어도 **스택 브랜치**로 작업을 이어간다.
 │     큐 남음 → A (질문·대기 없이)                              │
 │     Decision 막힘 → Proposal 1블록 → **다른 큐**              │
 ├──────────────────────────────────────────────────────────────┤
-│  F. 종료 (§9만)                                               │
-│     큐 소진 · Step 0 PR · inbox confirm/next                  │
+│  F. 번호 큐 소진 → 시드 다음 줄 · 없으면 G1–G5 5줄 추가      │
+│     종료는 queue-expansion.md §2만                            │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -68,7 +69,7 @@ main이 늦어도 **스택 브랜치**로 작업을 이어간다.
 | 「main 이 늦어서 기다립니다」 | main 미변경 = 정상. **스택 위에서 계속** |
 | 스캐너/ast 「0건」만 보고 성공 보고 | **코드 확인 + 뮤테이션 ≥2** |
 | Docker/pip 없이 「됐을 것」 | **못 쟀다 + 이유** 적고 다음 큐 |
-| Decision 9건 때문에 전체 중단 | **Proposal만** — 구현 Wave는 Decision 후 |
+| Decision 때문에 전체 중단 | **Proposal만** — 시드 12–40 / G로 |
 
 ---
 
@@ -158,37 +159,23 @@ main ──●──●──●  (Cursor가 squash merge)
 
 ---
 
-## 8. Decision 9건 — 구현 PR 금지
+## 8. Decision — **구현 PR 금지**
 
-| topic | 비고 |
-|---|---|
-| `silent-truncation` | |
-| `gate-run-stuck-running` | |
-| `failure-reason-not-surfaced` | |
-| `retention-ttl-policy` | |
-| `11th-capability-timeseries-anomaly` | |
-| `changelog-changeset-rule` | |
-| `golden-leakage-claim-unreproducible` | |
-| `output-required-undeclared-policy` | #186 · **B 거절 권장** |
-| Next | |
+정본 목록: [`queue-expansion.md`](./queue-expansion.md) §7 (기존 아홉 + 8회차 둘).
 
-막히면 `inbox-cursor.md`에 **Proposal 1블록** (`expects: decision`) → **다른 큐로**.
+막히면 `inbox-cursor.md`에 **Proposal 1블록** (`expects: decision`) → **다른 큐(12–40 / G)**.
 
 ---
 
-## 9. 다음 큐 (`round7-close` 정본)
+## 9. 다음 큐
 
-**완료(다시 하지 마):** #186–#191 결함 · #192–#196 전수·핀 · inbox 3·4·6·7·8·9.
+**정본:** [`queue-expansion.md`](./queue-expansion.md) §4–§6.
 
-| inbox # | 무엇 | 조건 |
-|---|---|---|
-| **5** | `openapi.yaml` **응답 스키마** 드리프트 | 경로·메서드는 `#142`. fastapi 세션에서 스키마 추출 대조 |
-| **10** | `docs/` **「할 수 있다」 주장** | README·user-guide vs 코드·테스트. `test_report_claims`는 카탈로그만 |
-| **11** | **Docker·pip 세션** | clean_room · prod_room · 종단 데모 · capreq 72 — **없으면 「못 봤다」** |
+**완료(다시 하지 마):** #186–#196 · 큐 10(#200) · 큐 5 버전(#201) · 큐 11 기록(#202).
 
-**우선순위:** 10 → 5 → 11.
+**지금 첫 줄:** **#12** (`prod_room.sh` vs 공개 GET). 그다음 13–40 · G1–G5.
 
-한 항목 = **한 PR(또는 스택 한 층)**. 끝나면 inbox `round7-close` 다음 큐 갱신.
+응답 스키마(45/45 부재) · 원고 기기 주소 문장은 **Decision** — 구현하지 마.
 
 ---
 
@@ -205,11 +192,13 @@ main ──●──●──●  (Cursor가 squash merge)
 
 ## 11. 세션 종료 조건 (이것만)
 
-1. **큐 5·10·11 소진** (11은 환경 없으면 「못 봤다」 기록) + Step 0 PR + inbox `confirm`/`next`
-2. **하드 블로커** — schema/CHECK/정책 숫자/제품 주장 (Decision 필요)
+정본은 [`queue-expansion.md`](./queue-expansion.md) §2.
+
+1. 시드 12–40과 G 루프가 비었고 남은 일은 Decision 구현뿐
+2. **하드 블로커** — schema/CHECK/정책 숫자/제품 주장
 3. 사용자가 **명시적으로 중단**
 
-그 외 — 사용자 재촉 없이 **큐까지·시간까지** 루프.
+**5·10·11 소진은 종료가 아니다.** 12번으로 간다.
 
 ---
 
@@ -226,12 +215,13 @@ tail -n 120 docs/bridge/inbox-cursor.md
 
 **읽을 파일 (순서):**
 
-1. `docs/bridge/autonomous-mode.md` (이 파일)
-2. `docs/bridge/handoff-long-mode-claude.md` 안쪽 markdown 블록
-3. `docs/bridge/inbox-cursor.md` 끝 — `round7-close`
-4. `CLAUDE.md` — 절대 규칙
+1. `docs/bridge/queue-expansion.md` — 종료 · 시드 12–40
+2. `docs/bridge/autonomous-mode.md` (이 파일)
+3. `docs/bridge/handoff-long-mode-claude.md` 안쪽 markdown 블록
+4. `docs/bridge/inbox-cursor.md` 끝
+5. `CLAUDE.md` — 절대 규칙
 
-**첫 작업:** inbox 큐 **#10** (`docs/` 주장).
+**첫 작업:** 큐 **#12** (`prod_room.sh` vs 공개 GET).
 
 ---
 
@@ -263,5 +253,6 @@ tail -n 120 docs/bridge/inbox-cursor.md
 
 | 날짜 | main | 비고 |
 |---|---|---|
+| 2026-09-03 | | 큐 확장 — §9·§11을 `queue-expansion.md`에 맡김 |
 | 2026-09-03 | `2cbb936` | 자율 모드 전문 최초 작성 (#198) |
 | 2026-09-02 | `34d943f` | 7회차 머지 완료 (#196·#188·#197) |
