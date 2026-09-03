@@ -25,7 +25,7 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`e927b65`** (#199) · **실행 능력 10종**.
+> **Wave A–AZ 완료 (2026-09-02).** main HEAD = **`2c57c1e`** (#203 큐 확장 전문) · **실행 능력 10종**.
 >
 > **자율 모드:** [`docs/bridge/queue-expansion.md`](docs/bridge/queue-expansion.md) (큐·종료 정본 · 시드 12–40) ·
 > [`docs/bridge/autonomous-mode.md`](docs/bridge/autonomous-mode.md) (루프) ·
