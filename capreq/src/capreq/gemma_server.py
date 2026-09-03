@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from capreq import __version__
 from capreq.config import ollama_url
 from capreq.ollama import OllamaClient, OllamaError
 
@@ -50,7 +51,7 @@ def create_gemma_app(*, model: str | None = None) -> Any:
     )
     history: list[dict[str, str]] = [{"role": "system", "content": _SYSTEM}]
 
-    app = FastAPI(title="capreq-gemma-chat", version="0.1.0")
+    app = FastAPI(title="capreq-gemma-chat", version=__version__)
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> FileResponse:

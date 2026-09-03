@@ -6,6 +6,7 @@ from typing import Any
 import httpx
 from pydantic import BaseModel
 
+from capreq import __version__
 from capreq.adapters.base import ExecutionResult
 from capreq.adapters.capnet import (
     CapNetAdapter,
@@ -79,7 +80,9 @@ def create_app(
         executor = capnet
 
     router = CapabilityRouter(catalog=catalog, llm=llm, executor=executor)
-    app = FastAPI(title="capreq", version="0.1.0")
+    # 버전은 **한 곳**에서 온다 (`capreq.__version__`). 리터럴을 두면
+    # `pyproject.toml` 과 갈리고, 그때 붙이는 쪽이 어느 쪽을 믿을지 알 수 없다.
+    app = FastAPI(title="capreq", version=__version__)
 
     def _fail(message: str, detail: dict[str, Any] | None = None) -> ExecutionResult:
         return ExecutionResult(ok=False, detail=detail or {}, message=message)
