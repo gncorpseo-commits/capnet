@@ -56,7 +56,10 @@ class TestCandidateFilter(unittest.TestCase):
 
     def test_does_not_hardcode_arch_names(self) -> None:
         """`TinyEuroSAT` 를 스크립트에 적어 두면 그 순간 정본이 둘이 된다."""
-        for name in sorted(image_arches()):
+        arches = sorted(image_arches())
+        # 바닥 — arch 목록이 비면 「하드코딩이 없다」가 공허하게 참이 된다.
+        self.assertGreater(len(arches), 1, f"image arch 를 못 읽었다: {arches}")
+        for name in arches:
             self.assertNotIn(
                 f'"{name}"', self.text, f"arch 이름을 스크립트에 박아 넣었다: {name}"
             )

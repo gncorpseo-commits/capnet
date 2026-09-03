@@ -161,7 +161,10 @@ class TestHealthDoesNotLeak(unittest.TestCase):
 
     def test_health_never_leaks_the_credential(self) -> None:
         """증서는 **보유 여부만** 나간다. 값도 prefix 도 아니다."""
-        for key, val in zip(self._returned().keys, self._returned().values):
+        returned = self._returned()
+        # 바닥 — health 가 빈 dict 를 돌려주면 이 검사가 아무것도 안 보고 초록이 된다.
+        self.assertTrue(returned.keys, "health 가 아무 칸도 안 돌려준다")
+        for key, val in zip(returned.keys, returned.values):
             name = key.value if isinstance(key, ast.Constant) else "?"
             with self.subTest(field=name):
                 if isinstance(val, ast.Name) and "CREDENTIAL" in val.id.upper():

@@ -206,7 +206,10 @@ class TestRepoMigrations(unittest.TestCase):
         self.assertEqual(got[0].name, "baseline")
 
     def test_repo_migrations_lint_clean(self):
-        for m in load_migrations(ROOT / "migrations"):
+        got = load_migrations(ROOT / "migrations")
+        # 바닥 — 디렉터리를 못 읽으면 0건을 훑으며 초록으로 끝난다 (#181 계열).
+        self.assertGreaterEqual(len(got), 1, "마이그레이션을 하나도 못 읽었다")
+        for m in got:
             with self.subTest(migration=m.path.name):
                 self.assertEqual(lint(m.sql), [], f"{m.path.name} 이 정적 검사를 어긴다")
 

@@ -70,7 +70,10 @@ class TestRules(NodeApp):
     def test_offsets_point_at_the_value(self) -> None:
         """`text[start:end] == value` — `text.ner` 과 같은 규약이라 사람이 대조할 수 있다."""
         text = "- Owner: ops@example.dev\nHost = 10.0.0.1\n"
-        for f in self.find(text):
+        found = self.find(text)
+        # 바닥 — 추출기가 아무것도 못 찾으면 이 검사가 빈 목록을 돌며 초록이 된다.
+        self.assertTrue(found, f"{text!r} 에서 아무것도 못 찾았다")
+        for f in found:
             self.assertEqual(text[f["start"]:f["end"]], f["value"])
 
     def test_bullet_is_stripped_from_key(self) -> None:
