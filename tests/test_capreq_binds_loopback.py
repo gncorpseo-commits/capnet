@@ -26,7 +26,27 @@ Core 를 부를 수 있다 — capreq 는 **운영자의 `CAPNET_API_KEY` 를 �
 1. `serve` · `gemma` 의 `--host` 기본값이 **루프백**이다
 2. 소스 어디에도 `0.0.0.0` 을 **기본값으로** 쓰지 않는다
 3. 서버 응답에 **API 키가 실리지 않는다** — 키는 헤더로만 나간다
-4. 라우트가 다섯 다 **선언돼 있다** (새로 늘면 분류하게 만든다)
+4. 어댑터가 **`self.api_key` 를 `_headers()` 밖에서 읽지 않는다** (큐 #35)
+5. 라우트가 다섯 다 **선언돼 있다** (새로 늘면 분류하게 만든다)
+
+## 큐 #35 — 3번만으로는 URL 을 못 막았다 (실측 2026-09-04)
+
+3번을 지키던 검사는 `assertIn("authorization", src.lower())` 한 줄이었다.
+**어댑터 소스에 그 낱말이 있기만 하면 통과한다.** 그래서 아래 둘이 그대로 지나갔다:
+
+```python
+f"?capability={capability_code}&version={capability_version}&key={self.api_key}"
+f"{self.core_url}/{self.api_key}/v1/capabilities"
+```
+
+둘 다 `_headers()` 는 손대지 않으므로 `authorization` 은 그대로 있고, 일곱 검사가
+**전부 초록**이었다. URL 은 헤더와 다르다 — 프록시 로그·`Referer`·브라우저 히스토리·
+Actions 로그에 **값이 그대로 남는다**.
+
+`self.api_key` 를 **읽는(Load) 자리**를 세는 것으로 바꾼다. 오늘 그 자리는
+`_headers()` **하나**다 (`__init__` 의 `self.api_key = api_key` 는 쓰기라 세지 않는다).
+어디서 어떻게 쓰든 키를 URL 에 실으려면 **먼저 읽어야** 하므로, 읽는 자리를 묶으면
+쿼리·경로·본문·로그가 한꺼번에 닫힌다.
 
 ## 무엇을 안 보나
 
@@ -82,6 +102,27 @@ def _host_defaults() -> list[str]:
     return out
 
 
+def _api_key_readers() -> set[str]:
+    """어댑터에서 `self.api_key` 를 **읽는**(Load) 함수 이름들.
+
+    쓰기(`self.api_key = …`)는 세지 않는다 — `__init__` 이 보관하는 것은 정상이다.
+    키를 URL·본문·로그 어디에 싣든 **먼저 읽어야** 하므로, 읽는 자리가 곧 반경이다.
+    """
+    tree = ast.parse(ADAPTER.read_text(encoding="utf-8"))
+    out: set[str] = set()
+    for fn in ast.walk(tree):
+        if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for node in ast.walk(fn):
+            if not isinstance(node, ast.Attribute) or node.attr != "api_key":
+                continue
+            if not (isinstance(node.value, ast.Name) and node.value.id == "self"):
+                continue
+            if isinstance(node.ctx, ast.Load):
+                out.add(fn.name)
+    return out
+
+
 def _routes(path: Path) -> set[tuple[str, str]]:
     out: set[tuple[str, str]] = set()
     for fn in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
@@ -122,9 +163,35 @@ class TestServeBindsLoopback(unittest.TestCase):
 class TestKeyNeverLeavesInTheBody(unittest.TestCase):
     """키는 **헤더로만** 나간다 (`adapters/capnet.py`). 응답에 실리면 안 된다."""
 
+    # `_headers()` 만 키를 읽는다. 늘리려면 **여기 적고** 왜 안전한지 근거를 남긴다.
+    ALLOWED_READERS = {"_headers"}
+
     def test_adapter_puts_the_key_in_a_header(self) -> None:
         src = ADAPTER.read_text(encoding="utf-8")
         self.assertIn("authorization", src.lower(), "키를 헤더로 안 보낸다")
+
+    def test_only_the_header_builder_reads_the_key(self) -> None:
+        """큐 #35 — 위 한 줄은 **낱말이 있기만 하면** 통과했다.
+
+        키가 URL 로 새려면 반드시 `self.api_key` 를 읽어야 한다. 읽는 자리를
+        `_headers()` 로 묶으면 쿼리·경로·본문이 한꺼번에 닫힌다.
+        """
+        readers = _api_key_readers()
+        extra = sorted(readers - self.ALLOWED_READERS)
+        self.assertEqual(
+            [],
+            extra,
+            f"`_headers()` 밖에서 API 키를 읽는다: {extra} — "
+            "URL·쿼리·본문에 실리면 프록시·브라우저·CI 로그에 값이 남는다",
+        )
+
+    def test_probe_finds_the_reader(self) -> None:
+        """읽는 자리를 하나도 못 찾으면 위 검사가 **공허하게** 통과한다."""
+        self.assertEqual(
+            self.ALLOWED_READERS,
+            _api_key_readers(),
+            "어댑터에서 `self.api_key` 를 읽는 자리를 못 찾았다 — 프로브가 헛돈다",
+        )
 
     def test_server_returns_never_reference_the_key(self) -> None:
         tree = ast.parse(SERVER.read_text(encoding="utf-8"))
