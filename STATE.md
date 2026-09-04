@@ -35,7 +35,9 @@
 > | **11** | `clean_room.sh` **본실행 통과 9 · 실패 0** — 빈 볼륨에서 전부 재현 | — |
 > | **35** | capreq 키 검사가 **낱말 하나만** 보고 있었다 — URL 은 열려 있었다 | [#219](https://github.com/gncorpseo-commits/capnet/pull/219) |
 > | **36** | `gh … list` 30 잘림을 **고쳤지만 못박지 않았다** — 검사 0 | [#220](https://github.com/gncorpseo-commits/capnet/pull/220) |
-> | **34** | Core 가 부르는 컬럼 **335건 · 드리프트 0** — 세던 검사 0 | (이 PR) |
+> | **34** | Core 가 부르는 컬럼 **335건 · 드리프트 0** — 세던 검사 0 | [#221](https://github.com/gncorpseo-commits/capnet/pull/221) |
+> | **38 · 30** | **코드 없음** — 주장이 참이고(psycopg 전부 skip 가드) · §7 이 철회를 시킨다 | — |
+> | **39** | 열린 `expects: decision` **23종** — §7 은 **11종**만 적는다 · **둘은 블록이 없다** | (이 PR) |
 >
 > **큐 #40 이 큐 #11 을 열었다.** 8회차·9회차가 두 번 「환경이 없어 못 봤다」고 적은
 > `clean_room` 이 이번에 돌았다 — 골든셋 sha 정합 · M25 위반 시연 6건 · sanity floor 3종 ·
@@ -54,6 +56,12 @@
 > #34 첫 추출기가 **멀쩡한 컬럼 넷을 「드리프트」로** 셀 뻔했다 — 다중 `ADD COLUMN` 과
 > `) PARTITION BY` 를 못 읽었다. **살아 있는 DB(세대 18)와 대조해서** 잡았다.
 > 그 대조는 Docker 가 이번에 생겨서(큐 #40) 가능해진 것이다.
+>
+> **큐 #39 가 우편함 드리프트를 열었다.** `inbox-cursor.md` 를 기계로 세니 블록 **116** ·
+> 열린 `decision` **23** · 열린 `ack` **43** 인데 `queue-expansion.md` §7 은 **11종**만 적는다.
+> 그리고 §7 이 적은 `contest-report-device-address-claim` · `openapi-response-schemas` 는
+> **블록이 아예 없다** — 결정이 안 난 게 아니라 **물어본 적이 없다.**
+> 8월 열한 종의 `status` 정리는 **master 몫으로 남겼다** (남의 판정을 내 손으로 닫지 않는다).
 >
 > **못 본 것:** `prod_room.sh` 본실행 — 자동 승인 분류기가 실행을 막았다.
 > 환경이 아니라 **권한** 문제이므로 9회차의 「docker 없음」과 사유가 다르다. 큐에 남긴다.
