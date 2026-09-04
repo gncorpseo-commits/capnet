@@ -37,7 +37,8 @@
 > | **36** | `gh … list` 30 잘림을 **고쳤지만 못박지 않았다** — 검사 0 | [#220](https://github.com/gncorpseo-commits/capnet/pull/220) |
 > | **34** | Core 가 부르는 컬럼 **335건 · 드리프트 0** — 세던 검사 0 | [#221](https://github.com/gncorpseo-commits/capnet/pull/221) |
 > | **38 · 30** | **코드 없음** — 주장이 참이고(psycopg 전부 skip 가드) · §7 이 철회를 시킨다 | — |
-> | **39** | 열린 `expects: decision` **23종** — §7 은 **11종**만 적는다 · **둘은 블록이 없다** | (이 PR) |
+> | **39** | 열린 `expects: decision` **23종** — §7 은 **11종**만 적는다 · **둘은 블록이 없다** | [#222](https://github.com/gncorpseo-commits/capnet/pull/222) |
+> | **12 옆** | `prod_room` §14 가 **두 라우트의 인증을 안 재고 있었다** (422 로 막혀서) | (이 PR) |
 >
 > **큐 #40 이 큐 #11 을 열었다.** 8회차·9회차가 두 번 「환경이 없어 못 봤다」고 적은
 > `clean_room` 이 이번에 돌았다 — 골든셋 sha 정합 · M25 위반 시연 6건 · sanity floor 3종 ·
@@ -45,7 +46,7 @@
 > 재현 `bash scripts/clean_room.sh` (별도 프로젝트 `capnet-cleanroom` · 포트 18800/18801 ·
 > 운영 스택을 건드리지 않는다).
 >
-> `run_tests` **705 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` ·
+> `run_tests` **707 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` ·
 > `check_submission` **28/28** · 건너뜀 **여전히 7** (9회차와 같다).
 >
 > **이번 회차도 스스로를 정정했다** (실측 규율):
@@ -63,8 +64,12 @@
 > **블록이 아예 없다** — 결정이 안 난 게 아니라 **물어본 적이 없다.**
 > 8월 열한 종의 `status` 정리는 **master 몫으로 남겼다** (남의 판정을 내 손으로 닫지 않는다).
 >
-> **못 본 것:** `prod_room.sh` 본실행 — 자동 승인 분류기가 실행을 막았다.
-> 환경이 아니라 **권한** 문제이므로 9회차의 「docker 없음」과 사유가 다르다. 큐에 남긴다.
+> **`prod_room` 도 돌았다 (사용자 승인 후) — 통과 51 · 실패 0.** 첫 실행은 **49/2** 였고,
+> 그 둘이 이번 회차의 가장 큰 발견이다: **인증을 재는 절이 두 라우트의 인증을 안 재고 있었다.**
+> `?node_id=` 를 빼먹어 FastAPI 파라미터 검증에서 422 로 멈췄고, `_assert_node_matches` 가
+> **아예 안 불렸다.** 채우니 둘 다 401 — 인증은 멀쩡했고 **확인한다고 믿던 두 줄이 확인하지
+> 않고 있었다.** 촬영 런북의 옛 `prod_room 27/27` 도 낡아 있었다 (지금 51).
+> 재현 `bash scripts/prod_room.sh`.
 > `.ps1` — `pwsh` 없음. capreq 단위 — `httpx`·`fastapi` 없음(정본은 CI).
 
 > **9회차 (2026-09-03) — 시드 큐 12–33.** main HEAD = **`26b5d14`** (#204) ·
