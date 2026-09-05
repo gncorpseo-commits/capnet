@@ -253,15 +253,19 @@ echo
 echo "== 14) 인증 GET 전수 — 무인증이면 전부 401 =="
 # ast 검사(test_every_route_declares_its_auth)는 「인증 헬퍼를 불렀는가」만 본다.
 # **강제 모드에서 실제로 401 이 나오는가**는 여기서만 잰다. 지금까지 넷뿐이었다.
+#
+# **필수 쿼리 파라미터는 반드시 채운다.** FastAPI 는 핸들러 본문보다 **먼저** 파라미터를
+# 검증하므로, 빼먹으면 인증에 닿기도 전에 422 가 나고 이 절이 **인증을 재지 못한다**.
+# 아래 둘이 `node_id` 를 요구한다 (`capability_get_sample` · `input_bytes`).
 for path in \
   "/v1/agents" \
   "/v1/agents/$dummy" \
   "/v1/api-keys" \
   "/v1/arches" \
   "/v1/inputs/$dummy" \
-  "/v1/internal/capabilities/$capid/sample" \
+  "/v1/internal/capabilities/$capid/sample?node_id=$dummy" \
   "/v1/internal/gate-runs/$dummy" \
-  "/v1/internal/inputs/$dummy/bytes" \
+  "/v1/internal/inputs/$dummy/bytes?node_id=$dummy" \
   "/v1/internal/nodes/$dummy/assignments" \
   "/v1/nodes" \
   "/v1/nodes-credentials" \

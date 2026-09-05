@@ -65,7 +65,58 @@ _SHVAR = re.compile(r"\$\{?[A-Za-z_][A-Za-z0-9_]*\}?")
 
 
 def _norm(path: str) -> str:
-    return _SHVAR.sub("<p>", _BRACE.sub("<p>", path))
+    """경로만 남긴다 — **쿼리는 뗀다.**
+
+    §14 는 필수 쿼리 파라미터를 **채워서** 눌러야 한다(아래 `TestRequiredQueryParams`).
+    그 쿼리를 그대로 두면 라우트 표와 안 맞아 「유령을 누른다」로 뒤집힌다.
+    """
+    return _SHVAR.sub("<p>", _BRACE.sub("<p>", path.split("?", 1)[0]))
+
+
+def _query(path: str) -> set[str]:
+    """`?a=1&b=2` 에서 파라미터 **이름**만."""
+    if "?" not in path:
+        return set()
+    return {kv.split("=", 1)[0] for kv in path.split("?", 1)[1].split("&") if kv}
+
+
+def _required_query_params() -> dict[str, set[str]]:
+    """정규화한 GET 경로 → **기본값 없는 쿼리 파라미터** 이름들.
+
+    경로 파라미터(`{capability_id}`)와 기본값이 있는 것(`authorization`)은 뺀다.
+    남은 것은 **없으면 422 가 나는** 인자다.
+    """
+    import ast as _ast
+
+    tree = _ast.parse((ROOT / "apps" / "core" / "app" / "main.py").read_text(encoding="utf-8"))
+    out: dict[str, set[str]] = {}
+    for fn in _ast.walk(tree):
+        if not isinstance(fn, (_ast.FunctionDef, _ast.AsyncFunctionDef)):
+            continue
+        for dec in fn.decorator_list:
+            if not (isinstance(dec, _ast.Call) and isinstance(dec.func, _ast.Attribute)):
+                continue
+            if not (isinstance(dec.func.value, _ast.Name) and dec.func.value.id == "app"):
+                continue
+            if dec.func.attr != "get" or not dec.args:
+                continue
+            if not isinstance(dec.args[0], _ast.Constant):
+                continue
+            raw = str(dec.args[0].value)
+            in_path = set(_BRACE.findall(raw))
+            in_path = {n.strip("{}") for n in in_path}
+            args = fn.args.args
+            defaults = fn.args.defaults
+            first_with_default = len(args) - len(defaults)
+            need = {
+                a.arg
+                for i, a in enumerate(args)
+                if i < first_with_default and a.arg not in in_path and a.arg != "self"
+            }
+            if need:
+                out[_norm(raw)] = need
+            break
+    return out
 
 
 def _probed(section: str) -> set[str]:
@@ -150,6 +201,48 @@ class TestProdRoomCoversEveryRoute(unittest.TestCase):
         real = {_norm(p) for _v, p, _n, _c in self.routes}
         ghosts = sorted((_probed("13") | _probed("14")) - real)
         self.assertEqual([], ghosts, f"라우트가 없는 경로를 누른다: {ghosts}")
+
+
+class TestRequiredQueryParams(unittest.TestCase):
+    """필수 쿼리 파라미터를 빼먹으면 **인증에 닿기도 전에 422** 가 난다.
+
+    FastAPI 는 핸들러 본문보다 **먼저** 파라미터를 검증한다. 그래서 `?node_id=` 없이 부르면
+    `_assert_node_matches` 가 아예 안 불리고, §14 는 「401 이 아니다」라고만 적는다.
+    **인증을 재는 절이 인증을 안 재고 있는 상태**가 된다 — 2026-09-04 에 실제로 그랬다.
+    """
+
+    def test_probe_supplies_every_required_query_param(self) -> None:
+        need = _required_query_params()
+        probed = {
+            _norm(q): _query(q)
+            for q in re.findall(
+                r'"([^"]+)"',
+                re.search(
+                    r"== 14\).*?for path in(.*?)\bdo\b",
+                    PROD.read_text(encoding="utf-8"),
+                    re.S,
+                ).group(1),
+            )
+        }
+        bad: list[str] = []
+        for path, want in need.items():
+            if path not in probed:
+                continue
+            missing = sorted(want - probed[path])
+            if missing:
+                bad.append(f"{path} 에 {missing} 가 없다")
+        self.assertEqual(
+            [], bad,
+            "§14 가 필수 쿼리 파라미터를 빼먹었다 — 422 가 나서 **인증을 재지 못한다**: "
+            + "; ".join(bad),
+        )
+
+    def test_probe_finds_the_routes_that_need_params(self) -> None:
+        """필요한 라우트를 하나도 못 찾으면 위 검사가 **공허하게** 통과한다."""
+        need = _required_query_params()
+        self.assertGreaterEqual(len(need), 2, f"필수 쿼리 파라미터를 요구하는 GET 이 {need}")
+        self.assertIn("/v1/internal/inputs/<p>/bytes", need)
+        self.assertIn("/v1/internal/capabilities/<p>/sample", need)
 
 
 class TestVerdictIsShared(unittest.TestCase):

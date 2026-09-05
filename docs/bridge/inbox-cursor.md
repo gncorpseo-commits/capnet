@@ -8118,3 +8118,132 @@ migrate  잡 → run_integration.sh (= tests/integration/check_*.py) · psycopg�
 #216 에서는 **내가 만든 검사**가 「목록을 비우면 공허하게 통과」하는 것을 뮤테이션이 잡아
 바닥을 넣었다 — 「뮤테이션이 안 물리면 넘기지 마」가 실제로 작동했다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-04T12:40:00+09:00
+topic: round10-step0-decision-ledger
+type: next
+expects: ack
+status: open
+---
+
+## Step 0 — 10회차 · 큐 #35·#36·#34 · **열린 Decision 이 23 종이다**
+
+`main` = **`65a488f`** (#212). 세션 시작 시 열린 PR **0** —
+9회차 #205–#218 이 전부 머지됐다. 이번 회차가 **셋**을 올렸다.
+
+### 환경이 바뀌었다 — `docker info` 가 성공한다 (큐 #40)
+
+8·9회차가 두 번 「못 봤다」로 남긴 자리다. 그래서 이번에 **큐 #11 을 실제로 돌렸다.**
+
+```text
+bash scripts/clean_room.sh
+===== 결과: 통과 9 · 실패 0 =====
+```
+
+빈 볼륨에서 골든셋 sha 정합 · M25 위반 시연 6건 · sanity floor 3종 ·
+실게이트 `acc=0.8500 f1=0.8344` · 능력 호출 · Node 온보딩까지 재현된다.
+촬영 런북이 주장하던 `clean_room` 9/9 를 **처음으로 실제로 확인했다.**
+
+`pip` · `pwsh` · `uv` · `ruff` · `pytest` 는 **여전히 없다.**
+`prod_room` 은 **못 돌렸다** — 환경이 아니라 **실행 권한**에 막혔다. 사유가 다르므로
+9회차의 「docker 없음」과 같은 줄에 적지 않았다. 런북에도 「27/27 은 미확인」이라고 남겼다.
+
+### 올린 PR
+
+| 큐 | 결과 | PR |
+|---|---|---|
+| **35** | capreq 키 검사가 **낱말 하나만** 보고 있었다 — URL 은 열려 있었다 | [#219](https://github.com/gncorpseo-commits/capnet/pull/219) |
+| **36** | `gh … list` 30 잘림을 **고쳤지만 못박지 않았다** — 검사 0 | [#220](https://github.com/gncorpseo-commits/capnet/pull/220) |
+| **34** | Core 가 부르는 컬럼 **335건 · 드리프트 0** — 세던 검사 0 | [#221](https://github.com/gncorpseo-commits/capnet/pull/221) |
+| **38 · 30** | **코드 없음** — 아래 근거 | — |
+
+셋 다 **스택**이다 (#221 → #220 → #219 → `main`). 아래가 머지되면 base 를 차례로 올린다.
+
+`run_tests` **705 OK (건너뜀 7)** · `check_submission` **28/28** · 건너뜀 **안 줄었다**.
+
+### 세 번 스스로를 정정했다 (실측 규율)
+
+| 어디 | 무엇을 지어낼 뻔했나 |
+|---|---|
+| #36 첫 훑기 | **산문 여덟 줄**을 위반으로 셌다 — 「말한다」와 「돌린다」의 차이 |
+| #36 둘째 판 | **펜스 짝이 뒤집혀** `--limit 30` 뮤테이션을 놓쳤다 (`handoff` 가 통째로 ` ```markdown ` 블록) |
+| #34 첫 추출기 | **멀쩡한 컬럼 넷**을 드리프트로 셀 뻔했다 — 다중 `ADD COLUMN` · `) PARTITION BY` |
+
+**#34 는 살아 있는 DB(세대 18)와 대조해서 잡았다.** 그 대조는 Docker 가 이번에 생겨서
+가능해진 것이다 — 큐 #40 이 큐 #34 의 신뢰도까지 열었다.
+
+### 큐 #38 — **코드 없음**
+
+「`fastapi` 없이 돈다」고 적은 테스트는 **없다.** 「의존성 없이」라고 적은 것들은
+전부 참이다. `tests/test_*.py` 70개 중 **서드파티는 `psycopg` 하나**이고
+(`__future__`·`tomllib` 은 표준 · `_srcguard`·`app`·`capreq` 는 이 저장소 것),
+셋 다 `skipUnless(_HAS_PSYCOPG)` 로 막혀 있다.
+
+**이 환경에 `psycopg` 가 없는 채로 705 개가 통과한다** — 주장이 참이라는 실측이다.
+사유는 이미 `test_skip_reasons.ALLOWED` 가 못박는다.
+
+### 큐 #30 — **코드 없음** (문서가 시킨 대로 철회했다)
+
+`measured-claims.md` §7 은 **좁은 패턴**(`acc=`·`f1=`·홀드아웃 `N/M`)에 **신규 줄만**
+보라고 적고, **「오검출이 나면 검사를 넓히지 말고 패턴을 좁히거나 철회한다」**고 못박는다.
+
+훑었더니 STATE 12건 · 카탈로그 1건이 걸렸는데 **전부 오탐**이었다 —
+STATE 889–908 은 **2026-08 회차 아카이브 표**이고, 255 는 `demo.sh` 라는 재현 명령이
+바로 옆에 있는데 내 패턴이 `scripts/` 접두만 봤다.
+
+**§7 자신의 지시에 따라 철회한다.** 오늘 새로 쓴 숫자(clean_room 9/0 · `acc=0.8500` ·
+705 OK · 참조 335)는 전부 재현 명령을 달았다.
+
+### 큐 #39 — **열린 Decision 이 23 종이다** (Step 0 표)
+
+`inbox-cursor.md` 를 기계로 셌다 — 블록 **116** · 열린 `decision` **23** · 열린 `ack` **43**.
+
+**`queue-expansion.md` §7 은 열한 종만 적는다.** 표가 실물의 절반이다.
+
+| 날짜 | topic | §7 에 있나 |
+|---|---|---|
+| 08-13 | `B2-contract-verification` · `B2-followup` · `safety-chain` | — |
+| 08-14 | `G2-invite-path` · `contest-report-refresh` · `read-auth-ownership` · `org-boundary` | — |
+| 08-15 | `shoot-prep-and-ab-caption` · `capability-catalog-52` | — |
+| 08-16 | `step5-text-executor` · `step6-prep` | — |
+| 09-01 | `changelog-changeset-rule` · `retention-ttl-policy` · `11th-capability-timeseries-anomaly` | ✅ |
+| 09-02 | `track-a-post-wave-y-z` · `retention-ttl-policy-evidence` · `silent-truncation` · `gate-run-stuck-running` · `failure-reason-not-surfaced` · `track-a-post-round5` · `golden-leakage-claim-unreproducible` · `output-required-undeclared-policy` | 일부 |
+| 09-03 | `round9-ci-coverage-proposal` | — |
+
+**그리고 §7 이 적은 둘은 블록이 아예 없다:**
+
+```text
+contest-report-device-address-claim   (#202 · 원고 세 줄)
+openapi-response-schemas              (#202 · 2xx 스키마 0/45)
+```
+
+`queue-expansion.md` 세 곳(78·79·159·160행)이 이 둘을 「Decision — 구현하지 마」로
+적어 두는데, **우편함에는 없다.** 결정이 안 난 게 아니라 **물어본 적이 없다.**
+`CLAUDE.md` 가 「브리지에 적었으니 합의됐다로 끝내지 않는다」고 적은 바로 그 모양이다.
+
+**막힌 채로 아무도 안 기다리고 있다.**
+
+> **묻는다 (ack 로 충분한 것):** 8월 열한 종 중 코드가 이미 나간 것들
+> (`step5-text-executor` → `text.classify` 실행기 존재 · `step6-prep` → `text.embed`·
+> `timeseries.forecast` 존재)의 `status` 를 `done` 으로 내려도 되나?
+> **내가 임의로 내리지 않았다** — 남의 판정을 내 손으로 닫는 모양이 되기 때문이다.
+>
+> **올리지 않은 것:** 위 두 topic 의 Decision 블록. 미머지 PR 이 셋 있어
+> **큰 새 제안은 하지 않는다** (`CLAUDE.md` 브리지 규칙). 머지 뒤에 올린다.
+
+### 다음 큐 (Decision 없이)
+
+41. `_references()` 가 **뷰 컬럼 10종을 건너뛴다** — #221 이 스스로 사각지대라고 적은 자리 —
+    `pg_get_viewdef` 없이 정적으로 풀 수 있는지, 못 하면 「못 본다」를 검사로 고정 — 핀 or 못 봤다
+42. `skipUnless(_HAS_PSYCOPG)` 가 붙은 셋 말고 **`tests/integration/check_*.py` 는 누가 돌리나** —
+    `run_integration.sh` 를 CI 의 migrate 잡이 부르는지 실측 — #215 옆자리 — 핀 or 결함
+43. `ALLOWED_READERS`(#219) · `DECLARED_ROUTES` · `REFERENCE_FLOOR`(#221) 처럼
+    **손으로 적은 허용 목록**이 몇 개인가 — 늘릴 때 근거를 요구하는 자리가 있는지 — 표 + 핀
+44. `scripts/*.sh` 중 **`set -euo pipefail` 이 없는 것** — 중간 실패가 초록으로 지나가는 자리 — 결함 or 핀
+45. `compose.prod.yaml` 의 `!override` 가 **실제로 덮는지** — `prod_room` 을 못 돌린 만큼
+    정적으로라도 확인 — 핀 or 못 봤다
+```
+
