@@ -1,5 +1,20 @@
 # Changelog
 
+## 게이트 사슬의 상태 전이를 앱이 손으로 쓰는 UPDATE 는 **0건** — 못박는다 (배치 B #88) — 2026-09-06
+
+절대규칙 2 는 `assignment`·`gate_run` 의 INSERT 만 말한다. 사슬의 나머지 세 표와 UPDATE 는 검사 밖이었다.
+`apps/core` 전수: 사슬 네 표를 건드리는 문장 **7** — INSERT 5 는 전부 `INSERT … SELECT`(PASSED 는
+`gate_run_passed` 에서만 나온다 · FAILED 는 PASSED 를 덮지 않는다), UPDATE 2 는 이전 상태를 WHERE 로
+고정한다(`status = 'RUNNING'` · `revoked_at IS NULL`), DELETE 0. finish 의 상태 값은
+`assert_real_finish`/`assert_contract_finish` 가 임계와 대조한 **뒤**에야 UPDATE 된다.
+
+`tests/test_gate_state_moves_only_through_select.py` 가 일곱 문장의 모양과 순서를 고정. 뮤테이션 4/4
+(손 UPDATE 추가 · RUNNING 가드 제거 · `gate_run_passed` 를 VALUES 로 · FAILED 가 PASSED 를 덮게) 운다.
+
+```bash
+python3 -m unittest tests.test_gate_state_moves_only_through_select
+```
+
 ## 위반 시연 여섯 중 TEST6 는 **표 밖의 제약**을 친다 — 정적으로 못박는다 (배치 B #87) — 2026-09-06
 
 `pg-violations.md` 가 스스로 적어 둔 함정 — 「다른 FK 가 잡았기 때문에 여전히 거절됐다」 — 을 시연
