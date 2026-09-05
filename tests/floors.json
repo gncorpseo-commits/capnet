@@ -87,6 +87,7 @@
   "test_openapi_request_schema_agrees.py::test_found_documented_bodies#0": 8,
   "test_openapi_request_schema_agrees.py::test_found_models_and_routes#0": 10,
   "test_openapi_request_schema_agrees.py::test_found_models_and_routes#1": 20,
+  "test_ops_and_contest_zeros_are_measurable.py::test_no_module_reaches_a_commercial_ai_host#0": 40,
   "test_pass_rate_script.py::test_does_not_hardcode_arch_names#0": 1,
   "test_pass_rate_script.py::test_probe_actually_finds_things#0": 1,
   "test_prod_room_auth_probe.py::test_probe_finds_the_routes_that_need_params#0": 2,
