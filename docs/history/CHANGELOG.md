@@ -28,6 +28,17 @@ G3 는 「「오늘은 0」인 전수의 재현 명령을 `tests/` 에 남겼는
 
 **주석을 걷고 본다** (`_srcguard.code_only`) — 「openai 를 쓰지 않는다」고 적은 설명이
 위반으로 잡히면 그건 **설명을 벌주는 검사**다.
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `AS nodes_without_credential` 이름 변경 | `test_every_named_metric_is_produced` |
+| 안내가 지표 이름을 그만 부름 | `test_the_guide_still_names_them` |
+| `https://api.openai.com` 참조 추가 | `test_no_module_reaches_a_commercial_ai_host` |
+| LLM 기본을 원격 호스트로 | `test_the_llm_backend_is_local_by_default` |
+
+재현: `python3 -m unittest tests.test_ops_and_contest_zeros_are_measurable` (8 검사 · 965 통과)
+
 ## 데모가 등록하는 `arch` 이름은 **아무도 안 보고 있었다** (G2) — 2026-09-05
 
 G2 는 「같은 디렉터리의 형제 파일 전수」다. `apps/node/app/tiny_*.py` 는 **아홉**인데
@@ -66,21 +77,12 @@ G2 는 「같은 디렉터리의 형제 파일 전수」다. `apps/node/app/tiny
 
 | 심은 것 | 운 검사 |
 |---|---|
-<<<<<<< HEAD
 | 데모의 `arch` 에 오타 (`TinyTableTyper2`) | `test_every_demo_arch_is_known` |
 | `ARCH_MODALITY` 에서 한 줄 삭제 | 레지스트리 ↔ 모달리티 대조 |
 | `gate` 허용 목록에서 하나 삭제 | `test_counts_are_what_we_measured` |
 | 레지스트리가 안 부르는 새 형제 파일 | `…is_imported_by_the_registry` |
 
 재현: `python3 -m unittest tests.test_arch_names_agree_everywhere` (8 검사 · 957 통과)
-=======
-| `AS nodes_without_credential` 이름 변경 | `test_every_named_metric_is_produced` |
-| 안내가 지표 이름을 그만 부름 | `test_the_guide_still_names_them` |
-| `https://api.openai.com` 참조 추가 | `test_no_module_reaches_a_commercial_ai_host` |
-| LLM 기본을 원격 호스트로 | `test_the_llm_backend_is_local_by_default` |
-
-재현: `python3 -m unittest tests.test_ops_and_contest_zeros_are_measurable` (8 검사 · 957 통과)
->>>>>>> dd18275 (「0 이어야 한다」고 적어 놓고 세지 않던 둘 (G3))
 
 ## 설정을 **주석으로 옮겨도** 통과하던 검사 둘 (G1) — 2026-09-05
 
