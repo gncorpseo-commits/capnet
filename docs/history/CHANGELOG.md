@@ -1,5 +1,52 @@
 # Changelog
 
+## 새 런북이 생기자 `gh … list` 검사가 **눈을 감았다** — 2026-09-05
+
+`#220`(큐 #36)은 「`gh pr list` 는 `--limit 100` 없이 쓰지 않는다」를 못박으며
+런북 **셋을 상수로** 적었다:
+
+```python
+RUNBOOKS = (autonomous-mode.md, handoff-long-mode-claude.md, queue-expansion.md)
+```
+
+`#225` 가 **네 번째 런북** `docs/bridge/queue-batches.md` 를 만들고 「상태확인」
+S0–S7 복붙 블록을 그리로 옮겼다. 세션이 실제로 붙여 넣는 명령이 **검사 범위 밖으로**
+나간 것이다. 같은 커밋에서 `handoff` 의 두 자리는 산문(백틱)이 되었다.
+
+### 바닥이 있었기 때문에 알았다
+
+`main` 이 빨갰다 — `test_at_least_one_call_is_seen` 이 `2 not greater than or equal to 3`.
+
+```text
+docs/bridge/autonomous-mode.md:42   git fetch/pull main · gh pr list --limit 100
+docs/bridge/autonomous-mode.md:213  gh pr list --state open --limit 100
+```
+
+`queue-batches.md:42` 의 `gh pr list --state open --limit 100` 은 **세지지 않았다.**
+바닥(`≥3`)이 없었으면 검사는 **아무것도 안 지킨 채 초록**이었을 것이다 —
+`#210` 이 「바닥을 내리면 초록」으로 잡은 것과 같은 자리다.
+
+### 고친 것 — 목록을 버렸다
+
+손으로 적는 대신 `docs/bridge/*.md` 를 훑고 **우편함 둘**만 뺀다:
+
+```python
+ARCHIVES = ("inbox-cursor.md", "inbox-claude.md")   # 고쳐진 결함의 「이전」을 보존한다
+```
+
+새 런북이 생기면 **이 파일을 고치지 않아도** 들어온다.
+
+### 뮤테이션 3 — 새로 덮인 자리에서 심었다
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `queue-batches.md:42` 를 `--limit 30` | `test_every_limit_is_big_enough` |
+| `queue-batches.md:42` 에서 `--limit` 제거 | `test_every_call_passes_a_limit` |
+| `ARCHIVES` 에 `queue-batches.md` 추가 | 바닥·범위·핀 **3건** |
+
+재현: `python3 -m unittest tests.test_gh_list_is_never_truncated`
+(런북 4 · 자리 3 · 709 통과 · 건너뜀 7)
+
 ## 인증을 재는 절이 **두 라우트의 인증을 안 재고 있었다** — 2026-09-04
 
 `prod_room.sh` §14 는 「무인증이면 전부 401」을 **강제 모드에서 실제로** 재는
