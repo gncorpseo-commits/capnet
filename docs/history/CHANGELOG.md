@@ -1,5 +1,18 @@
 # Changelog
 
+## 배경 GC 가 **지우지 않은 바이트를 「회수했다」고 세고 있었다** (배치 B #90 · `#187` 계열) — 2026-09-06
+
+`#187` 은 관리자 purge 의 `purged_now: True` 거짓말을 고쳤다. 같은 자리가 하나 더 있었다 —
+`_gc_once` 는 `purge_blob` 의 결과(True=지금 지움 · False=이미 없음)를 **버리고**, 행을 PURGED 로
+바꾸기만 하면 `freed_bytes` 에 크기를 더했다. 관리자 purge 와 경쟁했거나 디스크에서 먼저 사라진
+입력도 회수량에 들어가, 로그의 숫자가 실제보다 컸다. 행 상태를 맞추는 것은 옳다 — 거짓은 **숫자**였다.
+
+`removed = purge_blob(…)` 를 잡아 `removed` 일 때만 더하고, 로그에 `file_removed=` 를 찍는다.
+`tests/test_gc_does_not_count_bytes_it_did_not_free.py` 가 AST 로 가드를 보고 `purge_blob` 의
+True/False 를 실제로 돌려 본다. 뮤테이션 3/3 (가드 제거 · 결과 안 잡음 · `purge_blob` 이 항상 True) 운다.
+
+```bash
+python3 -m unittest tests.test_gc_does_not_count_bytes_it_did_not_free
 ## 설치가 일어나는 자리 여섯 전부 ↔ THIRD-PARTY-LICENSES — 베이스 이미지 하나가 빠져 있었다 (배치 B #85) — 2026-09-06
 
 `check_deps_declared` 는 `requirements.txt` 둘과 `capreq/pyproject.toml` 만 본다. 패키지가 깔리는
