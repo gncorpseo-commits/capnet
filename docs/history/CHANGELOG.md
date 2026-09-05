@@ -1,5 +1,51 @@
 # Changelog
 
+## `!override` 는 **덮는다** — 그런데 문서가 요구 버전을 낮게 적었다 (큐 #45) — 2026-09-05
+
+제품 오버레이의 3번 주장은 「**postgres 를 호스트에 노출하지 않는다**」다. 그 주장 전체가
+**한 태그**에 걸려 있다:
+
+```yaml
+  postgres:
+    ports: !override []      # ← 없으면 병합이 「덧붙이기」라 5432 가 남는다
+```
+
+### 실측 — 데몬 없이 `config` 로 쟀다 (Compose v5.3.1)
+
+```bash
+export POSTGRES_USER=u POSTGRES_PASSWORD=p POSTGRES_DB=d \
+       DATABASE_URL=postgresql://u:p@postgres:5432/d
+docker compose -f compose.yaml config                     | grep -c published:   # 5
+docker compose -f compose.yaml -f compose.prod.yaml config | grep -c published:   # 1
+```
+
+| 무엇 | 결과 |
+|---|---|
+| `compose.yaml` 단독 공개 포트 | **5** |
+| `+ compose.prod.yaml` | **1** — `core:8000` 만 |
+| postgres `5432` | **사라진다** ✅ |
+| `!override` 를 지우고 다시 재면 | **2** · `published: "5432"` **부활** |
+
+**태그는 하중을 받고 있다.** 주장은 참이다.
+
+### 그런데 README 는 「Compose v2」라고만 적었다
+
+`!override` 는 **v2.24.0 (2024-01)** 에서 들어왔다. v2.0–v2.23 은 그 태그를 모른다.
+심사자가 그 버전으로 제품 오버레이를 띄우면 **postgres 가 열린 채**이거나 파싱이 깨진다.
+「v2」와 「v2.24+」는 다른 말이다 — README·운영 안내를 고쳤다.
+
+### 뮤테이션 3
+
+| 심은 것 | 결과 |
+|---|---|
+| `!override` 제거 (정적) | `test_postgres_is_closed` 외 3건 |
+| `!override` 제거 (**실제 병합**) | `published` 1 → **2** · `5432` 부활 |
+| README 를 「Compose v2」로 되돌림 | `test_readme_states_the_minimum` |
+| 해명 없는 새 공개 포트(`adminer`) 추가 | `test_every_open_port_is_closed_or_explained` |
+
+재현: 위 `docker compose … config` 두 줄 · `python3 -m unittest tests.test_compose_override_closes_ports`
+(8 검사 · 763 통과)
+
 ## 통합 검사 **열다섯**은 CI 의 **한 줄**로만 돈다 — 그 줄을 못박은 검사는 0 (큐 #42) — 2026-09-05
 
 `#215` 가 잡은 것은 「**CI 가 본다**」가 거짓이던 자리였다. 같은 질문을
