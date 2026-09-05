@@ -1,5 +1,24 @@
 # Changelog
 
+## 이미지·compose 에 구워진 시크릿 기본값은 **0건** — 못박는다 (배치 B #79) — 2026-09-06
+
+`ENV POSTGRES_PASSWORD=…` 가 이미지에 들어가면 그 이미지를 받은 모두가 안다. compose 의
+`${X:-값}` 도 같다. 전수해 보니:
+
+| 어디 | 값 |
+|---|---|
+| Dockerfile 둘의 `ENV`·`ARG` 7줄 중 시크릿 이름 | **0** |
+| `compose.prod.yaml` 시크릿 키 2개(`POSTGRES_PASSWORD`·`DATABASE_URL`) | 전부 `:?` — 기본값 **0** |
+| `compose.yaml`(데모) 의 `:-capnet` 기본값 | **2** — 프로드 오버레이가 둘 다 `:?` 로 덮는다 |
+| `.env.example` 시크릿 키 값 | 전부 빈칸 |
+
+`tests/test_no_secret_has_a_baked_default.py` 가 넷과 **데모 기본값 ↔ 프로드 `:?` 짝**을 고정.
+뮤테이션 4/4 (Dockerfile 에 `ENV CAPNET_API_KEY=x` · 프로드 `:?`→`:-` · 프로드 선언 삭제 · `.env.example` 에 값) 운다.
+
+```bash
+python3 -m unittest tests.test_no_secret_has_a_baked_default
+```
+
 ## 세는 도구 둘이 **0건을 통과로 치고 있었다** (배치 B #78) — 2026-09-06
 
 `floor_registry.py` 와 `room_check_count.py` 는 다른 검사가 기대는 **자**다. 자가 0 을 내면
