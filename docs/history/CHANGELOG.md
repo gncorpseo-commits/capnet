@@ -1,5 +1,68 @@
 # Changelog
 
+## 주석이 금지한 것을 코드가 하고 있었다 — API 키가 `ps` 에 떴다 (큐 #47) — 2026-09-05
+
+`scripts/lib/*.sh` 의 판정 함수 셋 중 **하나만 검사 밖**이었다. 그리고 그 하나에서
+결함이 나왔다.
+
+| 함수 | 파일 | 단위 검사 (전) |
+|---|---|---|
+| `tally_verdict` | `lib/tally.sh` | ✅ `test_room_tally.py` |
+| `probe_verdict` | `lib/authprobe.sh` | ✅ `test_prod_room_auth_probe.py` |
+| **`ccurl`** | `lib/http.sh` | **없었다** |
+
+### 결함
+
+`lib/http.sh` 의 「시크릿 위생」은 이렇게 적혀 있다:
+
+> 키는 환경변수로만 받는다. **인자로 받으면 프로세스 목록(ps)에 남는다.**
+
+그래 놓고 헤더를 **curl 의 인자로** 넘기고 있었다. `-H` 의 값도 argv 다. 실측:
+
+```text
+$ pgrep -a curl
+9951 curl -H Authorization: CapNet-Key ck_deadbeef.SECRETVALUE123 -s --max-time 4 http://…
+```
+
+`ps` 는 기본 리눅스에서 **다른 사용자에게도 보인다** (`hidepid` 미설정). 데모·촬영은
+공용 워크스테이션에서 돈다 — 「환경변수로만 받는다」의 목적이 여기서 무너져 있었다.
+
+### 고친 방법 — `-H @파일`
+
+curl **7.55+** 는 헤더를 파일에서 읽는다. 파일은 `0600`, 호출이 끝나면 지운다.
+
+```text
+$ pgrep -a curl
+9980 curl -H @/tmp/capnet-hdr-JdOf7v -s --max-time 4 http://…     ← 키가 안 보인다
+```
+
+`|| rc=$?` 로 받는 데 이유가 있다. 호출자는 전부 `set -e` 다 — 그냥 두면 curl 실패 시
+**지우기 전에** 셸이 죽어 **시크릿 파일이 `/tmp` 에 남는다.** 고치면서 만들 뻔한 두 번째
+결함이라 검사로 못박았다.
+
+### 어떻게 쟀나 — 가짜 `curl`
+
+Docker 도 살아 있는 Core 도 필요 없다. `PATH` 앞에 **argv 를 받아 적는 `curl`** 을 놓고
+`ccurl` 을 부른다. 넘기는 것이 그대로 보인다 — `lib/tally.sh` 를 `source` 해서 부르는
+`test_room_tally` 와 같은 방식이다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 헤더를 다시 인자로 (원래 코드) | 5건 — argv 노출·파일 권한·삭제 |
+| `\|\| rc=$?` 제거 | `…removed_after_failure` — **`set -e` 로 파일이 남는다** |
+| 헤더 파일 `0600` → `0644` | `…is_not_world_readable` |
+| 검사 없는 새 lib 함수 추가 | `test_no_lib_function_is_unclaimed` |
+
+### 남은 자리 — 다음 줄
+
+`prod_room.sh` 는 `ccurl` 을 안 쓰고 **직접** `-H "Authorization: CapNet-Key $key"` 를
+**아홉 번** 넘긴다. 같은 노출이다. 다만 거기는 일회용 게이트 스택의 부트스트랩 키이고,
+그 스크립트는 Docker 없이 **돌려 볼 수 없다** — 다음 줄로 남긴다.
+
+재현: `python3 -m unittest tests.test_lib_http_never_leaks_the_key` (10 검사 · 785 통과)
+
 ## 「인증이 조회보다 먼저」를 **규칙 두 줄**로 굳혔다 — 오늘 위반 0 (큐 #64) — 2026-09-05
 
 `#223` 은 `prod_room` 이 두 라우트에서 **401 이 아니라 422** 를 받던 것을 잡았다.
