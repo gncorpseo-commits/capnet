@@ -1,5 +1,43 @@
 # Changelog
 
+## claim 의 잠금 — **오늘 0건**, 두 줄이 다른 것을 지킨다 (큐 #68) — 2026-09-05
+
+`pitfalls` §4 는 두 줄로 못박는다:
+
+> - `FOR UPDATE SKIP LOCKED` **필수**
+> - 활성 lease 유니크 인덱스가 이중 할당을 DB 에서 막는다
+
+**두 줄은 다른 것을 지킨다.** 유니크 인덱스는 이중 배정을 **거절**하고, `SKIP LOCKED` 는
+애초에 **두 워커가 같은 작업을 집지 않게** 한다. 잠금이 빠지면 인덱스가 계속 잡아 주긴
+하지만 그건 **정상 경로가 계속 실패하는** 모양이다 — 조용히 느려지고 재시도가 는다.
+
+`SKIP LOCKED` 없는 맨 `FOR UPDATE` 는 더 나쁘다. 거절이 아니라 **대기**라서 워커가 서로를
+막고 큐가 멈춘다. 「안 되는」게 아니라 **「안 끝나는」** 것이라 알아채기 어렵다.
+
+### 실측
+
+| 무엇 | 값 |
+|---|---|
+| `task` 를 고르는 SQL | **4** |
+| 그중 **배정을 쓰는** 것 | **1** — `CLAIM_SQL`(`INSERT … SELECT`) |
+| 그 앞에서 잠그는 것 | **1** — `LOCK_SQL`(`FOR UPDATE SKIP LOCKED`) ✅ |
+| `SKIP LOCKED` 없는 맨 `FOR UPDATE` | **0** ✅ |
+| 나머지 둘 | 조회 전용 (`/v1/ops/status` 집계 · `GET /v1/tasks/{id}`) |
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `SKIP LOCKED` 제거 (맨 `FOR UPDATE`) | `test_every_for_update_skips_locked` |
+| 잠금 없이 `task` 를 골라 배정을 쓰는 SQL 추가 | 배정 쓰는 SQL 수 · picker 수 |
+| `claim_next` 에서 잠금과 쓰기 순서 뒤집기 | `test_claim_next_runs_the_lock_before_the_insert` |
+| `pitfalls` §4 의 규칙 줄 삭제 | `test_pitfalls_still_requires_it` |
+
+**동시성을 여기서 재지 않는다** — 두 워커를 실제로 붙이는 것은 DB 가 필요하고
+`tests/integration/check_*.py` 쪽 일이다. 여기는 **SQL 의 모양**만 본다.
+
+재현: `python3 -m unittest tests.test_claim_takes_the_lock` (9 검사 · 864 통과)
+
 ## `datasetId` 는 두 종류다 — 그걸 모르면 **결함 열 건을 지어낸다** (큐 #66) — 2026-09-05
 
 `datasetId` 는 세 군데에 흩어져 있다 — 앱의 allowlist, 시드·데모의 **작업 페이로드**,

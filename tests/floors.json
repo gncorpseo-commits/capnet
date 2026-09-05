@@ -18,6 +18,7 @@
   "test_ci_matches_run_tests.py::test_probe_actually_finds_tools#0": 2,
   "test_ci_matches_run_tests.py::test_probe_actually_finds_tools#1": 2,
   "test_ci_never_logs_secrets.py::test_lines_are_read#0": 50,
+  "test_claim_takes_the_lock.py::test_enough_sql_is_read#0": 20,
   "test_clean_room_covers_demos.py::test_enough_demos_are_seen#0": 12,
   "test_compose_healthchecks_can_fail.py::test_services_are_read#0": 6,
   "test_compose_healthchecks_can_fail.py::test_the_waits_are_seen#0": 2,
