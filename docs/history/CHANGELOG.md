@@ -1,5 +1,60 @@
 # Changelog
 
+## capreq 를 로컬에서 돌리면 **`FAILED (errors=3)`** 였다 (큐 #60) — 2026-09-05
+
+`STATE` 는 「capreq **72**」라고 적고 「정본은 CI」라고 단다. 그 72 는 이 환경에서
+재현되지 않는다 — `pip` 이 없어 `httpx`·`fastapi` 를 못 깐다. **그건 괜찮다.**
+문제는 **로컬에서 돌렸을 때 무엇이 나오느냐**였다:
+
+```text
+ERROR: test_capnet_unit  ModuleNotFoundError: No module named 'httpx'
+ERROR: test_router_unit  ModuleNotFoundError: No module named 'httpx'
+ERROR: test_server_unit  ModuleNotFoundError: No module named 'fastapi'
+Ran 52 tests — FAILED (errors=3)
+```
+
+**`FAILED` 는 「코드가 깨졌다」처럼 보인다.** `testing.md` §4.6 은 그 경우를
+「**없으면 건너뛴다**」로 정해 뒀는데 세 모듈만 그 규약 밖이었다.
+
+### 고친 뒤
+
+```text
+Ran 52 tests — OK (skipped=3)
+```
+
+| 무엇 | 값 |
+|---|---|
+| `capreq/tests` 의 검사 파일 | **7** |
+| 런타임 핀 없이 도는 것 | **4** (검사 **52**) |
+| 핀이 있어야 도는 것 | **3** — `capnet`·`router`(httpx) · `server`(fastapi) |
+| CI 의 capreq 잡 | **72** — 정본은 그 잡의 로그다 |
+
+숫자를 옮겨 적지 않는다. **어디서 나오는지**를 못박고, 이 환경에서 셋을 못 돌린다는
+사실은 그대로 적는다.
+
+### 건너뜀도 허가제다
+
+`raise unittest.SkipTest(…)` 는 `test_skip_reasons` 의 탐지 목록 밖이었다 —
+**「사유를 안 적어도 되는 문법」이 될 뻔했다.** `SKIP_CALLS` 에 넣고 두 사유를
+`ALLOWED` 에 등록했다 (4 → 6).
+
+### 또 주석에 속았다 (적어 둔다)
+
+「CI 가 핀을 깐다」를 **파일 전체**에서 `fastapi` 를 찾아 확인했더니, 바로 위 주석에 그
+낱말이 있어서 **설치에서 빼는 뮤테이션이 통과했다.** `pip install` **줄만** 보게 좁혔다 —
+`#242` 와 같은 자리다. 이번 회차에 세 번째다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 가드를 지워 다시 import 오류로 | 정적 검사 + **실행 검사** |
+| CI 설치 줄에서 `fastapi` 제거 | `test_ci_installs_the_pins_and_runs_the_suite` (정정 후) |
+| 핀 없이 도는 모듈이 `httpx` 를 import | **실행 검사** (`Ran 46 · errors=1`) |
+
+재현: `PYTHONPATH=capreq/src python3 -m unittest discover -s capreq/tests -p "test_*.py"`
+→ `Ran 52 · OK (skipped=3)` · 935 통과
+
 ## 스크립트 서른넷 중 **스물여섯은 아무것도 안 돌린다** (큐 #63) — 2026-09-05
 
 `#63` 은 `regate.sh`·`proof_ab.sh` 를 「본실행 or **못 봄** 명시」로 남겼다. 재려고 보니

@@ -17,9 +17,12 @@ import json
 import unittest
 from typing import Any
 
-from fastapi.testclient import TestClient
+try:
+    from fastapi.testclient import TestClient
 
-import capreq.server as server
+    import capreq.server as server
+except ModuleNotFoundError:  # noqa: F401
+    raise unittest.SkipTest("fastapi 없음 — capreq 런타임 핀이 깔린 환경에서만 돈다")
 from capreq.adapters.base import CapabilityInfo, ExecutionResult
 
 TASK_ID = "11111111-1111-1111-1111-111111111111"

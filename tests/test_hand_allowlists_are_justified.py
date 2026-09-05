@@ -21,7 +21,7 @@ ALLOWED_READERS = {"_headers"}                            # #196
 |---|---|
 | `tests/` 의 허용 목록성 상수 | **20** |
 | 그것이 든 파일 | **14** |
-| 원소 합 | **96** |
+| 원소 합 | **99** |
 | 그중 **진짜 예외 목록** | **17** |
 | **어휘 집합**(예외가 아님) | **3** — `SKIP_PARTS` · `SKIP_CALLS` · `SKIP_DIRS` |
 | 늘어나는 것을 막던 검사 | **0** |
@@ -80,7 +80,7 @@ REGISTRY: dict[str, tuple[str, int, str]] = {
     "test_secrets_never_reach_output.py::NOT_SECRET":
         (EXEMPT, 7, "이름에 시크릿 낱말이 들지만 값은 경로·존재 여부인 접미"),
     "test_skip_reasons.py::ALLOWED":
-        (EXEMPT, 4, "건너뛰어도 되는 사유 — 허가제 (Wave W)"),
+        (EXEMPT, 6, "건너뛰어도 되는 사유 — 허가제 (Wave W · 큐 #60 으로 둘 추가)"),
     "test_room_numbers_match_scripts.py::OUTSIDE_THE_CHECK":
         (EXEMPT, 6, "연대기 문서 — 그때의 실측을 보존한다 (큐 #48)"),
     "test_scripts_do_not_swallow_failures.py::ALLOWED_SWALLOW":
@@ -94,7 +94,7 @@ REGISTRY: dict[str, tuple[str, int, str]] = {
     "test_secrets_never_reach_output.py::SKIP_PARTS":
         (VOCAB, 2, "훑지 않는 디렉터리 이름 — 봐주는 목록이 아니다"),
     "test_skip_reasons.py::SKIP_CALLS":
-        (VOCAB, 4, "`skip`·`skipIf` 등 호출 이름 — 봐주는 목록이 아니다"),
+        (VOCAB, 5, "`skip`·`skipIf`·`SkipTest` 등 호출 이름 — 봐주는 목록이 아니다"),
     "test_dataset_ids_do_not_drift.py::SKIP_DIRS":
         (VOCAB, 5, "훑지 않는 디렉터리 이름 — 봐주는 목록이 아니다 (큐 #66)"),
 }
