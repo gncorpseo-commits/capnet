@@ -2,6 +2,8 @@
   "test_absolute_rules_are_enforced.py::test_enough_files#0": 15,
   "test_absolute_rules_are_enforced.py::test_probe_found_the_inserts#0": 3,
   "test_agent_arch_wiring.py::test_finder_actually_finds_things#0": 5,
+  "test_auth_comes_before_lookup.py::test_enough_authenticated_routes_are_seen#0": 35,
+  "test_auth_comes_before_lookup.py::test_enough_path_routes_are_seen#0": 15,
   "test_broken_contract_does_not_disable_check.py::test_every_demo_output_schema_declares_required#0": 5,
   "test_capability_patch_wiring.py::test_the_probe_finds_the_demos#0": 8,
   "test_capreq_binds_loopback.py::test_probe_actually_found_routes#0": 4,
