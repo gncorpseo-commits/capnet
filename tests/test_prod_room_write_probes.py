@@ -98,11 +98,14 @@ def _unauthenticated_write_probes() -> set[tuple[str, str]]:
     """`prod_room` 이 **Authorization 없이** 부르는 쓰기."""
     body = PROD.read_text(encoding="utf-8")
     found: set[tuple[str, str]] = set()
-    call = re.compile(r'(?:code|curl)[^\n]*?-X\s+(POST|PUT|PATCH|DELETE)\s+"\$CORE_URL([^"]+)"(.*?)\)\n',
+    # `ccode`/`ccurl` 은 **키를 붙이는** 호출이다 (큐 #72 이후). 이름이 `code`·`curl` 로
+    # 끝나 그냥 세면 무인증으로 오인한다 — 앞 글자를 함께 본다.
+    call = re.compile(r'(?<![a-z])(?:code|curl)[^\n]*?-X\s+(POST|PUT|PATCH|DELETE)\s+"\$CORE_URL([^"]+)"(.*?)\)\n',
                       re.S)
     for m in call.finditer(body):
         verb, path, rest = m.group(1), m.group(2), m.group(3)
-        if "Authorization" in rest:
+        head = body[:m.start()].rsplit("\n", 1)[-1] + m.group(0)[:40]
+        if "Authorization" in rest or "CAPNET_API_KEY" in head:
             continue
         found.add((verb, re.sub(r"\$\{?[a-z_]+\}?", "{id}", path)))
     return found
@@ -144,8 +147,11 @@ class TestProbeActuallyScans(unittest.TestCase):
         probes = _unauthenticated_write_probes()
         self.assertIn(("POST", "/v1/nodes"), probes)
         # §8 은 admin 키로 같은 경로를 부른다 — 그건 무인증이 아니다.
+        # 큐 #72 이후 그 자리는 `ccode`/`ccurl` 이라 헤더가 argv 에 안 보인다.
         body = PROD.read_text(encoding="utf-8")
-        self.assertIn("Authorization: CapNet-Key $key", body, "기준 파일이 바뀌었다")
+        self.assertIn("ccode -X POST", body, "기준 파일이 바뀌었다")
+        self.assertNotIn("Authorization: CapNet-Key $key", body,
+                         "키가 다시 argv 로 넘어간다 (큐 #72)")
         self.assertNotIn(("POST", "/v1/tasks"), probes)
 
 

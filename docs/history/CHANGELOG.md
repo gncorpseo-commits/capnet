@@ -1,5 +1,61 @@
 # Changelog
 
+## `prod_room` 이 키를 **아홉 번 직접** 넘기고 있었다 (배치 B #72) — 2026-09-06
+
+`#237`(큐 #47)이 `ccurl` 의 키 노출을 `-H @파일` 로 고치며 **남긴 줄**이다 —
+「`prod_room.sh` 는 `ccurl` 을 안 쓰고 직접 아홉 번 넘긴다. 같은 노출이지만 Docker 없이
+못 돌려 봐서 다음 줄로 남긴다.」
+
+### 왜 `ccurl` 을 못 쓰고 있었나
+
+`prod_room` 은 **키 없이 눌러야 하는 프로브**(무인증 401)와 **키를 붙이는 호출**을 같이
+쓴다. `ccurl` 은 키가 있으면 무조건 붙이므로, 통째로 바꾸면 401 프로브가 200 이 된다.
+
+그래서 갈랐다:
+
+| 무엇 | 무엇을 쓰나 |
+|---|---|
+| 키 **없이** 눌러야 하는 프로브 (§5·§8-1·§13·§14 …) | `code()` — 맨 `curl` **그대로** |
+| 키를 붙이는 호출 **아홉** | `ccurl` / **새 `ccode`** |
+
+`ccode` 는 `lib/http.sh` 에 넣었다 — `code()` 를 스크립트마다 다시 쓰지 않게. `#237` 의
+헤더 파일 경로를 그대로 탄다.
+
+### 실측
+
+```text
+전:  curl -H Authorization: CapNet-Key ck_… -s -o /dev/null -w %{http_code} …
+후:  curl -H @/tmp/capnet-hdr-d6IuZ0 -s -o /dev/null -w %{http_code} …
+```
+
+`Authorization: CapNet-Key` 문자열이 `prod_room.sh` 에서 **10 → 0**.
+
+### 검사 둘이 같이 울었다 — 그게 맞다
+
+- `#237` 의 lib 함수 핀: `ccode` 가 **주인 없는 함수**라 걸렸다 → 단위 검사 셋 추가
+- `#235` 의 쓰기 프로브 탐지기: `ccode` 를 **무인증으로 오인**했다 → `(?<![a-z])` 로 좁히고
+  `CAPNET_API_KEY` 접두를 함께 본다
+
+### 뮤테이션이 새 구멍을 열었다
+
+`source "$root/scripts/lib/http.sh"` 를 지우는 뮤테이션이 **안 울었다** — `ccode` 가
+정의되지 않은 채 도는데 아무도 안 봤다. 「`ccurl`/`ccode` 를 쓰면 `lib/http.sh` 를 부른다」를
+검사로 넣었다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 키를 다시 argv 로 | `test_the_probe_reader_discriminates` |
+| `ccode` 가 `ccurl` 을 안 거치게 | `test_it_attaches_the_header_by_file` |
+| `source lib/http.sh` 삭제 | `test_every_caller_sources_the_library` (새로 넣은 것) |
+
+**본실행은 못 했다** — `docker info` 실패. 바꾼 것은 **헤더를 넘기는 방법**뿐이고
+(`Authorization: CapNet-Key <키>` 한 줄로 동일), 가짜 `curl` 로 그 동치를 확인했다.
+
+재현: `python3 -m unittest tests.test_lib_http_never_leaks_the_key tests.test_prod_room_write_probes`
+(984 통과)
+
 ## `prod_room` 이 `-e` 를 못 켜는 이유 — **정적으로 증명했다** (배치 B #71) — 2026-09-06
 
 `#228`(큐 #44)은 `prod_room.sh` 만 `set -e` 를 안 켠 것을 찾고 **「못 쟀다」**로 남겼다.
