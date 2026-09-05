@@ -57,6 +57,8 @@ EXEMPT, VOCAB = "예외", "어휘"
 # `파일::이름` → (종류, 오늘 원소 수, 무엇을 봐주는가)
 # **늘리려면 이 표를 같이 고쳐야 한다.** 줄이는 것은 자유다.
 REGISTRY: dict[str, tuple[str, int, str]] = {
+    "test_authorization_never_reaches_a_message.py::EXEMPT":
+        (EXEMPT, 1, "preprocess 설정 필드 이름을 도는 루프 변수 `key` — 값이 아니다"),
     "test_agent_arch_wiring.py::EXEMPT":
         (EXEMPT, 1, "일부러 불완전한 본문을 보내는 자리"),
     "test_capability_catalog.py::LOCKED_UNTIL_ISOLATION":
