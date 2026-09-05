@@ -1,5 +1,40 @@
 # Changelog
 
+## 절대규칙 6 을 **세는 검사가 없었다** — 빌드 표면 0건 (큐 #62) — 2026-09-05
+
+절대규칙 6 은 「**사전학습 가중치를 쓰거나 동봉하지 않는다.** EuroSAT scratch 학습만.
+대회 2차 라이선스 검증 대비.」다. 그런데 `test_absolute_rules_are_enforced` 는 스스로
+적는다 — 「규칙 1·**6** 은 여기서 안 본다」.
+
+**빌드 표면이 그 규칙을 조용히 뒤집을 수 있는 자리다.** `INSTALL_TORCH=true` 는 torch 를
+깔고, torch 가 깔리면 `torchvision.models` **한 줄**이면 사전학습 가중치를 런타임에
+내려받는다. Dockerfile 의 `curl` 한 줄도 같다. **둘 다 소스에는 「가중치 파일」이 안 보인다.**
+
+### 실측
+
+| 무엇 | 값 |
+|---|---|
+| 빌드 ARG | **3** — `INSTALL_TORCH` · `TORCH_VERSION` · `TORCHVISION_VERSION` |
+| 그 ARG 가 여는 것 | CPU 휠 인덱스에서 **torch·torchvision 패키지**뿐 |
+| `torchvision.models`·`torch.hub`·`from_pretrained`·`timm` | **0** ✅ |
+| Dockerfile 의 `curl`·`wget`·`ADD http` | **0** ✅ |
+| 학습 스크립트의 `"pretrained": False` | **4곳 전부** ✅ |
+
+**0건이다.** 라이선스 검증에서 「안 썼다」를 말하려면 **그것을 세는 검사**가 있어야 한다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `torchvision.models.resnet18(weights="DEFAULT")` | `test_no_module_reaches_for_pretrained_weights` |
+| Dockerfile 에 `curl … w.pth` | `test_no_dockerfile_downloads_anything` |
+| 해명 없는 새 ARG `PRETRAINED_URL` | `test_every_arg_says_what_it_opens` |
+| 학습 스크립트의 `pretrained` 기록 삭제 | `test_training_scripts_record_pretrained_false` |
+
+`ALLOWED_ARGS` 는 `#231` 의 허용목록 표가 잡아내 **등록했다** — 그 핀이 작동한 두 번째 사례다.
+
+재현: `python3 -m unittest tests.test_build_args_open_no_pretrained_path` (8 검사 · 920 통과)
+
 ## 마이그레이션은 실패하면 멈춘다 — 다만 **대기가 조용히 만료됐다** (큐 #57) — 2026-09-05
 
 세대 하나가 실패했는데 다음으로 넘어가면 DB 는 **어느 상태도 아니게** 된다. `0012` 가
