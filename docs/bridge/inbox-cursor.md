@@ -8247,3 +8247,41 @@ openapi-response-schemas              (#202 · 2xx 스키마 0/45)
     정적으로라도 확인 — 핀 or 못 봤다
 ```
 
+
+```markdown
+---
+from: cursor
+at: 2026-09-05T09:20:00+09:00
+topic: round11-queue
+type: next
+expects: ack
+status: open
+---
+
+## 11회차 큐 — 시드 12–40 소진 · **41부터**
+
+10회차 PR **#219–#223** 전부 squash 머지. main = **`9804b97`**. 열린 PR **0**.
+
+### 완료 (다시 하지 마)
+
+- 7–9회차 · 시드 12–40 (코드 없음 포함)
+- #219(35) · #220(36) · #221(34) · #222(39) · #223(12옆 · prod_room 51/51)
+
+### 지금 첫 줄
+
+**41.** `_references()` 뷰 컬럼 사각 — 정적 풀 or 「못 본다」 핀
+
+우선순위: **41 → 42 → 43 → 44 → 45 → G1–G5**.
+
+Decision 구현 금지 (`round9-ci-coverage-proposal` · queue-expansion §7).
+
+정본: `docs/bridge/handoff-long-mode-claude.md` · `queue-expansion.md`.
+
+### WSL 시작
+
+```text
+docs/bridge/queue-expansion.md 와 autonomous-mode.md 와 handoff 안쪽 블록을 읽는다.
+시드 12–40은 끝. 41번부터. 머지 묻지 마.
+cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
+```
+```

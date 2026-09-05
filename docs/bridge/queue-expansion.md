@@ -77,7 +77,13 @@ N. <한 줄 실측 대상> — <재현 힌트> — <핀 | 결함 | 못 봤다>
 | 3·4·6·7·8·9 | #186–#196 | 7회차 완료 |
 | **10** | #200 | README 「할 수 있다」 핀. **원고 세 줄은 Decision** (`contest-report-device-address-claim`) |
 | **5** (버전) | #201 | `info.version` 드리프트 핀. **응답 스키마 45/45 부재는 Decision** (`openapi-response-schemas`) |
-| **11** | #202 | 이 환경 Docker/pip 불가. capreq 72는 **CI 로그로 확인**. 본실행은 환경이 생기면 40번 |
+| **11** | #202 기록 · **#219 트리에서 `clean_room` 본실행** | 10회차 Docker 생김 → **통과 9 · 실패 0** |
+| **12** | #205 · **#223** | 라우트 전수 + 필수 쿼리(`node_id`) — `prod_room` **51/51** |
+| **13–33** | #206–#218 등 | 9회차 · 코드 없음(25·37·13·32) 포함 |
+| **34–36 · 39** | #221 · #220 · #219 · #222 | 10회차 |
+| **38 · 30 · 40** | — | 코드 없음 / Docker 재측정 완료 |
+
+**시드 12–40 소진.** 다음 줄 = inbox **41–45** → G1–G5.
 
 ---
 
@@ -166,7 +172,7 @@ G 루프는 Decision이 아니다. 새 능력이 아니다.
 
 ```text
 docs/bridge/queue-expansion.md 와 autonomous-mode.md 와 handoff-long-mode-claude.md 안쪽 블록을 읽는다.
-번호 큐가 비면 멈추지 말고 시드 12번부터 착수한다.
+시드 12–40은 끝났다. 번호가 비면 inbox 41–45 · 없으면 G1–G5.
 PR 후 다음 줄을 inbox에 ≥3 남기고 즉시 다음 항목.
 머지 묻지 마. Decision 구현하지 마.
 cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
@@ -181,7 +187,7 @@ gh pr list --state open --limit 100
 4. `inbox-cursor.md` 끝
 5. `CLAUDE.md`
 
-**첫 작업:** 큐 **#12** (`prod_room.sh` vs 공개 GET).
+**첫 작업:** 큐 **#41** (`_references()` 뷰 컬럼 사각). 시드 12–40은 다시 하지 마.
 
 ---
 
@@ -189,4 +195,5 @@ gh pr list --state open --limit 100
 
 | 날짜 | 비고 |
 |---|---|
+| 2026-09-05 | `9804b97` | 10회차 머지 · 시드 12–40 소진 · 다음 41–45 |
 | 2026-09-03 | `2c57c1e` | 최초 작성 — 8회차 종료 조건 개정 · 시드 12–40 · G1–G5 (#203) |
