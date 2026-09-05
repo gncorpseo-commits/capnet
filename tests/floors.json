@@ -80,6 +80,7 @@
   "test_license_coverage.py::test_capreq_runtime_deps_are_declared#0": 2,
   "test_loop_tests_have_a_floor.py::test_found_enough_test_files#0": 30,
   "test_measured_claims_doc.py::test_probe_actually_finds_things#0": 5,
+  "test_measured_values_name_their_tool.py::test_zero_bare_values#0": 5,
   "test_migrate_lint.py::test_repo_migrations_lint_clean#0": 1,
   "test_migrate_lint.py::test_repo_migrations_load#0": 1,
   "test_modality_fallback.py::test_every_modality_is_decided#0": 5,
