@@ -1,5 +1,49 @@
 # Changelog
 
+## 통합 검사 **열다섯**은 CI 의 **한 줄**로만 돈다 — 그 줄을 못박은 검사는 0 (큐 #42) — 2026-09-05
+
+`#215` 가 잡은 것은 「**CI 가 본다**」가 거짓이던 자리였다. 같은 질문을
+`tests/integration/` 에 물었다.
+
+| 무엇 | 답 |
+|---|---|
+| `tests/integration/check_*.py` | **15** |
+| `scripts/run_tests.sh` 가 부르는가 | **아니다** — DB 가 필요하다 |
+| 그럼 누가 부르는가 | `ci.yml` 의 `migrate` 잡 **한 줄** |
+| 그 한 줄을 못박은 검사 | **0** |
+
+```yaml
+      - name: 통합 검사 (검사마다 깨끗한 DB)
+        run: scripts/run_integration.sh      # ← 유일한 실행 경로
+```
+
+### 왜 기존 둘 사이로 빠졌나
+
+- `test_integration_runner` 는 **러너의 glob** 만 본다 — 파일 이름이 패턴에 맞는가
+- `test_ci_matches_run_tests` 는 **`run_tests.sh` 가 부르는 도구**만 본다
+
+`run_integration.sh` 는 `run_tests.sh` 밖이라 **둘 다 안 본다.** 그 줄을 지우거나
+`if:` 를 붙이면 검사 열다섯이 **조용히 멈추고 CI 는 초록**이다.
+
+「검사를 짜 놓고 돌지 않는 것은 검사가 없는 것보다 나쁘다 — 있다고 믿게 되기
+때문이다」(`test_integration_runner` 머리말). 그 문장이 **러너 자신**에게도 해당했다.
+
+### `ci.yml` 은 고치지 않았다
+
+잡·설치 추가는 열린 Decision (`round9-ci-coverage-proposal`) 이다. **오늘 있는 것을
+못박기만** 한다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| CI 단계의 `run:` 을 다른 명령으로 | `test_ci_has_a_step_that_runs_the_runner` |
+| 그 단계에 `if: github.ref == …` 추가 | `test_that_step_is_not_conditional` |
+| 러너의 「0건은 통과가 아니다」 제거 | `test_runner_fails_when_it_finds_nothing` |
+| 러너의 glob 을 파일 하나로 고정 | `test_runner_still_globs` |
+
+재현: `python3 -m unittest tests.test_integration_checks_are_run_by_ci` (7 검사 · 755 통과)
+
 ## 손으로 적은 **예외 목록 열둘**이 근거 없이 자랄 수 있었다 (큐 #43) — 2026-09-05
 
 이 회차가 세운 검사들은 거의 전부 예외 목록을 하나씩 달고 있다:
