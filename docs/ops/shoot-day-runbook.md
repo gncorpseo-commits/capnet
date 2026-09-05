@@ -1,7 +1,7 @@
 # 촬영일 런북 (3분 영상)
 
 **목적:** 스토리보드([`demo-video-storyboard.md`](./demo-video-storyboard.md))를 **명령 순서**로 고정.  
-**갱신:** 2026-09-05  
+**갱신:** 2026-09-06  
 > **리허설 1회 완료 (2026-08-14).** 명령 순서 재현 · `demo` PASSED `acc=0.8500` · sanity 3종 FAILED ·
 > 위반 6종 REJECTED · A/B 완결 · 증적 줄.  
 > **리허설 보강 (2026-08-21).** Windows 본편은 **`pwsh`(PowerShell 7)** 로 통일 · `proof_ab.ps1` 포팅 ·
