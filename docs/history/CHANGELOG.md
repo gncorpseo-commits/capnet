@@ -1,5 +1,18 @@
 # Changelog
 
+## 측정값 재전수 — 위반 0 · §7 이 정한 모양의 좁은 검사 하나 (배치 B #98 · `#30` 재전수) — 2026-09-06
+
+2026-09-03 이후 `STATE.md`·카탈로그에 들어온 `acc=`·`f1=`·`N/M`·ms 줄을 다시 봤다. 전부 같은 줄이나 바로
+옆 줄에 재는 도구(`clean_room.sh`·`demo.sh`·`pass_rate.sh`·`route_bench.py`·`run_tests`…)가 있다 — **위반 0**. 검사를 붙이니 옛 줄 둘(STATE 2026-08-13 연대기 행 · 카탈로그의 「`acc=0.8500` 이 움직인다」)이 도구 이름 없이 있어
+`demo.sh` 를 붙였다. `measured-claims.md` §7 은 「위반 커밋이 나오면 좁은 검사를 붙인다 — 파일 단위 · `acc=`/`f1=` 만 · 신규 줄만」이라
+했고, 그 모양 그대로 하나를 붙였다: 두 파일 · 두 패턴 · 앞뒤 2줄. §7 의 「지금은 문서만이다」를 사실대로 고쳤다.
+
+`tests/test_measured_values_name_their_tool.py`. 뮤테이션 2/2 (STATE 에 도구 없는 `acc=` · 안내에서 검사 언급 제거) 운다.
+
+```bash
+python3 -m unittest tests.test_measured_values_name_their_tool
+```
+
 ## G2 — Node 가 Core 를 부르는 다섯 자리 전부가 증서 헤더를 싣는다 (배치 B 뒤 G 라운드) — 2026-09-06
 
 `#89`(바이트 경로)·`#81`(증서 문자열 한 줄)의 형제 전수. `urllib.request.Request(` 5곳 전부 `headers=_core_headers()`,
