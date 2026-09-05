@@ -166,7 +166,7 @@ W2 버퍼를 코드 다듬기에 쓰지 않는다. F2에 따라 1차는 글로�
       `prod_room` 은 **2026-09-04 재측정 51/51** — 8/16 의 「27/27」은 그때의 값이고,
       `#205` 가 프로브 라우트를 5 → 24 로 늘려 51 이 됐다.
       재현: `python3 scripts/room_check_count.py` (소스에서 센다) · `bash scripts/prod_room.sh` (실행)
-- [x] **능력 6종 데모 재현** — `text`·`embed`·`series`·`image_embed`·`table` 다섯 데모 완주
+- [x] **능력 6종 데모 재현** (당시 능력 6종 · 지금은 **9종** — 나머지 셋은 Docker 뒤, `tests/test_capability_demos_are_ready_to_add.py`) — `text`·`embed`·`series`·`image_embed`·`table` 다섯 데모 완주
       (`bash` 전용 · 촬영에는 넣지 않는다 → 런북 §1-A)
 - [x] `scripts/demo_violations` 위반 6종 전부 DB 거부
 - [x] sanity 3종 FAILED
