@@ -16,7 +16,7 @@
 | 7 | 미바인딩 Node로 할당 | `assignment_agent_id_node_id_fkey` |
 | 8 | 라이브 lease 중 Node public 강등 | `..._node_id_node_trust_domain_node_tier_max_fkey` |
 | 9 | READY 존재 중 가중치 교체 | `agent_node_ready_agent_id_weights_sha256_fkey` |
-| 10 | 해시 불일치로 READY 등재 | `agent_node_ready_..._weights_sha2_fkey` |
+| 10 | 해시 불일치로 READY 등재 | `agent_node_ready_..._weights_sha256_fk` (63자 절단) |
 | 11 | 증서 존재 중 게이트 강등 | `agent_capability_passed_..._gate_status_fkey` |
 | 12 | 비-게이트러너 Node로 gate_run 기록 | `gate_run_runner_node_id_runner_is_gate_runner_fkey` |
 | 13 | 근거 없이 `gate_status='PASSED'` | `ck_ac_run_only_when_passed` |
@@ -39,5 +39,19 @@ python3 tests/integration/check_pg_violations.py   # DATABASE_URL 필요 · 전�
    모든 INSERT 가 실패해도 「전부 거절됨」으로 초록이 뜬다
 
 `scripts/demo_violations.sql` 은 촬영용 6종 시연으로 남긴다 (NOTICE 출력이 화면에 보인다).
+
+시연 여섯이 **표의 어느 행**을 치는가 — 스키마에서 FK 이름을 도출해 각 시연의 실패 문장이
+건드리는 표로 정적 대조했다 (`tests/test_violation_demo_names_its_constraint.py`, 2026-09-06).
+시연의 `WHEN foreign_key_violation` 은 **어떤 FK 든** 받아 주므로, 실행만으로는 위 2 의 함정을
+못 가른다. Docker 로 실측하면 `CONSTRAINT_NAME` 단언을 SQL 에 넣는다 (브리지).
+
+| 시연 | 행 | 정적 대조 |
+|---|---|---|
+| TEST1 gate-ungated assignment | 1 | `assignment_agent_id_capability_id_fkey` — 후보 안 |
+| TEST2 team task → public node | 2 | `assignment_capability_tier_node_tier_max_fkey` — 후보 안 |
+| TEST3 L capability → S node | 3 | `tier_compatible` 을 참조하는 FK — 후보 안 |
+| TEST4 live lease then demote node | 8 | `assignment_node_id_node_trust_domain_node_tier_max_fkey` — 후보 안 |
+| TEST5 READY live weight swap | 9 | `agent_node_ready_agent_id_weights_sha256_fkey` — 후보 안 |
+| TEST6 invalidate PASSED gate_run | — | `UPDATE gate_run.status` 가 칠 수 있는 것은 `gate_run_passed_…_status_fkey` 뿐 — **표 밖**. 11행은 `agent_capability.gate_status` 강등이라 다른 문장이다. 실측 뒤 15행 후보 |
 
 업데이트 경로도 함께 닫혀 있다 — 할당이 살아있는 동안 `task.trust_domain`·`capability.compute_tier`·`node.trust_domain`을 아무도 못 바꾼다.
