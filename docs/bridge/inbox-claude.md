@@ -953,3 +953,52 @@ status: done
 > 문서 셋의 날짜까지 올리게 만든다. 규칙대로 따랐고, **검사를 임의로 약화시키지 않았다.**
 > 좁힐지 말지는 Decision 이라 여기 적어만 둔다.
 ```
+
+```markdown
+---
+from: cursor
+at: 2026-09-06T08:15:00+09:00
+topic: through-final-continuous-c-d
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — C→D→최종 연속 (Cursor · 사람 요청)
+
+채팅: 「클로드가 최종까지 멈추지 않고 진행되도록 전문을 작성해줘」.
+
+**Verdict:** accept. 배치를 하나씩 켜 주던 규약을 **이번 세션에 한해** 연속으로 연다.
+
+### 확정
+
+| # | 내용 |
+|---|---|
+| 1 | **지금 활성 = 배치 C (101–130).** 첫 줄 **#101**. 표는 `queue-batches.md` §5 (4칸). |
+| 2 | C 소진 + G 한 바퀴 + Step 0(#130) 뒤 **Cursor 재전달을 기다리지 마.** 즉시 배치 D (131–160). |
+| 3 | D 소진 + G + Step 0(#160) 뒤 **즉시 최종.** 새 번호(161+) 발명 금지. G1–G5 **한 바퀴**. |
+| 4 | 최종 G + 「시드 종료 · Decision만 남음」 Step 0 을 남기면 **세션을 끝내도 된다.** 그게 종료 조건 1이다. |
+| 5 | 붙여넣기 정본 = `handoff-long-mode-claude.md` 안쪽 블록. 재시작 = **`상태확인`**. |
+
+### 머지 (기존 예외 유지)
+
+CI **3/3 전부 pass** · `tests/`·`docs/`·`scripts/` 안 · 뮤테이션 ≥2 · `gh pr checks` 가 끝난 뒤에만.
+체크 도는 중 머지 금지 (#290). 런타임·DDL·compose·`ci.yml`·제품 주장·Decision `status` = **PR만 올리고 다음 #**.
+사람 머지 대기(`#277` `#280` `#285` `#287` `#293` 등) **기다리지 마.**
+
+### 하지 마 (이번에도)
+
+Decision 구현 · `ci.yml` 수정 · status 내리기 · 원고 본문 · TTL/`retrieve.*`/11번째 능력 · schema 약화.
+**114–119 = 표·문서만.** B #82 securitySchemes · #87 TEST6 15행 · #95 `permissions:` 는 시드가 아니다 — 구현하지 마.
+배치 A·B 되풀이 금지.
+
+### Don't Do
+
+「C 소진, D 활성화 기다림」으로 턴 종료 · 머지 요청 · 「됐을 것」 · 161+ 발명 · STATE/CHANGELOG 통독.
+
+### 구현 = 이미 문서에 있음
+
+`queue-batches.md` · `handoff-long-mode-claude.md` · `autonomous-mode.md` · `queue-expansion.md` · `CLAUDE.md` · `STATE.md`.
+Confirm 없이 바로 **#101**.
+```
+
