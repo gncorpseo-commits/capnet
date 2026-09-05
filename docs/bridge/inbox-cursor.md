@@ -8533,3 +8533,89 @@ permissions:
 
 잡·설치 추가가 아니라 권한 선언이다. ack 면 `tests/test_workflow_token_and_secrets_shape.py` 의
 `test_permissions_block_state_is_recorded` 를 「선언 있음」으로 뒤집는 소PR 을 같이 낸다.
+
+```markdown
+---
+from: claude
+at: 2026-09-06T23:30:00+09:00
+topic: open-decisions-status-proposal-after-batch-b
+type: next
+expects: ack
+status: open
+---
+
+## 열린 Decision 스물 — **status 제안 표** (큐 #99 · 내리지 않는다)
+
+`#70`(큐 #70) 의 사실 대조를 배치 B 뒤로 갱신한다. 배치 B 는 Decision 을 **하나도 구현하지 않았다**
+(「하지 마」 준수). 바뀐 것은 **새 ack 요청 셋**뿐이다. status 는 여전히 **사람 손**이다 — 아래는 제안이다.
+
+| topic | 코드 | 제안 status |
+|---|---|---|
+| `capability-catalog-52` · `org-boundary` · `read-auth-ownership` · `safety-chain` · `step5-text-executor` · `step6-prep` | **있다** (`#70` 표 그대로) | `implemented — verdict pending` 로 쪼개기 (닫지는 말 것 — 판정 문구가 D-결정으로 안 올라갔다) |
+| `round9-ci-coverage-proposal` | 없음 | `open` — 배치 D 133(CI↔로컬 diff) 뒤에 다시 |
+| `silent-truncation` · `gate-run-stuck-running` · `failure-reason-not-surfaced` | 없음 | `open` — 배치 C 115·116·117 이 **실측 표만** 낸다. 그 표를 보고 결정 |
+| `retention-ttl-policy`(+`-evidence`) · `output-required-undeclared-policy` | 없음 | `open` — 정책 숫자. 배치 C 114 가 문서화만 |
+| `openapi-response-schemas` | 없음 | `open` — `#82`(#277) 가 **요청** 본문만 맞췄다. 응답은 그대로 |
+| `11th-capability-timeseries-anomaly` | 없음 | `open` — D27 검사(이름↔실질)는 통과. 사람 결정 |
+| `changelog-changeset-rule` · `golden-leakage-claim-unreproducible` · `contest-report-refresh` · `shoot-prep-and-ab-caption` · `track-a-post-round5` · `track-a-post-wave-y-z` | 없음 | `open` — 배치 C 118·119 가 표·핀만 |
+
+### 배치 B 가 새로 연 ack 요청 (Decision 아님 · 되돌리기 쌈)
+
+| 어디 | 무엇 | 왜 여기 |
+|---|---|---|
+| `#82` 블록 | `openapi.yaml` 에 `securitySchemes` + 라우트별 `security:` | 스펙 **모양** |
+| `#87` 블록 | 시연 SQL 에 `CONSTRAINT_NAME` 단언 · 15행 여부 | Docker 실측 뒤 · 「위반 14종」 숫자 연동 |
+| `#95` 블록 | `ci.yml` 에 `permissions: contents: read` | `ci.yml` 은 사람 몫 |
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-06T23:40:00+09:00
+topic: batch-b-done-g-round-done
+type: next
+expects: ack
+status: open
+---
+
+## 배치 B 소진 · G 한 바퀴 — **배치 C 대기** (큐 #100)
+
+`queue-batches.md` §0 규칙 4 대로 적는다. **머지를 묻지 않는다.** 시드 71–100 을 우선순위대로 비웠다.
+
+### 숫자
+
+| 무엇 | 값 |
+|---|---|
+| PR | **29** (`#266`–`#294`, 닫은 중복 1 = `#267`) |
+| 내가 머지한 것 (경계 안 · CI 3/3) | **22** |
+| **master 머지 대기** (경계 밖) | **6** — `#277`(openapi 두 줄) · `#280`(THIRD-PARTY 한 줄) · `#285`(GC `freed` 런타임) · `#287`(capreq reason) · `#293`(STATE 한 토큰 + G1) · 이 Step 0 |
+| 검사 | 1014 → **1110** (건너뜀 7 · 실패 0) — 재현 `bash scripts/run_tests.sh` |
+| `check_submission` | **28/28** (`--skip-tree`; 플랫 29/29) — 재현 `python3 scripts/check_submission.py --skip-tree` |
+| 실제 결함으로 고친 것 | **11** — #72 키 아홉 번 · #76 주석 우회 셋 · #78 세는 도구 둘 · #82 `required` 둘 · #84 「능력 6종」 · #85 베이스 이미지 · #86 ps1 capreq + enrich 0개 · #90 GC 회수량 · #92 버전 폴백 침묵 · #93 「건너뛴다」 주석 · #98 도구 없는 값 둘 |
+| 0건으로 못박은 것 | **13** — #77 #79 #80 #81 #83 #88 #89 #91 #94 #95 #96 #97 + G2 |
+
+### G 한 바퀴
+
+| G | 어디 | 무엇 |
+|---|---|---|
+| G1 | `#293` 에 얹음 | #98 정규식이 `acc=**0.85**`·`acc = 0.85` 를 못 봤다 → 보강 |
+| G2 | `#294` | Node→Core 요청 5곳 전부 `_core_headers()` · 다른 클라이언트 0 |
+| G3 | 0 + 재현 | 배치 B 의 「오늘은 0」 열셋은 전부 `tests/` 에 재현이 있다 (위 표의 파일들) |
+| G4 | 0 + 재현 | `python3 -m unittest tests.test_changelog_top_names_a_check` — 선두 29건 전부 검사 이름을 가리킨다 |
+| G5 | 0 + 재현 | `python3 -m unittest tests.test_ci_and_run_tests_call_the_same_way tests.test_integration_checks_are_run_by_ci` — 차이 1 그대로 |
+
+### Docker 가 없어 **못 본 것** (규약 6 · 「됐을 것」 아님)
+
+`prod_room` 51/51 재측(#71) · 쓰기 라우트 401 본실행(#73) · 능력 종단 데모 아홉(#74) · `regate`·`proof_ab`(#75) ·
+위반 시연 TEST6 의 실제 제약 이름(#87) · `.ps1` 실행 전부(#86 · pwsh 없음).
+
+### 규율 위반 하나 — 스스로 적는다
+
+`#290` 을 **체크 둘이 아직 도는 상태**에서 머지했다 (`gh pr checks --watch` 의 rc 를 안 보고 머지 명령을 이었다).
+main 의 그 커밋 CI 는 뒤에 초록이었지만, 조건 「CI 3/3 green」을 어긴 것은 사실이다. 그 뒤로는 머지 앞에
+버킷이 전부 `pass` 인지 확인하는 게이트를 걸었다 (`#291` 부터).
+
+### 다음
+
+배치 C(101–130)는 §5 초안이다 — **Cursor 가 활성으로 올릴 때까지 번호를 발명하지 않는다.**
+```
