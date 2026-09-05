@@ -1,5 +1,56 @@
 # Changelog
 
+## capreq 키 검사가 **낱말 하나만 보고 있었다** — URL 은 열려 있었다 — 2026-09-04
+
+큐 #35. `#192`·`#193`(Core) · `#194`(Node) 가 「키가 출력으로 새는가」를 전수했고,
+`test_capreq_binds_loopback` 이 capreq 쪽을 맡았다. 그 파일의 3번 주장이
+「**키는 헤더로만 나간다**」였는데, 그것을 지키던 검사는 한 줄이었다:
+
+```python
+self.assertIn("authorization", src.lower(), "키를 헤더로 안 보낸다")
+```
+
+**어댑터 소스에 그 낱말이 있기만 하면 통과한다.**
+
+### 실측 (2026-09-04) — 오늘 새는 곳은 **없다**. 그런데 막지도 않았다
+
+| 무엇 | 수 |
+|---|---|
+| `self.api_key` 를 **읽는** 자리 | **1** (`_headers()`) |
+| 키를 URL·쿼리에 싣는 자리 | **0** |
+| 그 0 을 **지키던** 검사 | **0** |
+
+키를 URL 에 심은 뮤테이션 셋이 **일곱 검사를 전부 초록으로 통과했다**:
+
+```python
+f"?capability={capability_code}&version={capability_version}&key={self.api_key}"
+f"{self.core_url}/{self.api_key}/v1/capabilities"
+f"{self.core_url}/v1/tasks/{task_id}?k={self.api_key}"
+```
+
+셋 다 `_headers()` 를 건드리지 않으므로 `authorization` 은 그대로 있다.
+**URL 은 헤더와 다르다** — 프록시 로그·`Referer`·브라우저 히스토리·Actions 로그에
+값이 그대로 남고, 지워도 캐시에 남는다. `#217` 이 Actions 로그를 「가장 나쁜 자리」라고
+적은 것과 같은 이유다.
+
+### 무엇으로 바꿨나 — **낱말이 아니라 읽는 자리**
+
+키를 어디에 싣든 **먼저 `self.api_key` 를 읽어야 한다.** 그래서 읽는(`ast.Load`)
+자리를 세고 `_headers()` 하나로 묶는다. 쓰기(`__init__` 의 `self.api_key = api_key`)는
+세지 않는다 — 보관은 정상이다. 읽는 자리를 묶으면 **쿼리·경로·본문·로그가 한꺼번에** 닫힌다.
+
+### 지키는 검사 — `test_capreq_binds_loopback` (7 → 9건)
+
+| 검사 | 무엇을 막나 |
+|---|---|
+| `test_only_the_header_builder_reads_the_key` | `_headers()` 밖에서 키를 읽으면 실패 |
+| `test_probe_finds_the_reader` | 읽는 자리가 0 이 되면 위 검사가 공허해지므로 실패 |
+
+**뮤테이션 4/4 잡는다** — 쿼리스트링 · URL 경로 · 폴링 URL · 헤더 빌더 제거.
+재현: `python3 -m unittest tests.test_capreq_binds_loopback` (의존성 0).
+
+`ALLOWED_READERS` 를 늘리려면 **거기 적고 왜 안전한지 근거를 남겨야** 한다.
+
 ## Core 를 우회하는 스크립트는 **하나뿐이고, 문서가 그렇게 적는다** — 2026-09-03
 
 큐 #29. 제품 주장의 한 줄이다 — 「사용자는 기기 주소를 모른다. 기기는 Core 가
