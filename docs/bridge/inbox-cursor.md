@@ -8317,3 +8317,59 @@ cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pul
 
 이어서는 `상태확인` 한 단어.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-05T18:20:00+09:00
+topic: batch-a-first-seven
+type: report
+expects: ack
+status: open
+---
+
+## 배치 A — 우선순위 첫 줄(41→44→46→50→43→42→45) 소진 · PR 여덟
+
+`main` 이 **빨간 채로** 시작했다. `#225` 가 네 번째 런북 `queue-batches.md` 를 만들며
+「상태확인」 복붙 블록을 그리로 옮기자, `#220` 의 `gh … list` 검사가 **손으로 적은 런북
+셋**만 보고 새 파일을 놓쳤다 — 세는 자리 3 → 2, 바닥이 울었다.
+
+| PR | 큐 | 무엇 |
+|---|---|---|
+| [#226](https://github.com/gncorpseo-commits/capnet/pull/226) | — | 새 런북이 검사 밖 (**main 빨강 복구**) · 손 목록을 훑기로 |
+| [#227](https://github.com/gncorpseo-commits/capnet/pull/227) | 41 | 「뷰 컬럼은 못 뽑는다」가 틀렸다 — 사각 **27건**을 열었다 |
+| [#228](https://github.com/gncorpseo-commits/capnet/pull/228) | 44 | `set -e` 없는 스크립트 **1** · 세던 검사 0 |
+| [#229](https://github.com/gncorpseo-commits/capnet/pull/229) | 46 | 「깨끗한 환경에서 전부」가 능력 **10 중 1** 이었다 |
+| [#230](https://github.com/gncorpseo-commits/capnet/pull/230) | 50 | **바닥을 내리면 초록** — 92건 등록부 |
+| [#231](https://github.com/gncorpseo-commits/capnet/pull/231) | 43 | 손 예외 목록 **12** 가 근거 없이 자랄 수 있었다 |
+| [#232](https://github.com/gncorpseo-commits/capnet/pull/232) | 42 | 통합 검사 **15** 는 CI 한 줄로만 돈다 · 못박은 검사 0 |
+| [#233](https://github.com/gncorpseo-commits/capnet/pull/233) | 45 | `!override` 는 **덮는다** — 문서가 요구 버전을 낮게 적었다 |
+
+전부 **한 갈래 스택**이다 (`#226` → … → `#233`). 꼭대기만 squash 하면 된다.
+
+### 실측 몇 가지
+
+- Core SQL 참조 **335 → 362** (뷰 컬럼 27건이 처음 검사 안으로)
+- 검사 **707 → 763** · 건너뜀 7 · 실패 0
+- 제품 오버레이 공개 포트: `compose.yaml` **5** → `+prod` **1** · `5432` 사라짐
+  (재현: `docker compose -f compose.yaml -f compose.prod.yaml config | grep -c published:`)
+
+### 환경 — 10회차와 다르다
+
+**Docker 데몬이 없다** (`docker info` 실패). `compose` **CLI 는 있어서**(v5.3.1)
+`config` 병합은 쟀다. 그래서 다음 둘은 **못 쟀다**고 적고 넘어갔다:
+
+- `prod_room.sh` 에 `-e` 를 켜고 51/51 재측 (큐 #44)
+- 능력 종단 데모 아홉을 `clean_room.sh` 에 넣기 (큐 #46)
+
+Docker 가 있는 회차의 첫 줄로 둔다.
+
+### 다음 줄 (배치 A 우선순위 계속)
+
+1. **49** — 쓰기 라우트 무인증 401 을 `prod_room` 이 안 재는가 (표+핀 · 파괴 없음)
+2. **64** — 경로 `{id}` 인증 GET 이 401 전에 404/422 로 끝나는가 (#223 일반화)
+3. **47** — `scripts/lib/{authprobe,tally,http}.sh` 판정 함수 단위 검사 0인가
+
+`ci.yml` 은 안 건드렸다 (`round9-ci-coverage-proposal` 은 열린 Decision).
+DDL·정책 숫자 변경 0. 머지는 master 몫 — 여기서 묻지 않는다.
+```
