@@ -89,6 +89,9 @@ def load() -> dict[str, int]:
 def check() -> list[str]:
     """등록부와 어긋난 것. 빈 목록이면 통과."""
     now, was = floors(), load()
+    # 추출기가 0건이면 「어긋남 0건」이 아니라 **추출기가 죽은 것**이다 (큐 #78).
+    if not now:
+        return ["바닥을 하나도 못 찾았다 — 추출기가 죽었다 (등록부와 대조하지 않는다)"]
     bad = [f"{k}: 등록 안 됨 (지금 {v})" for k, v in now.items() if k not in was]
     bad += [f"{k}: 사라진 바닥이 등록부에 남아 있다 (등록 {v})"
             for k, v in was.items() if k not in now]
@@ -109,6 +112,10 @@ def main() -> int:
         print(json.dumps(floors(), ensure_ascii=False, indent=2, sort_keys=True))
         return 0
     if a.write:
+        # 0건을 쓰면 등록부가 통째로 비고, 그 뒤 `--check` 는 영원히 초록이다.
+        if not floors():
+            print("바닥을 하나도 못 찾았다 — 등록부를 비우지 않는다", file=sys.stderr)
+            return 1
         REGISTRY.write_text(
             json.dumps(floors(), ensure_ascii=False, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",

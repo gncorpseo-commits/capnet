@@ -1,5 +1,23 @@
 # Changelog
 
+## 세는 도구 둘이 **0건을 통과로 치고 있었다** (배치 B #78) — 2026-09-06
+
+`floor_registry.py` 와 `room_check_count.py` 는 다른 검사가 기대는 **자**다. 자가 0 을 내면
+그 위의 검사는 「어긋남 0건」·「9/9」를 믿는다. 실측한 사각 셋:
+
+| 사각 | 전 | 후 |
+|---|---|---|
+| `floor_registry.check()` 추출기 0건 + 등록부 `{}` | `[]` = **통과** | 「추출기가 죽었다」 |
+| `floor_registry.py --write` 가 0건이면 | 등록부를 **비운다** → 이후 `--check` 영원히 초록 | rc 1, 안 쓴다 |
+| `room_check_count.py` 방이 0건 | `0건` 찍고 **rc 0** | rc 1 |
+| 목록 `for` 머리 뒤 `; do` 없음 | 조용히 세다 만다 | `ValueError` |
+
+`tests/test_counters_refuse_to_count_nothing.py` 가 넷을 고정. 뮤테이션 4/4 (문마다 하나씩 제거) 운다.
+
+```bash
+python3 -m unittest tests.test_counters_refuse_to_count_nothing
+```
+
 ## 등록된 바닥 140 중 **언제나 참인 것은 0** — 그걸 못박는다 (배치 B #77) — 2026-09-06
 
 `#230`(큐 #50)은 바닥을 등록부(`tests/floors.json`)에 적어 **내려가면 운다**고 했다.
