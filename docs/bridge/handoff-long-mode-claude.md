@@ -32,14 +32,14 @@
 
 ---
 
-## 1. 지금 어디인가 (8회차 PR 열림 · 큐 확장)
+## 1. 지금 어디인가 (10회차 머지 완료 · 11회차)
 
 | 항목 | 값 |
 |---|---|
-| main HEAD | `git log -1` 로 재확인 |
-| 열린 PR | `gh pr list --state open --limit 100` (#200·#201·#202 가 있을 수 있음) |
+| main HEAD | `9804b97` (#223) — 시작 시 `git log -1` 로 재확인 |
+| 열린 PR | `gh pr list --state open --limit 100` — **0이어야 정상** |
 | 실행 능력 | **10종** |
-| 다음 큐 | **#12** — `queue-expansion.md` |
+| 다음 큐 | **#41** — inbox `round10-step0-decision-ledger` · 아래 §6 |
 
 **첫 액션:**
 ```bash
@@ -48,11 +48,12 @@ git fetch origin main && git checkout main && git pull
 gh pr list --state open --limit 100
 git log -1 --oneline
 bash scripts/run_tests.sh 2>&1 | tail -5
-tail -n 80 docs/bridge/inbox-cursor.md
+tail -n 120 docs/bridge/inbox-cursor.md
 ```
 
-**8회차가 증명한 것:** 큐 10·5(버전)·11을 머지 없이 한 세션에서 소진. 그다음 멈춘 이유는 줄이 없어서다.  
-**브리지 정본:** `queue-expansion.md` + inbox 끝 `round9-queue`.
+**10회차가 증명한 것:** Docker 생김 → `clean_room` 9/9 · `prod_room` 51/51 · 큐 35·36·34·39 · #223(프로브 `node_id`).  
+시드 **12–40 소진.** 다음 줄은 inbox가 남긴 **41–45** (그다음 G1–G5).  
+**브리지 정본:** `queue-expansion.md` + inbox 끝 `round10` / `round11-queue`.
 
 ---
 
@@ -135,17 +136,29 @@ tail -n 80 docs/bridge/inbox-cursor.md
 
 ---
 
-## 6. 다음 큐 (9회차 · `queue-expansion.md` 정본)
+## 6. 다음 큐 (11회차 · inbox 정본 · 시드 12–40 소진)
 
-**완료(다시 하지 마):** #186–#196 · #200(큐10) · #201(큐5 버전) · #202(큐11 기록).
+**완료(다시 하지 마):**
+- 7회차 #186–#196 · 8회차 #200–#202 · 9회차 #205–#218
+- 10회차 #219(큐35) · #220(36) · #221(34) · #222(39 Step0) · #223(12옆)
+- 코드 없음으로 닫힌 것: 25·37·13·32·38·30 등 (inbox·STATE 표)
 
-**지금:** **#12** (`prod_room.sh` vs 공개 GET) → 13–40 → G1–G5.
+**지금 첫 줄: #41** → 42 → 43 → 44 → 45 → **G1–G5**.
 
-한 항목 = 한 PR. 끝나면 inbox에 다음 줄 ≥3. 응답 스키마·원고 문장은 Decision.
+| # | 무엇 |
+|---|---|
+| **41** | `_references()` 뷰 컬럼 10종 사각 — 정적 풀 or 「못 본다」 핀 (#221 옆) |
+| **42** | `tests/integration/check_*.py` 를 누가 돌리나 — CI migrate ↔ `run_integration.sh` (#215 옆) |
+| **43** | 손 허용 목록(`ALLOWED_READERS`·`REFERENCE_FLOOR` 등) 전수 — 늘릴 때 근거 자리 |
+| **44** | `scripts/*.sh` 중 `set -euo pipefail` 없는 것 — 중간 실패 초록 |
+| **45** | `compose.prod.yaml` `!override` 가 실제로 덮는지 — 정적 확인 (`prod_room` 51/51 은 이미 봄) |
+
+한 항목 = 한 PR. 끝나면 inbox에 다음 줄 ≥3. Decision 구현 금지(`queue-expansion.md` §7 · `round9-ci-coverage-proposal` 포함).
 
 ---
 
 ## 7. 매 PR 체크리스트
+
 
 - [ ] 절대규칙 8개
 - [ ] `bash scripts/run_tests.sh` (숫자 PR/inbox에)
@@ -176,7 +189,7 @@ tail -n 80 docs/bridge/inbox-cursor.md
 
 ---
 
-**시작: main pull → 큐 **12**. PR 후 멈추지 마.**
+**시작: main pull → 큐 **41**. PR 후 멈추지 마.**
 ```
 
 ---
@@ -185,6 +198,7 @@ tail -n 80 docs/bridge/inbox-cursor.md
 
 | 날짜 | main | 비고 |
 |---|---|---|
+| 2026-09-05 | `9804b97` | 10회차 머지(#219–#223) · 다음 큐 41–45 (#224) |
 | 2026-09-03 | `2c57c1e` | 큐 확장 전문 · 시드 12–40 · 종료 조건 개정 (#203) |
 | 2026-09-03 | `2cbb936` | `autonomous-mode.md` 전문 · handoff 요약 (#198) |
 | 2026-09-03 | `34d943f` | 자율 루프·실측 규율·8회차 큐 (#192/#196 교훈 반영) |
