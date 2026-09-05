@@ -59,6 +59,8 @@ EXEMPT, VOCAB = "예외", "어휘"
 REGISTRY: dict[str, tuple[str, int, str]] = {
     "test_authorization_never_reaches_a_message.py::EXEMPT":
         (EXEMPT, 1, "preprocess 설정 필드 이름을 도는 루프 변수 `key` — 값이 아니다"),
+    "test_integration_checks_have_no_skip_channel.py::SKIP_NAMES":
+        (VOCAB, 5, "unittest 의 건너뜀 호출 이름 — 탐지 어휘지 예외가 아니다"),
     "test_agent_arch_wiring.py::EXEMPT":
         (EXEMPT, 1, "일부러 불완전한 본문을 보내는 자리"),
     "test_capability_catalog.py::LOCKED_UNTIL_ISOLATION":
@@ -186,6 +188,7 @@ class TestVocabularyIsNotCountedAsAnExemption(unittest.TestCase):
         vocab = sorted(k for k, (kind, _, _) in REGISTRY.items() if kind == VOCAB)
         self.assertEqual(
             ["test_dataset_ids_do_not_drift.py::SKIP_DIRS",
+             "test_integration_checks_have_no_skip_channel.py::SKIP_NAMES",
              "test_secrets_never_reach_output.py::SKIP_PARTS",
              "test_skip_reasons.py::SKIP_CALLS"], vocab)
 

@@ -73,6 +73,8 @@
   "test_hand_allowlists_are_justified.py::test_enough_allowlists_are_seen#0": 12,
   "test_input_contract_rejections_actually_run.py::test_file_grows_while_the_stream_is_still_being_read#0": 0,
   "test_integration_checks_are_run_by_ci.py::test_enough_checks_exist#0": 12,
+  "test_integration_checks_have_no_skip_channel.py::test_every_main_calls_check_before_returning_zero#0": 3,
+  "test_integration_checks_have_no_skip_channel.py::test_no_unittest_skip_shapes#0": 12,
   "test_integration_runner.py::test_probe_actually_finds_things#0": 5,
   "test_license_coverage.py::test_capreq_runtime_deps_are_declared#0": 2,
   "test_loop_tests_have_a_floor.py::test_found_enough_test_files#0": 30,

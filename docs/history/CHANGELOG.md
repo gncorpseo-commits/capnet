@@ -1,5 +1,19 @@
 # Changelog
 
+## 통합 검사에는 **건너뜀 통로가 없다** — 그 상태를 못박는다 (배치 B #93) — 2026-09-06
+
+단위 검사의 skip 은 `test_skip_reasons` 가 사유를 `ALLOWED` 와 대조한다. 통합 검사 15개는 스크립트라
+그물 밖처럼 보였는데, 전수하니 스킵 호출 **0** · `check` 없이 `return 0` 하는 main **0** · 러너 집계는
+통과/실패 둘뿐. 유일한 「건너뛴다」는 `check_capability_patch.py` 의 **주석**이고 코드는 `check(False, …)`
+로 실패를 적는다 — 주석을 사실대로 고쳤다. 즉 「스킵 메시지 ↔ ALLOWED」는 비교할 스킵이 없다.
+
+`tests/test_integration_checks_have_no_skip_channel.py` 가 넷을 고정. 뮤테이션 3/3 (통합 검사에 `SkipTest` ·
+러너에 건너뜀 칸 · 주석 되돌림) 운다.
+
+```bash
+python3 -m unittest tests.test_integration_checks_have_no_skip_channel
+```
+
 ## 계약 필드의 기본값은 전부 **엄격한 쪽** — 표로 못박는다 (배치 B #91 · `#189` 계열) — 2026-09-06
 
 등록 본문에서 칸을 빼먹으면 기본값이 들어간다. 그게 「검사 없음·누구나·무제한」이면 빼먹은 등록이

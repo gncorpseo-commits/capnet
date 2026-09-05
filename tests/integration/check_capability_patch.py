@@ -105,7 +105,7 @@ def run_model_checks() -> None:
     """허용 밖 필드는 **모델이** 막는다 — 라우트에 화이트리스트를 손으로 적지 않는다."""
     try:
         from app.main import CapabilityDescriptionPatch
-    except Exception as exc:  # fastapi 가 없으면 이 검사만 건너뛴다
+    except Exception as exc:  # fastapi 가 없으면 **건너뛰지 않고 실패로 적는다** — 통합 검사에 skip 통로는 없다 (큐 #93)
         check(False, "app.main 임포트", f"{exc}")
         return
 
