@@ -22,6 +22,7 @@
   "test_catalog_has_a_registration_path.py::test_scripts_are_readable#0": 15,
   "test_changelog_integrity.py::test_probe_actually_finds_entries#0": 50,
   "test_changelog_top_names_a_check.py::test_enough_entries_are_read#0": 100,
+  "test_ci_and_run_tests_call_the_same_way.py::test_the_counter_reads_a_number#0": 25,
   "test_ci_claims_match_the_workflow.py::test_enough_ci_steps_are_seen#0": 12,
   "test_ci_claims_match_the_workflow.py::test_section_is_found_and_not_empty#0": 800,
   "test_ci_matches_run_tests.py::test_probe_actually_finds_tools#0": 2,

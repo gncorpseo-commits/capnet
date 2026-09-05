@@ -1,5 +1,50 @@
 # Changelog
 
+## 로컬도 CI 도 **안 보는 검사 한 건** (G5) — 2026-09-05
+
+G5 는 「CI 3잡이 로컬 `run_tests` 와 다른 파일을 보는가」다. `#215` 가 **도구 목록**을 이미
+맞췄으니 남은 것은 **인자**다 — 같은 도구를 다른 인자로 부르면 한쪽만 약해지고, 사람은
+로컬 초록을 믿는다.
+
+| 도구 | `run_tests.sh` | CI `unit` |
+|---|---|---|
+| `unittest discover` | `-s tests "$@"` | `-s tests -v` |
+| `check_golden_sha.py` | (없음) | (없음) |
+| `check_release.sh` | (없음) | (없음) |
+| `check_submission.py` | **`--skip-tree`** | `--verbose` **`--skip-tree`** |
+
+`-v`·`--verbose` 는 출력만 바꾼다. **실질적으로 다른 인자는 없다** ✅
+
+### 그런데 **둘 다 빼는** 검사가 하나 있다
+
+```text
+python3 scripts/check_submission.py --skip-tree   → 28/28
+python3 scripts/check_submission.py               → 29/29
+```
+
+`--skip-tree` 가 빼는 「워킹트리 깨끗 (패키징 전)」 한 건은 **로컬에서도 CI 에서도 안 돈다.**
+그건 의도다 — 작업 중에는 늘 더럽다. 대신 그 한 건은 **사람이 패키징 직전에** 맨몸으로
+돌려야 하고 체크리스트가 그렇게 적는다.
+
+**문제는 「하나」가 조용히 늘 때다.** `--skip-tree` 뒤에 검사가 더 숨으면 「28/28 통과」는
+그대로인데 안 도는 것이 둘·셋이 된다. 그래서 **그 차이를 1 로 못박는다.**
+
+### 값 읽기는 검사 호출이 아니다 (적어 둔다)
+
+`ci.yml` 의 migrate 잡이 `want=$(python3 scripts/check_golden_sha.py --print)` 로 골든 sha 를
+**읽는다.** 그걸 인자 차이로 세니 검사가 늘 빨갰다 — `$(` 가 든 줄은 뺀다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 로컬에만 `--skip-links` 추가 | `test_check_submission_is_called_the_same` |
+| `--skip-tree` 가 검사를 하나 더 빼게 | `test_skip_tree_hides_exactly_one_check` |
+| 체크리스트에서 패키징 안내 삭제 | `…tells_the_human_to_run_the_full_one` |
+| `run_tests` 에서 이유 주석 삭제 | `test_run_tests_says_why_it_skips` |
+
+재현: `python3 -m unittest tests.test_ci_and_run_tests_call_the_same_way` (8 검사 · 973 통과)
+
 ## 「0 이어야 한다」고 적어 놓고 **세지 않던 둘** (G3) — 2026-09-05
 
 G3 는 「「오늘은 0」인 전수의 재현 명령을 `tests/` 에 남겼는가 — 없으면 핀」이다.
