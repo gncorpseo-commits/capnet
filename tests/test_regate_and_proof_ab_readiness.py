@@ -39,10 +39,13 @@ r"""`regate.sh` · `proof_ab.sh` — **무엇이 있어야 도는가** (배치 B
 from __future__ import annotations
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402
 SCRIPTS = ROOT / "scripts"
 WEIGHTS = ROOT / "apps" / "node" / "weights"
 
@@ -119,7 +122,7 @@ class TestProbeActuallyScans(unittest.TestCase):
 
     def test_the_weight_reader_works(self) -> None:
         self.assertIn("eurosat_scratch_b.safetensors",
-                      SAFETENSORS.findall((SCRIPTS / "proof_ab.sh").read_text(encoding="utf-8")))
+                      SAFETENSORS.findall(hash_comment_free((SCRIPTS / "proof_ab.sh"))))
         self.assertEqual([], SAFETENSORS.findall("no weights here"))
 
 

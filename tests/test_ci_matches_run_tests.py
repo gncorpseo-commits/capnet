@@ -25,10 +25,13 @@ PR 은 CI 초록만 보고 지나간다. 0.25초짜리라 뺄 이유도 없었�
 from __future__ import annotations
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402
 RUNNER = ROOT / "scripts" / "run_tests.sh"
 CI = ROOT / ".github" / "workflows" / "ci.yml"
 
@@ -75,7 +78,7 @@ class TestCiSeesWhatRunTestsSees(unittest.TestCase):
 
     def test_ci_still_runs_the_unit_suite(self) -> None:
         """도구만 맞추고 정작 테스트를 안 돌리면 뜻이 없다."""
-        self.assertIn("unittest discover -s tests", CI.read_text(encoding="utf-8"))
+        self.assertIn("unittest discover -s tests", hash_comment_free(CI))
 
 
 if __name__ == "__main__":

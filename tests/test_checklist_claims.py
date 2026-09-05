@@ -27,10 +27,13 @@ from __future__ import annotations
 
 import re
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402
 CHECKLIST = ROOT / "docs" / "ops" / "contest-submission-checklist.md"
 SUBMISSION = ROOT / "scripts" / "check_submission.py"
 
@@ -105,7 +108,7 @@ class TestReleaseCheckIsWired(unittest.TestCase):
     def test_run_tests_runs_it(self) -> None:
         """매번 돌아야 한다 — 8/25 에 처음 보면 늦다."""
         self.assertIn("check_release.sh",
-                      (ROOT / "scripts" / "run_tests.sh").read_text(encoding="utf-8"))
+                      hash_comment_free((ROOT / "scripts" / "run_tests.sh")))
 
 
 if __name__ == "__main__":

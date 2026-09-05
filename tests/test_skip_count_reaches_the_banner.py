@@ -49,6 +49,8 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402
 RUN_TESTS = ROOT / "scripts" / "run_tests.sh"
 TESTS = ROOT / "tests"
 
@@ -143,7 +145,7 @@ class TestProbeActuallyScans(unittest.TestCase):
         self.assertGreaterEqual(len(_skip_sites()), 5, _skip_sites())
 
     def test_sed_line_is_found(self) -> None:
-        self.assertIn("skipped=", RUN_TESTS.read_text(encoding="utf-8"))
+        self.assertIn("skipped=", hash_comment_free(RUN_TESTS))
         self.assertEqual("3", _sed("OK (skipped=3)"))
 
 

@@ -1,5 +1,47 @@
 # Changelog
 
+## 설정을 `#` 로 꺼도 통과하던 자리 **셋 더** (배치 B #76 · G1 전수) — 2026-09-06
+
+`#258`(G1)이 `hash_comment_free()` 를 만들며 **두 자리**를 고쳤다. 나머지는 안 봤다.
+이번에 훑었더니 `.sh`·`.yaml` 에서 리터럴을 「있는가」로 보는 자리가 **열넷**이었고,
+**셋이 실제로 속았다.**
+
+| 심은 것 | 그 전 | 무엇이 되나 |
+|---|---|---|
+| `# python -m app.migrate status` | **통과** | migrate 가 baseline 을 **못 본 채 `up`** 을 돈다 |
+| `# source …/lib/tally.sh` | **통과** | `tally_verdict` 가 없어 **「0건 통과」 방어가 사라진다** |
+| `# source …/lib/http.sh` (`node_bind`) | **통과** | 키가 **공통 래퍼를 안 거친다** |
+
+둘째가 가장 크다 — `#180`·`#181` 이 세운 「0건은 통과가 아니다」가 **주석 한 글자로**
+꺼진다.
+
+`!override`(`#233`)와 `check_release` 호출은 **다른 검사가 잡았다** — 셋만 구멍이었다.
+
+### 규칙으로 굳혔다
+
+| 무엇을 보나 | 어떻게 |
+|---|---|
+| 설정이 **있다** (`source …` · `restart:` · `ports:`) | `hash_comment_free` 로 **걷고** |
+| **이유·경고가 적혀 있다** (initdb 함정 · 시크릿 위생) | **원문** — 주석이 본체다 |
+
+`COMMENT_IS_THE_POINT` 가 후자 **여섯**을 함수 단위로 못박는다. 새 자리가 표에 없으면 운다.
+설정을 보는 쪽은 **아홉 함수**를 일괄로 걷게 고쳤다.
+
+### 탐지기를 줄 단위 → **함수 단위**로
+
+한 함수에서 원문과 걷은 것을 같이 쓰는 자리가 있어, 줄 단위로 보면 고친 뒤에도 계속 걸렸다.
+「한 줄만 걷어도 그 함수는 걷는 쪽」으로 판정한다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 (고친 뒤) |
+|---|---|
+| migrate 대기 루프를 주석으로 | `test_the_wait_loop_is_still_there` |
+| `tally.sh` source 를 주석으로 | `test_both_rooms_source_and_call_it` |
+| `node_bind` 의 `http.sh` source 를 주석으로 | `test_node_bind_has_no_credential_of_its_own` |
+
+재현: `python3 -m unittest tests.test_config_literals_are_read_without_comments` (6 검사 · 1014 통과)
+
 ## `regate` 는 Docker 가 생겨도 **안 돈다** — `proof_ab` 는 돈다 (배치 B #75) — 2026-09-06
 
 `#254`(큐 #63)는 둘을 「본실행 못 봄」으로 묶었다. `#268`(큐 #74)에서 데모 아홉에 같은

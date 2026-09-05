@@ -102,7 +102,9 @@ class TestBindTouchesNoSecret(unittest.TestCase):
         """`node_bind.sh` 는 게이트·바인딩만 한다 — 증서를 다루면 자리가 하나 는다."""
         body = BIND.read_text(encoding="utf-8")
         self.assertNotIn("secret", body.lower().replace("secrets_dir", ""))
-        self.assertIn("scripts/lib/http.sh", body, "관리 키는 공통 래퍼로만 붙인다")
+        # 걷고 본다 (큐 #76) — 주석 처리해도 통과하던 자리다.
+        self.assertIn("scripts/lib/http.sh", hash_comment_free(BIND),
+                      "관리 키는 공통 래퍼로만 붙인다")
 
 
 class TestNodeReadsTheFileFirst(unittest.TestCase):
