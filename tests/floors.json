@@ -164,5 +164,7 @@
   "test_workflow_token_and_secrets_shape.py::test_job_env_carries_only_throwaway_values#0": 3,
   "test_write_route_minimal_bodies.py::test_models_are_read#0": 15,
   "test_write_route_minimal_bodies.py::test_most_routes_need_no_body#0": 10,
-  "test_write_route_minimal_bodies.py::test_write_routes_and_bodies#0": 20
+  "test_write_route_minimal_bodies.py::test_write_routes_and_bodies#0": 20,
+  "test_write_routes_request_body_agrees.py::test_enough_routes_are_seen#0": 20,
+  "test_write_routes_request_body_agrees.py::test_enough_routes_are_seen#1": 20
 }
