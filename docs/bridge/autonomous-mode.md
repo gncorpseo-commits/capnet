@@ -19,21 +19,23 @@
 |---|---|---|
 | **Claude** | 시드·G가 빌 때까지 PR·검사·브리지 Step 0 · **자기 스택 머지 (조건부 · 아래)** | Decision 단독 확정 · 조건 밖 머지 |
 
-> **머지 예외 (11회차 · 2026-09-06 사용자 승인 · 배치 B–D).** Claude 가 자기 스택을
-> 머지한다 — CI **3/3 green** · 변경이 `tests/`·`docs/`·`scripts/` 안 · 뮤테이션 ≥2 를
-> 돌려 PR 에 적었을 때만. 런타임 코드·DDL·`compose`·`ci.yml`·제품 주장·Decision `status`
-> 는 **그대로 사람 몫**이다. 배치 경계에서 꼭대기만 squash.
+> **머지 예외 (11회차 · 2026-09-06 사용자 승인 · 배치 C–D·최종 G).** Claude 가 자기 스택을
+> 머지한다 — CI **3/3 전부 pass** · 변경이 `tests/`·`docs/`·`scripts/` 안 · 뮤테이션 ≥2 를
+> 돌려 PR 에 적었을 때만. 체크가 도는 중 머지 금지(#290).
+> 런타임 코드·DDL·`compose`·`ci.yml`·제품 주장·Decision `status`
+> 는 **그대로 사람 몫**이다. 배치 경계에서 꼭대기만 squash. C 뒤 D, D 뒤 최종 — 재전달 대기 금지.
 | **Cursor/사람** | PR 리뷰 · main squash merge · Decision | 매 PR마다 「계속해」 재촉 |
 | **master** | main 머지 최종 | — |
 
 **핵심:** Claude는 PR을 올린 뒤 **머지를 기다리지 않고** 다음 큐로 간다.
 main이 늦어도 **스택 브랜치**로 작업을 이어간다.
+**배치 경계에서 Cursor를 기다리지 않는다** — C 소진 뒤 D, D 소진 뒤 최종.
 
 ---
 
 ## 2. 한 줄 규칙
 
-**PR 올렸다고 멈추지 마. 머지를 묻지 마. 활성 배치가 빌 때까지 돌린다. 「상태확인」= 동기화 후 즉시 다음 #.**
+**PR 올렸다고 멈추지 마. 머지를 묻지 마. C→D→최종이 빌 때까지 돌린다. 「상태확인」= 동기화 후 즉시 다음 #.**
 
 사용자가 **「상태확인」** 만 보내면 [`queue-batches.md`](./queue-batches.md) §1 (S0–S7)을 **한 턴에 끝낸 뒤** 다음 큐에 착수한다. 장문 브리핑·머지 요청·「계속?」 **금지**.
 
@@ -64,8 +66,9 @@ main이 늦어도 **스택 브랜치**로 작업을 이어간다.
 │     배치 남음 → A (질문·대기 없이)                            │
 │     Decision 막힘 → Proposal 1블록 → **다른 #**               │
 ├──────────────────────────────────────────────────────────────┤
-│  F. 배치 소진 → G1–G5 · Step 0 「다음 배치 대기」            │
-│     종료는 queue-expansion.md §2만                            │
+│  F. 배치 소진 → G1–G5 · Step 0 → **다음 예약 배치 즉시**     │
+│     C→D, D→최종. Cursor 재전달 대기 금지.                     │
+│     종료는 queue-expansion.md §2 · queue-batches.md §7 끝     │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -74,6 +77,7 @@ main이 늦어도 **스택 브랜치**로 작업을 이어간다.
 | 하면 안 됨 | 대신 |
 |---|---|
 | 「PR N개 올렸습니다, 머지해 주세요」로 턴 종료 | PR 올리고 **바로 다음 큐** |
+| 「배치 C 소진, D 활성화 기다림」 | Step 0 적고 **즉시 #131** |
 | 「main 이 늦어서 기다립니다」 | main 미변경 = 정상. **스택 위에서 계속** |
 | 스캐너/ast 「0건」만 보고 성공 보고 | **코드 확인 + 뮤테이션 ≥2** |
 | Docker/pip 없이 「됐을 것」 | **못 쟀다 + 이유** 적고 다음 큐 |
@@ -181,9 +185,9 @@ main ──●──●──●  (Cursor가 squash merge)
 
 **완료(다시 하지 마):** #186–#196 · 큐 10(#200) · 큐 5 버전(#201) · 큐 11 기록(#202).
 
-**지금 첫 줄:** **#12** (`prod_room.sh` vs 공개 GET). 그다음 13–40 · G1–G5.
+**지금 첫 줄:** **#101** (claim 루프 · SKIP LOCKED). 그다음 102–130 → D 131–160 → 최종 G.
 
-응답 스키마(45/45 부재) · 원고 기기 주소 문장은 **Decision** — 구현하지 마.
+응답 스키마 · 원고 기기 주소 문장 · TTL · 11번째 능력은 **Decision** — 구현하지 마.
 
 ---
 
@@ -202,11 +206,11 @@ main ──●──●──●  (Cursor가 squash merge)
 
 정본은 [`queue-expansion.md`](./queue-expansion.md) §2.
 
-1. **활성 배치와 G가 비었고** 다음 배치가 미기입이며 남은 일은 Decision 구현뿐
+1. **D #160 + 최종 G 한 바퀴 + 시드 종료 Step 0** 을 남겼고 남은 일은 Decision 구현뿐
 2. **하드 블로커** — schema/CHECK/정책 숫자/제품 주장
 3. 사용자가 **명시적으로 중단**
 
-**5·10·11 소진은 종료가 아니다.** 12번으로 간다.
+**C 소진·D 소진은 종료가 아니다.** 다음 표로 간다.
 
 ---
 
@@ -218,19 +222,20 @@ git fetch origin main && git checkout main && git pull
 gh pr list --state open --limit 100
 git log -1 --oneline
 bash scripts/run_tests.sh 2>&1 | tail -5
-tail -n 120 docs/bridge/inbox-cursor.md
+tail -n 80 docs/bridge/inbox-claude.md
+tail -n 80 docs/bridge/inbox-cursor.md
 ```
 
 **읽을 파일 (순서):**
 
-1. `docs/bridge/queue-batches.md` — **상태확인** · 활성 배치 A
+1. `docs/bridge/queue-batches.md` — **상태확인** · 활성 C · 연속 D·최종
 2. `docs/bridge/queue-expansion.md` — 종료 · G
 3. `docs/bridge/autonomous-mode.md` (이 파일)
 4. `docs/bridge/handoff-long-mode-claude.md` 안쪽 markdown 블록
-5. `docs/bridge/inbox-cursor.md` 끝
+5. `docs/bridge/inbox-claude.md` 끝 · `inbox-cursor.md` 끝
 6. `CLAUDE.md` — 절대 규칙
 
-**첫 작업:** 배치 B **#71**. 재시작은 채팅에 **`상태확인`**.
+**첫 작업:** 배치 C **#101**. 재시작은 채팅에 **`상태확인`**. C 소진 뒤 **즉시 D**.
 
 ---
 
@@ -262,6 +267,7 @@ tail -n 120 docs/bridge/inbox-cursor.md
 
 | 날짜 | main | 비고 |
 |---|---|---|
+| 2026-09-06 | — | C→D→최종 연속 · 첫 줄 #101 |
 | 2026-09-05 | — | 배치 A · queue-batches · 「상태확인」 |
 | 2026-09-03 | `2c57c1e` | 큐 확장 — §9·§11을 `queue-expansion.md`에 맡김 (#203) |
 | 2026-09-03 | `2cbb936` | 자율 모드 전문 최초 작성 (#198) |

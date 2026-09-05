@@ -25,9 +25,9 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
-> **배치 B 활성 (2026-09-05) — 시드 71–100.** 정본 [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) §4.
-> 배치 A·G1–G5 완료 (#262). Claude 전달 = handoff §「배치 B」·재시작 = **`상태확인`**.
-> 이후: C 101–130 · D 131–160 · 최종(Decision만).
+> **배치 C 활성 · C→D→최종 연속 (2026-09-06).** 정본 [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) §5–§7.
+> 배치 A·B·그 G 완료. Cursor 가 C만 켜고 멈추지 말라고 전달했다 — C 소진+G 뒤 **즉시 D**, D 뒤 **최종 G 한 바퀴**.
+> Claude 전달 = handoff §「C→D→최종」·재시작 = **`상태확인`**. 첫 줄 = **#101**.
 
 > **12회차 (2026-09-06) — 배치 B(71–100) 30줄 전부 소진 · PR 스물아홉 (`#266`–`#294`) · G 한 바퀴.**
 >
@@ -44,7 +44,7 @@
 >
 > Docker 가 없어 못 본 것: `prod_room` 재측 · 능력 데모 아홉 · `regate`/`proof_ab` · TEST6 제약 이름 · `.ps1` 전부.
 >
-> **다음:** 배치 C(101–130) **대기** — §5 초안을 Cursor 가 활성으로 올릴 때까지 번호를 발명하지 않는다.
+> **다음:** 배치 C(101–130) **지금** — #101부터. 발명 금지(161+). 114–119는 표·문서만. D·최종은 C Step 0 뒤 스스로.
 
 > **11회차 G 루프 (2026-09-06) — G1–G5 한 바퀴 · PR 다섯 (`#256`–`#261`).**
 >
