@@ -1,5 +1,19 @@
 # Changelog
 
+## `run_tests` 의 discover 가 빠뜨리는 검사 파일은 **0** — 로더로 못박는다 (배치 B #94 · G5 옆) — 2026-09-06
+
+`discover -s tests` 는 기본 패턴 `test*.py` 로 최상위만 본다. 파일이 빠져도 「전부 통과」가 찍힌다.
+정적 스캔은 상속으로 검사를 받는 두 파일을 「검사 0」으로 잘못 세었다 — 그래서 **같은 로더**로 실제로
+싣고 셌다: `tests/test_*.py` 120 = 적재 120 · 검사 0 인 모듈 0 · 적재 실패 0 · 패턴 밖 이름 0 ·
+`__init__.py` 없는 하위 폴더의 검사 0 · `-p` 좁힘 없음.
+
+`tests/test_discover_loads_every_test_file.py` 가 여섯을 고정. 뮤테이션 3/3 (`foo_test.py` · `__init__` 없는
+하위 폴더의 검사 · `-p "test_a*.py"`) 운다.
+
+```bash
+python3 -m unittest tests.test_discover_loads_every_test_file
+```
+
 ## 통합 검사에는 **건너뜀 통로가 없다** — 그 상태를 못박는다 (배치 B #93) — 2026-09-06
 
 단위 검사의 skip 은 `test_skip_reasons` 가 사유를 `ALLOWED` 와 대조한다. 통합 검사 15개는 스크립트라
