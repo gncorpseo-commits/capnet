@@ -1,5 +1,23 @@
 # Changelog
 
+## capreq 라우터의 **버전 폴백이 조용했다** — reason 에 남긴다 (배치 B #92 · `#216` 옆) — 2026-09-06
+
+미등록 `code` 는 `rejected=True` 로 막고 있었다. 그런데 `code` 는 있는데 **버전**이 없으면
+(`image.classify@7` 요청 · `@1` 만 등록) 같은 code 의 첫 등록 버전으로 바꿔 타면서 reason 에 아무
+흔적도 남기지 않았다. 계약 버전이 다르면 전처리·스키마가 다를 수 있다(D3) — 바꿔 탄 사실은 결과를
+보는 쪽이 알아야 한다. 폴백은 유지하고 reason 에 `버전 @7 은 카탈로그에 없다 → @1 로 라우팅` 을 남긴다.
+
+| 경우 | 동작 |
+|---|---|
+| 미등록 code | `rejected=True` (그대로) |
+| 버전만 없음 | 첫 등록 버전 + **reason 명시** (새로) |
+| code 비교 | 정확 일치 — 대소문자·유사도 폴백 없음 |
+
+`tests/test_capreq_router_never_falls_back_silently.py`(소스) + capreq 단위 검사 `test_version_fallback_is_said_out_loud`(`capreq` 폴더의 `test_router_unit.py`)
+(실행 · httpx 있는 CI capreq 잡). 뮤테이션 3/3 (폴백을 다시 조용하게 · 미등록을 rejected 없이 · 비교를 느슨하게) 운다.
+
+```bash
+python3 -m unittest tests.test_capreq_router_never_falls_back_silently
 ## G2 — Node 가 Core 를 부르는 다섯 자리 전부가 증서 헤더를 싣는다 (배치 B 뒤 G 라운드) — 2026-09-06
 
 `#89`(바이트 경로)·`#81`(증서 문자열 한 줄)의 형제 전수. `urllib.request.Request(` 5곳 전부 `headers=_core_headers()`,

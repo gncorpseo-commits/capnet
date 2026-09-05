@@ -109,8 +109,12 @@ class CapabilityRouter:
             ver_i = None
         matched = _find(caps, code, ver_i)
         if matched is None:
-            # 버전만 빠진 경우 같은 code 최신(목록 순서상 첫) 시도
+            # 버전만 빠진 경우 같은 code 최신(목록 순서상 첫) 시도.
+            # **조용히 바꾸지 않는다** — 계약 버전이 다르면 전처리·스키마가 다를 수 있다 (D3).
+            # 폴백 사실을 reason 에 남겨 결과를 보는 쪽이 알게 한다 (큐 #92).
             matched = _find(caps, code, None)
+            if matched is not None and ver_i is not None:
+                reason = f"버전 @{ver_i} 은 카탈로그에 없다 → @{matched.version} 로 라우팅 — {reason}"
         if matched is None:
             return RouteDecision(
                 capability_code=code,
