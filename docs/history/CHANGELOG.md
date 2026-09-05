@@ -1,5 +1,51 @@
 # Changelog
 
+## 마이그레이션은 실패하면 멈춘다 — 다만 **대기가 조용히 만료됐다** (큐 #57) — 2026-09-05
+
+세대 하나가 실패했는데 다음으로 넘어가면 DB 는 **어느 상태도 아니게** 된다. `0012` 가
+만든 컬럼을 `0013` 이 쓰는데 `0012` 가 없으면 오류는 `0013` 에서 나고 사람은 엉뚱한
+파일을 본다.
+
+| 무엇 | 값 |
+|---|---|
+| `cmd_up` 의 실패 처리 | `rollback()` → 메시지 → **`return 1`** ✅ |
+| 실패 메시지 | 「이 파일은 롤백됐다. **앞 파일들은 적용된 채로 남는다.**」 ✅ |
+| `core` 가 기다리는 조건 | `service_completed_successfully` ✅ |
+| `migrate` 재시작 정책 | `restart: "no"` ✅ |
+| `scripts/migrate.sh` | 종료 코드를 그대로 넘긴다 ✅ |
+
+**넘어가는 분기는 없다.**
+
+### 고친 것 하나
+
+compose 의 `migrate` 는 baseline 이 보일 때까지 60초 기다린 뒤 `up` 을 돈다. 그 루프가
+**성공했는지 만료됐는지 아무 말도 안 했다.**
+
+```sh
+for i in $(seq 1 60); do
+  python -m app.migrate status >/dev/null 2>&1 && break     # ← 만료도 여기로 나온다
+done
+exec python -m app.migrate up
+```
+
+**흐름은 안 바꿨다** — `up` 은 그대로 돈다(거기서 나는 오류가 더 구체적이다). 다만
+「60초를 기다렸다」가 로그에 남는다. 그게 없으면 「왜 baseline 이 없지」를 처음부터 다시
+찾게 된다. `sh -n` 과 `docker compose config` 로 확인했다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 실패 처리를 `continue` 로 | `test_the_handler_returns_instead_of_continuing` |
+| `core` 를 `service_started` 로 | `test_core_waits_for_success_not_completion` |
+| 대기 만료 보고 삭제 | `test_the_loop_reports_expiry` |
+| 래퍼에 `\|\| true` | `test_the_wrapper_propagates_the_exit_code` |
+
+마지막 뮤테이션이 `shift || true`(정상)까지 잡아 처음엔 늘 빨갰다 — **러너를 부르는 줄**만
+보게 좁혔다 (`#239` 의 `ALLOWED_SWALLOW` 와 같은 갈림).
+
+재현: `python3 -m unittest tests.test_migrate_stops_on_failure` (10 검사 · 909 통과)
+
 ## Node 증서는 **파일에만 산다** — 재전수 0건 (큐 #56) — 2026-09-05
 
 `compose.prod.yaml` 이 스스로 적는다:
