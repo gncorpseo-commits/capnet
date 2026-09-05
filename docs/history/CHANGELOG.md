@@ -1,5 +1,43 @@
 # Changelog
 
+## `datasetId` 는 두 종류다 — 그걸 모르면 **결함 열 건을 지어낸다** (큐 #66) — 2026-09-05
+
+`datasetId` 는 세 군데에 흩어져 있다 — 앱의 allowlist, 시드·데모의 **작업 페이로드**,
+화면이 읽는 `GET /v1/datasets`. 하나만 바뀌면 나머지가 조용히 낡는다.
+
+### 갈림 — `inputId` 가 있으면 allowlist 를 안 본다
+
+`#205`(D8′ · Decision A)가 연 자리다. 바이트가 이미 Core 를 거쳤으면 `datasetId` 를 다시
+묻는 것은 통제를 더하지 않고 **거짓말을 시킨다** — 텍스트 작업에 맞는 이름이 없어
+`eurosat-rgb` 를 적어야 했고, 그러면 증적에 **없던 데이터셋**이 남았다.
+
+```text
+datasetId 페이로드            21
+  ├ inputId 있음 (자유 이름)  10   전부 "text-demo" — 참인 이름이고 증적에 그대로 남는다
+  └ inputId 없음 (allowlist)  11   전부 "eurosat-rgb"
+allowlist 밖인데 inputId 없음  0   ✅
+```
+
+**첫 훑기는 「위반 10건」이라고 적을 뻔했다.** `#218` 이 `$node_id` 문자열을 세어
+「우회 일곱 건」이 될 뻔한 것과 같은 함정이라, **페이로드 단위**로 보고 `inputId` 유무를
+함께 읽는다.
+
+### 나머지 두 곳
+
+- `GET /v1/datasets` 가 **allowlist 를 그대로** 낸다 (화면이 읽는 값)
+- 시드의 `golden_metrics.dataset.id` 와 **골든 핀 파일 이름**이 그 집합과 맞는다
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `demo.sh` 의 `datasetId` 를 allowlist 밖으로 | `test_no_payload_without_input_id_leaves_the_allowlist` |
+| `/v1/datasets` 가 목록을 손으로 냄 | `test_the_route_serves_the_allowlist_itself` |
+| allowlist 에 핀 파일 없는 이름 추가 | `test_the_golden_pin_file_is_named_after_it` |
+| `if body.input_id is None:` 갈림 제거 | `test_the_branch_still_exists_in_core` |
+
+재현: `python3 -m unittest tests.test_dataset_ids_do_not_drift` (9 검사 · 855 통과)
+
 ## 실패한 회차에는 **건너뜀이 안 보였다** (큐 #58) — 2026-09-05
 
 `OK (skipped=7)` 은 초록으로 지나간다. 2026-09-01 에 실제로 6건이 조용히 빠졌고 아무도 그
