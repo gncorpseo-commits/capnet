@@ -51,8 +51,9 @@ def count(path: Path, verb: str) -> int:
             while j < len(lines) and "; do" not in lines[j]:
                 j += 1
             if j >= len(lines):
-                i += 1
-                continue
+                # 목록 for 의 머리를 봤는데 `; do` 가 없다 — 조용히 세다 말면
+                # 그 뒤 검사가 통째로 빠진다 (큐 #78).
+                raise ValueError(f"{path.name}:{i + 1} for 머리 뒤에 '; do' 가 없다")
             paths = sum(1 for raw in lines[i + 1:j] if QUOTED.match(raw))
             if re.match(r'^\s*"[^"]*"\s*;\s*do', lines[j]):
                 paths += 1
@@ -79,6 +80,11 @@ def main() -> int:
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
     got = counts()
+    # 0건은 「검사가 없다」가 아니라 **세는 쪽이 죽었다**는 뜻이다 (큐 #78).
+    empty = sorted(name for name, n in got.items() if n == 0)
+    if empty:
+        print(f"검사를 하나도 못 셌다: {', '.join(empty)}", file=sys.stderr)
+        return 1
     if a.json:
         print(json.dumps(got, ensure_ascii=False, sort_keys=True))
         return 0

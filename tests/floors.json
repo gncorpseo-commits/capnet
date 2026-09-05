@@ -47,6 +47,8 @@
   "test_core_sql_columns_exist.py::test_schema_is_read#1": 200,
   "test_core_sql_columns_exist.py::test_schema_is_read#2": 8,
   "test_core_sql_columns_exist.py::test_schema_is_read#3": 80,
+  "test_counters_refuse_to_count_nothing.py::test_real_extractor_still_finds_plenty#0": 100,
+  "test_counters_refuse_to_count_nothing.py::test_the_real_rooms_still_count#0": 0,
   "test_dataset_ids_do_not_drift.py::test_enough_payloads_are_seen#0": 15,
   "test_dataset_sha_consistency.py::test_site_list_did_not_shrink#0": 9,
   "test_every_route_declares_its_auth.py::test_probe_actually_found_routes#0": 20,
