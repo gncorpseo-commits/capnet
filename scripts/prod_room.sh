@@ -16,6 +16,9 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 source "$root/scripts/lib/tally.sh"
 # 인증 프로브 판정 — 000(응답 없음)을 통과로 세지 않는다. §13·§14 가 쓴다.
 source "$root/scripts/lib/authprobe.sh"
+# 키를 **argv 로 넘기지 않는다** (큐 #72 · #237 과 같은 자리). ccurl/ccode 가 헤더를
+# 0600 파일로 넘긴다. **키 없이 눌러야 하는 프로브는 아래 code() 를 그대로 쓴다.**
+source "$root/scripts/lib/http.sh"
 proj=capnet-prod
 core_port=18830
 node_port=18831
@@ -103,8 +106,8 @@ chk "무인증 Agent 등록 401" test "$c" = "401"
 
 echo
 echo "== 6) 잘못된 키도 막힌다 =="
-c=$(code -X POST "$CORE_URL/v1/nodes" -H 'content-type: application/json' \
-      -H 'Authorization: CapNet-Key ck_deadbeef.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' \
+c=$(CAPNET_API_KEY='ck_deadbeef.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' \
+      ccode -X POST "$CORE_URL/v1/nodes" -H 'content-type: application/json' \
       -d '{"name":"intruder2","device_type":"SERVER","trust_domain":"public","compute_tier_max":"S","provision_source":"public"}')
 echo "    POST /v1/nodes (가짜 키) → HTTP $c"
 chk "가짜 키 401" test "$c" = "401"
@@ -118,8 +121,7 @@ export CAPNET_API_KEY="$key"
 
 echo
 echo "== 8) 키가 있으면 통과한다 =="
-c=$(code -X POST "$CORE_URL/v1/nodes" -H 'content-type: application/json' \
-      -H "Authorization: CapNet-Key $key" \
+c=$(ccode -X POST "$CORE_URL/v1/nodes" -H 'content-type: application/json' \
       -d '{"name":"prod-probe","device_type":"SERVER","trust_domain":"team","compute_tier_max":"M","provision_source":"team"}')
 echo "    POST /v1/nodes (admin 키) → HTTP $c"
 chk "admin 키로 Node 등록" bash -c "[ '$c' = '200' ] || [ '$c' = '201' ]"
@@ -131,7 +133,7 @@ echo "== 8-1) 안전 자세 조회면도 강제 아래에 있다 (S2) =="
 c=$(code "$CORE_URL/v1/ops/safety")
 echo "    GET /v1/ops/safety (키 없음) → HTTP $c"
 chk "무인증 안전 조회면 401" test "$c" = "401"
-enf=$(curl -s -m 10 "$CORE_URL/v1/ops/safety" -H "Authorization: CapNet-Key $key" \
+enf=$(ccurl -s -m 10 "$CORE_URL/v1/ops/safety" \
       | python3 -c 'import json,sys; d=json.load(sys.stdin); e=d["enforcement"]; print(e["api_key"], e["node_credential"])' 2>/dev/null)
 echo "    admin 키로 조회 → enforcement: $enf"
 chk "강제 켜짐이 조회면에 그대로 보인다" test "$enf" = "True True"
@@ -140,8 +142,8 @@ echo
 echo "== 8-2) 초대 소진은 관리 키 없이 된다 (G2) =="
 # 이 경로만 키 없이 열린다 — 초대받은 사람에게는 관리 키가 없기 때문이다.
 # 열려 있다는 것과 아무나 쓴다는 것은 다르다. 둘 다 여기서 본다.
-inv=$(curl -s -m 10 -X POST "$CORE_URL/v1/nodes/invites" -H 'content-type: application/json' \
-      -H "Authorization: CapNet-Key $key" -d '{"trust_domain":"tenant","label":"prod-room"}')
+inv=$(ccurl -s -m 10 -X POST "$CORE_URL/v1/nodes/invites" -H 'content-type: application/json' \
+      -d '{"trust_domain":"tenant","label":"prod-room"}')
 itok=$(printf '%s' "$inv" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("secret",""))' 2>/dev/null)
 chk "초대 발행 (admin 키)" test -n "$itok"
 c=$(code -X POST "$CORE_URL/v1/nodes/redeem" -H 'content-type: application/json' -d '{"name":"crew-1"}')
@@ -168,8 +170,7 @@ c=$(code "$CORE_URL/v1/ops/status");        echo "    GET /v1/ops/status (키 �
 chk "무인증 운영 조회면 401" test "$c" = "401"
 c=$(code "$CORE_URL/v1/nodes-credentials"); echo "    GET /v1/nodes-credentials (키 없음) → HTTP $c"
 chk "무인증 증서 조회면 401" test "$c" = "401"
-echo -n "    enforcement: "; curl -s -m 10 "$CORE_URL/v1/ops/status" \
-  -H "Authorization: CapNet-Key $key" \
+echo -n "    enforcement: "; ccurl -s -m 10 "$CORE_URL/v1/ops/status" \
   | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["enforcement"], "ok=",d["ok"])' 2>/dev/null \
   || echo "(조회 실패)"
 
@@ -177,15 +178,14 @@ echo -n "    enforcement: "; curl -s -m 10 "$CORE_URL/v1/ops/status" \
 other=$(dc run --rm --no-deps core python -m app.apikey_cli issue --role user --label other 2>&1 \
         | grep -oE 'ck_[0-9a-f]{8}\.[A-Za-z0-9_-]+' | head -1)
 chk "다른 사용자 키 발급" test -n "$other"
-tid=$(curl -s -m 10 -X POST "$CORE_URL/v1/tasks" -H 'content-type: application/json' \
-      -H "Authorization: CapNet-Key $key" \
+tid=$(ccurl -s -m 10 -X POST "$CORE_URL/v1/tasks" -H 'content-type: application/json' \
       -d '{"datasetId":"eurosat-rgb","caseId":"ic1-0001"}' \
       | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))' 2>/dev/null)
 chk "작업 생성 (admin 키)" test -n "$tid"
-c=$(code "$CORE_URL/v1/tasks/$tid" -H "Authorization: CapNet-Key $key")
+c=$(ccode "$CORE_URL/v1/tasks/$tid")
 echo "    소유자(admin) 조회 → HTTP $c"
 chk "소유자는 자기 작업을 본다" test "$c" = "200"
-c=$(code "$CORE_URL/v1/tasks/$tid" -H "Authorization: CapNet-Key $other")
+c=$(CAPNET_API_KEY="$other" ccode "$CORE_URL/v1/tasks/$tid")
 echo "    다른 사용자 조회 → HTTP $c"
 chk "남의 작업은 404 (403 아님)" test "$c" = "404"
 c=$(code "$CORE_URL/v1/tasks/$tid")
@@ -195,8 +195,8 @@ chk "무인증 작업 조회 401" test "$c" = "401"
 echo
 echo "== 9) seed 게이트러너 증서 발급 → 파일 주입 =="
 runner=00000000-0000-4000-8000-000000000030
-cred=$(curl -s -m 10 -X POST "$CORE_URL/v1/nodes/$runner/credentials" \
-        -H 'content-type: application/json' -H "Authorization: CapNet-Key $key" \
+cred=$(ccurl -s -m 10 -X POST "$CORE_URL/v1/nodes/$runner/credentials" \
+        -H 'content-type: application/json' \
         -d '{"label":"prod-e2e"}' | python3 -c 'import json,sys; print(json.load(sys.stdin).get("secret",""))' 2>/dev/null)
 if [ -n "$cred" ]; then printf '%s' "$cred" > "$secrets/node-m-team.credential"; chmod 600 "$secrets/node-m-team.credential"; fi
 chk "증서 발급·파일 기록" test -s "$secrets/node-m-team.credential"
@@ -213,7 +213,7 @@ dc --profile demo up -d --build node-m-team >/dev/null 2>&1
 for i in $(seq 1 60); do curl -sf -m 3 "$NODE_URL/health" >/dev/null 2>&1 && break; sleep 2; done
 chk "Node health 200" test "$(code $NODE_URL/health)" = "200"
 sleep 5
-hb=$(curl -s -m 10 "$CORE_URL/v1/nodes-liveness" -H "Authorization: CapNet-Key $key" | python3 -c '
+hb=$(ccurl -s -m 10 "$CORE_URL/v1/nodes-liveness" | python3 -c '
 import json,sys
 d=json.load(sys.stdin)
 for n in d["nodes"]:

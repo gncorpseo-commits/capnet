@@ -78,8 +78,9 @@ exit "${STUB_RC:-0}"
 """
 
 
-def run_ccurl(env: dict[str, str], args: str = "-s http://example") -> dict[str, object]:
-    """가짜 curl 로 `ccurl` 을 한 번 부르고 관측값을 돌려준다."""
+def run_ccurl(env: dict[str, str], args: str = "-s http://example",
+              fn: str = "ccurl") -> dict[str, object]:
+    """가짜 curl 로 `ccurl`(또는 `ccode`)을 한 번 부르고 관측값을 돌려준다."""
     with tempfile.TemporaryDirectory() as tmp:
         stub_dir = Path(tmp) / "bin"
         stub_dir.mkdir()
@@ -96,7 +97,7 @@ def run_ccurl(env: dict[str, str], args: str = "-s http://example") -> dict[str,
         full["PATH"] = f"{stub_dir}:{full['PATH']}"
 
         proc = subprocess.run(
-            ["bash", "-euo", "pipefail", "-c", f'source "{HTTP}"; ccurl {args}'],
+            ["bash", "-euo", "pipefail", "-c", f'source "{HTTP}"; {fn} {args}'],
             capture_output=True, text=True, env=full, timeout=60,
         )
         read = lambda suffix: (  # noqa: E731
@@ -145,6 +146,28 @@ class TestTheKeyNeverReachesArgv(unittest.TestCase):
         self.assertFalse(Path(str(got["path"])).exists(), "실패 뒤 시크릿 파일이 남는다")
 
 
+class TestCcodeGoesThroughCcurl(unittest.TestCase):
+    """`ccode` 는 http_code 만 받는 판이다 — **같은 파일 경로**를 써야 한다 (큐 #72).
+
+    `prod_room` 이 이것을 쓰면서 키를 argv 로 넘기던 아홉 자리가 사라졌다.
+    """
+
+    def test_it_attaches_the_header_by_file(self) -> None:
+        got = run_ccurl({"CAPNET_API_KEY": KEY}, args='-s http://example', fn="ccode")
+        self.assertEqual(f"Authorization: CapNet-Key {KEY}\n", got["header"])
+        for arg in got["argv"]:
+            self.assertNotIn(KEY, arg, f"키가 argv 에 있다: {got['argv']}")
+
+    def test_it_asks_for_the_status_code_only(self) -> None:
+        got = run_ccurl({"CAPNET_API_KEY": KEY}, args='http://example', fn="ccode")
+        self.assertIn("%{http_code}", got["argv"])
+        self.assertIn("-o", got["argv"])
+
+    def test_without_a_key_it_adds_no_header(self) -> None:
+        got = run_ccurl({}, args='http://example', fn="ccode")
+        self.assertIsNone(got["header"])
+
+
 class TestKeyResolution(unittest.TestCase):
     def test_without_a_key_no_header_is_added(self) -> None:
         """강제가 꺼진 데모 경로를 깨지 않는다."""
@@ -181,6 +204,7 @@ class TestEveryLibFunctionHasAUnitCheck(unittest.TestCase):
         "tally_verdict": "test_room_tally.py",
         "probe_verdict": "test_prod_room_auth_probe.py",
         "ccurl": "test_lib_http_never_leaks_the_key.py",
+        "ccode": "test_lib_http_never_leaks_the_key.py",
     }
 
     def test_every_function_is_named_by_a_test(self) -> None:
@@ -190,6 +214,20 @@ class TestEveryLibFunctionHasAUnitCheck(unittest.TestCase):
                 path = tests / owner
                 self.assertTrue(path.is_file(), f"{owner} 가 없다")
                 self.assertIn(func, path.read_text(encoding="utf-8"))
+
+    def test_every_caller_sources_the_library(self) -> None:
+        """`source` 를 지우면 `ccurl`/`ccode` 가 **정의되지 않은 채** 돈다.
+
+        뮤테이션에서 그 줄을 지워도 아무도 안 울었다 — 그래서 여기서 본다.
+        """
+        import re as _re
+        bad = []
+        for path in sorted((ROOT / "scripts").glob("*.sh")):
+            body = path.read_text(encoding="utf-8")
+            uses = _re.search(r"(?<![a-z])(?:ccurl|ccode)\s", body)
+            if uses and "lib/http.sh" not in body:
+                bad.append(path.name)
+        self.assertEqual([], bad, f"ccurl/ccode 를 쓰면서 lib/http.sh 를 안 부른다: {bad}")
 
     def test_no_lib_function_is_unclaimed(self) -> None:
         """새 판정 함수가 검사 없이 생기면 운다."""
