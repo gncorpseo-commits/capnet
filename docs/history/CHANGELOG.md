@@ -1,5 +1,41 @@
 # Changelog
 
+## compose 헬스체크는 **항상 참이 아니다** — 오늘 0건, 모양을 못박는다 (큐 #61) — 2026-09-05
+
+헬스체크는 `depends_on: condition: service_healthy` 의 **유일한 근거**다. 그 명령이 언제나
+0 을 내면 「기다렸다」가 거짓이 되고 뒤 서비스는 **준비 안 된 DB 위에서** 뜬다.
+
+| 무엇 | 값 |
+|---|---|
+| `compose.yaml` 의 `healthcheck` | **1** — `postgres` |
+| 그 명령 | `pg_isready …` — 준비 전에는 **0 이 아니다** ✅ |
+| 항상 참인 헬스체크 | **0** ✅ |
+| `condition: service_healthy` 자리 | **2** — 둘 다 `postgres` |
+| 헬스체크 없는 서비스를 `service_healthy` 로 기다리는 곳 | **0** ✅ |
+
+### 적어 두는 것 — `core` 에는 헬스체크가 없다
+
+Node 셋은 `depends_on: [core]` 를 **조건 없이** 쓴다. 「컨테이너가 떴다」까지만 기다린다는
+뜻이다. 괜찮은 이유는 Node 가 하트비트를 **반복**하기 때문이다. 헬스체크를 새로 다는 것은
+이 큐의 범위가 아니라, **지금 모양을 못박아** 누가 `core` 에 `service_healthy` 를 걸면
+헬스체크부터 만들게 했다 — 없는 서비스에 걸면 compose 가 기동에서 죽는다.
+
+### 판정과 탐지기가 갈렸다 (적어 둔다)
+
+`["CMD", "true"]` 를 걸러내는 정규화를 **판정과 탐지기 검사에 따로** 적었더니 한쪽에서
+쉼표가 남아 첫 낱말이 `,` 가 됐다 — 탐지기 검사가 **자기 검사에 실패**하며 그걸 잡았다.
+같은 함수를 쓰게 합쳤다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 헬스체크를 `["CMD", "true"]` 로 | `test_every_healthcheck_can_fail` |
+| 헬스체크 없는 `core` 를 `service_healthy` 로 대기 | `test_every_wait_points_at_a_real_healthcheck` |
+| initdb 함정 주석 삭제 | `test_the_caveat_comment_is_there` |
+
+재현: `python3 -m unittest tests.test_compose_healthchecks_can_fail` (8 검사 · 835 통과)
+
 ## 「CI 가 본다」는 목록이 **실제보다 짧았다** (큐 #59) — 2026-09-05
 
 `#215` 가 잡은 것은 「**CI 가 본다**」가 **거짓**이던 자리였다. 이번에는 그 문장이 적힌
