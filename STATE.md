@@ -25,6 +25,10 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
+> **배치 B 활성 (2026-09-05) — 시드 71–100.** 정본 [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) §4.
+> 배치 A·G1–G5 완료 (#262). Claude 전달 = handoff §「배치 B」·재시작 = **`상태확인`**.
+> 이후: C 101–130 · D 131–160 · 최종(Decision만).
+
 > **11회차 G 루프 (2026-09-06) — G1–G5 한 바퀴 · PR 다섯 (`#256`–`#261`).**
 >
 > 배치 A 소진 뒤 `queue-expansion` §6 의 상시 생성기를 한 바퀴 돌렸다.
@@ -176,11 +180,11 @@
 
 > **8회차 (2026-09-03).** `2c57c1e` (#203 큐 확장 전문) 까지 · 실행 능력 10종.
 >
-> **자율 모드:** [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) (배치 A 41–70 · **상태확인**) ·
+> **자율 모드:** [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) (**배치 B 71–100** · 상태확인 · C/D/최종) ·
 > [`docs/bridge/queue-expansion.md`](docs/bridge/queue-expansion.md) (종료·G) ·
 > [`docs/bridge/autonomous-mode.md`](docs/bridge/autonomous-mode.md) (루프) ·
 > [`docs/bridge/handoff-long-mode-claude.md`](docs/bridge/handoff-long-mode-claude.md) (붙여넣기).
-> **다음 줄: 배치 A #41.** 재시작 = `상태확인`.
+> **다음 줄: 배치 B #71.** 재시작 = `상태확인`.
 >
 > `run_tests` **571 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` (#196·#188 합친 트리).
 > capreq 는 **이 환경에서 못 쟀다** — `pip` 가 없어 `httpx`·`fastapi` 가 빠지고

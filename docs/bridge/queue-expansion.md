@@ -55,7 +55,8 @@
 | 3·4·6·7·8·9 | #186–#196 | 7회차 |
 | **10** · **5**(버전) · **11** | #200–#202 | 8회차 |
 | **12–40** | #205–#223 등 | 9–10회차 · 시드 소진 |
-| **41–70** | — | **배치 A 진행 중** → [`queue-batches.md`](./queue-batches.md) §3 |
+| **41–70** | #226–#262 | **배치 A + G 완료** |
+| **71–100** | — | **배치 B 활성** → [`queue-batches.md`](./queue-batches.md) §4 |
 
 상세 완료 표·활성 시드는 **queue-batches.md** 가 정본이다.
 
@@ -111,17 +112,18 @@ G 루프는 Decision이 아니다. 새 능력이 아니다.
 
 **재시작:** 채팅에 `상태확인` → `queue-batches.md` §1.
 
-**첫 배치 A:**
+**첫 배치 B:**
 
 ```text
-배치 A (41–70). docs/bridge/queue-batches.md · autonomous-mode.md · handoff 안쪽 블록을 읽는다.
-「상태확인」절차로 동기화한 뒤 우선순위대로 41부터. 배치가 빌 때까지 멈추지 마. 머지 묻지 마.
+배치 B (71–100) 활성화. docs/bridge/queue-batches.md §4 · autonomous-mode.md · handoff 안쪽 블록을 읽는다.
+「상태확인」절차로 동기화한 뒤 우선순위대로 71부터. 배치가 빌 때까지 멈추지 마. 머지 묻지 마.
+Docker 없으면 본실행은 「못 봤다」만 적고 다음 번호. Decision 구현·ci.yml 수정 금지.
 cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
 ```
 
 읽을 순서: `queue-batches.md` → `queue-expansion.md` §2·§4 → `autonomous-mode.md` → handoff → inbox 끝 → `CLAUDE.md`.
 
-**첫 작업:** 큐 **#41**.
+**첫 작업:** 큐 **#71**.
 
 ---
 
