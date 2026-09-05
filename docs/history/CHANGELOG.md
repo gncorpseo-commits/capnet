@@ -1,5 +1,54 @@
 # Changelog
 
+## `prod_room` 이 `-e` 를 못 켜는 이유 — **정적으로 증명했다** (배치 B #71) — 2026-09-06
+
+`#228`(큐 #44)은 `prod_room.sh` 만 `set -e` 를 안 켠 것을 찾고 **「못 쟀다」**로 남겼다.
+Docker 가 없어 켠 채 51/51 을 다시 못 돌렸기 때문이다. 이번에는 **왜 못 켜는지**를
+재 보지 않고 증명했다.
+
+```bash
+CAPNET_API_KEY="$key" bash "$root/scripts/demo.sh" > "…/prod_demo.log" 2>&1
+rc=$?                                   # ← set -e 면 여기 못 온다
+chk "demo.sh 강제 모드 통과" test "$rc" = "0"
+```
+
+`demo.sh` 가 실패하는 **바로 그때** `-e` 가 셸을 죽인다. `rc=$?` 도, 로그 tail 도, `chk` 도
+안 돈다 — **tally 한 줄조차 안 찍힌다.** 실패를 세려고 만든 자리가 실패할 때 사라진다.
+
+`clean_room.sh` 가 `-e` 를 켜고도 멀쩡한 이유는 **전부 `step "…" cmd` → `if "$@"`** 이기
+때문이다. `if` 조건 안의 실패는 errexit 를 발동하지 않는다.
+
+**`prod_room` 의 `-e` 없음은 결함이 아니라 구조의 결과다.** 켜려면 §12 를 먼저 `chk`
+어법으로 옮겨야 하고, 그건 Docker 가 있는 회차에 51/51 을 다시 재면서 할 일이다.
+
+### `rc=$?` 전수
+
+| 무엇 | 수 |
+|---|---|
+| `scripts/*.sh` 의 `rc=$?` | **10** |
+| `set -e` 인 스크립트 안 | **9** |
+| 그중 **보호되지 않은 것** | **0** ✅ |
+
+### 거짓 결함 둘을 적을 뻔했다 (적어 둔다)
+
+첫 훑기는 `pass_rate.sh`·`score_n300.sh` 를 **위반**으로 셌다. 둘 다 앞에 `set +e` 가
+있는데 내 창이 **여섯 줄**이라 못 봤다. `set -e`/`set +e` 토글을 **파일 처음부터 따라가는**
+쪽으로 고쳤다 — 창 크기로 판정하지 않는다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `set -e` 아래 맨몸 `rc=$?` | `test_every_capture_is_protected` |
+| `set +e` 추적 제거 | 같은 검사 + `test_the_set_tracker_follows_toggles` |
+| §12 를 `\|\|` 로 보호 (= `-e` 가능해짐) | `test_the_blocking_shape_is_still_there` |
+| `clean_room` 이 조건 어법을 버림 | `…wraps_everything_in_a_condition` |
+
+**51/51 재측은 못 했다** — `docker info` 실패. 세 번째 뮤테이션이 그 날을 위한 표시다:
+§12 가 보호되면 검사가 울고, 그때 `-e` 를 켜고 다시 재면 된다.
+
+재현: `python3 -m unittest tests.test_exit_code_capture_is_errexit_safe` (8 검사 · 981 통과)
+
 ## 로컬도 CI 도 **안 보는 검사 한 건** (G5) — 2026-09-05
 
 G5 는 「CI 3잡이 로컬 `run_tests` 와 다른 파일을 보는가」다. `#215` 가 **도구 목록**을 이미
