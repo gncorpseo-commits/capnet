@@ -64,6 +64,19 @@ class TestAllowlist(unittest.TestCase):
         self.assertTrue(d.ok)
         self.assertEqual(d.capability_code, "image.classify")
 
+    def test_version_fallback_is_said_out_loud(self) -> None:
+        """없는 버전은 같은 code 의 등록 버전으로 가되, reason 이 그 사실을 말한다 (큐 #92)."""
+        llm = FakeLLM(
+            '{"capability_code":"image.classify","capability_version":7,'
+            '"confidence":0.9,"reason":"classify"}'
+        )
+        r = CapabilityRouter(catalog=self.catalog, llm=llm)  # type: ignore[arg-type]
+        d = r.route("사진 분류해줘")
+        self.assertTrue(d.ok)
+        self.assertEqual(d.capability_version, 1)
+        self.assertIn("@7", d.reason)
+        self.assertIn("@1", d.reason)
+
     def test_reject_unknown_code(self) -> None:
         llm = FakeLLM(
             '{"capability_code":"image.teleport","capability_version":1,'

@@ -1587,13 +1587,16 @@ def _gc_once() -> dict[str, int]:
         due = purge_due(conn, limit=GC_BATCH)
         for item in due:
             input_id = item["task_input_id"]
-            purge_blob(input_id)  # 파일이 이미 없어도 상태는 맞춰 둔다
+            # 파일이 이미 없어도 상태는 맞춰 둔다 — 단 **지금 지운 바이트만** 센다 (큐 #90).
+            # 결과를 버리면 이미 없던 파일의 크기까지 `freed_bytes` 에 더해 「지웠다」가 된다.
+            removed = purge_blob(input_id)
             if mark_purged(conn, input_id):
                 purged += 1
-                freed += int(item["byte_size"] or 0)
+                if removed:
+                    freed += int(item["byte_size"] or 0)
                 logger.info(
-                    "gc: input purged id=%s reason=%s bytes=%s",
-                    input_id, item["reason"], item["byte_size"],
+                    "gc: input purged id=%s reason=%s bytes=%s file_removed=%s",
+                    input_id, item["reason"], item["byte_size"], removed,
                 )
     return {
         "timed_out": timed_out,

@@ -628,6 +628,7 @@ paths:
         **등급은 여기서 정해져 초대장에 박힌다.** 소진하는 쪽은 바꾸지 못한다 (절대규칙 4).
         team 은 초대로 만들 수 없다 — DB 가 거절한다. admin 전용.
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -667,6 +668,7 @@ paths:
             type: string
             format: uuid
       requestBody:
+        required: true
         content:
           application/json:
             schema:
