@@ -75,6 +75,8 @@
   "test_prod_room_write_probes.py::test_enough_write_routes_are_seen#0": 20,
   "test_regate_respects_revocation.py::test_probe_actually_reads_the_script#0": 1500,
   "test_regate_respects_revocation.py::test_probe_actually_reads_the_script#1": 3,
+  "test_room_numbers_match_scripts.py::test_both_rooms_are_seen#0": 2,
+  "test_room_numbers_match_scripts.py::test_the_docs_actually_say_something#0": 2,
   "test_route_bench.py::test_confusable_pair_is_probed_from_both_sides#0": 2,
   "test_route_bench.py::test_confusable_pair_is_probed_from_both_sides#1": 2,
   "test_route_bench.py::test_the_catalog_probe_finds_things#0": 10,

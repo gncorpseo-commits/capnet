@@ -1,5 +1,59 @@
 # Changelog
 
+## 같은 방을 **27/27** 과 **51/51** 로 부르고 있었다 (큐 #48) — 2026-09-05
+
+`clean_room` · `prod_room` 의 통과 수는 문서 여러 곳에 **손으로** 적혀 있다. 스크립트가
+자라면 그 숫자가 낡는데 **아무도 세고 있지 않았다.**
+
+| 어디 | 뭐라고 |
+|---|---|
+| `docs/ops/shoot-day-runbook.md` | `prod_room` **통과 51** |
+| `docs/bridge/queue-batches.md` | `prod_room 51/51` |
+| **`docs/ops/contest-submission-checklist.md`** | `prod_room` **27/27** ← 낡았다 |
+
+`#205` 가 프로브 라우트를 **5 → 24** 로 늘리면서 27 이 51 이 됐다. 런북은 따라갔고
+**제출 정본 체크리스트는 안 따라갔다** — 심사자가 읽는 쪽이 낡은 것이다.
+
+### 실행 없이 센다
+
+`scripts/room_check_count.py` 가 소스에서 센다. 최상위 `chk`/`step` 은 한 건,
+`for path in … ; do … chk … done` 은 **경로 수 × 루프 안 chk 수**.
+
+```bash
+python3 scripts/room_check_count.py
+# clean_room   9건
+# prod_room    51건
+```
+
+### 계수기가 파이썬 `for` 에 속아 두 건을 잃을 뻔했다 (적어 둔다)
+
+`prod_room.sh` 안에는 `python3 -c '…'` 로 넘기는 코드가 있고 그 안의
+`for n in d["nodes"]:` 도 **열 0 에서 시작한다.** 셸 루프로 잡으면 그 뒤 최상위 `chk`
+**두 건이 통째로 사라져 49** 가 나온다 — 실제로 그렇게 나왔다. 셸 `for` 는 줄이 `\` 나
+`; do` 로 끝난다. **세는 도구도 틀릴 수 있어서**, 그 함정을 검사에 그대로 심어 뒀다.
+
+### 인용은 위반이 아니다
+
+런북은 「옛 27/27 은 낡았다」고 **적는다.** 그건 주장이 아니라 설명이라, `「…」` 안을
+걷어내고 본다 — `#220` 이 백틱을 걷어낸 것과 같은 규율이다.
+
+### 날짜를 지우지 않았다
+
+체크리스트 항목은 `2026-08-16` 재현 기록이다. **숫자만 51 로 바꾸면 그 날의 기록이
+거짓이 된다.** 8/16 의 27 은 그때 값으로 두고, `prod_room` 은 **2026-09-04 재측정
+51/51** 로 따로 적었다. 재현 명령 둘을 같이 붙였다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 체크리스트를 다시 `27/27` 로 | `test_no_stale_room_number` |
+| `clean_room` 에 `step` 하나 추가 | 같은 검사 + `test_counts_match_todays_measurement` |
+| 계수기를 파이썬 `for` 에 속게 | `test_the_counter_is_not_fooled` (4 ≠ 2) |
+
+재현: `python3 scripts/room_check_count.py` · `python3 -m unittest tests.test_room_numbers_match_scripts`
+(7 검사 · 792 통과)
+
 ## 주석이 금지한 것을 코드가 하고 있었다 — API 키가 `ps` 에 떴다 (큐 #47) — 2026-09-05
 
 `scripts/lib/*.sh` 의 판정 함수 셋 중 **하나만 검사 밖**이었다. 그리고 그 하나에서
