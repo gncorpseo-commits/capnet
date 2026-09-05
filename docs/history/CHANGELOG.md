@@ -1,5 +1,15 @@
 # Changelog
 
+## G2 — Node 가 Core 를 부르는 다섯 자리 전부가 증서 헤더를 싣는다 (배치 B 뒤 G 라운드) — 2026-09-06
+
+`#89`(바이트 경로)·`#81`(증서 문자열 한 줄)의 형제 전수. `urllib.request.Request(` 5곳 전부 `headers=_core_headers()`,
+다른 HTTP 클라이언트 0, 증서가 헤더가 되는 자리 1. `tests/test_node_calls_core_with_its_credential.py` 가 고정.
+뮤테이션 3/3 (한 호출에서 헤더 제거 · 헤더 없는 호출 추가 · `httpx` 임포트) 운다.
+
+```bash
+python3 -m unittest tests.test_node_calls_core_with_its_credential
+```
+
 ## `.ps1` 만 있는 경로를 WSL 안내가 「돌린다」고 적은 곳은 **0** — 못박는다 (배치 B #97) — 2026-09-06
 
 `#206`·`#240` 의 반대 방향. `.sh` 쌍둥이 없는 `.ps1` 은 `smoke_w1.ps1` 하나이고, WSL 안내(`docs/guide/*` ·
