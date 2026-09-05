@@ -56,10 +56,13 @@ CI 단위 잡에는 없다. 위 실측은 머리말에 명령과 함께 적었�
 from __future__ import annotations
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402
 BASE = ROOT / "compose.yaml"
 PROD = ROOT / "compose.prod.yaml"
 README = ROOT / "README.md"
@@ -139,7 +142,7 @@ class TestTheVersionRequirementIsWritten(unittest.TestCase):
     """`!override` 는 Compose **v2.24+** 다. 「v2」라고만 적으면 심사자가 연 채로 띄운다."""
 
     def test_prod_overlay_uses_the_tag(self) -> None:
-        self.assertTrue("!override" in PROD.read_text(encoding="utf-8"),
+        self.assertTrue("!override" in hash_comment_free(PROD),
                         "오버레이가 `!override` 를 안 쓴다 — 그럼 이 파일의 전제가 바뀐다")
 
     def test_readme_states_the_minimum(self) -> None:

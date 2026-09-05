@@ -38,10 +38,13 @@ Node 셋은 `depends_on: [core]` 를 **조건 없이** 쓴다. 그건 「컨테�
 from __future__ import annotations
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402
 COMPOSE = ROOT / "compose.yaml"
 PROD = ROOT / "compose.prod.yaml"
 
@@ -150,7 +153,9 @@ class TestTheInitdbTrapStaysWritten(unittest.TestCase):
                         f"compose.yaml 에서 initdb 함정 주석이 사라졌다: «{note}»")
 
     def test_the_wait_loop_is_still_there(self) -> None:
-        self.assertTrue("python -m app.migrate status" in COMPOSE.read_text(encoding="utf-8"),
+        # **걷고 본다** (큐 #76). 주석 처리해도 통과하던 자리다 — 대기 루프가 사라지면
+        # migrate 가 baseline 을 못 본 채 up 을 돈다.
+        self.assertTrue("python -m app.migrate status" in hash_comment_free(COMPOSE),
                         "compose.yaml 에서 migrate 의 대기 루프가 사라졌다")
 
 

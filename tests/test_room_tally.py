@@ -43,10 +43,13 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402
 LIB = ROOT / "scripts" / "lib" / "tally.sh"
 ROOMS = (ROOT / "scripts" / "clean_room.sh", ROOT / "scripts" / "prod_room.sh")
 OK_LINE = "전부 재현된다."
@@ -90,8 +93,12 @@ class TestRoomsUseIt(unittest.TestCase):
     def test_both_rooms_source_and_call_it(self) -> None:
         for path in ROOMS:
             with self.subTest(script=path.name):
-                body = path.read_text(encoding="utf-8")
+                body = hash_comment_free(path)
                 self.assertIn("scripts/lib/tally.sh", body, f"{path.name}: 안 부른다")
+                # 주석 처리해도 통과하던 자리다 (큐 #76) — `source` 가 없으면
+                # `tally_verdict` 가 정의되지 않고 「0건 통과」 방어가 통째로 사라진다.
+                self.assertIn("scripts/lib/tally.sh", hash_comment_free(path),
+                              f"{path.name}: source 가 주석 처리됐다")
                 self.assertIn("tally_verdict", body, f"{path.name}: 함수를 안 쓴다")
 
     def test_no_room_keeps_the_old_inline_verdict(self) -> None:

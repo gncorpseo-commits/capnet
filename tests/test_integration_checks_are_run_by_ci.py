@@ -42,10 +42,13 @@ glob 만 보고, `test_ci_matches_run_tests` 는 `run_tests.sh` 가 부르는 �
 from __future__ import annotations
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402
 CI = ROOT / ".github" / "workflows" / "ci.yml"
 RUNNER = ROOT / "scripts" / "run_integration.sh"
 INTEGRATION = ROOT / "tests" / "integration"
@@ -98,7 +101,7 @@ class TestCiActuallyRunsThem(unittest.TestCase):
 
     def test_run_tests_does_not_run_them(self) -> None:
         """여기가 바뀌면 이 파일의 전제가 바뀐다 — 그때 머리말을 같이 고친다."""
-        body = (ROOT / "scripts" / "run_tests.sh").read_text(encoding="utf-8")
+        body = hash_comment_free((ROOT / "scripts" / "run_tests.sh"))
         self.assertNotIn("run_integration.sh", body,
                          "run_tests 가 통합 검사를 부른다면 이 검사의 전제를 다시 적는다")
 
@@ -107,12 +110,12 @@ class TestTheRunnerRefusesToBeEmpty(unittest.TestCase):
     """0건이 통과면 CI 단계가 남아 있어도 지키는 게 없다."""
 
     def test_runner_fails_when_it_finds_nothing(self) -> None:
-        body = RUNNER.read_text(encoding="utf-8")
+        body = hash_comment_free(RUNNER)
         self.assertTrue("통합 검사를 하나도 못 찾았다" in body,
                         f"{RUNNER.name}: 러너가 0건을 통과로 넘긴다")
 
     def test_runner_still_globs(self) -> None:
-        body = RUNNER.read_text(encoding="utf-8")
+        body = hash_comment_free(RUNNER)
         self.assertTrue("check_*.py" in body,
                         f"{RUNNER.name}: glob 을 안 쓴다 — 하드코딩 목록이면 빠뜨린다")
 
