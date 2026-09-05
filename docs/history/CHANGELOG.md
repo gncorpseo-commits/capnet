@@ -1,5 +1,55 @@
 # Changelog
 
+## 손으로 적은 **예외 목록 열둘**이 근거 없이 자랄 수 있었다 (큐 #43) — 2026-09-05
+
+이 회차가 세운 검사들은 거의 전부 예외 목록을 하나씩 달고 있다:
+
+```python
+ARCHIVES = ("inbox-cursor.md", "inbox-claude.md")   # #226
+WITHOUT_ERREXIT = {"prod_room.sh": "큐 #44"}         # #228
+OUTSIDE_CLEAN_ROOM = {…열하나…}                      # #229
+ALLOWED_READERS = {"_headers"}                       # #196
+```
+
+**목록에 한 줄 더 넣으면 검사가 조용히 약해진다.** 「지키는 척」의 마지막 통로다 —
+`#230`(바닥 등록부)과 같은 자리이고, 이번에는 **예외 목록** 쪽이다.
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| `tests/` 의 허용 목록성 상수 | **14** |
+| 그것이 든 파일 | **9** |
+| 원소 합 | **40** |
+| **진짜 예외 목록** | **12** |
+| **어휘 집합**(예외가 아님) | **2** — `SKIP_PARTS` · `SKIP_CALLS` |
+| 늘어나는 것을 막던 검사 | **0** |
+
+### 어휘를 예외로 세면 「열넷」이 된다 — 그건 틀린 숫자다
+
+`SKIP_PARTS = {"__pycache__", "node_modules"}` 와 `SKIP_CALLS = {"skip", "skipIf", …}` 는
+**무엇을 봐줄지**가 아니라 **무엇을 부르는지**를 적은 어휘다. 이름에 `SKIP` 이 들어가
+탐지기에 걸릴 뿐이다. `#218` 이 `$node_id` 문자열을 세어 「우회 일곱 건」이 될 뻔한 것과
+같은 함정이라, 표가 **종류를 함께** 적는다.
+
+### 표가 못박는 것
+
+1. **새 허용 목록은 등록된다** — 표에 없으면 운다
+2. **원소가 늘면 운다** — 줄이는 것은 자유다 (예외가 줄어드는 건 개선이다)
+3. **예외는 근거를 코드 옆에 둔다** — 바로 위 주석이거나 값이 이유 문자열이다
+4. 사라진 목록은 표에서 빠진다
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `ARCHIVES` 에 한 줄 추가 | `test_no_allowlist_grew` |
+| 표 밖에서 새 `ALLOWED_ROOMS` 생성 | `test_no_allowlist_is_unregistered` |
+| `EXEMPT` 위 근거 주석 삭제 | `test_every_exemption_carries_its_reason_in_the_code` |
+| 어휘를 예외로 옮김 | `test_exemption_count_is_twelve` · `…vocab_sets_are_marked` |
+
+재현: `python3 -m unittest tests.test_hand_allowlists_are_justified` (9 검사 · 748 통과)
+
 ## 바닥을 내리면 **초록이었다** — 92건을 등록부로 못박는다 (큐 #50) — 2026-09-05
 
 이 회차들이 반복해서 잡아 온 결함은 **「0건인데 통과」**다 — `#180`(누출 검사가
