@@ -1,5 +1,42 @@
 # Changelog
 
+## `regate` 는 Docker 가 생겨도 **안 돈다** — `proof_ab` 는 돈다 (배치 B #75) — 2026-09-06
+
+`#254`(큐 #63)는 둘을 「본실행 못 봄」으로 묶었다. `#268`(큐 #74)에서 데모 아홉에 같은
+물음을 던졌더니 **막는 것이 Docker 하나뿐**이라는 답이 나왔다. 둘에도 물었고 **답이 갈렸다.**
+
+| 스크립트 | 필요한 것 | 저장소가 주는가 |
+|---|---|---|
+| `proof_ab.sh` | `eurosat_scratch` · `eurosat_scratch_b` **둘** | ✅ 둘 다 있다 |
+| | 살아 있는 스택 | ❌ Docker |
+| `regate.sh` | `provenance_drift` 에 **라우팅 가능한 드리프트 행** | ❌ **만들 수 없다** |
+| | 대상 Agent 의 가중치가 Node 에 | ❌ Docker |
+
+**`regate` 는 「Docker 가 생기면 돈다」가 아니다.** `clean_room` 이 「증적 드리프트 **0**」을
+확인하는 것이 정상이므로, 재게이트 **대상이 있으려면 골든셋을 실제로 교체**해야 한다 —
+Docker 가 있어도 **한 단계 더** 필요하다. `--dry-run` 으로 「대상 0」을 확인하는 것까지가
+현실적인 첫 걸음이고, 그 사실을 적어 둔다.
+
+### 말하는 문장에 또 속을 뻔했다 — **이번 회차 네 번째**
+
+「누가 부르는가」를 경로 문자열로 셌더니 `sanity.sh` 가 걸렸다. 실제로는 `echo` 안내였다:
+
+```text
+echo "sanity OK (floors FAILED). 사슬 위 A/B 교체는 scripts/proof_ab.sh."
+```
+
+`bash …` 로 **실행하는** 줄만 보게 좁혔다. `#220` 이 백틱을 걷어낸 것과 같은 규율이다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `sanity.sh` 가 **진짜로** `proof_ab` 를 실행 | `test_they_are_still_run_by_nobody` |
+| `--dry-run` 을 `--preview` 로 개명 | `test_it_has_a_dry_run` |
+| B 가중치를 트리에서 치움 | `test_both_weights_are_in_the_repo` |
+
+재현: `python3 -m unittest tests.test_regate_and_proof_ab_readiness` (9 검사 · 1008 통과)
+
 ## 능력 데모 아홉 — **막는 건 Docker 하나뿐이다** (배치 B #74) — 2026-09-06
 
 `#229`(큐 #46)는 `clean_room` 이 데모 **열셋 중 둘**만 돌리면서 「전부 재현된다」를 찍던
