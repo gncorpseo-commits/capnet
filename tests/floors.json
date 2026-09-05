@@ -126,6 +126,7 @@
   "test_run_tests_banner.py::test_not_vacuous#0": 800,
   "test_sbom_coverage.py::test_probe_actually_finds_things#0": 5,
   "test_sbom_coverage.py::test_probe_actually_finds_things#1": 5,
+  "test_sbom_entry_points_refuse_empty.py::test_enough_sources#0": 5,
   "test_schema_and_migrations_agree.py::test_baseline_size#0": 20,
   "test_schema_and_migrations_agree.py::test_baseline_size#1": 140,
   "test_schema_and_migrations_agree.py::test_composite_size#0": 26,

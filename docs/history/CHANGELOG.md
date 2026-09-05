@@ -1,5 +1,23 @@
 # Changelog
 
+## SBOM 진입점 셋 중 둘이 **의존성 없이 성공**하고 있었다 (배치 B #86) — 2026-09-06
+
+`#245` 는 `generate_sbom.sh` 에 「의존성 파일을 못 읽으면 멈춘다」를 달았다. SBOM 이 나오는 길은
+셋이다 — `.sh` · `.ps1` 쌍둥이 · 둘이 공유하는 `enrich_sbom.py`. 나머지 둘:
+
+| 진입점 | 전 | 후 |
+|---|---|---|
+| `generate_sbom.ps1` | `capreq/pyproject.toml` 을 안 읽는다 — Windows 에서 만든 SBOM 은 `httpx`·`python-multipart` 없이 exit 0 | `.sh` 와 같은 목록 · 이름 기준 중복 제거(fastapi 가 세 자리에 있다) |
+| `enrich_sbom.py` | raw 구성요소 **0개**여도 `sbom.json` 을 쓰고 exit 0 | 0개면 exit 1, 안 쓴다 |
+
+`tests/test_sbom_entry_points_refuse_empty.py` — `enrich` 는 실제로 돌리고(0개 → 실패, 1개 → 성공),
+`.ps1` 은 `pwsh` 가 없어 소스만 본다(주석 벗기고 호출 모양). 뮤테이션 3/3 (0개 거부 제거 ·
+ps1 에서 capreq 제거 · 중복 제거를 줄 단위로) 운다.
+
+```bash
+python3 -m unittest tests.test_sbom_entry_points_refuse_empty
+```
+
 ## 체크리스트·런북의 세는 숫자 7종 전수 — 낡은 것은 「능력 6종」 하나 (배치 B #84) — 2026-09-06
 
 `9/9`·`51/51`·가중치 `9종`·`완료 — 18개 적용` 은 이미 검사가 본다. 나머지를 실물과 대조했다:
