@@ -44,7 +44,7 @@ DB 와 대조하지 않았으면 **없는 컬럼 셋을 「드리프트」라고
 `apps/core/app/*.py` 의 SQL 문자열에서 `<별칭>.<컬럼>` 을 뽑고, `FROM`·`JOIN`·
 `UPDATE`·`INSERT INTO` 로 별칭→관계를 풀어 스키마에 있는지 본다.
 
-**실측 (2026-09-05): 참조 362건 · 관계 26종 · 없는 컬럼 0건.**
+**실측 (2026-09-05): 참조 449건 · 관계 26종 · 없는 컬럼 0건.**
 
 ## 사각이던 뷰를 열었다 (큐 #41)
 
@@ -74,10 +74,33 @@ LEFT JOIN LATERAL (SELECT * FROM node_session ns …) s ON TRUE;
 세고, 오늘의 **0** 을 `test_no_view_is_silently_skipped` 가 못박는다. 건너뛴 채로
 두면 그 뷰의 참조가 말없이 사라져 검사가 **지키는 척**만 한다.
 
+## 두 번째 사각도 열었다 — f-string SQL (큐 #51)
+
+첫 판은 `ast.Constant` 만 읽었다. 그런데 이 저장소에는 **조각을 조립한 SQL** 이 넷 있다:
+
+```text
+TOTALS_SQL = f-string:  WITH w AS ({_WINDOW})  SELECT {_AGG}, …  FROM w
+```
+
+`ast.Constant` 가 아니라 `ast.JoinedStr` 라서 **넷이 통째로 안 보였다** —
+`work_units.py` 셋 · `safety.py` 하나. 조각(`_WINDOW`·`_AGG`)은 **모듈 자리의 문자열
+상수**라 그대로 풀어 넣을 수 있다. 모르는 표현은 공백으로 둔다 — **반쪽이라도 보는 편이
+통째로 못 보는 것보다 낫다.**
+
+| 무엇 | 전 | 후 |
+|---|---|---|
+| Core 참조 | 362 | **449** (+87) |
+| 없는 컬럼 | 0 | **0** |
+
 ## 무엇을 안 보나 — 정직하게 적는다
 
 - **한정 없는 컬럼** (`WHERE status = …`). 어느 관계인지 정적으로 못 정한다
-- **문자열 조립으로 만든 SQL.** 이 저장소는 그렇게 쓰지 않지만, 쓰면 안 보인다
+- f-string 의 **모르는 조각**(함수 호출·조건식). 공백으로 두므로 그 부분은 안 보인다.
+  오늘 조각은 전부 모듈 상수라 **전부 풀린다**
+- **CTE 별칭의 컬럼** (`WITH w AS (…) … SELECT w.capability_id`). `w` 는 테이블도 뷰도
+  아니라 관계로 안 풀린다 — 뮤테이션으로 확인했다(`w.capability_idz` 로 바꿔도 안 운다).
+  조각 **안쪽**(`FROM assignment a`)과 함께 조인되는 실제 테이블은 본다
+- `%`·`.format()` 로 만든 SQL. 오늘 Core 에 **0건**이고, 아래 검사가 늘면 운다
 - 뷰가 `SELECT *` 를 쓰면 컬럼을 못 뽑는다 — **오늘 0건**이고 위 검사가 운다
 """
 
@@ -256,13 +279,51 @@ def schema() -> tuple[dict[str, set[str]], dict[str, set[str]]]:
     return cols, views
 
 
+def _module_strings(tree: ast.Module) -> dict[str, str]:
+    """모듈 자리의 `NAME = "…"` 문자열 상수. f-string SQL 의 조각을 풀 때 쓴다."""
+    out: dict[str, str] = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 \
+                and isinstance(node.targets[0], ast.Name) \
+                and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+            out[node.targets[0].id] = node.value.value
+    return out
+
+
+def _joined(node: ast.JoinedStr, frags: dict[str, str]) -> str:
+    """f-string 을 **읽을 수 있는 만큼** 편다.
+
+    조각이 모듈 상수면 그 값을 넣고, 모르는 표현이면 공백으로 둔다 — 반쪽이라도
+    보는 편이 통째로 못 보는 것보다 낫다 (큐 #51).
+    """
+    parts: list[str] = []
+    for value in node.values:
+        if isinstance(value, ast.Constant) and isinstance(value.value, str):
+            parts.append(value.value)
+        elif isinstance(value, ast.FormattedValue) and isinstance(value.value, ast.Name):
+            parts.append(frags.get(value.value.id, " "))
+        else:
+            parts.append(" ")
+    return "".join(parts)
+
+
 def _sql_literals(path: Path) -> list[tuple[int, str]]:
-    """소스를 **데이터로** 읽는다 — import 하지 않는다 (의존성 0)."""
+    """소스를 **데이터로** 읽는다 — import 하지 않는다 (의존성 0).
+
+    f-string 도 본다. `work_units.py` 의 `WITH w AS ({_WINDOW})` 처럼 **조각을 조립한
+    SQL** 이 이 저장소에 넷 있고, 첫 판은 `ast.Constant` 만 읽어 그 넷을 통째로 놓쳤다.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    frags = _module_strings(tree)
     out: list[tuple[int, str]] = []
-    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+    for node in ast.walk(tree):
+        text = None
         if isinstance(node, ast.Constant) and isinstance(node.value, str):
-            if len(node.value) > 30 and SQL_HINT.search(node.value):
-                out.append((node.lineno, node.value))
+            text = node.value
+        elif isinstance(node, ast.JoinedStr):
+            text = _joined(node, frags)
+        if text and len(text) > 30 and SQL_HINT.search(text):
+            out.append((node.lineno, text))
     return out
 
 
@@ -359,10 +420,10 @@ class TestProbeActuallyScans(unittest.TestCase):
             with self.subTest(column=f"{table}.{col}"):
                 self.assertIn(col, tables.get(table, set()))
 
-    # 오늘 실측 362 (뷰 컬럼 27건이 큐 #41 로 들어왔다 · 그전 335).
+    # 오늘 실측 449 (f-string SQL 87건이 큐 #51 로 들어왔다 · 그전 362 · 그전 335).
     # **별칭이 안 풀리면 참조가 조용히 빠지므로** 바닥을 가깝게 둔다.
     # 줄었다면 왜 줄었는지 확인하고 근거와 함께 이 수를 다시 적는다.
-    REFERENCE_FLOOR = 355
+    REFERENCE_FLOOR = 440
 
     def test_enough_references_are_checked(self) -> None:
         """`FROM task t` 에서 별칭 하나만 빠져도 열여덟 건이 말없이 사라진다."""
@@ -373,6 +434,44 @@ class TestProbeActuallyScans(unittest.TestCase):
             f"참조 {len(refs)}건밖에 못 봤다 (바닥 {self.REFERENCE_FLOOR}) — "
             "별칭이 안 풀렸을 수 있다. 줄어든 이유를 확인하고 바닥을 다시 적는다",
         )
+
+    def test_fstring_sql_is_read(self) -> None:
+        """조각을 조립한 SQL 넷 — `ast.Constant` 만 읽으면 통째로 안 보인다 (큐 #51)."""
+        seen = {name for name, _, _, _ in _references()}
+        joined = [(n, l) for n, l in
+                  [(p.name, l) for p in sorted(CORE.glob("*.py")) for l, _ in _sql_literals(p)]]
+        self.assertTrue(joined, "SQL 리터럴을 하나도 못 읽었다")
+        work = [(n, l, s) for n, l, s in
+                [(p.name, l, s) for p in sorted(CORE.glob("*.py")) for l, s in _sql_literals(p)]
+                if n == "work_units.py" and "WITH w AS" in s]
+        self.assertGreaterEqual(len(work), 3, f"work_units 의 조립 SQL {len(work)}건만 봤다")
+        self.assertIn("work_units.py", seen)
+        self.assertIn("safety.py", seen)
+
+    def test_fragments_are_substituted(self) -> None:
+        """조각을 안 풀면 `FROM w` 만 남아 **컬럼이 하나도 안 보인다**."""
+        body = [s for l, s in _sql_literals(CORE / "work_units.py") if "WITH w AS" in s]
+        self.assertTrue(body, "조립 SQL 을 못 찾았다")
+        self.assertIn("FROM assignment", body[0], "_WINDOW 조각이 안 풀렸다")
+
+    def test_no_percent_or_format_built_sql(self) -> None:
+        """`%`·`.format()` 조립은 여기서 안 보인다 — 오늘 0건이고, 생기면 운다."""
+        bad = []
+        for path in sorted(CORE.glob("*.py")):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Mod):
+                    left = node.left
+                    if isinstance(left, ast.Constant) and isinstance(left.value, str) \
+                            and SQL_HINT.search(left.value) and len(left.value) > 30:
+                        bad.append(f"{path.name}:{node.lineno}")
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+                        and node.func.attr == "format" \
+                        and isinstance(node.func.value, ast.Constant) \
+                        and isinstance(node.func.value.value, str) \
+                        and SQL_HINT.search(node.func.value.value):
+                    bad.append(f"{path.name}:{node.lineno}")
+        self.assertEqual([], bad, f"`%`·`.format()` 로 조립한 SQL: {bad}")
 
     def test_alias_resolution_works(self) -> None:
         """별칭을 못 풀면 참조가 통째로 빠지고 검사가 조용히 비어 버린다."""

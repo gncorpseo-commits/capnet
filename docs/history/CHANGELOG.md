@@ -1,5 +1,47 @@
 # Changelog
 
+## 두 번째 사각 — **f-string SQL 넷이 통째로 안 보였다** (큐 #51) — 2026-09-05
+
+`#227`(큐 #41)이 뷰 컬럼 사각을 열었다. 그 머리말이 남긴 다음 줄이 「문자열 조립으로 만든
+SQL 은 안 보인다」였고, **이 저장소에 실제로 넷 있었다.**
+
+```text
+TOTALS_SQL = f-string:  WITH w AS ({_WINDOW})  SELECT {_AGG}, …  FROM w
+```
+
+`ast.Constant` 가 아니라 `ast.JoinedStr` 라서 추출기가 **넷을 통째로 놓쳤다** —
+`work_units.py` 셋 · `safety.py` 하나. 조각(`_WINDOW`·`_AGG`)은 **모듈 자리의 문자열
+상수**라 그대로 풀어 넣을 수 있다. 모르는 표현은 공백으로 둔다 — **반쪽이라도 보는 편이
+통째로 못 보는 것보다 낫다.**
+
+| 무엇 | 전 | 후 |
+|---|---|---|
+| Core 참조 | 362 | **449** (+87) |
+| 없는 컬럼 | 0 | **0** |
+
+`REFERENCE_FLOOR` 355 → **440**.
+
+### 뮤테이션이 세 번째 사각을 드러냈다 (적어 둔다)
+
+조립 SQL 의 `w.capability_id` 를 `w.capability_idz` 로 바꿔 봤더니 **안 울었다.**
+`w` 는 CTE 별칭이라 테이블도 뷰도 아니고, 관계로 안 풀린다. 조각 **안쪽**
+(`FROM assignment a`)과 함께 조인되는 실제 테이블은 본다 — `a.vram_mb_peak` 를
+틀리게 하니 바로 울었다.
+
+**뮤테이션을 안 심었으면 「조립 SQL 을 이제 본다」를 과장해서 적을 뻔했다.**
+CTE 별칭은 사각으로 남겨 두고 머리말에 적었다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| f-string 을 다시 안 읽음 | 참조 449 → **362** · 조각 검사 |
+| 조각을 안 풀고 공백으로 | 참조 449 → **402** |
+| 조각 안쪽 `a.vram_mb_peak` 를 틀리게 | `test_every_qualified_column_exists` |
+| `%` 로 조립한 SQL 추가 | `test_no_percent_or_format_built_sql` |
+
+재현: `python3 -m unittest tests.test_core_sql_columns_exist` (11 검사 · 880 통과)
+
 ## Core 가 죽으면 Node 는 **혼자 성공으로 끝내지 않는다** — 오늘 0건 (큐 #67) — 2026-09-05
 
 `#207` 은 「Core 와 끊긴 Node 가 **한가한 Node 처럼** 보였다」를 고쳤다 — **조회** 쪽이다.
