@@ -17,7 +17,12 @@
 
 | 역할 | 함 | 안 함 |
 |---|---|---|
-| **Claude** | 시드·G가 빌 때까지 PR·검사·브리지 Step 0 | main merge/push · Decision 단독 확정 |
+| **Claude** | 시드·G가 빌 때까지 PR·검사·브리지 Step 0 · **자기 스택 머지 (조건부 · 아래)** | Decision 단독 확정 · 조건 밖 머지 |
+
+> **머지 예외 (11회차 · 2026-09-06 사용자 승인 · 배치 B–D).** Claude 가 자기 스택을
+> 머지한다 — CI **3/3 green** · 변경이 `tests/`·`docs/`·`scripts/` 안 · 뮤테이션 ≥2 를
+> 돌려 PR 에 적었을 때만. 런타임 코드·DDL·`compose`·`ci.yml`·제품 주장·Decision `status`
+> 는 **그대로 사람 몫**이다. 배치 경계에서 꼭대기만 squash.
 | **Cursor/사람** | PR 리뷰 · main squash merge · Decision | 매 PR마다 「계속해」 재촉 |
 | **master** | main 머지 최종 | — |
 

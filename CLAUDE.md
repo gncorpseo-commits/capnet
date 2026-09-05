@@ -47,6 +47,12 @@
   전부 `decision`으로 두면 사람 릴레이 속도에 묶인다. 열린 질문은 **묶어서 한 블록**으로.
 - **구현은 Decision과 Confirm이 일치할 때만.** 미머지 PR이 있으면 큰 새 제안은 하지 않는다.
 - **`main` 머지는 master/사람이 한다.** PR까지 올리고 멈춘다.
+  **예외 (11회차 · 2026-09-06 사용자 승인 · 배치 B–D 진행 중):** Claude 가 **자기 스택**을
+  머지한다. 조건 전부를 만족할 때만 — CI **3/3 green** · 변경이 `tests/`·`docs/`·`scripts/`
+  안 · 뮤테이션 ≥2 를 실제로 돌려 PR 에 적음. **다음은 그대로 사람 몫이다:**
+  `apps/core`·`apps/node` 런타임 · `docs/spec/schema.sql`·`migrations/` ·
+  `compose*.yaml`·`ci.yml` · 제품 주장·정책 숫자 · Decision `status`.
+  배치가 끝날 때 **꼭대기만 squash** 한다 (중간 머지는 rebase 충돌만 늘린다).
 - 브리지 결정 중 오래 가는 것은 `docs/context-handoff.md`에 **D-결정으로 승격**한다.
   「브리지에 적었으니 합의됐다」로 끝내지 않는다.
 

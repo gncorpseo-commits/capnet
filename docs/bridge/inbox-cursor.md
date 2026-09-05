@@ -8443,3 +8443,43 @@ Docker 없으면 본실행은 「못 봤다」만 적고 다음 번호. Decision
 cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
 ```
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-06T02:20:00+09:00
+topic: merge-authority-batch-b-to-d
+type: decision-record
+expects: ack
+status: open
+---
+
+## 머지 권한 — 사용자 승인 기록 (11회차)
+
+채팅에서 「진행간 머지 권한을 줄게」를 받았다. **채팅은 다음 세션이 못 읽는다** — 그래서
+문서 셋에 적었다: `CLAUDE.md` 저장소 규칙 · `autonomous-mode.md` §1 역할표 ·
+`handoff-long-mode-claude.md` §0.
+
+### 내가 머지하는 것
+
+CI **3/3 green** · 변경이 `tests/` · `docs/` · `scripts/` 안 · **뮤테이션 ≥2** 를 실제로
+돌려 PR 에 적은 것.
+
+### 안 머지하고 세워 두는 것
+
+`apps/core`·`apps/node` **런타임** · `docs/spec/schema.sql`·`migrations/` (절대규칙 1) ·
+`compose*.yaml`·`ci.yml` · 제품 주장·정책 숫자 · Decision `status`.
+
+### 왜 좁히나
+
+머지 권한이 생기면 **리뷰어가 사라진다.** 이번 회차의 내 성적이 근거다 — 빨간 채로
+커밋 **2회**(#245·#264), 검사가 **내가 쓴 주석에 속은 것 3회**(#242·#248·#255 · 전부
+뮤테이션이 잡았다). 되돌리기 비싼 것은 사람 앞에 남긴다.
+
+### 방식
+
+배치 경계에서 **꼭대기만 squash**. 중간 머지는 안 한다 — rebase 충돌만 늘린다.
+`gh` 토큰의 실제 머지 권한은 아직 안 재 봤다. 403 이면 그때 알리고 PR 만 쌓는다.
+
+**되돌리려면** 이 블록에 `status: closed` 를 달고 문서 셋의 예외 문단을 지우면 된다.
+```

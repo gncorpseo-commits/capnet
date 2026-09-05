@@ -31,7 +31,10 @@
 
 - **WSL만** — `~/pjt/ai-agent-store`
 - 커밋: `git -c user.name=toma -c user.email=252522396+gncorpseo-commits@users.noreply.github.com commit`
-- `git add -A` / `git add .` **금지** · **main push/merge 금지**
+- `git add -A` / `git add .` **금지**
+- **main 머지: 조건부 허용** (11회차 · 2026-09-06 승인 · 배치 B–D) — CI 3/3 ·
+  `tests/`·`docs/`·`scripts/` 안 · 뮤테이션 ≥2. 런타임·DDL·`compose`·`ci.yml`·
+  제품 주장·Decision `status` 는 **사람 몫**. `main` 직접 push 는 여전히 금지
 - `gh pr list --state open --limit 100` **필수**
 - CHANGELOG: `docs/history/CHANGELOG.md` 선두만
 - **Docker 없으면** 본실행은 「못 봤다」+다음 # — 「됐을 것」 금지
