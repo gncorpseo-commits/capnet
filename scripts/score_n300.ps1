@@ -1,12 +1,15 @@
 # n=300 골든셋 채점. A/B Must 아님. 결과는 artifacts/ 에 JSON 저장.
 param(
     [string]$Weights = "eurosat_scratch.safetensors",
-    [string]$OutName = ""
+    [string]$OutName = "",
+    # 동명 .sh 의 GOLDEN 과 같은 자리 (큐 #53). 홀드아웃을 재려면 여기를 바꾼다:
+    #   scripts\score_n300.ps1 -Golden data\golden-n300-holdout
+    [string]$Golden = "data\golden-n300"
 )
 
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$golden = Join-Path $root "data\golden-n300"
+$golden = Join-Path $root $Golden
 $manifest = Join-Path $golden "manifest-image-classify-n300.json"
 $cases = Join-Path $golden "cases"
 $weightsHost = Join-Path $root "apps\node\weights\$Weights"
@@ -19,7 +22,8 @@ if (-not (Test-Path $weightsHost)) {
 }
 
 $stem = [IO.Path]::GetFileNameWithoutExtension($Weights)
-if (-not $OutName) { $OutName = "score-n300-$stem.json" }
+# 이름에 골든셋을 넣는다 — 동명 .sh 와 같아야 compare_ab 가 같은 파일을 본다 (큐 #53).
+if (-not $OutName) { $OutName = "score-n300-$stem-$(Split-Path -Leaf $golden).json" }
 $art = Join-Path $root "artifacts"
 New-Item -ItemType Directory -Force -Path $art | Out-Null
 $outPath = Join-Path $art $OutName

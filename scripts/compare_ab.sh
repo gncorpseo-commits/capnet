@@ -2,8 +2,10 @@
 # paired A/B 비교 골격. Contest Must 아님.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-SCORE_A="${SCORE_A:-artifacts/score-n300-eurosat_scratch.json}"
-SCORE_B="${SCORE_B:-artifacts/score-n300-eurosat_scratch_b.json}"
+# `score_n300.sh` 가 **실제로 쓰는** 이름이다 — 예전 기본값은 골든셋 이름이 빠져 있어
+# 문서대로 돌리면 「missing …」으로 끝났다 (큐 #53).
+SCORE_A="${SCORE_A:-artifacts/score-n300-eurosat_scratch-golden-n300.json}"
+SCORE_B="${SCORE_B:-artifacts/score-n300-eurosat_scratch_b-golden-n300.json}"
 MAX_DEV="${MAX_DEVIATION:-0.05}"
 MIN_N="${MIN_N:-300}"
 a="$root/$SCORE_A"
