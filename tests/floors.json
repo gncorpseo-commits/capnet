@@ -86,6 +86,7 @@
   "test_run_tests_banner.py::test_not_vacuous#0": 800,
   "test_sbom_coverage.py::test_probe_actually_finds_things#0": 5,
   "test_sbom_coverage.py::test_probe_actually_finds_things#1": 5,
+  "test_scripts_do_not_swallow_failures.py::test_enough_http_code_sites_are_seen#0": 8,
   "test_scripts_go_through_core.py::test_found_scripts_that_touch_the_node#0": 5,
   "test_scripts_set_errexit.py::test_enough_scripts_are_seen#0": 30,
   "test_scripts_set_errexit.py::test_libs_are_seen#0": 3,

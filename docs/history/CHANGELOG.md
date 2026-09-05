@@ -1,5 +1,63 @@
 # Changelog
 
+## SBOM 이 의존성 없이 **조용히** 만들어질 수 있었다 (큐 #55) — 2026-09-05
+
+`#205` 가 남긴 교훈은 「**응답 없음(`000`)을 통과로 세지 마라**」였다. 같은 질문을 셸 쪽
+전체에 물었다 — `|| true` · `|| :` 는 **직전 명령의 실패를 지운다.**
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| `scripts/**/*.sh` 의 `\|\| true` · `\|\| :` | **18** |
+| 그중 **실제 결함** | **1** — `generate_sbom.sh` |
+| 근거가 서는 자리 | **17** |
+| `%{http_code}` 를 받는 자리 | **10** |
+| 그중 `000` 이 새는 곳 | **0** — 전부 **허용 목록 비교**(`== "200" \|\| == "409"`) |
+
+### 결함
+
+```bash
+grep -v '^\s*#' "$root/apps/core/requirements.txt" || true   # ← 파일이 없어도 넘어간다
+```
+
+`grep` 은 파일이 없으면 **2** 로 죽는다. `|| true` 가 그걸 지웠다:
+
+```text
+$ bash -c 'set -euo pipefail; { grep -v "^#" /nonexistent/requirements.txt || true; }; echo rc=$?'
+grep: /nonexistent/requirements.txt: No such file or directory
+rc=0                            ← SBOM 은 core 의존성 없이 만들어지고 exit 0
+```
+
+`capreq` 쪽은 `[ -n "$capreq_reqs" ] || exit 1` 로 막혀 있었는데 **`requirements.txt` 둘만
+안 막혀 있었다.** 대회 2차 라이선스 검증에 내는 산출물이라 **빠진 채 초록**인 것이 가장 나쁘다.
+
+고친 방법 둘:
+
+1. 파일 존재를 **`pip install` 전에** 본다 — 없는 파일 하나 때문에 몇십 초를 기다리지 않는다
+2. `|| true` → `|| [ "$?" -eq 1 ]` — grep 의 **1**(고른 줄 없음)만 봐주고 **2**(읽기 실패)는 죽는다
+
+### 나머지 열일곱은 근거가 선다
+
+`shift`(인자 없음) · 뒷정리(`down -v`·`kill`·`tail`) · `grep -c .`(0건) · 데모의 id 추출
+(바로 뒤 `ccurl -sf` 가 다시 확인한다). `ALLOWED_SWALLOW` 가 **파일별 개수**로 못박는다.
+
+### 실제로 돌려 봤다
+
+정적 검사만으로는 가드가 도는지 모른다. 임시 트리에 스크립트를 복사하고 `requirements.txt`
+하나를 빼고 **실행**해 종료 코드와 메시지를 확인한다 — Docker 없이 돈다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 존재 가드 삭제 | 실행 검사 **2건** (없는 파일인데 통과) |
+| `\|\| [ "$?" -eq 1 ]` 를 `\|\| true` 로 | 표 검사 2건 + `test_grep_only_forgives_no_match` |
+| 새 스크립트가 `\|\| true` 로 삼킴 | `test_every_swallow_is_accounted_for` |
+| `text_demo` 의 http_code 비교 삭제 | `test_every_http_code_check_is_an_allowlist` |
+
+재현: `python3 -m unittest tests.test_scripts_do_not_swallow_failures` (10 검사 · 802 통과)
+
 ## 같은 방을 **27/27** 과 **51/51** 로 부르고 있었다 (큐 #48) — 2026-09-05
 
 `clean_room` · `prod_room` 의 통과 수는 문서 여러 곳에 **손으로** 적혀 있다. 스크립트가

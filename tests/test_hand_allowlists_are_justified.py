@@ -19,10 +19,10 @@ ALLOWED_READERS = {"_headers"}                            # #196
 
 | 무엇 | 수 |
 |---|---|
-| `tests/` 의 허용 목록성 상수 | **15** |
-| 그것이 든 파일 | **10** |
-| 원소 합 | **46** |
-| 그중 **진짜 예외 목록** | **13** |
+| `tests/` 의 허용 목록성 상수 | **16** |
+| 그것이 든 파일 | **11** |
+| 원소 합 | **60** |
+| 그중 **진짜 예외 목록** | **14** |
 | **어휘 집합**(예외가 아님) | **2** — `SKIP_PARTS` · `SKIP_CALLS` |
 | 늘어나는 것을 막던 검사 | **0** |
 
@@ -83,6 +83,8 @@ REGISTRY: dict[str, tuple[str, int, str]] = {
         (EXEMPT, 4, "건너뛰어도 되는 사유 — 허가제 (Wave W)"),
     "test_room_numbers_match_scripts.py::OUTSIDE_THE_CHECK":
         (EXEMPT, 6, "연대기 문서 — 그때의 실측을 보존한다 (큐 #48)"),
+    "test_scripts_do_not_swallow_failures.py::ALLOWED_SWALLOW":
+        (EXEMPT, 14, "실패를 지워도 되는 자리 — 파일별 개수로 못박는다 (큐 #55)"),
     "test_secrets_never_reach_output.py::SKIP_PARTS":
         (VOCAB, 2, "훑지 않는 디렉터리 이름 — 봐주는 목록이 아니다"),
     "test_skip_reasons.py::SKIP_CALLS":
@@ -174,9 +176,9 @@ class TestVocabularyIsNotCountedAsAnExemption(unittest.TestCase):
             ["test_secrets_never_reach_output.py::SKIP_PARTS",
              "test_skip_reasons.py::SKIP_CALLS"], vocab)
 
-    def test_exemption_count_is_thirteen(self) -> None:
+    def test_exemption_count_is_fourteen(self) -> None:
         n = sum(1 for kind, _, _ in REGISTRY.values() if kind == EXEMPT)
-        self.assertEqual(13, n, "예외 목록 수가 바뀌었다 — 표와 머리말을 같이 고친다")
+        self.assertEqual(14, n, "예외 목록 수가 바뀌었다 — 표와 머리말을 같이 고친다")
 
 
 class TestProbeActuallyScans(unittest.TestCase):

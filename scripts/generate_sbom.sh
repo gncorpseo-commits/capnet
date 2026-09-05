@@ -5,6 +5,12 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 out="$root/sbom.json"
 py="${PYTHON:-python3}"
 command -v "$py" >/dev/null || { echo "need python3"; exit 1; }
+# 의존성 원본이 **있는지 먼저 본다 (큐 #55).** 아래 grep 이 `|| true` 였을 때는
+# 파일이 사라져도 조용히 넘어가 SBOM 이 **그 의존성 없이** 만들어지고 exit 0 이었다.
+# 대회 2차 라이선스 검증에 내는 산출물이라, 빠진 채 초록인 것이 가장 나쁘다.
+for f in "$root/apps/core/requirements.txt" "$root/apps/node/requirements.txt"; do
+  [ -r "$f" ] || { echo "의존성 파일을 못 읽는다: $f" >&2; exit 1; }
+done
 "$py" -m pip install -q cyclonedx-bom
 req="$(mktemp)"
 raw="$(mktemp)"
@@ -33,8 +39,9 @@ PYDEPS
 [ -n "$capreq_reqs" ] || { echo "capreq/pyproject.toml 에서 의존성을 못 읽었다" >&2; exit 1; }
 
 {
-  grep -v '^\s*#' "$root/apps/core/requirements.txt" || true
-  grep -v '^\s*#' "$root/apps/node/requirements.txt" || true
+  # `|| true` 가 아니다 — grep 의 1(고른 줄 없음)만 봐주고 2(읽기 실패)는 죽는다.
+  grep -v '^\s*#' "$root/apps/core/requirements.txt" || [ "$?" -eq 1 ]
+  grep -v '^\s*#' "$root/apps/node/requirements.txt" || [ "$?" -eq 1 ]
   printf '%s\n' "$capreq_reqs"
   echo "torch==$torch_ver"
   echo "torchvision==$torchvision_ver"
