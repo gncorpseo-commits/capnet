@@ -1,5 +1,25 @@
 # Changelog
 
+## 계약 필드의 기본값은 전부 **엄격한 쪽** — 표로 못박는다 (배치 B #91 · `#189` 계열) — 2026-09-06
+
+등록 본문에서 칸을 빼먹으면 기본값이 들어간다. 그게 「검사 없음·누구나·무제한」이면 빼먹은 등록이
+가장 열린 능력이 된다. 전수:
+
+| 칸 | 기본값 |
+|---|---|
+| `quality_profile` · `trust_domain_min` · `mvp_eligible` · `output_kind` | `golden` · `team` · `False` · `closed_set_labels` |
+| `max_input_bytes` · `max_attempts` 를 안 보내면 | `coalesce` 32 MiB(DDL DEFAULT 와 같고 상한의 1/8) · 5 |
+| `AgentCreate.weights_format` · `arch` | `safetensors` · `None` 이지만 핸들러가 거부 (G5) |
+| `NodeCreate.is_gate_runner` | `False` |
+| 능력을 등록하는 데모 9개 | 전부 `quality_profile` 명시 |
+
+`tests/test_contract_defaults_lean_strict.py` 가 표를 고정. 뮤테이션 5/5 (`golden`→`none` · `team`→`public` ·
+coalesce 를 상한으로 · 데모가 profile 을 뺌 · arch 가드 제거) 운다.
+
+```bash
+python3 -m unittest tests.test_contract_defaults_lean_strict
+```
+
 ## lease 만료 뒤에도 바이트를 읽는 길은 **0건** — 못박는다 (배치 B #89 · SD-010 옆) — 2026-09-06
 
 바이트가 나가는 길은 둘뿐이다. `GET /v1/internal/inputs/{id}/bytes` 는 `node_may_read`
