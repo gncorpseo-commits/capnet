@@ -6,6 +6,10 @@
 # clean_room.sh 가 데모 경로의 게이트라면 이것은 제품 경로의 게이트다.
 # 운영 스택·데모 스택을 건드리지 않는다 (별도 프로젝트 capnet-prod · 포트 18830/18831).
 # 부트스트랩 순서는 docs/guide/operate-production.md.
+# `-e` 는 켜 두지 않았다 (clean_room.sh 는 켠다). chk 는 `if "$@"` 라 `-e` 와
+# 양립해 보이지만, 켠 채로 51/51 을 **다시 재 보지 못했다** — 이 세션에 Docker 가
+# 없다. 켜면 지금 세지 않는 중간 단계(dc run … apikey_cli 등)의 실패가 전체를
+# 중단시킬 수 있다. 근거와 못박기: tests/test_scripts_set_errexit.py (큐 #44)
 set -uo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 # 판정 한 줄은 clean_room 과 공유한다 — 0건을 통과로 세지 않게.

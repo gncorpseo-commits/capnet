@@ -1,5 +1,49 @@
 # Changelog
 
+## 중간 실패를 삼키는 스크립트가 **하나** 있었다 — 세던 검사는 **0** (큐 #44) — 2026-09-05
+
+`set -e` 없이 돌면 중간 명령이 실패해도 다음 줄로 넘어간다. 마지막 줄이
+`echo "전부 통과"` 면 그 스크립트는 **실패한 채 초록**이다. 이 회차가 계속 잡아 온
+모양이다 — `#180`(누출 검사) · `#181`(통합 러너) · `tally.sh`(0건 통과).
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| `scripts/*.sh` | **37** |
+| `set -euo pipefail` | **36** |
+| `-e` 가 빠진 것 | **1** — `prod_room.sh` (`set -uo pipefail`) |
+| `scripts/lib/*.sh` | **3** — `set` 없음이 **맞다** |
+| 이것을 세던 검사 | **0** |
+
+### `prod_room.sh` 는 고치지 않았다 — **못 쟀기 때문이다**
+
+`chk()` 가 `if "$@"; then …` 이라 **`if` 조건 안의 실패는 `-e` 를 발동하지 않는다.**
+그래서 `clean_room.sh` 는 같은 모양으로 `-e` 를 켜고도 집계가 멀쩡하다. 즉
+`prod_room.sh` 도 켤 수 있어 **보인다.**
+
+그러나 **켠 채로 51/51 을 다시 재 보지 못했다.** 이 세션에는 Docker 가 없다
+(`docker info` 실패 — 10회차에는 있었다). 켜면 지금 세지 않는 중간 단계
+(`dc run … apikey_cli issue` 등)의 실패가 전체를 중단시킬 수 있고, 그건 실제로
+돌려 보고 정할 일이다. **못 쟀다고 적고 못박는다** — 스크립트 안에도 같은 이유를 남겼다.
+
+### `scripts/lib/*.sh` 는 예외가 아니라 규칙이다
+
+`source` 된 파일의 `set -e` 는 그 파일에서 끝나지 않고 **부른 셸의 옵션을 바꾼다.**
+라이브러리가 호출자의 오류 처리를 바꾸면 안 된다 — 셋이 `set` 을 안 두는 것이 맞다.
+아무도 `source` 하지 않는 lib 가 생기면 그 규칙이 공허해지므로 그것도 같이 본다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `set` 없는 새 스크립트 | `test_every_script_sets_euo_pipefail` · `…comes_before_any_command` |
+| `set` 앞에 실행 줄 하나 | 같은 둘 — **스무 줄 아래의 `set` 은 그 위를 못 지킨다** |
+| `lib/tally.sh` 에 `set -euo pipefail` | `test_libs_set_nothing` · 탐지기 검사 |
+| 예외 목록에 `clean_room.sh` 추가 | `…does_not_grow_silently` · `…carry_their_reason_in_the_file` |
+
+재현: `python3 -m unittest tests.test_scripts_set_errexit` (10 검사 · 722 통과)
+
 ## 「뷰 컬럼은 정적으로 못 뽑는다」가 **틀렸다** — 사각 27건을 열었다 (큐 #41) — 2026-09-05
 
 `#221`(큐 #34)은 Core 의 SQL 이 없는 컬럼을 부르는지 세면서, 뷰만은
