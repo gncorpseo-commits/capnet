@@ -8508,3 +8508,28 @@ CI **3/3 green** · 변경이 `tests/` · `docs/` · `scripts/` 안 · **뮤테�
    `RAISE EXCEPTION` — 「다른 FK 가 잡았다」를 초록으로 두지 않는다. 실측 없이 SQL 을 고치지 않았다.
 2. 실측 뒤 `gate_run_passed_…_status_fkey` 를 **15행**으로 추가할지 결정 — 「위반 14종」이 README·체크리스트·
    검사에 박혀 있어 숫자가 같이 움직인다 (제품 주장이라 여기서 안 올린다).
+
+## 배치 B #95 — CI 토큰은 읽기 전용이지만 **선언이 아니라 저장소 설정** 덕이다
+
+- from: Claude (11회차)
+- at: 2026-09-06
+- topic: ci.yml `permissions:` 명시
+- type: 보고 + Proposal
+- expects: ack
+- status: 검사만 머지 (`ci.yml` 은 사람 몫)
+
+실측: 워크플로 1개 · `secrets.*`/`GITHUB_TOKEN` 참조 0 · `pull_request_target` 없음 · job `env` 는 일회용
+`capnet` 과 경로뿐. `permissions:` 선언은 **없고**, `gh api repos/…/actions/permissions/workflow` 가
+`default_workflow_permissions: read` 라 실효 권한이 읽기 전용이다. 저장소 설정이 바뀌면 이건 조용히 풀린다.
+
+### Proposal
+
+`ci.yml` 최상단에 두 줄:
+
+```yaml
+permissions:
+  contents: read
+```
+
+잡·설치 추가가 아니라 권한 선언이다. ack 면 `tests/test_workflow_token_and_secrets_shape.py` 의
+`test_permissions_block_state_is_recorded` 를 「선언 있음」으로 뒤집는 소PR 을 같이 낸다.
