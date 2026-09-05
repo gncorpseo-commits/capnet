@@ -38,7 +38,7 @@
 > | **34** | Core 가 부르는 컬럼 **335건 · 드리프트 0** — 세던 검사 0 | [#221](https://github.com/gncorpseo-commits/capnet/pull/221) |
 > | **38 · 30** | **코드 없음** — 주장이 참이고(psycopg 전부 skip 가드) · §7 이 철회를 시킨다 | — |
 > | **39** | 열린 `expects: decision` **23종** — §7 은 **11종**만 적는다 · **둘은 블록이 없다** | [#222](https://github.com/gncorpseo-commits/capnet/pull/222) |
-> | **12 옆** | `prod_room` §14 가 **두 라우트의 인증을 안 재고 있었다** (422 로 막혀서) | (이 PR) |
+> | **12 옆** | `prod_room` §14 가 **두 라우트의 인증을 안 재고 있었다** (422 로 막혀서) | [#223](https://github.com/gncorpseo-commits/capnet/pull/223) |
 >
 > **큐 #40 이 큐 #11 을 열었다.** 8회차·9회차가 두 번 「환경이 없어 못 봤다」고 적은
 > `clean_room` 이 이번에 돌았다 — 골든셋 sha 정합 · M25 위반 시연 6건 · sanity floor 3종 ·
