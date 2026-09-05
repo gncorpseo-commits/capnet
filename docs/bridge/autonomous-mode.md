@@ -1,7 +1,7 @@
 # CapNet 자율 모드 — 운영 전문
 
 > **대상:** WSL Claude Code (구현·PR 전담) · Cursor/사람 (리뷰·main 머지)  
-> **정본:** 이 파일(루프·스택·실측) + [`queue-expansion.md`](./queue-expansion.md)(종료·시드 12–40·G 루프)  
+> **정본:** 이 파일(루프·스택·실측) + [`queue-batches.md`](./queue-batches.md)(활성 배치·**상태확인**) + [`queue-expansion.md`](./queue-expansion.md)(종료·G)  
 > **붙여넣기:** `handoff-long-mode-claude.md`  
 > **브리지:** `@docs/bridge/PROTOCOL.md` — Decision·Confirm은 여기와 별개로 유지
 
@@ -28,7 +28,9 @@ main이 늦어도 **스택 브랜치**로 작업을 이어간다.
 
 ## 2. 한 줄 규칙
 
-**PR 올렸다고 멈추지 마. 머지를 묻지 마. 번호 큐가 비면 시드·G에서 다음을 집어 적고 바로 착수한다.**
+**PR 올렸다고 멈추지 마. 머지를 묻지 마. 활성 배치가 빌 때까지 돌린다. 「상태확인」= 동기화 후 즉시 다음 #.**
+
+사용자가 **「상태확인」** 만 보내면 [`queue-batches.md`](./queue-batches.md) §1 (S0–S7)을 **한 턴에 끝낸 뒤** 다음 큐에 착수한다. 장문 브리핑·머지 요청·「계속?」 **금지**.
 
 ---
 
@@ -38,7 +40,8 @@ main이 늦어도 **스택 브랜치**로 작업을 이어간다.
 ┌──────────────────────────────────────────────────────────────┐
 │  A. 동기화                                                    │
 │     git fetch/pull main · gh pr list --limit 100              │
-│     inbox 끝 · queue-expansion.md 시드에서 다음 큐 1개       │
+│     queue-batches.md 활성 배치에서 다음 # 1개                 │
+│     (「상태확인」이면 §1 S0–S7 전부 후 즉시 착수)             │
 ├──────────────────────────────────────────────────────────────┤
 │  B. 실측                                                      │
 │     ast/스캐너 결과만 믿지 않음 — **코드 열어 확인**          │
@@ -53,10 +56,10 @@ main이 늦어도 **스택 브랜치**로 작업을 이어간다.
 │     **머지 요청 문장 금지**                                   │
 ├──────────────────────────────────────────────────────────────┤
 │  E. 분기                                                      │
-│     큐 남음 → A (질문·대기 없이)                              │
-│     Decision 막힘 → Proposal 1블록 → **다른 큐**              │
+│     배치 남음 → A (질문·대기 없이)                            │
+│     Decision 막힘 → Proposal 1블록 → **다른 #**               │
 ├──────────────────────────────────────────────────────────────┤
-│  F. 번호 큐 소진 → 시드 다음 줄 · 없으면 G1–G5 5줄 추가      │
+│  F. 배치 소진 → G1–G5 · Step 0 「다음 배치 대기」            │
 │     종료는 queue-expansion.md §2만                            │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -69,7 +72,7 @@ main이 늦어도 **스택 브랜치**로 작업을 이어간다.
 | 「main 이 늦어서 기다립니다」 | main 미변경 = 정상. **스택 위에서 계속** |
 | 스캐너/ast 「0건」만 보고 성공 보고 | **코드 확인 + 뮤테이션 ≥2** |
 | Docker/pip 없이 「됐을 것」 | **못 쟀다 + 이유** 적고 다음 큐 |
-| Decision 때문에 전체 중단 | **Proposal만** — 시드 12–40 / G로 |
+| Decision 때문에 전체 중단 | **Proposal만** — 배치 다른 # / G로 |
 
 ---
 
@@ -163,13 +166,13 @@ main ──●──●──●  (Cursor가 squash merge)
 
 정본 목록: [`queue-expansion.md`](./queue-expansion.md) §7 (기존 아홉 + 8회차 둘).
 
-막히면 `inbox-cursor.md`에 **Proposal 1블록** (`expects: decision`) → **다른 큐(12–40 / G)**.
+막히면 `inbox-cursor.md`에 **Proposal 1블록** (`expects: decision`) → **다른 #(배치 / G)**.
 
 ---
 
 ## 9. 다음 큐
 
-**정본:** [`queue-expansion.md`](./queue-expansion.md) §4–§6.
+**정본:** [`queue-batches.md`](./queue-batches.md) (활성 배치) · [`queue-expansion.md`](./queue-expansion.md) §4–§6 (완료·G).
 
 **완료(다시 하지 마):** #186–#196 · 큐 10(#200) · 큐 5 버전(#201) · 큐 11 기록(#202).
 
@@ -194,7 +197,7 @@ main ──●──●──●  (Cursor가 squash merge)
 
 정본은 [`queue-expansion.md`](./queue-expansion.md) §2.
 
-1. 시드 12–40과 G 루프가 비었고 남은 일은 Decision 구현뿐
+1. **활성 배치와 G가 비었고** 다음 배치가 미기입이며 남은 일은 Decision 구현뿐
 2. **하드 블로커** — schema/CHECK/정책 숫자/제품 주장
 3. 사용자가 **명시적으로 중단**
 
@@ -215,13 +218,14 @@ tail -n 120 docs/bridge/inbox-cursor.md
 
 **읽을 파일 (순서):**
 
-1. `docs/bridge/queue-expansion.md` — 종료 · 시드 12–40
-2. `docs/bridge/autonomous-mode.md` (이 파일)
-3. `docs/bridge/handoff-long-mode-claude.md` 안쪽 markdown 블록
-4. `docs/bridge/inbox-cursor.md` 끝
-5. `CLAUDE.md` — 절대 규칙
+1. `docs/bridge/queue-batches.md` — **상태확인** · 활성 배치 A
+2. `docs/bridge/queue-expansion.md` — 종료 · G
+3. `docs/bridge/autonomous-mode.md` (이 파일)
+4. `docs/bridge/handoff-long-mode-claude.md` 안쪽 markdown 블록
+5. `docs/bridge/inbox-cursor.md` 끝
+6. `CLAUDE.md` — 절대 규칙
 
-**첫 작업:** 큐 **#12** (`prod_room.sh` vs 공개 GET).
+**첫 작업:** 배치 A **#41**. 재시작은 채팅에 **`상태확인`**.
 
 ---
 
@@ -253,6 +257,7 @@ tail -n 120 docs/bridge/inbox-cursor.md
 
 | 날짜 | main | 비고 |
 |---|---|---|
+| 2026-09-05 | — | 배치 A · queue-batches · 「상태확인」 |
 | 2026-09-03 | `2c57c1e` | 큐 확장 — §9·§11을 `queue-expansion.md`에 맡김 (#203) |
 | 2026-09-03 | `2cbb936` | 자율 모드 전문 최초 작성 (#198) |
 | 2026-09-02 | `34d943f` | 7회차 머지 완료 (#196·#188·#197) |

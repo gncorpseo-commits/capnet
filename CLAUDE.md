@@ -78,7 +78,9 @@
 
 배경·결정 근거·함정은 자동으로 읽히지 않는다. 필요할 때 부른다.
 
-    @docs/INDEX.md
-    @docs/context-handoff.md
-    @docs/error/pitfalls.md
-    @docs/bridge/PROTOCOL.md
+ @docs/INDEX.md
+ @docs/context-handoff.md
+ @docs/error/pitfalls.md
+ @docs/bridge/PROTOCOL.md
+ @docs/bridge/queue-batches.md
+ @docs/bridge/handoff-long-mode-claude.md

@@ -25,6 +25,11 @@
 > **역할 분담 (2026-08-28).** **Claude = 구현·PR** · **Cursor = 리뷰·설계·Decision**.
 > 브리지 Next: `product-handoff-to-claude`. main 머지 = master/사람.
 
+> **11회차 준비 (2026-09-05) — 배치 A (41–70) · 「상태확인」.**
+> 정본: [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) ·
+> [`handoff-long-mode-claude.md`](docs/bridge/handoff-long-mode-claude.md).
+> 시드 12–40 소진. Claude 재시작 = 채팅에 **`상태확인`**.
+
 > **10회차 (2026-09-04) — 환경이 바뀌었다: Docker 가 생겼다.** main HEAD = **`9804b97`** (#223).
 >
 > 9회차가 「못 본 것」으로 남긴 세 줄 중 **둘을 실제로 봤다** — 큐 #40 재측정이 문을 열었다.
@@ -111,10 +116,11 @@
 
 > **8회차 (2026-09-03).** `2c57c1e` (#203 큐 확장 전문) 까지 · 실행 능력 10종.
 >
-> **자율 모드:** [`docs/bridge/queue-expansion.md`](docs/bridge/queue-expansion.md) (큐·종료 정본 · 시드 12–40) ·
+> **자율 모드:** [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) (배치 A 41–70 · **상태확인**) ·
+> [`docs/bridge/queue-expansion.md`](docs/bridge/queue-expansion.md) (종료·G) ·
 > [`docs/bridge/autonomous-mode.md`](docs/bridge/autonomous-mode.md) (루프) ·
-> [`docs/bridge/handoff-long-mode-claude.md`](docs/bridge/handoff-long-mode-claude.md) (WSL 붙여넣기).
-> **다음 줄: 큐 #12.** 8회차 PR #200·#201·#202 는 열린 채 쌓을 수 있다.
+> [`docs/bridge/handoff-long-mode-claude.md`](docs/bridge/handoff-long-mode-claude.md) (붙여넣기).
+> **다음 줄: 배치 A #41.** 재시작 = `상태확인`.
 >
 > `run_tests` **571 OK (건너뜀 7)** — 재현 `bash scripts/run_tests.sh` (#196·#188 합친 트리).
 > capreq 는 **이 환경에서 못 쟀다** — `pip` 가 없어 `httpx`·`fastapi` 가 빠지고

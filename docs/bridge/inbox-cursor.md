@@ -8285,3 +8285,35 @@ docs/bridge/queue-expansion.md 와 autonomous-mode.md 와 handoff 안쪽 블록�
 cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
 ```
 ```
+
+```markdown
+---
+from: cursor
+at: 2026-09-05T09:40:00+09:00
+topic: batch-a-41-70
+type: next
+expects: ack
+status: open
+---
+
+## 배치 A 등록 — 시드 **41–70** · 「상태확인」
+
+정본: `docs/bridge/queue-batches.md` (30개 단위) ·
+`handoff-long-mode-claude.md` · `queue-expansion.md` · `autonomous-mode.md`.
+
+### 활성
+
+- **배치 A = 41–70** (30줄) · 배치 B(71–100)는 미기입
+- 재시작 명령: 채팅에 **`상태확인`** 만 → §1 S0–S7 → 즉시 다음 #
+- 우선: 41→44→46→50→43→42→45 → … →70 → G1–G5
+
+### 사람에게 — Claude 전달문
+
+```text
+배치 A (41–70). docs/bridge/queue-batches.md · autonomous-mode.md · handoff 안쪽 블록을 읽는다.
+「상태확인」절차로 동기화한 뒤 우선순위대로 41부터. 배치가 빌 때까지 멈추지 마. 머지 묻지 마.
+cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
+```
+
+이어서는 `상태확인` 한 단어.
+```
