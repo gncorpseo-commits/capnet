@@ -42,6 +42,7 @@
   "test_dataset_ids_do_not_drift.py::test_enough_payloads_are_seen#0": 15,
   "test_dataset_sha_consistency.py::test_site_list_did_not_shrink#0": 9,
   "test_every_route_declares_its_auth.py::test_probe_actually_found_routes#0": 20,
+  "test_every_script_is_accounted_for.py::test_enough_scripts_are_parsed#0": 30,
   "test_executor_dispatch_covers_vocabulary.py::test_imported_executors_exist#0": 3,
   "test_executor_dispatch_covers_vocabulary.py::test_probe_actually_read_both_sides#0": 5,
   "test_executor_dispatch_covers_vocabulary.py::test_probe_actually_read_both_sides#1": 5,

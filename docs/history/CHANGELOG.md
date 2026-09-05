@@ -1,5 +1,54 @@
 # Changelog
 
+## 스크립트 서른넷 중 **스물여섯은 아무것도 안 돌린다** (큐 #63) — 2026-09-05
+
+`#63` 은 `regate.sh`·`proof_ab.sh` 를 「본실행 or **못 봄** 명시」로 남겼다. 재려고 보니
+더 큰 사실이 나왔다.
+
+| 누가 | 무엇을 |
+|---|---|
+| `run_tests.sh` | `check_release.sh` · `migrate.sh` |
+| `clean_room.sh` | `demo.sh` · `demo_violations.sh` · `sanity.sh` · `call.sh` · `node_onboard.sh` |
+| `prod_room.sh` | `demo.sh` |
+| `ci.yml` | `run_integration.sh` · `check_release.sh` |
+| **아무도** | **26** |
+
+**스물여섯이 전부 결함은 아니다.** 학습(`train_*`)·내려받기·수동 데모는 사람이 부르는
+도구다. 문제는 **그게 어디에도 안 적혀 있어서**, 게이트에 있어야 할 것이 빠져도 티가 안
+난다는 것이다 — `#229`(clean_room 이 데모 13 중 2만 돈다)와 같은 자리, 이번에는 전수다.
+
+### 문법을 처음 전수했다 — **34/34 통과**
+
+아무도 안 돌리는 스크립트가 **깨져 있으면 아무도 모른다.** `bash -n` 은 Docker 도
+스택도 필요 없다. 이 저장소에서 처음 센 값이다.
+
+### `regate.sh` · `proof_ab.sh` — 못 봤다
+
+| 스크립트 | 오늘 잰 것 | 못 잰 것 |
+|---|---|---|
+| `regate.sh` | 문법 · 사전 조건 명시 | 본실행 (재게이트 대상 · 새 `gate_run`) |
+| `proof_ab.sh` | 같음 | 본실행 (A·B 교차 배정) |
+
+둘 다 `docker compose up -d` 와 Node 의 실제 가중치가 있어야 한다. 이 세션에는 **Docker
+데몬이 없다.** Docker 가 있는 회차의 줄로 남긴다 — **「돌 것이다」로 적지 않는다.**
+
+### 이름을 잘못 지어 표에 유령이 생겼다 (적어 둔다)
+
+예외 목록을 `MANUAL` 로 지었더니 `#231` 의 허용목록 탐지 패턴
+(`ALLOW|EXEMPT|WITHOUT|…`)에 **안 걸려서**, 표에 등록해도 「없는 것을 해명한다」로
+빨개졌다. `WITHOUT_A_CALLER` 로 바꿨다 — **검사에 보이는 이름을 쓰는 것도 규율이다.**
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 이유 없는 새 스크립트 | `test_no_script_is_silently_unrun` |
+| 문법이 깨진 스크립트 | `test_every_script_parses` |
+| 「못 봤다」 표기 삭제 | `test_both_are_in_the_manual_table` |
+| `clean_room` 이 `sanity` 를 그만 부름 | `test_no_script_is_silently_unrun` |
+
+재현: `python3 -m unittest tests.test_every_script_is_accounted_for` (8 검사 · 928 통과)
+
 ## 절대규칙 6 을 **세는 검사가 없었다** — 빌드 표면 0건 (큐 #62) — 2026-09-05
 
 절대규칙 6 은 「**사전학습 가중치를 쓰거나 동봉하지 않는다.** EuroSAT scratch 학습만.
