@@ -1,5 +1,44 @@
 # Changelog
 
+## Node 증서는 **파일에만 산다** — 재전수 0건 (큐 #56) — 2026-09-05
+
+`compose.prod.yaml` 이 스스로 적는다:
+
+> 증서는 **파일로** 넣는다: 환경변수로 주면 `docker inspect` 에 평문이 뜬다.
+
+`#47`(`ccurl` 이 키를 argv 로 넘기던 자리)이 보여 준 것처럼 **주석이 금지한 것을 코드가
+하고 있는지는 세어 봐야 안다.** 증서 쪽을 다시 훑었다.
+
+| 무엇 | 값 |
+|---|---|
+| 증서를 **파일로** 넣는 compose 서비스 | **3** |
+| 증서 **값**을 환경변수로 주는 서비스 | **0** ✅ |
+| `node_onboard.sh` 가 화면에 찍는 것 | `key_prefix` 만 ✅ |
+| 시크릿 디렉터리·파일 권한 | `0700` · `0600` ✅ |
+| `.gitignore` 가 막는 것 | `data/node-secrets/` · `*.credential` ✅ |
+| Node 가 읽는 순서 | **파일 먼저**, 없으면 환경변수 ✅ |
+| git 이 추적하는 증서 파일 | **0** ✅ |
+
+`NODE_CREDENTIAL`(값) 환경변수는 **읽는 쪽에만** 남아 있다 — 아무 compose 도 그걸 채우지
+않으므로 실제로는 죽은 길이다. **읽을 수 있다는 것과 그렇게 준다는 것은 다르다.**
+
+### 검사를 한 번 잘못 적었다 (적어 둔다)
+
+처음에는 「`*.credential` 파일이 트리에 **있으면** 실패」로 적었고, 온보딩을 한 번 돌린
+이 작업 트리에서 바로 빨개졌다. **파일이 있는 것은 정상이다** — 온보딩이 만드는 것이고
+`.gitignore` 가 커밋을 막는다. 보는 것은 「**git 이 추적하는가**」다. `git ls-files` 로 고쳤다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| compose 가 증서 **값**을 환경변수로 | `test_no_compose_sets_the_credential_value` |
+| 시크릿 파일을 `0644` 로 | `test_permissions_are_tight` |
+| 안내가 `NODE_CREDENTIAL=$cred` 를 붙여 넣게 | `test_the_snippet_hands_over_a_path` |
+| Node 가 환경변수를 먼저 읽게 | `test_file_beats_env` |
+
+재현: `python3 -m unittest tests.test_node_secrets_live_in_files` (11 검사 · 899 통과)
+
 ## DB 를 세우는 길이 둘인데, 둘이 만나는지 세는 검사가 없었다 (큐 #52) — 2026-09-05
 
 | 길 | 무엇이 도는가 |
