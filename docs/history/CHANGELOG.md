@@ -1,5 +1,37 @@
 # Changelog
 
+## 역할 가드의 **새 우회 모양 넷** — 오늘 전부 0 (큐 #65) — 2026-09-05
+
+`#192`·`#193` 은 **그때 있던** 우회를 닫았다. 우회는 새 문법으로 다시 열린다 — FastAPI 는
+인증을 여러 방식으로 붙일 수 있고, 방식이 늘 때마다 「이 라우트가 인증하는가」를 세는
+검사가 눈을 감는다.
+
+`test_every_route_declares_its_auth` 는 **본문에서 헬퍼를 불렀는가**만 본다. 그 전제가
+깨지는 모양 넷을 센다:
+
+| 모양 | 왜 위험한가 | 오늘 |
+|---|---|---|
+| `Depends(...)` | 인증이 **시그니처**로 옮겨가면 본문 스캔이 못 본다 | **0** |
+| 라우트를 감싸는 커스텀 데코레이터 | 데코레이터를 빼면 조용히 열린다 | **0** |
+| `if …: _require(…)` | **조건이 거짓이면 인증이 아예 안 돈다** | **0** |
+| `_require(변수, …)` | 무엇을 요구하는지 정적으로 못 센다 | **0** |
+
+인증 호출 **41**건은 전부 함수 본문의 **무조건** 호출이고 역할은 **리터럴**이다.
+
+`Depends` 로 인증을 붙이는 것이 나쁘다고 말하지 않는다 — 그렇게 바꾸려면
+**탐지기를 같이 고쳐야 한다**는 뜻이고, 이 검사는 그 순간에 운다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `Depends(_actor)` 로 인증 이동 | `test_no_dependency_injection_for_auth` |
+| 라우트에 `@needs_admin` 부착 | `test_no_custom_decorator_wraps_a_route` |
+| `if authorization:` 안으로 `_require` 이동 | `test_no_auth_call_sits_inside_a_condition` |
+| 역할을 변수로 (`role = "developer"`) | `test_every_required_role_is_a_literal` |
+
+재현: `python3 -m unittest tests.test_no_new_auth_bypass_shapes` (7 검사 · 871 통과)
+
 ## claim 의 잠금 — **오늘 0건**, 두 줄이 다른 것을 지킨다 (큐 #68) — 2026-09-05
 
 `pitfalls` §4 는 두 줄로 못박는다:

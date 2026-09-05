@@ -59,6 +59,8 @@
   "test_modality_fallback.py::test_every_modality_is_decided#0": 5,
   "test_modality_fallback.py::test_probe_actually_read_the_vocabulary#0": 5,
   "test_no_conflict_markers.py::test_probe_actually_watches_something#0": 2,
+  "test_no_new_auth_bypass_shapes.py::test_enough_routes_and_calls_are_seen#0": 40,
+  "test_no_new_auth_bypass_shapes.py::test_enough_routes_and_calls_are_seen#1": 35,
   "test_no_silent_exception_swallowing.py::test_found_broad_handlers#0": 10,
   "test_node_core_unreachable.py::test_probe_actually_reads_the_module#0": 5000,
   "test_node_core_unreachable.py::test_probe_actually_reads_the_module#1": 3,
