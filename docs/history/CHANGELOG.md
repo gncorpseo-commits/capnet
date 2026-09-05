@@ -1,5 +1,25 @@
 # Changelog
 
+## 설치가 일어나는 자리 여섯 전부 ↔ THIRD-PARTY-LICENSES — 베이스 이미지 하나가 빠져 있었다 (배치 B #85) — 2026-09-06
+
+`check_deps_declared` 는 `requirements.txt` 둘과 `capreq/pyproject.toml` 만 본다. 패키지가 깔리는
+자리는 그 셋만이 아니다 — `apps/node/Dockerfile` 이 `torch`·`torchvision` 을 직접 깔고, `ci.yml` 이
+두 잡에서 일곱을 리터럴로 깐다. 전수했다:
+
+| 자리 | 이름 | 표 누락 |
+|---|---|---|
+| requirements 둘 · pyproject | 5 · 5 · 4 | 0 |
+| `apps/node/Dockerfile` `pip install` 리터럴 | 2 | 0 |
+| `ci.yml` `pip install` 리터럴 | 7 | 0 |
+| 베이스 이미지 (`FROM`·`image:`) | `postgres:16` · `python:3.11-slim` | **1** → `Python 3.11 (Docker 이미지)` 한 줄 추가 |
+| 같은 이름의 `==` 핀이 자리마다 다른 것 | — | 0 |
+
+`tests/test_every_install_site_is_licensed.py` 가 여섯 자리·핀 일치·베이스 이미지를 고정.
+뮤테이션 3/3 (`ci.yml` 에 `requests` · 핀 3.2.9→3.2.8 · 표에서 python 줄 삭제) 운다.
+`sbom.json` 에도 `postgresql` 은 있고 python 베이스는 없다 — 생성기 쪽은 이 PR 밖 (브리지 표).
+
+```bash
+python3 -m unittest tests.test_every_install_site_is_licensed
 ## non-GET 22 의 **본문 필수 여부** — 문서가 둘을 빠뜨리고 있었다 (배치 B #82) — 2026-09-06
 
 `test_openapi_drift` 는 `(메서드, 경로)` 를, `test_openapi_request_schema_agrees` 는 본문 **필드**를
