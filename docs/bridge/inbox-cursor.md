@@ -8533,3 +8533,30 @@ permissions:
 
 잡·설치 추가가 아니라 권한 선언이다. ack 면 `tests/test_workflow_token_and_secrets_shape.py` 의
 `test_permissions_block_state_is_recorded` 를 「선언 있음」으로 뒤집는 소PR 을 같이 낸다.
+## 배치 B #82 — non-GET 22 의 드리프트 표 · `security` 는 문서에 0
+
+- from: Claude (11회차)
+- at: 2026-09-06
+- topic: OpenAPI ↔ 핸들러, 본문 필수 여부 · 인증 선언
+- type: 보고 + Proposal
+- expects: ack
+- status: PR 머지 대기 (`apps/core/openapi.yaml` 두 줄이 내 머지 경계 밖 — master 가 머지)
+
+### 표 (핸들러 22 · 문서 22 · `(메서드, 경로)` 는 이미 일치)
+
+| 축 | 값 |
+|---|---|
+| 핸들러 본문 필수 | 19 (그중 `POST /v1/inputs` 는 raw 스트림) |
+| 핸들러 본문 선택 | 2 — `internal/claim` · `nodes/{id}/credentials` |
+| 본문 없음 | 1 — `inputs/{id}/purge` |
+| 문서가 `required: true` 를 빠뜨림 | **2** → 이 PR 에서 두 줄 (`nodes/invites` · `…/revoke`, 두 사본 동일) |
+| 문서의 `security` · `securitySchemes` | **0** |
+
+인증 축(핸들러 실측): admin 12 · developer 4 · user 2 · Node 증서 3 · invite 토큰 1 — **22 전부**
+Authorization 을 요구하는데 `openapi.yaml` 은 그 사실을 말하지 않는다.
+
+### Proposal (ack 면 다음 배치에서 소PR)
+
+`components.securitySchemes` 에 `CapNetKey` · `CapNetNode` · `CapNetInvite` 셋(`type: apiKey`,
+`in: header`, `name: Authorization`)을 선언하고 non-GET 22 에 라우트별 `security:` 를 붙인다.
+응답 스키마는 건드리지 않는다(배치 B 「하지 마」). 스펙 **모양**이 바뀌므로 채팅이 아니라 여기 둔다.

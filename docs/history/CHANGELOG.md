@@ -1,5 +1,24 @@
 # Changelog
 
+## non-GET 22 의 **본문 필수 여부** — 문서가 둘을 빠뜨리고 있었다 (배치 B #82) — 2026-09-06
+
+`test_openapi_drift` 는 `(메서드, 경로)` 를, `test_openapi_request_schema_agrees` 는 본문 **필드**를
+본다. 그 사이가 비어 있었다 — **본문 자체가 필수인가.** OpenAPI 의 `requestBody.required` 는
+빠지면 false 다. 표로 전수했다:
+
+| 축 | 값 |
+|---|---|
+| 핸들러가 본문 필수 | **19** (그중 `inputs` 는 raw 스트림) |
+| 핸들러가 본문 선택 (`X \| None = None`) | **2** — `internal/claim` · `nodes/{id}/credentials` |
+| 본문 없음 | **1** — `inputs/{id}/purge` |
+| 문서가 `required: true` 를 빠뜨린 곳 | **2** → `nodes/invites` · `nodes/invites/{id}/revoke` 에 두 줄 (두 사본 동일) |
+| 문서의 `security`·`securitySchemes` | **0** — 22 전부 Authorization 을 요구한다. 스펙 모양이라 브리지 표로 올린다 |
+
+`tests/test_write_routes_request_body_agrees.py` 가 22 쌍을 고정. 뮤테이션 4/4 (문서 `required` 제거 ·
+핸들러 본문 선택화 · 원래 드리프트 되돌리기 · `purge` 에 문서 본문 추가) 운다.
+
+```bash
+python3 -m unittest tests.test_write_routes_request_body_agrees
 ## G2 — Node 가 Core 를 부르는 다섯 자리 전부가 증서 헤더를 싣는다 (배치 B 뒤 G 라운드) — 2026-09-06
 
 `#89`(바이트 경로)·`#81`(증서 문자열 한 줄)의 형제 전수. `urllib.request.Request(` 5곳 전부 `headers=_core_headers()`,
