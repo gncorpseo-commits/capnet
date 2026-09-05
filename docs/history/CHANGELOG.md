@@ -1,5 +1,134 @@
 # Changelog
 
+## 로컬도 CI 도 **안 보는 검사 한 건** (G5) — 2026-09-05
+
+G5 는 「CI 3잡이 로컬 `run_tests` 와 다른 파일을 보는가」다. `#215` 가 **도구 목록**을 이미
+맞췄으니 남은 것은 **인자**다 — 같은 도구를 다른 인자로 부르면 한쪽만 약해지고, 사람은
+로컬 초록을 믿는다.
+
+| 도구 | `run_tests.sh` | CI `unit` |
+|---|---|---|
+| `unittest discover` | `-s tests "$@"` | `-s tests -v` |
+| `check_golden_sha.py` | (없음) | (없음) |
+| `check_release.sh` | (없음) | (없음) |
+| `check_submission.py` | **`--skip-tree`** | `--verbose` **`--skip-tree`** |
+
+`-v`·`--verbose` 는 출력만 바꾼다. **실질적으로 다른 인자는 없다** ✅
+
+### 그런데 **둘 다 빼는** 검사가 하나 있다
+
+```text
+python3 scripts/check_submission.py --skip-tree   → 28/28
+python3 scripts/check_submission.py               → 29/29
+```
+
+`--skip-tree` 가 빼는 「워킹트리 깨끗 (패키징 전)」 한 건은 **로컬에서도 CI 에서도 안 돈다.**
+그건 의도다 — 작업 중에는 늘 더럽다. 대신 그 한 건은 **사람이 패키징 직전에** 맨몸으로
+돌려야 하고 체크리스트가 그렇게 적는다.
+
+**문제는 「하나」가 조용히 늘 때다.** `--skip-tree` 뒤에 검사가 더 숨으면 「28/28 통과」는
+그대로인데 안 도는 것이 둘·셋이 된다. 그래서 **그 차이를 1 로 못박는다.**
+
+### 값 읽기는 검사 호출이 아니다 (적어 둔다)
+
+`ci.yml` 의 migrate 잡이 `want=$(python3 scripts/check_golden_sha.py --print)` 로 골든 sha 를
+**읽는다.** 그걸 인자 차이로 세니 검사가 늘 빨갰다 — `$(` 가 든 줄은 뺀다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 로컬에만 `--skip-links` 추가 | `test_check_submission_is_called_the_same` |
+| `--skip-tree` 가 검사를 하나 더 빼게 | `test_skip_tree_hides_exactly_one_check` |
+| 체크리스트에서 패키징 안내 삭제 | `…tells_the_human_to_run_the_full_one` |
+| `run_tests` 에서 이유 주석 삭제 | `test_run_tests_says_why_it_skips` |
+
+재현: `python3 -m unittest tests.test_ci_and_run_tests_call_the_same_way` (8 검사 · 973 통과)
+
+## 「0 이어야 한다」고 적어 놓고 **세지 않던 둘** (G3) — 2026-09-05
+
+G3 는 「「오늘은 0」인 전수의 재현 명령을 `tests/` 에 남겼는가 — 없으면 핀」이다.
+문서의 「0건」 주장 **열일곱**을 훑어 둘이 남았다 (나머지는 시장·회차 기록이라 대상 아님).
+
+### ① 운영 안내가 부르는 지표 넷
+
+`operate-production.md` §7 은 운영자에게 `nodes_without_credential` · `drift_routable` ·
+`arch_unbound_routable` 이 **0** 인지, `api_keys_active` 가 1 이상인지 보라고 시킨다.
+
+**그 이름이 응답에 없으면 운영자의 확인은 조용히 아무것도 안 본다.** `json.tool` 로 보면
+없는 키는 안 보이고, **「0 이다」와 「필드가 없다」가 화면에서 같아 보인다** —
+`#207`(끊긴 Node 가 한가한 Node 처럼)과 같은 모양이다.
+
+넷 다 `ops/status` SQL 에 있다 ✅.
+
+### ② 대회 제출 문서의 「외부 AI API 호출 **0건**」
+
+독립 구동 항목이고 **심사에서 확인하는 주장**인데 세는 검사가 없었다.
+
+| 무엇 | 값 |
+|---|---|
+| `apps/` · `capreq/src` 의 외부 AI 호스트·SDK | **0** ✅ |
+| 외부 호스트 참조 전체 | **2** — 둘 다 `modality.py` **주석**의 GitHub 링크 |
+| 라우팅 LLM 기본 | `http://127.0.0.1:11434` (로컬 Ollama) |
+
+**주석을 걷고 본다** (`_srcguard.code_only`) — 「openai 를 쓰지 않는다」고 적은 설명이
+위반으로 잡히면 그건 **설명을 벌주는 검사**다.
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `AS nodes_without_credential` 이름 변경 | `test_every_named_metric_is_produced` |
+| 안내가 지표 이름을 그만 부름 | `test_the_guide_still_names_them` |
+| `https://api.openai.com` 참조 추가 | `test_no_module_reaches_a_commercial_ai_host` |
+| LLM 기본을 원격 호스트로 | `test_the_llm_backend_is_local_by_default` |
+
+재현: `python3 -m unittest tests.test_ops_and_contest_zeros_are_measurable` (8 검사 · 965 통과)
+
+## 데모가 등록하는 `arch` 이름은 **아무도 안 보고 있었다** (G2) — 2026-09-05
+
+G2 는 「같은 디렉터리의 형제 파일 전수」다. `apps/node/app/tiny_*.py` 는 **아홉**인데
+검사가 이름을 부르는 것은 **셋**뿐이었다.
+
+### 먼저 — **클래스 이름은 정본이 아니다**
+
+`tiny_cnn.py` 의 `ARCH_REGISTRY` 가 정본이고, 같은 구조를 다른 이름으로 등록하는 것이
+**의도**다:
+
+```text
+"TinyTableTyper": _text_classifier(),   # 표 열 타입 추론은 text.classify 와 같은 모델
+```
+
+**「클래스가 없으면 결함」이라고 셌으면 `table_demo.sh` 를 거짓 결함으로 적을 뻔했다** —
+`#218`·`#245` 와 같은 함정이다.
+
+### 진짜 공백
+
+| 곳 | 무엇 | 대조하던 검사 |
+|---|---|---|
+| `ARCH_REGISTRY` | 빌더 **11** | `test_contract_checks_by_arch` |
+| `ARCH_MODALITY` | 모달리티 **11** | 같음 |
+| `gate.REFERENCE_ARCHS` | 실행 가능 목록 **11** | 같음 |
+| **`scripts/*_demo.sh` 의 `arch="…"`** | **9** | **없었다** |
+
+데모의 `arch` 에 오타가 나면 **그 데모를 돌릴 때만** 드러난다. 그런데 그 데모들은
+`#254` 기준 **아무도 안 돌린다** — 오타가 무기한 산다.
+
+### 실측 — 오늘은 0건
+
+셋은 서로 같고(11), 데모 아홉은 전부 그 안에 있고, `tiny_*.py` 형제 아홉은 전부
+레지스트리가 부른다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 데모의 `arch` 에 오타 (`TinyTableTyper2`) | `test_every_demo_arch_is_known` |
+| `ARCH_MODALITY` 에서 한 줄 삭제 | 레지스트리 ↔ 모달리티 대조 |
+| `gate` 허용 목록에서 하나 삭제 | `test_counts_are_what_we_measured` |
+| 레지스트리가 안 부르는 새 형제 파일 | `…is_imported_by_the_registry` |
+
+재현: `python3 -m unittest tests.test_arch_names_agree_everywhere` (8 검사 · 957 통과)
+
 ## 설정을 **주석으로 옮겨도** 통과하던 검사 둘 (G1) — 2026-09-05
 
 `tests/_srcguard.py` 는 이 저장소가 **네 번** 겪은 사고에서 나왔다 — 「X 를 쓰지 않는다」를
