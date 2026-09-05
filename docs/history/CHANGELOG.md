@@ -1,5 +1,53 @@
 # Changelog
 
+## 「뷰 컬럼은 정적으로 못 뽑는다」가 **틀렸다** — 사각 27건을 열었다 (큐 #41) — 2026-09-05
+
+`#221`(큐 #34)은 Core 의 SQL 이 없는 컬럼을 부르는지 세면서, 뷰만은
+**이름으로만** 알고 컬럼을 통째로 건너뛰었다. 머리말에 그렇게 적어 두었다:
+
+> **뷰의 컬럼** (10개). `CREATE VIEW … AS SELECT` 는 정적으로 컬럼을 못 뽑는다.
+
+**뽑힌다.** 이 저장소의 뷰 정의 12개(재정의 포함) **전부**가 명시 `SELECT` 목록을
+갖는다. 최상위 `SELECT *` 는 하나도 없다.
+
+### 걸림돌 셋 — 전부 넘었다
+
+| 모양 | 어디 | 어떻게 |
+|---|---|---|
+| `LEFT JOIN LATERAL (SELECT * FROM …)` | `node_liveness` | **깊이 0 의 `FROM`** 에서 끊으면 안쪽이 안 섞인다 |
+| `CASE … END AS reason` | `task_input_purge_due` | 꼬리의 `AS <이름>` |
+| `count(*) FILTER (WHERE …) AS x` | `provenance_drift_summary` | 같음 |
+
+`CREATE OR REPLACE` 재정의는 **뒤가 이긴다** — `0004` 의 `provenance_drift` 가
+`0002` 를 덮고, `0013` 의 `task_input_purge_due` 가 `0011` 을 덮는다.
+
+### 실측
+
+| 무엇 | 전 | 후 |
+|---|---|---|
+| 뷰 | 10 (이름만) | **10 · 컬럼 86** |
+| Core 참조 | 335 | **362** |
+| 뷰 컬럼 참조 | **0 — 전부 버려졌다** | **27** (뷰 6종) |
+| 없는 컬럼 | 0 | **0** |
+
+버려지던 27건에는 `claim.py:26`·`registry.py:294` 의 `node_liveness.is_fresh`
+— **큐를 집는 자리**가 들어 있다.
+
+### 못 뽑는 뷰가 생기면 조용히 넘어가지 않는다
+
+`_unresolved_views()` 가 세고 `test_no_view_is_silently_skipped` 가 오늘의 **0** 을
+못박는다. 건너뛴 채 두면 그 뷰의 참조가 말없이 사라져 검사가 **지키는 척**만 한다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `node_liveness` 의 `AS is_fresh` → `is_fresh_x` | `claim.py:26`·`registry.py:294` 를 짚었다 |
+| `agent_arch_unbound` 를 `SELECT *` 로 | `test_no_view_is_silently_skipped` |
+| 최상위 `FROM` 판정에서 깊이 무시 | `safety.py:68 agent_arch_unbound.routable` 이 사라졌다 |
+
+재현: `python3 -m unittest tests.test_core_sql_columns_exist` (8 검사 · 712 통과)
+
 ## 새 런북이 생기자 `gh … list` 검사가 **눈을 감았다** — 2026-09-05
 
 `#220`(큐 #36)은 「`gh pr list` 는 `--limit 100` 없이 쓰지 않는다」를 못박으며

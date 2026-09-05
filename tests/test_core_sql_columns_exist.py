@@ -44,14 +44,41 @@ DB 와 대조하지 않았으면 **없는 컬럼 셋을 「드리프트」라고
 `apps/core/app/*.py` 의 SQL 문자열에서 `<별칭>.<컬럼>` 을 뽑고, `FROM`·`JOIN`·
 `UPDATE`·`INSERT INTO` 로 별칭→관계를 풀어 스키마에 있는지 본다.
 
-**실측 (2026-09-04): 참조 335건 · 관계 20종 · 없는 컬럼 0건.**
+**실측 (2026-09-05): 참조 362건 · 관계 26종 · 없는 컬럼 0건.**
+
+## 사각이던 뷰를 열었다 (큐 #41)
+
+첫 판은 뷰를 **이름으로만** 알고 컬럼은 통째로 건너뛰었다 — 「정적으로 못 뽑는다」고
+적어 두었다. **틀렸다.** 이 저장소의 뷰 정의 **12개(중복 정의 포함) 전부**가 명시
+`SELECT` 목록을 갖는다. 최상위 `SELECT *` 는 **하나도 없다.**
+
+```sql
+CREATE OR REPLACE VIEW node_liveness AS
+SELECT n.id AS node_id, s.availability, …   -- ← 여기서 뽑힌다
+FROM node n
+LEFT JOIN LATERAL (SELECT * FROM node_session ns …) s ON TRUE;
+```
+
+깊이 0 의 `FROM` 에서 끊으므로 **LATERAL 안쪽의 `SELECT *` 는 섞이지 않는다.**
+`END AS reason`(CASE)·`count(*) FILTER (…) AS drifted_still_routable` 도 꼬리의
+`AS <이름>` 으로 잡힌다.
+
+| 무엇 | 수 |
+|---|---|
+| 뷰 | **10** (`CREATE OR REPLACE` 재정의는 뒤가 이긴다) |
+| 뽑힌 뷰 컬럼 | **86** |
+| Core 의 **뷰 컬럼** 참조 | **27** (뷰 **6**종) — 전에는 전부 버려졌다 |
+| 그중 없는 컬럼 | **0** |
+
+**컬럼을 못 뽑는 뷰가 생기면 조용히 건너뛰지 않는다** — `_unresolved_views()` 가
+세고, 오늘의 **0** 을 `test_no_view_is_silently_skipped` 가 못박는다. 건너뛴 채로
+두면 그 뷰의 참조가 말없이 사라져 검사가 **지키는 척**만 한다.
 
 ## 무엇을 안 보나 — 정직하게 적는다
 
-- **뷰의 컬럼** (10개). `CREATE VIEW … AS SELECT` 는 정적으로 컬럼을 못 뽑는다.
-  뷰를 **이름으로만** 알고 컬럼은 건너뛴다. 여기는 **여전히 사각지대**다
 - **한정 없는 컬럼** (`WHERE status = …`). 어느 관계인지 정적으로 못 정한다
 - **문자열 조립으로 만든 SQL.** 이 저장소는 그렇게 쓰지 않지만, 쓰면 안 보인다
+- 뷰가 `SELECT *` 를 쓰면 컬럼을 못 뽑는다 — **오늘 0건**이고 위 검사가 운다
 """
 
 from __future__ import annotations
@@ -118,10 +145,65 @@ def _matching_paren(sql: str, open_at: int) -> int:
     return len(sql)
 
 
-def schema() -> tuple[dict[str, set[str]], set[str]]:
-    """(테이블→컬럼, 뷰 이름). `schema.sql` 다음에 마이그레이션을 **순서대로** 얹는다."""
+VIEW_HEAD = re.compile(r"CREATE(?:\s+OR\s+REPLACE)?\s+VIEW\s+([a-z_][a-z0-9_]*)\s+AS\s", re.I)
+# 꼬리의 `AS <이름>` — `END AS reason` · `count(*) FILTER (…) AS x` 를 잡는다
+AS_TAIL = re.compile(r"\bAS\s+([a-z_][a-z0-9_]*)\s*$", re.I)
+IDENT_TAIL = re.compile(r"^(?:[a-z_][a-z0-9_]*\.)?([a-z_][a-z0-9_]*)$", re.I)
+
+
+def _select_list(body: str) -> str | None:
+    """최상위 `SELECT` 목록. **깊이 0 의 `FROM`** 에서 끊는다.
+
+    괄호 안(LATERAL 서브쿼리 등)의 `SELECT *` 는 섞이지 않는다.
+    """
+    head = re.match(r"\s*SELECT\s+(?:DISTINCT\s+)?", body, re.I)
+    if not head:
+        return None
+    depth, i = 0, head.end()
+    while i < len(body):
+        ch = body[i]
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif depth == 0 and re.match(r"\bFROM\b", body[i:], re.I):
+            return body[head.end():i]
+        i += 1
+    return None
+
+
+def _view_columns(body: str) -> set[str]:
+    """뷰가 **내놓는** 컬럼 이름. 못 뽑으면 빈 집합 — 그건 아래에서 센다."""
+    select_list = _select_list(body)
+    if select_list is None:
+        return set()
+    out: set[str] = set()
+    for piece in _split_top_level(select_list):
+        piece = " ".join(piece.split())
+        if not piece:
+            continue
+        tail = AS_TAIL.search(piece)
+        if tail:
+            out.add(tail.group(1).lower())
+            continue
+        ident = IDENT_TAIL.match(piece)
+        if ident:
+            out.add(ident.group(1).lower())
+            continue
+        return set()   # `*` 등 — 하나라도 못 읽으면 **이 뷰는 못 뽑은 것**이다
+    return out
+
+
+def _unresolved_views() -> list[str]:
+    """컬럼을 못 뽑은 뷰. 조용히 건너뛰면 그 참조가 말없이 사라진다."""
+    _, views = schema()
+    return sorted(name for name, cols in views.items() if not cols)
+
+
+def schema() -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    """(테이블→컬럼, 뷰→컬럼). `schema.sql` 다음에 마이그레이션을 **순서대로** 얹는다."""
     cols: dict[str, set[str]] = {}
-    views: set[str] = set()
+    views: dict[str, set[str]] = {}
 
     def add(table: str, col: str) -> None:
         cols.setdefault(table, set()).add(col)
@@ -164,8 +246,12 @@ def schema() -> tuple[dict[str, set[str]], set[str]]:
                 cols.get(table, set()).discard(old)
                 add(table, new)
 
-        for m in re.finditer(r"CREATE(?:\s+OR REPLACE)?\s+VIEW\s+([a-z_][a-z0-9_]*)", sql, re.I):
-            views.add(m.group(1))
+        for m in VIEW_HEAD.finditer(sql):
+            name = m.group(1).lower()
+            end = sql.find(";", m.end())
+            body = sql[m.end():end if end != -1 else len(sql)]
+            # `CREATE OR REPLACE` 는 **뒤가 이긴다** — 0004 가 0002 의 provenance_drift 를 덮는다
+            views[name] = _view_columns(body)
 
     return cols, views
 
@@ -199,8 +285,8 @@ def _references() -> list[tuple[str, int, str, str]]:
             for m in QUALIFIED.finditer(sql):
                 nick, col = m.group(1).lower(), m.group(2).lower()
                 rel = alias.get(nick)
-                # 뷰는 컬럼을 정적으로 못 뽑는다 — 머리말에 사각지대로 적었다
-                if rel and rel in tables:
+                # 뷰도 본다 (큐 #41). 컬럼을 못 뽑은 뷰만 건너뛰고, 그 수는 따로 센다.
+                if rel and (rel in tables or views.get(rel)):
                     out.append((path.name, lineno, rel, col))
     return out
 
@@ -208,12 +294,13 @@ def _references() -> list[tuple[str, int, str, str]]:
 class TestCoreSqlNamesRealColumns(unittest.TestCase):
     def test_every_qualified_column_exists(self) -> None:
         """없는 컬럼은 임포트도 테스트도 통과하고 **요청 한복판**에서 터진다."""
-        tables, _ = schema()
+        tables, views = schema()
+        known = {**views, **tables}
         bad = sorted(
             {
                 f"{name}:{lineno} {rel}.{col}"
                 for name, lineno, rel, col in _references()
-                if col not in tables[rel]
+                if col not in known[rel]
             }
         )
         self.assertEqual([], bad, "스키마에 없는 컬럼을 부른다: " + "; ".join(bad))
@@ -229,6 +316,36 @@ class TestProbeActuallyScans(unittest.TestCase):
             sum(len(c) for c in tables.values()), 200, "컬럼을 너무 적게 읽었다"
         )
         self.assertGreaterEqual(len(views), 8, f"뷰 {len(views)}개밖에 못 읽었다")
+        # 오늘 실측 86. 이름만 알고 컬럼이 비면 뷰 참조가 통째로 사라진다 (큐 #41).
+        self.assertGreaterEqual(
+            sum(len(c) for c in views.values()), 80,
+            f"뷰 컬럼을 {sum(len(c) for c in views.values())}개밖에 못 뽑았다",
+        )
+
+    def test_no_view_is_silently_skipped(self) -> None:
+        """컬럼을 못 뽑은 뷰는 **참조가 말없이 사라진다** — 오늘은 0 이다."""
+        self.assertEqual([], _unresolved_views(),
+                         f"컬럼을 못 뽑은 뷰: {_unresolved_views()}")
+
+    def test_view_columns_are_really_read(self) -> None:
+        """추출기가 껍데기면 위 바닥만 채우고 **엉뚱한 이름**을 담을 수 있다."""
+        _, views = schema()
+        self.assertIn("is_fresh", views.get("node_liveness", set()))          # 괄호식 + AS
+        self.assertIn("availability", views.get("node_liveness", set()))      # 별칭 없는 s.availability
+        self.assertIn("reason", views.get("task_input_purge_due", set()))     # END AS (CASE)
+        self.assertIn("drifted_still_routable",                                # FILTER (…) AS
+                      views.get("provenance_drift_summary", set()))
+        # LATERAL 안쪽 `SELECT * FROM node_session` 이 새어 들어오면 안 된다
+        self.assertNotIn("closed_at", views.get("node_liveness", set()))
+
+    def test_core_actually_reads_views(self) -> None:
+        """뷰 참조가 0 이면 위 확장은 **아무것도 안 지킨다** (오늘 27건 · 뷰 6종)."""
+        _, views = schema()
+        view_refs = [r for r in _references() if r[2] in views]
+        self.assertGreaterEqual(len(view_refs), 20, f"뷰 컬럼 참조 {len(view_refs)}건")
+        # 6 종만 **한정된** 컬럼으로 부른다. 나머지 넷은 한정 없이 부르거나 안 쓴다.
+        self.assertGreaterEqual(len({r[2] for r in view_refs}), 5,
+                                sorted({r[2] for r in view_refs}))
 
     def test_migrations_are_applied_on_top(self) -> None:
         """마이그레이션을 안 얹으면 **멀쩡한 컬럼이 「없다」로 뒤집힌다** — 오탐 공장이다."""
@@ -242,9 +359,10 @@ class TestProbeActuallyScans(unittest.TestCase):
             with self.subTest(column=f"{table}.{col}"):
                 self.assertIn(col, tables.get(table, set()))
 
-    # 오늘 실측 335. **별칭이 안 풀리면 참조가 조용히 빠지므로** 바닥을 가깝게 둔다.
+    # 오늘 실측 362 (뷰 컬럼 27건이 큐 #41 로 들어왔다 · 그전 335).
+    # **별칭이 안 풀리면 참조가 조용히 빠지므로** 바닥을 가깝게 둔다.
     # 줄었다면 왜 줄었는지 확인하고 근거와 함께 이 수를 다시 적는다.
-    REFERENCE_FLOOR = 330
+    REFERENCE_FLOOR = 355
 
     def test_enough_references_are_checked(self) -> None:
         """`FROM task t` 에서 별칭 하나만 빠져도 열여덟 건이 말없이 사라진다."""
@@ -260,6 +378,7 @@ class TestProbeActuallyScans(unittest.TestCase):
         """별칭을 못 풀면 참조가 통째로 빠지고 검사가 조용히 비어 버린다."""
         rels = {rel for _, _, rel, _ in _references()}
         self.assertGreaterEqual(len(rels), 8, f"관계 {len(rels)}종만 풀렸다: {sorted(rels)}")
+        self.assertIn("node_liveness", rels)   # 뷰도 풀린다 (큐 #41)
         self.assertIn("assignment", rels)
         self.assertIn("task", rels)
 
