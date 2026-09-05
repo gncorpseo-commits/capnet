@@ -1,5 +1,83 @@
 # Changelog
 
+## `regate` 는 Docker 가 생겨도 **안 돈다** — `proof_ab` 는 돈다 (배치 B #75) — 2026-09-06
+
+`#254`(큐 #63)는 둘을 「본실행 못 봄」으로 묶었다. `#268`(큐 #74)에서 데모 아홉에 같은
+물음을 던졌더니 **막는 것이 Docker 하나뿐**이라는 답이 나왔다. 둘에도 물었고 **답이 갈렸다.**
+
+| 스크립트 | 필요한 것 | 저장소가 주는가 |
+|---|---|---|
+| `proof_ab.sh` | `eurosat_scratch` · `eurosat_scratch_b` **둘** | ✅ 둘 다 있다 |
+| | 살아 있는 스택 | ❌ Docker |
+| `regate.sh` | `provenance_drift` 에 **라우팅 가능한 드리프트 행** | ❌ **만들 수 없다** |
+| | 대상 Agent 의 가중치가 Node 에 | ❌ Docker |
+
+**`regate` 는 「Docker 가 생기면 돈다」가 아니다.** `clean_room` 이 「증적 드리프트 **0**」을
+확인하는 것이 정상이므로, 재게이트 **대상이 있으려면 골든셋을 실제로 교체**해야 한다 —
+Docker 가 있어도 **한 단계 더** 필요하다. `--dry-run` 으로 「대상 0」을 확인하는 것까지가
+현실적인 첫 걸음이고, 그 사실을 적어 둔다.
+
+### 말하는 문장에 또 속을 뻔했다 — **이번 회차 네 번째**
+
+「누가 부르는가」를 경로 문자열로 셌더니 `sanity.sh` 가 걸렸다. 실제로는 `echo` 안내였다:
+
+```text
+echo "sanity OK (floors FAILED). 사슬 위 A/B 교체는 scripts/proof_ab.sh."
+```
+
+`bash …` 로 **실행하는** 줄만 보게 좁혔다. `#220` 이 백틱을 걷어낸 것과 같은 규율이다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `sanity.sh` 가 **진짜로** `proof_ab` 를 실행 | `test_they_are_still_run_by_nobody` |
+| `--dry-run` 을 `--preview` 로 개명 | `test_it_has_a_dry_run` |
+| B 가중치를 트리에서 치움 | `test_both_weights_are_in_the_repo` |
+
+재현: `python3 -m unittest tests.test_regate_and_proof_ab_readiness` (9 검사 · 1008 통과)
+
+## 능력 데모 아홉 — **막는 건 Docker 하나뿐이다** (배치 B #74) — 2026-09-06
+
+`#229`(큐 #46)는 `clean_room` 이 데모 **열셋 중 둘**만 돌리면서 「전부 재현된다」를 찍던
+것을 잡고, 아홉을 안 넣은 이유를 「Docker 가 없어 재 볼 수 없다」로 적었다.
+**그 문장은 「무엇이 더 필요한지 모른다」로도 읽힌다.** 재 봤다.
+
+| 데모 | 가중치 | 저장소에 | Ollama |
+|---|---|---|---|
+| `embed_demo` | `text_embed_scratch` | ✅ | 아니오 |
+| `image_embed_demo` | `eurosat_scratch` | ✅ | 아니오 |
+| `ner_demo` | `rule_ner` | ✅ | 아니오 |
+| `pii_demo` | `rule_pii` | ✅ | 아니오 |
+| `series_demo` | `series_scratch` | ✅ | 아니오 |
+| `table_demo` | `text_struct_scratch` | ✅ | 아니오 |
+| `text_demo` | `text_struct_scratch` | ✅ | 아니오 |
+| `text_extract_demo` | `rule_extract`·`rule_ner` | ✅ | 아니오 |
+| `text_rank_demo` | `rule_extract`·`rule_ner`·`rule_rank` | ✅ | 아니오 |
+
+**아홉 전부 추가 가능하다.** 새로 만들 가중치도, 내려받을 것도, Ollama 도 없다 —
+`docker compose up` 하나가 서면 `clean_room` 에 `step` 아홉 줄을 얹으면 된다.
+
+`capreq_demo` 는 다르다 — **Ollama 가 필요하다.** 그래서 `#229` 의 `OUTSIDE_CLEAN_ROOM` 에
+그대로 둔다. (그 대비가 없으면 이 분류가 무엇을 가르는지 알 수 없어, 검사에 같이 넣었다.)
+
+### 제출 정본과도 대조한다
+
+아홉이 쓰는 가중치가 `check_submission.REQUIRED_WEIGHTS` 에 전부 있다 — 심사본에서
+빠지면 그 데모가 못 돈다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 데모가 없는 가중치를 부름 | `test_all_needed_weights_are_in_the_repo` |
+| 후보가 Ollama 를 씀 | `test_none_of_them_needs_ollama` |
+| 가중치 파일을 트리에서 치움 | 첫 검사 |
+
+**돌려 보지 않았다** — `docker info` 실패 (규약 6). 여기서 답한 것은 「무엇이 더 필요한가」다.
+
+재현: `python3 -m unittest tests.test_capability_demos_are_ready_to_add` (7 검사 · 999 통과)
+
 ## 쓰기 라우트의 최소 몸통 — **열아홉이 아니라 열 개**만 필요하다 (배치 B #73) — 2026-09-06
 
 `#235`(큐 #49)는 쓰기 라우트 **스물둘 중 셋**만 무인증으로 눌러 본다는 것을 표로 남기고,
