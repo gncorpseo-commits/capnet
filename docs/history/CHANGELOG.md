@@ -1,5 +1,51 @@
 # Changelog
 
+## 실패한 회차에는 **건너뜀이 안 보였다** (큐 #58) — 2026-09-05
+
+`OK (skipped=7)` 은 초록으로 지나간다. 2026-09-01 에 실제로 6건이 조용히 빠졌고 아무도 그
+숫자를 안 읽었다 — 그래서 `run_tests.sh` 가 그 수를 맨 아래 배너로 끌어올린다.
+
+**그런데 그 배너가 통과했을 때만 찍혔다.**
+
+```bash
+skipped="$(… sed 's/.*skipped=\([0-9][0-9]*\).*/\1/p' …)"   # FAILED 에서도 뽑는다
+…
+if [[ "$fail" -ne 0 ]]; then echo "실패 …" >&2; exit 1; fi     # ← 여기서 끝난다
+echo "전부 통과."
+if [[ "$skipped" -gt 0 ]]; then …                              # ← 실패하면 안 찍힌다
+```
+
+`FAILED (failures=1, skipped=7)` 두 모양을 다 잡으라고 sed 를 고쳐 놓고, **그 결과를 실패한
+회차에는 한 번도 안 보여 줬다.** 고칠 게 있는 회차일수록 「무엇이 안 돌았는가」가 필요하다.
+순서를 바꿨다.
+
+### 실측
+
+| 무엇 | 값 |
+|---|---|
+| `tests/` 의 **정적 skip 자리** | **7** |
+| 사유 | **2종** — `psycopg 없음`(5) · `capreq 를 못 읽었다`(2) |
+| 이 환경의 런타임 건너뜀 | **7** — 전부 발동 |
+| `ALLOWED` 의 사유 | **4** (나머지 둘은 `capreq/tests` 쪽) |
+
+정적 자리 수는 **상한**이다 — 의존성이 깔린 환경에서는 덜 건너뛴다. 런타임이 상한을
+넘으면 **목록에 없는 자리**에서 건너뛴 것이다.
+
+### sed 를 눈으로 읽지 않았다
+
+`OK (…)` · `FAILED (…)` · 건너뜀 없음 · 검사 출력에 `skipped=` 가 섞인 경우 —
+**`run_tests.sh` 에서 그 줄을 그대로 꺼내 돌려 본다.**
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 건너뜀 줄을 실패 분기 뒤로 되돌림 | `test_skip_block_comes_before_the_failure_exit` |
+| sed 를 `OK` 모양만 잡게 좁힘 | `test_failed_form` |
+| 허가 안 된 사유로 건너뜀 | `test_every_site_reason_is_allowed` · 자리 수 |
+
+재현: `python3 -m unittest tests.test_skip_count_reaches_the_banner` (11 검사 · 846 통과)
+
 ## compose 헬스체크는 **항상 참이 아니다** — 오늘 0건, 모양을 못박는다 (큐 #61) — 2026-09-05
 
 헬스체크는 `depends_on: condition: service_healthy` 의 **유일한 근거**다. 그 명령이 언제나

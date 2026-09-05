@@ -101,6 +101,7 @@
   "test_secrets_never_reach_output.py::test_scanner_reads_many_files#0": 30,
   "test_secrets_never_reach_output.py::test_scanner_reads_many_files#1": 20,
   "test_secrets_never_reach_output.py::test_shell_allowlist_is_real_and_reasoned#0": 20,
+  "test_skip_count_reaches_the_banner.py::test_enough_sites_are_seen#0": 5,
   "test_skip_reasons.py::test_probe_actually_finds_things#0": 5,
   "test_skip_reasons.py::test_probe_actually_finds_things#1": 3,
   "test_testing_doc.py::test_probe_actually_finds_things#0": 2,
