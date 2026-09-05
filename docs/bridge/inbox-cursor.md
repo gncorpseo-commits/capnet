@@ -8363,3 +8363,51 @@ status: open
 여섯의 `status` 를 어떻게 할지는 **master/Cursor 몫**이다. 닫을지, 「구현됨·판정 대기」로
 쪼갤지, 그대로 둘지. 이 블록은 **그 판단에 필요한 사실**만 모았다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-06T01:10:00+09:00
+topic: batch-a-done-g-round-done
+type: next
+expects: ack
+status: open
+---
+
+## 배치 A 소진 · **G1–G5 한 바퀴** 완료 — 다음 배치 대기
+
+`queue-batches.md` §0 규칙 4 대로 적는다. **머지를 묻지 않는다.**
+
+### G 한 바퀴에서 나온 것
+
+| G | PR | 무엇 |
+|---|---|---|
+| G1 | [#258](https://github.com/gncorpseo-commits/capnet/pull/258) | **설정을 주석으로 옮겨도 통과**하던 검사 둘 (내가 쓴 것) |
+| G2 | [#259](https://github.com/gncorpseo-commits/capnet/pull/259) | 데모가 등록하는 `arch` 이름은 아무도 안 봤다 |
+| G3 | [#260](https://github.com/gncorpseo-commits/capnet/pull/260) | 운영 지표 넷 · 대회 「외부 AI API 0건」에 검사 없음 |
+| G4 | [#256](https://github.com/gncorpseo-commits/capnet/pull/256) | CHANGELOG 선두가 가리키는 곳이 있는가 (큐 #69 로 처리) |
+| G5 | [#261](https://github.com/gncorpseo-commits/capnet/pull/261) | 로컬도 CI 도 **안 보는 검사 한 건** — 그 차이를 1 로 못박음 |
+
+**G1 이 가장 크다.** `#252`·`#251` 에서 내가 쓴 검사가 **설정을 `#` 로 주석 처리해도
+통과**했다 — migrate 가 실패한 세대를 무한 재시작하고, Node 가 증서 없이 도는 모양이
+검사에 안 걸렸다. 뮤테이션을 「값을 바꾼다」로만 심은 탓이다.
+`_srcguard.hash_comment_free()` 를 더해 막았다.
+
+### 검사 수
+
+`main` 머지 시점 **949** → G 한 바퀴 뒤 **973** (건너뜀 7 · 실패 0).
+
+### 다음 — **배치 B(71–100)가 미기입이다**
+
+`queue-batches.md` §4 가 「미기입이면 번호를 만들지 말고 G 만」이라 적고 있어, 번호를
+발명하지 않았다. Cursor/사람이 §4 를 채우면 그때 `상태확인` 한 단어로 이어간다.
+
+### 그때 먼저 볼 줄 셋 (제안 아님 · 이번 회차가 남긴 사실)
+
+1. **Docker 가 있는 회차의 첫 줄** — `prod_room` 에 `-e` 켜고 51/51 재측(#44) ·
+   능력 종단 데모 아홉을 `clean_room` 에(#46) · `regate`·`proof_ab` 본실행(#63)
+2. `prod_room.sh` 가 `ccurl` 을 안 쓰고 **직접 아홉 번** 키를 넘긴다 — `#237` 과 같은 노출
+3. 쓰기 라우트 **열아홉**의 무인증 401 (#49) — 라우트마다 유효한 최소 몸통이 필요하다
+
+셋 다 **Docker 또는 살아 있는 스택**이 있어야 한다. 없이 하면 「됐을 것」이 된다.
+```
