@@ -1,5 +1,24 @@
 # Changelog
 
+## 등록된 바닥 140 중 **언제나 참인 것은 0** — 그걸 못박는다 (배치 B #77) — 2026-09-06
+
+`#230`(큐 #50)은 바닥을 등록부(`tests/floors.json`)에 적어 **내려가면 운다**고 했다.
+그런데 처음부터 **물지 않는 바닥**이 등록되면 등록부는 그것을 「지킨다」고 센다.
+물지 않는 모양은 하나다 — `assertGreaterEqual(len(x), 0)`. 길이는 음수가 없으니 언제나 참이다.
+
+| 무엇 | 값 |
+|---|---|
+| 등록된 바닥 | **140** |
+| 값이 0 인 것 | **2** — 둘 다 `assertGreater(…, 0)`(strict · 실효 바닥 1) |
+| `assertGreaterEqual(…, 0)` | **0** ✅ |
+
+`tests/test_floors_actually_bite.py` 가 셋을 고정한다. 뮤테이션 2 — 공허한 바닥을 심기 ·
+strict 를 `>=` 로 느슨하게 하기 — 둘 다 운다.
+
+```bash
+python3 -m unittest tests.test_floors_actually_bite
+```
+
 ## 설정을 `#` 로 꺼도 통과하던 자리 **셋 더** (배치 B #76 · G1 전수) — 2026-09-06
 
 `#258`(G1)이 `hash_comment_free()` 를 만들며 **두 자리**를 고쳤다. 나머지는 안 봤다.

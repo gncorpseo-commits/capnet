@@ -55,6 +55,8 @@
   "test_executor_dispatch_covers_vocabulary.py::test_probe_actually_read_both_sides#0": 5,
   "test_executor_dispatch_covers_vocabulary.py::test_probe_actually_read_both_sides#1": 5,
   "test_exit_code_capture_is_errexit_safe.py::test_enough_captures_are_seen#0": 8,
+  "test_floors_actually_bite.py::test_registry_and_scan_agree_on_scale#0": 100,
+  "test_floors_actually_bite.py::test_registry_and_scan_agree_on_scale#1": 100,
   "test_floors_do_not_sag.py::test_enough_files_have_one#0": 40,
   "test_floors_do_not_sag.py::test_enough_floors_are_seen#0": 80,
   "test_gh_list_is_never_truncated.py::MIN_LIMIT": 100,
