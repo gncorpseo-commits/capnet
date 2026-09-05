@@ -1,5 +1,25 @@
 # Changelog
 
+## 위반 시연 여섯 중 TEST6 는 **표 밖의 제약**을 친다 — 정적으로 못박는다 (배치 B #87) — 2026-09-06
+
+`pg-violations.md` 가 스스로 적어 둔 함정 — 「다른 FK 가 잡았기 때문에 여전히 거절됐다」 — 을 시연
+여섯이 그대로 안고 있다 (`WHEN foreign_key_violation` = 어떤 FK 든 통과). Docker 가 없어 실행은
+못 봤고, 스키마에서 FK 40개의 이름·표·참조표를 도출해 각 시연의 실패 문장이 **칠 수 있는 FK** 와
+문서 행을 대조했다:
+
+| 시연 | 행 | 판정 |
+|---|---|---|
+| TEST1·2·3·4·5 | 1·2·3·8·9 | 행의 제약이 후보 안 ✅ |
+| TEST6 `UPDATE gate_run … 'FAILED'` | — | 칠 수 있는 것은 `gate_run_passed_…_status_fkey` 뿐 — **표 밖**. 11행은 다른 문장 |
+| 10행 `…_weights_sha2_fkey` | — | PG 63자 절단 실명 `…_weights_sha256_fk` 로 고쳤다 |
+
+`tests/test_violation_demo_names_its_constraint.py` 가 14행 해석·다섯 매핑·TEST6 표 밖·핸들러 6/단언 0 을
+고정. 뮤테이션 3/3 (9행 제약 바꿈 · TEST4 가 다른 표 갱신 · 4행 축약 오타) 운다. SQL 단언·15행은 브리지.
+
+```bash
+python3 -m unittest tests.test_violation_demo_names_its_constraint
+```
+
 ## SBOM 진입점 셋 중 둘이 **의존성 없이 성공**하고 있었다 (배치 B #86) — 2026-09-06
 
 `#245` 는 `generate_sbom.sh` 에 「의존성 파일을 못 읽으면 멈춘다」를 달았다. SBOM 이 나오는 길은

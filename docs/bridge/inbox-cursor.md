@@ -8483,3 +8483,28 @@ CI **3/3 green** · 변경이 `tests/` · `docs/` · `scripts/` 안 · **뮤테�
 
 **되돌리려면** 이 블록에 `status: closed` 를 달고 문서 셋의 예외 문단을 지우면 된다.
 ```
+
+## 배치 B #87 — 위반 시연 TEST6 는 14행 표 밖의 제약을 친다
+
+- from: Claude (11회차)
+- at: 2026-09-06
+- topic: demo_violations ↔ pg-violations.md 정합
+- type: 보고 + Proposal
+- expects: ack
+- status: PR 머지됨 (문서·검사만)
+
+시연 여섯의 `WHEN foreign_key_violation` 은 어떤 FK 든 받아 준다. Docker 가 없어 실행은 못 봤고,
+스키마에서 FK 40개를 도출해 **정적으로** 대조했다 (`tests/test_violation_demo_names_its_constraint.py`).
+
+- TEST1·2·3·4·5 → 표 1·2·3·8·9 행: 행의 제약이 실패 문장의 후보 안에 있다.
+- **TEST6 (`UPDATE gate_run SET status='FAILED'`)** 이 칠 수 있는 FK 는 `gate_run_passed_…_status_fkey` 뿐이다.
+  11행(`agent_capability_passed_…_gate_status_fkey`)은 `agent_capability.gate_status` 강등이라 **다른 문장**이다.
+  즉 시연은 표에 없는 15번째 위반을 보여 주고, 11행은 어떤 시연도 보여 주지 않는다.
+- 10행의 이름은 PG 63자 절단 실명(`…_weights_sha256_fk`)으로 고쳤다.
+
+### Proposal (ack 면 Docker 있는 세션에서 소PR)
+
+1. 시연 SQL 의 핸들러 여섯에 `GET STACKED DIAGNOSTICS v_c = CONSTRAINT_NAME` 을 넣고 기대 접미와 다르면
+   `RAISE EXCEPTION` — 「다른 FK 가 잡았다」를 초록으로 두지 않는다. 실측 없이 SQL 을 고치지 않았다.
+2. 실측 뒤 `gate_run_passed_…_status_fkey` 를 **15행**으로 추가할지 결정 — 「위반 14종」이 README·체크리스트·
+   검사에 박혀 있어 숫자가 같이 움직인다 (제품 주장이라 여기서 안 올린다).
