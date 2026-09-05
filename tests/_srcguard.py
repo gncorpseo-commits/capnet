@@ -62,3 +62,38 @@ def code_only(path: str | Path) -> str:
         "" if (i + 1) in doc else line.split("#", 1)[0]
         for i, line in enumerate(src.splitlines())
     )
+
+
+def hash_comment_free(path: str | Path) -> str:
+    """YAML·셸에서 `#` 주석을 비운 문자열 (줄 번호 유지).
+
+    ## 왜 필요한가
+
+    위 `code_only` 는 **파이썬**만 본다. 그런데 이 저장소가 실제로 네 번 더 걸린 자리는
+    **YAML 주석**이었다 (`#242` · `#248` · `#255`, 그리고 아래 둘):
+
+        # restart: "no"  ← 주석으로 옮겨도 「restart: "no" 가 있다」 검사가 통과했다
+        # NODE_CREDENTIAL_FILE: …  ← 같은 모양. 그 Node 는 증서 없이 돈다
+
+    「설정이 있다」를 텍스트로 확인할 때는 **주석을 걷고** 봐야 한다.
+    반대로 「그 이유가 적혀 있다」를 볼 때는 **원문**을 본다 — 그건 주석이 본체다.
+
+    ## 따옴표 안의 `#` 는 안 지운다
+
+    `key: "a#b"` · `printf '%s#%s'` 처럼 값에 든 것은 주석이 아니다.
+    """
+    out: list[str] = []
+    for raw in Path(path).read_text(encoding="utf-8").splitlines():
+        quote = ""
+        cut = len(raw)
+        for i, ch in enumerate(raw):
+            if quote:
+                if ch == quote:
+                    quote = ""
+            elif ch in "\"'":
+                quote = ch
+            elif ch == "#":
+                cut = i
+                break
+        out.append(raw[:cut].rstrip())
+    return "\n".join(out) + "\n"

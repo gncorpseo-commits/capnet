@@ -4,9 +4,15 @@ from __future__ import annotations
 
 import unittest
 
-from capreq.adapters.base import CapabilityInfo
-from capreq.adapters.static import StaticCatalog
-from capreq.router import CapabilityRouter, _parse_decision
+# 의존성이 없으면 **오류가 아니라 건너뜀**이다 (큐 #60 · `testing.md` §4.6).
+# 예전에는 import 가 그대로 터져 로컬 실행이 `FAILED (errors=3)` 였고, 그게
+# 「코드가 깨졌다」처럼 보였다. CI 의 capreq 잡은 핀을 깔므로 그대로 돈다.
+try:
+    from capreq.adapters.base import CapabilityInfo
+    from capreq.adapters.static import StaticCatalog
+    from capreq.router import CapabilityRouter, _parse_decision
+except ModuleNotFoundError:  # noqa: F401
+    raise unittest.SkipTest("httpx 없음 — capreq 런타임 핀이 깔린 환경에서만 돈다")
 
 
 class FakeLLM:

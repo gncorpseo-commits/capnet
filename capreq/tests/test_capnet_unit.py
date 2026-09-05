@@ -11,9 +11,15 @@ from __future__ import annotations
 import json
 import unittest
 
-import httpx
+# 의존성이 없으면 **오류가 아니라 건너뜀**이다 (큐 #60 · `testing.md` §4.6).
+# 예전에는 import 가 그대로 터져 로컬 실행이 `FAILED (errors=3)` 였고, 그게
+# 「코드가 깨졌다」처럼 보였다. CI 의 capreq 잡은 핀을 깔므로 그대로 돈다.
+try:
+    import httpx
 
-from capreq.adapters.capnet import CapNetAdapter, CapNetTaskError
+    from capreq.adapters.capnet import CapNetAdapter, CapNetTaskError
+except ModuleNotFoundError:  # noqa: F401
+    raise unittest.SkipTest("httpx 없음 — capreq 런타임 핀이 깔린 환경에서만 돈다")
 
 TASK_ID = "11111111-1111-1111-1111-111111111111"
 

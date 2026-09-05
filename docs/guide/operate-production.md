@@ -10,6 +10,12 @@
 docker compose -f compose.yaml -f compose.prod.yaml up -d
 ```
 
+> **Compose v2.24+ 가 필요하다.** 이 오버레이는 `ports: !override []` 로 postgres 를 닫는데,
+> `!override` 는 **v2.24.0(2024-01)** 에서 들어왔다. 그보다 낮으면 병합이 **덧붙이기**라
+> `5432` 가 열린 채 남는다. 확인: `docker compose version`.
+> 재현: `docker compose -f compose.yaml -f compose.prod.yaml config | grep -c published:` → **1**
+> (`compose.yaml` 단독은 **5**).
+
 | | 데모 (`compose.yaml`) | 제품 (`+ compose.prod.yaml`) |
 |---|---|---|
 | 관리 API 인증 | 꺼짐 — 쓰기 12개가 열려 있다 | **강제** (`REQUIRE_API_KEY=1`) |

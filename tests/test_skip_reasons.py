@@ -37,7 +37,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TREES = (ROOT / "tests", ROOT / "capreq" / "tests")
 
-SKIP_CALLS = {"skip", "skipIf", "skipUnless", "skipTest"}
+# `raise unittest.SkipTest(…)` 도 센다 (큐 #60) — 모듈 전체를 건너뛰는 자리가
+# 여기 셋 있고, 그건 「사유를 안 적어도 되는 문법」이 아니다.
+SKIP_CALLS = {"skip", "skipIf", "skipUnless", "skipTest", "SkipTest"}
 
 # 사유 → **왜 건너뛰어도 되는가**. 새 줄을 넣기 전에 이 물음에 답한다:
 #   「이건 그 환경에 없는 것인가, 아니면 깨진 검사를 덮는 것인가?」
@@ -70,6 +72,16 @@ ALLOWED: dict[str, tuple[str, str | None]] = {
     ),
     "node 가 없다 — 흐름 실행 검사를 건너뛴다": (
         "위와 같다 — 보내기→라우팅→폴링→결과 경로 전체.",
+        "capreq",
+    ),
+    "httpx 없음 — capreq 런타임 핀이 깔린 환경에서만 돈다": (
+        "`capnet` 어댑터·라우터 검사가 `httpx` 를 import 한다. 예전에는 그대로 터져 "
+        "로컬 실행이 `FAILED (errors=3)` 였다 — 그건 「코드가 깨졌다」처럼 보인다 (큐 #60). "
+        "capreq 잡은 핀을 깔므로 **거기서는 실제로 돈다.**",
+        "capreq",
+    ),
+    "fastapi 없음 — capreq 런타임 핀이 깔린 환경에서만 돈다": (
+        "서버 경로 검사가 `fastapi.testclient` 를 쓴다. 위와 같은 이유·같은 잡.",
         "capreq",
     ),
 }

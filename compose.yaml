@@ -40,10 +40,15 @@ services:
       - |
         [ "$${CAPNET_AUTO_MIGRATE:-1}" = "1" ] || {
           echo "migrate 건너뜀 (CAPNET_AUTO_MIGRATE=$${CAPNET_AUTO_MIGRATE})"; exit 0; }
+        ok=0
         for i in $$(seq 1 60); do
-          python -m app.migrate status >/dev/null 2>&1 && break
+          python -m app.migrate status >/dev/null 2>&1 && { ok=1; break; }
           sleep 1
         done
+        # 만료를 조용히 넘기지 않는다 (큐 #57). 그래도 up 은 돌린다 — 거기서 나는
+        # 오류가 더 구체적이다. 다만 「60초를 기다렸다」는 사실이 로그에 남아야
+        # 「왜 baseline 이 없지」를 처음부터 다시 찾지 않는다.
+        [ "$$ok" = 1 ] || echo "migrate: baseline 을 60초 안에 못 봤다 — 그대로 up 을 시도한다" >&2
         exec python -m app.migrate up
 
   core:

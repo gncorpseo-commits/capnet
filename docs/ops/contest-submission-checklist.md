@@ -5,7 +5,7 @@
 > **전제:** 참가접수 완료 · 배점 비공개 · 회신 없어도 준비 완결.  
 > **최종 마감 = 8.27** (내부 마감 8/26 12:00).  
 > 시나리오·UC 정본: [`Contest_MVP_2026.md`](./Contest_MVP_2026.md) · 결정: [`../context-handoff.md`](../context-handoff.md)  
-> 갱신: 2026-09-04
+> 갱신: 2026-09-05
 
 ---
 
@@ -161,8 +161,11 @@ W2 버퍼를 코드 다듬기에 쓰지 않는다. F2에 따라 1차는 글로�
 - [ ] M1–M13, M15–M21, **M25** 동작
 - [ ] UC-1 → 4 → 6 → 11 (가능하면 7)
 - [x] `scripts/demo` 단일 명령 성공 — **깨끗한 환경 재현 확인 (2026-08-16 · `main`=`6609ce1`)**
-      빈 볼륨 → `compose up` → `clean_room` **9/9** · `prod_room` **27/27** · 골든 `acc=0.8500` ·
+      빈 볼륨 → `compose up` → `clean_room` **9/9** · 골든 `acc=0.8500` ·
       무단 노드 호출 403 · 마이그레이션 **18개 적용 · 체크섬 일치**
+      `prod_room` 은 **2026-09-04 재측정 51/51** — 8/16 의 「27/27」은 그때의 값이고,
+      `#205` 가 프로브 라우트를 5 → 24 로 늘려 51 이 됐다.
+      재현: `python3 scripts/room_check_count.py` (소스에서 센다) · `bash scripts/prod_room.sh` (실행)
 - [x] **능력 6종 데모 재현** — `text`·`embed`·`series`·`image_embed`·`table` 다섯 데모 완주
       (`bash` 전용 · 촬영에는 넣지 않는다 → 런북 §1-A)
 - [x] `scripts/demo_violations` 위반 6종 전부 DB 거부

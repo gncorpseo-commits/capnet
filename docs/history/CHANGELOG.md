@@ -1,5 +1,1392 @@
 # Changelog
 
+## 설정을 **주석으로 옮겨도** 통과하던 검사 둘 (G1) — 2026-09-05
+
+`tests/_srcguard.py` 는 이 저장소가 **네 번** 겪은 사고에서 나왔다 — 「X 를 쓰지 않는다」를
+텍스트로 검사할 때 **그렇게 적어 둔 설명이 검사에 걸린** 자리들이다. 그 헬퍼는
+**파이썬**의 `#` 주석과 docstring 을 걷는다.
+
+**거울상이 남아 있었다.** 「설정이 **있다**」를 텍스트로 확인할 때, 그 설정을 **주석으로
+옮기면** 검사가 그대로 통과한다. 파이썬이 아니라 **YAML** 이라 `code_only` 가 못 닿았다.
+
+### 이번 회차에 **내가 쓴** 검사 둘이 걸렸다
+
+| 심은 것 | 그 전 | 무엇이 되나 |
+|---|---|---|
+| `# restart: "no"` | `test_migrate_does_not_restart` **통과** | migrate 가 실패한 세대를 **무한 재시작** |
+| `# NODE_CREDENTIAL_FILE: …` 하나 | `…file_path_to_every_node` **통과** | 그 Node 가 강제 모드에서 **증서 없이** 돈다 |
+
+둘 다 `#252`·`#251` 이다. 뮤테이션을 **「값을 바꾼다」로만** 심었고
+**「주석으로 옮긴다」는 안 심었다.** G1 이 정확히 그걸 물었다 — 「방금 PR 의 뮤테이션이
+안 덮는 우회 한 가지」.
+
+### 더한 것
+
+`_srcguard.hash_comment_free(path)` — YAML·셸의 `#` 주석을 비운다. 줄 번호는 유지하고
+**따옴표 안의 `#` 는 안 지운다** (`a: "x#y"` 는 값이다).
+
+| 무엇을 보나 | 어떻게 |
+|---|---|
+| 설정이 **있다** | **걷고** 본다 |
+| **이유**가 적혀 있다 (initdb 함정 주석 · 시크릿 위생) | **원문**을 본다 — 주석이 본체다 |
+
+「설명을 지워야 통과하는 검사를 만들지 않는다」(`_srcguard` 머리말)의 반대편도 같이 적는다 —
+**주석만 있어도 통과하는 검사도 만들지 않는다.**
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `restart: "no"` 를 주석으로 | `test_migrate_does_not_restart` (고친 뒤) |
+| `NODE_CREDENTIAL_FILE` 하나를 주석으로 | `…gives_the_file_path_to_every_node` (고친 뒤) |
+| 따옴표 안 `#` 를 지우게 | `test_a_hash_inside_quotes_survives` |
+| 두 검사에서 헬퍼를 빼면 | `test_they_import_the_helper` |
+
+재현: `python3 -m unittest tests.test_srcguard_covers_hash_comments` (8 검사 · 949 통과)
+
+## CHANGELOG 선두가 **가리키는 곳이 있는가** (큐 #69 · G4) — 2026-09-05
+
+`measured-claims` 규율은 「**측정 숫자는 재현 명령 없이 쓰지 않는다**」다. CHANGELOG 는 그
+규율이 가장 자주 깨지는 자리다 — 항목마다 숫자가 있고, 그 숫자를 **다시 낼 방법**은 쓰는
+사람만 안다. G4 는 그것을 한 줄로 좁힌다: **선두 항목이 테스트와 같은 말을 하는가.**
+
+| 무엇 | 값 |
+|---|---|
+| CHANGELOG 항목 | **186** |
+| 최근 12개 중 재현 대상을 지목한 것 | **12** |
+| 지목한 이름 중 **실재하지 않는 것** | **0** |
+
+선두 항목(`큐 #60`)은 `capreq/tests` 디스커버리만 적고 있어 **모듈 이름을 하나 덧붙였다** —
+그게 이 검사가 요구하는 모양이다.
+
+### 왜 열둘만 보나
+
+옛 항목은 이 규율이 서기 전에 쓰였다. **거슬러 올라가 고쳐 쓰지 않는다** — `#238` 이
+체크리스트의 옛 날짜를 지우지 않은 것과 같다. 규율은 **지금부터** 지킨다.
+
+### 무엇을 안 보나
+
+**주장과 검사가 같은 것을 말하는지**는 사람이 읽어야 한다. 여기는 「지목했는가 · 그것이
+있는가」만 본다 — **없는 것을 가리키는 재현 명령은 없는 것보다 나쁘다.**
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 선두 항목의 재현 줄 삭제 | `test_every_recent_entry_names_something` |
+| 없는 모듈을 지목 | `test_recent_entries_name_real_files` |
+| 선두 항목의 날짜 삭제 | `test_it_has_a_date` |
+
+재현: `python3 -m unittest tests.test_changelog_top_names_a_check` (6 검사 · 941 통과)
+
+## capreq 를 로컬에서 돌리면 **`FAILED (errors=3)`** 였다 (큐 #60) — 2026-09-05
+
+`STATE` 는 「capreq **72**」라고 적고 「정본은 CI」라고 단다. 그 72 는 이 환경에서
+재현되지 않는다 — `pip` 이 없어 `httpx`·`fastapi` 를 못 깐다. **그건 괜찮다.**
+문제는 **로컬에서 돌렸을 때 무엇이 나오느냐**였다:
+
+```text
+ERROR: test_capnet_unit  ModuleNotFoundError: No module named 'httpx'
+ERROR: test_router_unit  ModuleNotFoundError: No module named 'httpx'
+ERROR: test_server_unit  ModuleNotFoundError: No module named 'fastapi'
+Ran 52 tests — FAILED (errors=3)
+```
+
+**`FAILED` 는 「코드가 깨졌다」처럼 보인다.** `testing.md` §4.6 은 그 경우를
+「**없으면 건너뛴다**」로 정해 뒀는데 세 모듈만 그 규약 밖이었다.
+
+### 고친 뒤
+
+```text
+Ran 52 tests — OK (skipped=3)
+```
+
+| 무엇 | 값 |
+|---|---|
+| `capreq/tests` 의 검사 파일 | **7** |
+| 런타임 핀 없이 도는 것 | **4** (검사 **52**) |
+| 핀이 있어야 도는 것 | **3** — `capnet`·`router`(httpx) · `server`(fastapi) |
+| CI 의 capreq 잡 | **72** — 정본은 그 잡의 로그다 |
+
+숫자를 옮겨 적지 않는다. **어디서 나오는지**를 못박고, 이 환경에서 셋을 못 돌린다는
+사실은 그대로 적는다.
+
+### 건너뜀도 허가제다
+
+`raise unittest.SkipTest(…)` 는 `test_skip_reasons` 의 탐지 목록 밖이었다 —
+**「사유를 안 적어도 되는 문법」이 될 뻔했다.** `SKIP_CALLS` 에 넣고 두 사유를
+`ALLOWED` 에 등록했다 (4 → 6).
+
+### 또 주석에 속았다 (적어 둔다)
+
+「CI 가 핀을 깐다」를 **파일 전체**에서 `fastapi` 를 찾아 확인했더니, 바로 위 주석에 그
+낱말이 있어서 **설치에서 빼는 뮤테이션이 통과했다.** `pip install` **줄만** 보게 좁혔다 —
+`#242` 와 같은 자리다. 이번 회차에 세 번째다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 가드를 지워 다시 import 오류로 | 정적 검사 + **실행 검사** |
+| CI 설치 줄에서 `fastapi` 제거 | `test_ci_installs_the_pins_and_runs_the_suite` (정정 후) |
+| 핀 없이 도는 모듈이 `httpx` 를 import | **실행 검사** (`Ran 46 · errors=1`) |
+
+재현: `PYTHONPATH=capreq/src python3 -m unittest discover -s capreq/tests -p "test_*.py"`
+→ `Ran 52 · OK (skipped=3)` · `python3 -m unittest tests.test_capreq_suite_is_countable` (7 검사 · 935 통과)
+
+## 스크립트 서른넷 중 **스물여섯은 아무것도 안 돌린다** (큐 #63) — 2026-09-05
+
+`#63` 은 `regate.sh`·`proof_ab.sh` 를 「본실행 or **못 봄** 명시」로 남겼다. 재려고 보니
+더 큰 사실이 나왔다.
+
+| 누가 | 무엇을 |
+|---|---|
+| `run_tests.sh` | `check_release.sh` · `migrate.sh` |
+| `clean_room.sh` | `demo.sh` · `demo_violations.sh` · `sanity.sh` · `call.sh` · `node_onboard.sh` |
+| `prod_room.sh` | `demo.sh` |
+| `ci.yml` | `run_integration.sh` · `check_release.sh` |
+| **아무도** | **26** |
+
+**스물여섯이 전부 결함은 아니다.** 학습(`train_*`)·내려받기·수동 데모는 사람이 부르는
+도구다. 문제는 **그게 어디에도 안 적혀 있어서**, 게이트에 있어야 할 것이 빠져도 티가 안
+난다는 것이다 — `#229`(clean_room 이 데모 13 중 2만 돈다)와 같은 자리, 이번에는 전수다.
+
+### 문법을 처음 전수했다 — **34/34 통과**
+
+아무도 안 돌리는 스크립트가 **깨져 있으면 아무도 모른다.** `bash -n` 은 Docker 도
+스택도 필요 없다. 이 저장소에서 처음 센 값이다.
+
+### `regate.sh` · `proof_ab.sh` — 못 봤다
+
+| 스크립트 | 오늘 잰 것 | 못 잰 것 |
+|---|---|---|
+| `regate.sh` | 문법 · 사전 조건 명시 | 본실행 (재게이트 대상 · 새 `gate_run`) |
+| `proof_ab.sh` | 같음 | 본실행 (A·B 교차 배정) |
+
+둘 다 `docker compose up -d` 와 Node 의 실제 가중치가 있어야 한다. 이 세션에는 **Docker
+데몬이 없다.** Docker 가 있는 회차의 줄로 남긴다 — **「돌 것이다」로 적지 않는다.**
+
+### 이름을 잘못 지어 표에 유령이 생겼다 (적어 둔다)
+
+예외 목록을 `MANUAL` 로 지었더니 `#231` 의 허용목록 탐지 패턴
+(`ALLOW|EXEMPT|WITHOUT|…`)에 **안 걸려서**, 표에 등록해도 「없는 것을 해명한다」로
+빨개졌다. `WITHOUT_A_CALLER` 로 바꿨다 — **검사에 보이는 이름을 쓰는 것도 규율이다.**
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 이유 없는 새 스크립트 | `test_no_script_is_silently_unrun` |
+| 문법이 깨진 스크립트 | `test_every_script_parses` |
+| 「못 봤다」 표기 삭제 | `test_both_are_in_the_manual_table` |
+| `clean_room` 이 `sanity` 를 그만 부름 | `test_no_script_is_silently_unrun` |
+
+재현: `python3 -m unittest tests.test_every_script_is_accounted_for` (8 검사 · 928 통과)
+
+## 절대규칙 6 을 **세는 검사가 없었다** — 빌드 표면 0건 (큐 #62) — 2026-09-05
+
+절대규칙 6 은 「**사전학습 가중치를 쓰거나 동봉하지 않는다.** EuroSAT scratch 학습만.
+대회 2차 라이선스 검증 대비.」다. 그런데 `test_absolute_rules_are_enforced` 는 스스로
+적는다 — 「규칙 1·**6** 은 여기서 안 본다」.
+
+**빌드 표면이 그 규칙을 조용히 뒤집을 수 있는 자리다.** `INSTALL_TORCH=true` 는 torch 를
+깔고, torch 가 깔리면 `torchvision.models` **한 줄**이면 사전학습 가중치를 런타임에
+내려받는다. Dockerfile 의 `curl` 한 줄도 같다. **둘 다 소스에는 「가중치 파일」이 안 보인다.**
+
+### 실측
+
+| 무엇 | 값 |
+|---|---|
+| 빌드 ARG | **3** — `INSTALL_TORCH` · `TORCH_VERSION` · `TORCHVISION_VERSION` |
+| 그 ARG 가 여는 것 | CPU 휠 인덱스에서 **torch·torchvision 패키지**뿐 |
+| `torchvision.models`·`torch.hub`·`from_pretrained`·`timm` | **0** ✅ |
+| Dockerfile 의 `curl`·`wget`·`ADD http` | **0** ✅ |
+| 학습 스크립트의 `"pretrained": False` | **4곳 전부** ✅ |
+
+**0건이다.** 라이선스 검증에서 「안 썼다」를 말하려면 **그것을 세는 검사**가 있어야 한다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `torchvision.models.resnet18(weights="DEFAULT")` | `test_no_module_reaches_for_pretrained_weights` |
+| Dockerfile 에 `curl … w.pth` | `test_no_dockerfile_downloads_anything` |
+| 해명 없는 새 ARG `PRETRAINED_URL` | `test_every_arg_says_what_it_opens` |
+| 학습 스크립트의 `pretrained` 기록 삭제 | `test_training_scripts_record_pretrained_false` |
+
+`ALLOWED_ARGS` 는 `#231` 의 허용목록 표가 잡아내 **등록했다** — 그 핀이 작동한 두 번째 사례다.
+
+재현: `python3 -m unittest tests.test_build_args_open_no_pretrained_path` (8 검사 · 920 통과)
+
+## 마이그레이션은 실패하면 멈춘다 — 다만 **대기가 조용히 만료됐다** (큐 #57) — 2026-09-05
+
+세대 하나가 실패했는데 다음으로 넘어가면 DB 는 **어느 상태도 아니게** 된다. `0012` 가
+만든 컬럼을 `0013` 이 쓰는데 `0012` 가 없으면 오류는 `0013` 에서 나고 사람은 엉뚱한
+파일을 본다.
+
+| 무엇 | 값 |
+|---|---|
+| `cmd_up` 의 실패 처리 | `rollback()` → 메시지 → **`return 1`** ✅ |
+| 실패 메시지 | 「이 파일은 롤백됐다. **앞 파일들은 적용된 채로 남는다.**」 ✅ |
+| `core` 가 기다리는 조건 | `service_completed_successfully` ✅ |
+| `migrate` 재시작 정책 | `restart: "no"` ✅ |
+| `scripts/migrate.sh` | 종료 코드를 그대로 넘긴다 ✅ |
+
+**넘어가는 분기는 없다.**
+
+### 고친 것 하나
+
+compose 의 `migrate` 는 baseline 이 보일 때까지 60초 기다린 뒤 `up` 을 돈다. 그 루프가
+**성공했는지 만료됐는지 아무 말도 안 했다.**
+
+```sh
+for i in $(seq 1 60); do
+  python -m app.migrate status >/dev/null 2>&1 && break     # ← 만료도 여기로 나온다
+done
+exec python -m app.migrate up
+```
+
+**흐름은 안 바꿨다** — `up` 은 그대로 돈다(거기서 나는 오류가 더 구체적이다). 다만
+「60초를 기다렸다」가 로그에 남는다. 그게 없으면 「왜 baseline 이 없지」를 처음부터 다시
+찾게 된다. `sh -n` 과 `docker compose config` 로 확인했다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 실패 처리를 `continue` 로 | `test_the_handler_returns_instead_of_continuing` |
+| `core` 를 `service_started` 로 | `test_core_waits_for_success_not_completion` |
+| 대기 만료 보고 삭제 | `test_the_loop_reports_expiry` |
+| 래퍼에 `\|\| true` | `test_the_wrapper_propagates_the_exit_code` |
+
+마지막 뮤테이션이 `shift || true`(정상)까지 잡아 처음엔 늘 빨갰다 — **러너를 부르는 줄**만
+보게 좁혔다 (`#239` 의 `ALLOWED_SWALLOW` 와 같은 갈림).
+
+재현: `python3 -m unittest tests.test_migrate_stops_on_failure` (10 검사 · 909 통과)
+
+## Node 증서는 **파일에만 산다** — 재전수 0건 (큐 #56) — 2026-09-05
+
+`compose.prod.yaml` 이 스스로 적는다:
+
+> 증서는 **파일로** 넣는다: 환경변수로 주면 `docker inspect` 에 평문이 뜬다.
+
+`#47`(`ccurl` 이 키를 argv 로 넘기던 자리)이 보여 준 것처럼 **주석이 금지한 것을 코드가
+하고 있는지는 세어 봐야 안다.** 증서 쪽을 다시 훑었다.
+
+| 무엇 | 값 |
+|---|---|
+| 증서를 **파일로** 넣는 compose 서비스 | **3** |
+| 증서 **값**을 환경변수로 주는 서비스 | **0** ✅ |
+| `node_onboard.sh` 가 화면에 찍는 것 | `key_prefix` 만 ✅ |
+| 시크릿 디렉터리·파일 권한 | `0700` · `0600` ✅ |
+| `.gitignore` 가 막는 것 | `data/node-secrets/` · `*.credential` ✅ |
+| Node 가 읽는 순서 | **파일 먼저**, 없으면 환경변수 ✅ |
+| git 이 추적하는 증서 파일 | **0** ✅ |
+
+`NODE_CREDENTIAL`(값) 환경변수는 **읽는 쪽에만** 남아 있다 — 아무 compose 도 그걸 채우지
+않으므로 실제로는 죽은 길이다. **읽을 수 있다는 것과 그렇게 준다는 것은 다르다.**
+
+### 검사를 한 번 잘못 적었다 (적어 둔다)
+
+처음에는 「`*.credential` 파일이 트리에 **있으면** 실패」로 적었고, 온보딩을 한 번 돌린
+이 작업 트리에서 바로 빨개졌다. **파일이 있는 것은 정상이다** — 온보딩이 만드는 것이고
+`.gitignore` 가 커밋을 막는다. 보는 것은 「**git 이 추적하는가**」다. `git ls-files` 로 고쳤다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| compose 가 증서 **값**을 환경변수로 | `test_no_compose_sets_the_credential_value` |
+| 시크릿 파일을 `0644` 로 | `test_permissions_are_tight` |
+| 안내가 `NODE_CREDENTIAL=$cred` 를 붙여 넣게 | `test_the_snippet_hands_over_a_path` |
+| Node 가 환경변수를 먼저 읽게 | `test_file_beats_env` |
+
+재현: `python3 -m unittest tests.test_node_secrets_live_in_files` (11 검사 · 899 통과)
+
+## DB 를 세우는 길이 둘인데, 둘이 만나는지 세는 검사가 없었다 (큐 #52) — 2026-09-05
+
+| 길 | 무엇이 도는가 |
+|---|---|
+| 새 볼륨 | initdb 가 `docs/spec/schema.sql` 을 넣고 → `migrate up` 이 `0001`–`0018` |
+| 기존 볼륨 | 그 세대 다음 것들만 |
+
+**둘이 같은 곳에 도착해야 한다.** 안 그러면 「새로 clone 하면 되는데 우리 서버에서는
+안 된다」가 되고, 그건 재현이 안 되는 결함이라 가장 비싸다.
+
+`#221`(큐 #34)·`#227`(큐 #41)·`#249`(큐 #51)의 컬럼 검사는 **이 합성본을 정본으로 삼는다.**
+합성이 어긋나면 그 검사들이 통째로 엉뚱한 것을 본다 — 그런데 합성 자체를 세는 검사가 없었다.
+
+### 실측
+
+| 무엇 | 값 |
+|---|---|
+| `schema.sql` 단독 | 테이블 **20** · 컬럼 **143** |
+| `+ migrations/*.sql` (18개) | 테이블 **26** · 컬럼 **211** |
+| 마이그레이션이 **더한** 컬럼 | **68** |
+| **지우거나 이름을 바꾼** 컬럼 | **0** |
+| 순서 문제 | **0** |
+
+「순서 문제」는 셋이다 — 없는 테이블을 `ALTER`(가드 없이) · 이미 있는 테이블을 다시
+`CREATE`(가드 없이) · 이미 있는 컬럼을 다시 `ADD`(가드 없이). 전부 **적용 순서를 잘못
+가정했다**는 신호다.
+
+**DDL 은 건드리지 않았다** (절대규칙 1) — 제약을 약화하지도 순서를 바꾸지도 않는다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 없는 테이블 `ALTER` | `test_no_ordering_assumption_is_broken` |
+| `DROP COLUMN` | `test_migrations_only_add` |
+| 이미 있는 컬럼을 가드 없이 `ADD` | 순서 검사 |
+| `RENAME COLUMN` | `test_migrations_only_add` |
+
+**실제 적용은 안 잰다** — 두 경로를 진짜로 돌리는 것은 CI `migrate` 잡의 1–7단계다.
+여기는 **파일이 서로 모순되지 않는가**만 본다.
+
+재현: `python3 -m unittest tests.test_schema_and_migrations_agree` (8 검사 · 888 통과)
+
+## 두 번째 사각 — **f-string SQL 넷이 통째로 안 보였다** (큐 #51) — 2026-09-05
+
+`#227`(큐 #41)이 뷰 컬럼 사각을 열었다. 그 머리말이 남긴 다음 줄이 「문자열 조립으로 만든
+SQL 은 안 보인다」였고, **이 저장소에 실제로 넷 있었다.**
+
+```text
+TOTALS_SQL = f-string:  WITH w AS ({_WINDOW})  SELECT {_AGG}, …  FROM w
+```
+
+`ast.Constant` 가 아니라 `ast.JoinedStr` 라서 추출기가 **넷을 통째로 놓쳤다** —
+`work_units.py` 셋 · `safety.py` 하나. 조각(`_WINDOW`·`_AGG`)은 **모듈 자리의 문자열
+상수**라 그대로 풀어 넣을 수 있다. 모르는 표현은 공백으로 둔다 — **반쪽이라도 보는 편이
+통째로 못 보는 것보다 낫다.**
+
+| 무엇 | 전 | 후 |
+|---|---|---|
+| Core 참조 | 362 | **449** (+87) |
+| 없는 컬럼 | 0 | **0** |
+
+`REFERENCE_FLOOR` 355 → **440**.
+
+### 뮤테이션이 세 번째 사각을 드러냈다 (적어 둔다)
+
+조립 SQL 의 `w.capability_id` 를 `w.capability_idz` 로 바꿔 봤더니 **안 울었다.**
+`w` 는 CTE 별칭이라 테이블도 뷰도 아니고, 관계로 안 풀린다. 조각 **안쪽**
+(`FROM assignment a`)과 함께 조인되는 실제 테이블은 본다 — `a.vram_mb_peak` 를
+틀리게 하니 바로 울었다.
+
+**뮤테이션을 안 심었으면 「조립 SQL 을 이제 본다」를 과장해서 적을 뻔했다.**
+CTE 별칭은 사각으로 남겨 두고 머리말에 적었다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| f-string 을 다시 안 읽음 | 참조 449 → **362** · 조각 검사 |
+| 조각을 안 풀고 공백으로 | 참조 449 → **402** |
+| 조각 안쪽 `a.vram_mb_peak` 를 틀리게 | `test_every_qualified_column_exists` |
+| `%` 로 조립한 SQL 추가 | `test_no_percent_or_format_built_sql` |
+
+재현: `python3 -m unittest tests.test_core_sql_columns_exist` (11 검사 · 880 통과)
+
+## Core 가 죽으면 Node 는 **혼자 성공으로 끝내지 않는다** — 오늘 0건 (큐 #67) — 2026-09-05
+
+`#207` 은 「Core 와 끊긴 Node 가 **한가한 Node 처럼** 보였다」를 고쳤다 — **조회** 쪽이다.
+**쓰기 쪽 질문이 남아 있었다**: 추론은 됐는데 Core 에 못 알리면 무엇이 되는가?
+
+로컬만 성공으로 끝나면 사용자에게는 **결과가 있는데 증적이 없다.** 이 제품의 한 줄이
+「누가·무엇으로 실행했는지 증적이 남고 조회된다」이므로 그건 결과가 아니라 **거짓말**이다.
+
+| 무엇 | 값 |
+|---|---|
+| `/v1/execute` 응답 | `"core": reported` — **Core 왕복 없이는 못 돌아온다** ✅ |
+| `_post_complete` 의 예외 삼킴 | **0** — `HTTPError` 는 502 로 올리고 나머지는 그대로 터진다 ✅ |
+| `contextlib.suppress` | **3** — 파일 정리 둘(`OSError`) · 실패 보고 하나 |
+| 그중 Core 호출을 덮는 것 | **1** — `_report_failure` 뿐이고 **이유가 적혀 있다** |
+
+### `_report_failure` 만 삼키는 것은 결함이 아니다
+
+보고는 **원래 실패를 알리는 길**이다. 그 길이 막혔다고 원래 실패를 덮으면 안 되므로
+삼키고 로그만 남긴다 — 회수는 lease 만료(60초)가 한다. **삼키는 것과 성공으로 끝내는
+것은 다르다.**
+
+### 뮤테이션이 「이유가 지워져도 통과」를 잡았다 (적어 둔다)
+
+그 해명을 「`lease 만료` 라는 낱말이 docstring 에 있는가」로 봤더니, **앞 문단에도 그
+낱말이 있어서** 해명 문장을 지운 뮤테이션이 **그대로 통과했다.** 해명하는 그 문장을
+직접 본다 — `#242` 에서 내가 쓴 주석에 검사가 속은 것과 같은 모양이다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 응답에서 `"core": reported` 제거 | `test_the_response_carries_the_core_reply` |
+| `_post_complete` 가 `HTTPError` 를 삼킴 | 삼킴 검사 + `…raises_on_http_error` |
+| `_post_complete` 를 `suppress` 로 덮음 | `test_suppress_is_only_for_cleanup_and_the_reporter` |
+| 삼킴 해명 문장 삭제 | `test_the_reporter_says_why_it_swallows` (정정 후) |
+
+**실제 단절은 안 쟀다** — Core 를 죽이고 Node 를 돌리려면 살아 있는 스택이 필요하다.
+여기는 **코드의 모양**만 본다.
+
+재현: `python3 -m unittest tests.test_node_cannot_succeed_alone` (9 검사 · 880 통과)
+
+## 역할 가드의 **새 우회 모양 넷** — 오늘 전부 0 (큐 #65) — 2026-09-05
+
+`#192`·`#193` 은 **그때 있던** 우회를 닫았다. 우회는 새 문법으로 다시 열린다 — FastAPI 는
+인증을 여러 방식으로 붙일 수 있고, 방식이 늘 때마다 「이 라우트가 인증하는가」를 세는
+검사가 눈을 감는다.
+
+`test_every_route_declares_its_auth` 는 **본문에서 헬퍼를 불렀는가**만 본다. 그 전제가
+깨지는 모양 넷을 센다:
+
+| 모양 | 왜 위험한가 | 오늘 |
+|---|---|---|
+| `Depends(...)` | 인증이 **시그니처**로 옮겨가면 본문 스캔이 못 본다 | **0** |
+| 라우트를 감싸는 커스텀 데코레이터 | 데코레이터를 빼면 조용히 열린다 | **0** |
+| `if …: _require(…)` | **조건이 거짓이면 인증이 아예 안 돈다** | **0** |
+| `_require(변수, …)` | 무엇을 요구하는지 정적으로 못 센다 | **0** |
+
+인증 호출 **41**건은 전부 함수 본문의 **무조건** 호출이고 역할은 **리터럴**이다.
+
+`Depends` 로 인증을 붙이는 것이 나쁘다고 말하지 않는다 — 그렇게 바꾸려면
+**탐지기를 같이 고쳐야 한다**는 뜻이고, 이 검사는 그 순간에 운다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `Depends(_actor)` 로 인증 이동 | `test_no_dependency_injection_for_auth` |
+| 라우트에 `@needs_admin` 부착 | `test_no_custom_decorator_wraps_a_route` |
+| `if authorization:` 안으로 `_require` 이동 | `test_no_auth_call_sits_inside_a_condition` |
+| 역할을 변수로 (`role = "developer"`) | `test_every_required_role_is_a_literal` |
+
+재현: `python3 -m unittest tests.test_no_new_auth_bypass_shapes` (7 검사 · 871 통과)
+
+## claim 의 잠금 — **오늘 0건**, 두 줄이 다른 것을 지킨다 (큐 #68) — 2026-09-05
+
+`pitfalls` §4 는 두 줄로 못박는다:
+
+> - `FOR UPDATE SKIP LOCKED` **필수**
+> - 활성 lease 유니크 인덱스가 이중 할당을 DB 에서 막는다
+
+**두 줄은 다른 것을 지킨다.** 유니크 인덱스는 이중 배정을 **거절**하고, `SKIP LOCKED` 는
+애초에 **두 워커가 같은 작업을 집지 않게** 한다. 잠금이 빠지면 인덱스가 계속 잡아 주긴
+하지만 그건 **정상 경로가 계속 실패하는** 모양이다 — 조용히 느려지고 재시도가 는다.
+
+`SKIP LOCKED` 없는 맨 `FOR UPDATE` 는 더 나쁘다. 거절이 아니라 **대기**라서 워커가 서로를
+막고 큐가 멈춘다. 「안 되는」게 아니라 **「안 끝나는」** 것이라 알아채기 어렵다.
+
+### 실측
+
+| 무엇 | 값 |
+|---|---|
+| `task` 를 고르는 SQL | **4** |
+| 그중 **배정을 쓰는** 것 | **1** — `CLAIM_SQL`(`INSERT … SELECT`) |
+| 그 앞에서 잠그는 것 | **1** — `LOCK_SQL`(`FOR UPDATE SKIP LOCKED`) ✅ |
+| `SKIP LOCKED` 없는 맨 `FOR UPDATE` | **0** ✅ |
+| 나머지 둘 | 조회 전용 (`/v1/ops/status` 집계 · `GET /v1/tasks/{id}`) |
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `SKIP LOCKED` 제거 (맨 `FOR UPDATE`) | `test_every_for_update_skips_locked` |
+| 잠금 없이 `task` 를 골라 배정을 쓰는 SQL 추가 | 배정 쓰는 SQL 수 · picker 수 |
+| `claim_next` 에서 잠금과 쓰기 순서 뒤집기 | `test_claim_next_runs_the_lock_before_the_insert` |
+| `pitfalls` §4 의 규칙 줄 삭제 | `test_pitfalls_still_requires_it` |
+
+**동시성을 여기서 재지 않는다** — 두 워커를 실제로 붙이는 것은 DB 가 필요하고
+`tests/integration/check_*.py` 쪽 일이다. 여기는 **SQL 의 모양**만 본다.
+
+재현: `python3 -m unittest tests.test_claim_takes_the_lock` (9 검사 · 864 통과)
+
+## `datasetId` 는 두 종류다 — 그걸 모르면 **결함 열 건을 지어낸다** (큐 #66) — 2026-09-05
+
+`datasetId` 는 세 군데에 흩어져 있다 — 앱의 allowlist, 시드·데모의 **작업 페이로드**,
+화면이 읽는 `GET /v1/datasets`. 하나만 바뀌면 나머지가 조용히 낡는다.
+
+### 갈림 — `inputId` 가 있으면 allowlist 를 안 본다
+
+`#205`(D8′ · Decision A)가 연 자리다. 바이트가 이미 Core 를 거쳤으면 `datasetId` 를 다시
+묻는 것은 통제를 더하지 않고 **거짓말을 시킨다** — 텍스트 작업에 맞는 이름이 없어
+`eurosat-rgb` 를 적어야 했고, 그러면 증적에 **없던 데이터셋**이 남았다.
+
+```text
+datasetId 페이로드            21
+  ├ inputId 있음 (자유 이름)  10   전부 "text-demo" — 참인 이름이고 증적에 그대로 남는다
+  └ inputId 없음 (allowlist)  11   전부 "eurosat-rgb"
+allowlist 밖인데 inputId 없음  0   ✅
+```
+
+**첫 훑기는 「위반 10건」이라고 적을 뻔했다.** `#218` 이 `$node_id` 문자열을 세어
+「우회 일곱 건」이 될 뻔한 것과 같은 함정이라, **페이로드 단위**로 보고 `inputId` 유무를
+함께 읽는다.
+
+### 나머지 두 곳
+
+- `GET /v1/datasets` 가 **allowlist 를 그대로** 낸다 (화면이 읽는 값)
+- 시드의 `golden_metrics.dataset.id` 와 **골든 핀 파일 이름**이 그 집합과 맞는다
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `demo.sh` 의 `datasetId` 를 allowlist 밖으로 | `test_no_payload_without_input_id_leaves_the_allowlist` |
+| `/v1/datasets` 가 목록을 손으로 냄 | `test_the_route_serves_the_allowlist_itself` |
+| allowlist 에 핀 파일 없는 이름 추가 | `test_the_golden_pin_file_is_named_after_it` |
+| `if body.input_id is None:` 갈림 제거 | `test_the_branch_still_exists_in_core` |
+
+재현: `python3 -m unittest tests.test_dataset_ids_do_not_drift` (9 검사 · 855 통과)
+
+## 실패한 회차에는 **건너뜀이 안 보였다** (큐 #58) — 2026-09-05
+
+`OK (skipped=7)` 은 초록으로 지나간다. 2026-09-01 에 실제로 6건이 조용히 빠졌고 아무도 그
+숫자를 안 읽었다 — 그래서 `run_tests.sh` 가 그 수를 맨 아래 배너로 끌어올린다.
+
+**그런데 그 배너가 통과했을 때만 찍혔다.**
+
+```bash
+skipped="$(… sed 's/.*skipped=\([0-9][0-9]*\).*/\1/p' …)"   # FAILED 에서도 뽑는다
+…
+if [[ "$fail" -ne 0 ]]; then echo "실패 …" >&2; exit 1; fi     # ← 여기서 끝난다
+echo "전부 통과."
+if [[ "$skipped" -gt 0 ]]; then …                              # ← 실패하면 안 찍힌다
+```
+
+`FAILED (failures=1, skipped=7)` 두 모양을 다 잡으라고 sed 를 고쳐 놓고, **그 결과를 실패한
+회차에는 한 번도 안 보여 줬다.** 고칠 게 있는 회차일수록 「무엇이 안 돌았는가」가 필요하다.
+순서를 바꿨다.
+
+### 실측
+
+| 무엇 | 값 |
+|---|---|
+| `tests/` 의 **정적 skip 자리** | **7** |
+| 사유 | **2종** — `psycopg 없음`(5) · `capreq 를 못 읽었다`(2) |
+| 이 환경의 런타임 건너뜀 | **7** — 전부 발동 |
+| `ALLOWED` 의 사유 | **4** (나머지 둘은 `capreq/tests` 쪽) |
+
+정적 자리 수는 **상한**이다 — 의존성이 깔린 환경에서는 덜 건너뛴다. 런타임이 상한을
+넘으면 **목록에 없는 자리**에서 건너뛴 것이다.
+
+### sed 를 눈으로 읽지 않았다
+
+`OK (…)` · `FAILED (…)` · 건너뜀 없음 · 검사 출력에 `skipped=` 가 섞인 경우 —
+**`run_tests.sh` 에서 그 줄을 그대로 꺼내 돌려 본다.**
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 건너뜀 줄을 실패 분기 뒤로 되돌림 | `test_skip_block_comes_before_the_failure_exit` |
+| sed 를 `OK` 모양만 잡게 좁힘 | `test_failed_form` |
+| 허가 안 된 사유로 건너뜀 | `test_every_site_reason_is_allowed` · 자리 수 |
+
+재현: `python3 -m unittest tests.test_skip_count_reaches_the_banner` (11 검사 · 846 통과)
+
+## compose 헬스체크는 **항상 참이 아니다** — 오늘 0건, 모양을 못박는다 (큐 #61) — 2026-09-05
+
+헬스체크는 `depends_on: condition: service_healthy` 의 **유일한 근거**다. 그 명령이 언제나
+0 을 내면 「기다렸다」가 거짓이 되고 뒤 서비스는 **준비 안 된 DB 위에서** 뜬다.
+
+| 무엇 | 값 |
+|---|---|
+| `compose.yaml` 의 `healthcheck` | **1** — `postgres` |
+| 그 명령 | `pg_isready …` — 준비 전에는 **0 이 아니다** ✅ |
+| 항상 참인 헬스체크 | **0** ✅ |
+| `condition: service_healthy` 자리 | **2** — 둘 다 `postgres` |
+| 헬스체크 없는 서비스를 `service_healthy` 로 기다리는 곳 | **0** ✅ |
+
+### 적어 두는 것 — `core` 에는 헬스체크가 없다
+
+Node 셋은 `depends_on: [core]` 를 **조건 없이** 쓴다. 「컨테이너가 떴다」까지만 기다린다는
+뜻이다. 괜찮은 이유는 Node 가 하트비트를 **반복**하기 때문이다. 헬스체크를 새로 다는 것은
+이 큐의 범위가 아니라, **지금 모양을 못박아** 누가 `core` 에 `service_healthy` 를 걸면
+헬스체크부터 만들게 했다 — 없는 서비스에 걸면 compose 가 기동에서 죽는다.
+
+### 판정과 탐지기가 갈렸다 (적어 둔다)
+
+`["CMD", "true"]` 를 걸러내는 정규화를 **판정과 탐지기 검사에 따로** 적었더니 한쪽에서
+쉼표가 남아 첫 낱말이 `,` 가 됐다 — 탐지기 검사가 **자기 검사에 실패**하며 그걸 잡았다.
+같은 함수를 쓰게 합쳤다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 헬스체크를 `["CMD", "true"]` 로 | `test_every_healthcheck_can_fail` |
+| 헬스체크 없는 `core` 를 `service_healthy` 로 대기 | `test_every_wait_points_at_a_real_healthcheck` |
+| initdb 함정 주석 삭제 | `test_the_caveat_comment_is_there` |
+
+재현: `python3 -m unittest tests.test_compose_healthchecks_can_fail` (8 검사 · 835 통과)
+
+## 「CI 가 본다」는 목록이 **실제보다 짧았다** (큐 #59) — 2026-09-05
+
+`#215` 가 잡은 것은 「**CI 가 본다**」가 **거짓**이던 자리였다. 이번에는 그 문장이 적힌
+**목록 자체**를 `ci.yml` 과 대조했다.
+
+| job | `ci.yml` 의 단계 | `testing.md` §4 가 적던 것 |
+|---|---|---|
+| `unit` | **4** | **3** — `check_release.sh`(G9) 가 빠졌다 |
+| `capreq` | 2 | 2 |
+| `migrate` | **9** (의존성 설치·통합 검사 포함) | **6 + 통합** — SD-015 가 빠졌다 |
+
+빠진 둘은 **실제로 도는데 문서에 없다.** 「CI 가 본다」고 적힌 목록이 실제보다 짧으면
+안 적힌 단계는 **없는 것처럼 읽히고**, 지우거나 옮겨도 아무도 못 본다 —
+`#217`(시크릿 검사가 CI 워크플로를 안 보고 있었다)과 같은 모양이다.
+
+### 검사가 **내가 쓴 주석에 속았다** (적어 둔다)
+
+빠졌던 단계를 문서에 적으면서 그 옆에 「예전에는 `SD-015` 가 빠져 있었다」고 **설명을
+달았다.** 그랬더니 목록에서 그 단계를 지우는 뮤테이션이 **통과했다** — 낱말이 설명 문장에
+남아 있었기 때문이다. **검사가 자기 글을 근거로 삼은 것이다.**
+
+설명에서 단계 이름을 빼고, 왜 빼는지를 문서에 적었다. `#220` 이 「말하는 문장은 위반이
+아니다」로 걸러낸 것의 **거울상**이다 — 이번에는 말하는 문장이 **위반을 덮고** 있었다.
+
+### `ci.yml` 은 고치지 않았다
+
+잡·설치·단계 추가는 열린 Decision (`round9-ci-coverage-proposal`). 고친 것은 **문서**뿐이고
+검사는 양쪽을 **대조**만 한다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 문서에서 마지막 migrate 단계 삭제 | `test_every_step_is_mentioned` · 번호 목록 수 |
+| 문서에서 `check_release.sh` 삭제 | `test_every_step_is_mentioned` |
+| `ci.yml` 에 단계 추가 (문서는 그대로) | 대응표 누락 + `test_migrate_step_count_matches` |
+
+재현: `python3 -m unittest tests.test_ci_claims_match_the_workflow` (7 검사 · 827 통과)
+
+## 같은 주장을 **세 경로**로 말한다 — 셋의 모양을 못박는다 (큐 #54) — 2026-09-05
+
+`#200` 은 README 가 「**기기 주소가 없다**」고 부른 **파일이 틀렸던 것**을 고쳤다. 그 옆자리다 —
+**세 데모가 각자 무엇을 보이기로 했고, 그게 지금도 참인가.**
+
+| 스크립트 | 문서가 말하는 것 | 경로 |
+|---|---|---|
+| `demo.sh` | 실게이트 → Task 완주 · 증적 두 줄 | Core 직접 (+ 준비 단계 Node `/health`) |
+| `product_demo.sh` | 「**어디에도 기기 주소가 없다**」 | Core 공개 API 만 |
+| `capreq_demo.sh` | 사람이 쓰는 **입구**로 같은 것 | capreq → Core |
+
+**같은 주장을 세 번 말하는데 경로가 다르다.** 하나가 조용히 어긋나도 나머지 둘이
+초록이면 아무도 모른다.
+
+### 실측 — 셋 다 참이다
+
+| 무엇 | 값 |
+|---|---|
+| `product_demo.sh` 안의 Node 주소 | **0** ✅ |
+| `demo.sh` 의 Node 주소 사용 | **2줄** — 기본값(L8) · `/health`(L13) |
+| 그 둘이 `POST /v1/tasks`(L70) **앞인가** | **그렇다** ✅ |
+| `capreq_demo.sh` 의 Core 직접 `POST /v1/tasks` | **0** ✅ |
+
+**오늘 결함은 없다.** 나기 전에 막는다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `product_demo` 에 `NODE_URL` 한 줄 | `test_no_node_address_anywhere` |
+| `demo.sh` 가 작업 **뒤에** Node 를 부름 | `test_node_use_is_all_before_the_first_task` |
+| `demo.sh` 가 `/health` 아닌 Node 경로를 부름 | `test_node_is_only_health` |
+| README 에서 그 주장을 삭제 | `test_the_readme_still_makes_that_claim` |
+
+마지막 하나가 이 검사의 핵심이다 — **주장이 사라지면 검사는 아무 말도 안 지키게 된다.**
+
+재현: `python3 -m unittest tests.test_three_demos_same_claim` (9 검사 · 820 통과)
+
+## bash 에서 문서대로 돌리면 A/B 비교가 **자기 산출물을 못 찾았다** (큐 #53) — 2026-09-05
+
+README 는 「**Windows** — 동명 `.ps1`」이라고 적는다. **동명인데 동작이 달랐다** —
+`#206` 이 주소에서 그걸 잡았고, 이번에는 **입력 이름과 기본값**을 다시 훑었다.
+
+| 무엇 | 수 |
+|---|---|
+| `.ps1` | **11** |
+| 동명 `.sh` 가 있는 것 | **10** (`smoke_w1` 만 단독) |
+| 입력이 맞는 쌍 | **9** |
+| **어긋난 쌍** | **1** — `score_n300` |
+
+### ① `score_n300.ps1` 에는 `GOLDEN` 이 없었다
+
+`.sh` 는 `GOLDEN=…` 으로 **홀드아웃**을 잰다 (주석에 용례가 있다). `.ps1` 은
+`data\golden-n300` 이 박혀 있어 **Windows 에서는 홀드아웃을 못 쟀다.** `STATE` 는 홀드아웃
+숫자를 적는데, 재현 수단이 한쪽에만 있었다.
+
+### ② 산출물 이름이 갈렸고, `compare_ab` 는 옛 이름을 들고 있었다
+
+```text
+score_n300.sh  → artifacts/score-n300-eurosat_scratch-golden-n300.json
+score_n300.ps1 → artifacts/score-n300-eurosat_scratch.json
+compare_ab.*   기본값: artifacts/score-n300-eurosat_scratch.json     ← .sh 산출물과 불일치
+```
+
+**bash 에서 문서대로 돌리면** `score_n300.sh` 다음 `compare_ab.sh` 가
+`missing … — run score_n300.sh first` 로 끝났다. **방금 돌린 스크립트를 다시 돌리라고**
+말하는 것이다. 셋을 한 이름으로 맞췄다 (홀드아웃 결과가 기본 결과를 덮어쓰지 않게
+이름에 골든셋을 남긴다).
+
+### 파서가 주석 속 괄호에 걸렸다 (적어 둔다)
+
+`param(` 블록을 「첫 `)` 까지」로 자르니 내가 방금 넣은 주석 `(큐 #53)` 에서 끊겨
+**그 뒤 파라미터를 통째로 못 봤다.** 닫는 `)` 만 있는 줄에서 끝내도록 고쳤다 —
+`#220` 이 펜스 짝을 세다 뒤집힌 것과 같은 모양이다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `.ps1` 에서 `-Golden` 제거 | `test_every_mapped_param_exists_on_both_sides` |
+| `compare_ab.sh` 를 옛 이름으로 | 기본값 대조 2건 |
+| `score_n300.sh` 의 `GOLDEN` 기본값 변경 | 사슬 검사 2건 (양쪽) |
+| 짝 없는 새 `.ps1` | `test_the_ps1_only_script_is_known` |
+
+**못 쟀다** — `pwsh` 가 없어 `.ps1` 을 돌리지 못했다 (`#206` 과 같은 조건). 고친 줄은
+같은 파일이 이미 쓰는 문법이고, 문자열 정합은 검사가 **양쪽 소스에서 뽑아** 대조한다.
+
+재현: `python3 -m unittest tests.test_ps1_parity` (9 검사 · 811 통과)
+
+## SBOM 이 의존성 없이 **조용히** 만들어질 수 있었다 (큐 #55) — 2026-09-05
+
+`#205` 가 남긴 교훈은 「**응답 없음(`000`)을 통과로 세지 마라**」였다. 같은 질문을 셸 쪽
+전체에 물었다 — `|| true` · `|| :` 는 **직전 명령의 실패를 지운다.**
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| `scripts/**/*.sh` 의 `\|\| true` · `\|\| :` | **18** |
+| 그중 **실제 결함** | **1** — `generate_sbom.sh` |
+| 근거가 서는 자리 | **17** |
+| `%{http_code}` 를 받는 자리 | **10** |
+| 그중 `000` 이 새는 곳 | **0** — 전부 **허용 목록 비교**(`== "200" \|\| == "409"`) |
+
+### 결함
+
+```bash
+grep -v '^\s*#' "$root/apps/core/requirements.txt" || true   # ← 파일이 없어도 넘어간다
+```
+
+`grep` 은 파일이 없으면 **2** 로 죽는다. `|| true` 가 그걸 지웠다:
+
+```text
+$ bash -c 'set -euo pipefail; { grep -v "^#" /nonexistent/requirements.txt || true; }; echo rc=$?'
+grep: /nonexistent/requirements.txt: No such file or directory
+rc=0                            ← SBOM 은 core 의존성 없이 만들어지고 exit 0
+```
+
+`capreq` 쪽은 `[ -n "$capreq_reqs" ] || exit 1` 로 막혀 있었는데 **`requirements.txt` 둘만
+안 막혀 있었다.** 대회 2차 라이선스 검증에 내는 산출물이라 **빠진 채 초록**인 것이 가장 나쁘다.
+
+고친 방법 둘:
+
+1. 파일 존재를 **`pip install` 전에** 본다 — 없는 파일 하나 때문에 몇십 초를 기다리지 않는다
+2. `|| true` → `|| [ "$?" -eq 1 ]` — grep 의 **1**(고른 줄 없음)만 봐주고 **2**(읽기 실패)는 죽는다
+
+### 나머지 열일곱은 근거가 선다
+
+`shift`(인자 없음) · 뒷정리(`down -v`·`kill`·`tail`) · `grep -c .`(0건) · 데모의 id 추출
+(바로 뒤 `ccurl -sf` 가 다시 확인한다). `ALLOWED_SWALLOW` 가 **파일별 개수**로 못박는다.
+
+### 실제로 돌려 봤다
+
+정적 검사만으로는 가드가 도는지 모른다. 임시 트리에 스크립트를 복사하고 `requirements.txt`
+하나를 빼고 **실행**해 종료 코드와 메시지를 확인한다 — Docker 없이 돈다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 존재 가드 삭제 | 실행 검사 **2건** (없는 파일인데 통과) |
+| `\|\| [ "$?" -eq 1 ]` 를 `\|\| true` 로 | 표 검사 2건 + `test_grep_only_forgives_no_match` |
+| 새 스크립트가 `\|\| true` 로 삼킴 | `test_every_swallow_is_accounted_for` |
+| `text_demo` 의 http_code 비교 삭제 | `test_every_http_code_check_is_an_allowlist` |
+
+재현: `python3 -m unittest tests.test_scripts_do_not_swallow_failures` (10 검사 · 802 통과)
+
+## 같은 방을 **27/27** 과 **51/51** 로 부르고 있었다 (큐 #48) — 2026-09-05
+
+`clean_room` · `prod_room` 의 통과 수는 문서 여러 곳에 **손으로** 적혀 있다. 스크립트가
+자라면 그 숫자가 낡는데 **아무도 세고 있지 않았다.**
+
+| 어디 | 뭐라고 |
+|---|---|
+| `docs/ops/shoot-day-runbook.md` | `prod_room` **통과 51** |
+| `docs/bridge/queue-batches.md` | `prod_room 51/51` |
+| **`docs/ops/contest-submission-checklist.md`** | `prod_room` **27/27** ← 낡았다 |
+
+`#205` 가 프로브 라우트를 **5 → 24** 로 늘리면서 27 이 51 이 됐다. 런북은 따라갔고
+**제출 정본 체크리스트는 안 따라갔다** — 심사자가 읽는 쪽이 낡은 것이다.
+
+### 실행 없이 센다
+
+`scripts/room_check_count.py` 가 소스에서 센다. 최상위 `chk`/`step` 은 한 건,
+`for path in … ; do … chk … done` 은 **경로 수 × 루프 안 chk 수**.
+
+```bash
+python3 scripts/room_check_count.py
+# clean_room   9건
+# prod_room    51건
+```
+
+### 계수기가 파이썬 `for` 에 속아 두 건을 잃을 뻔했다 (적어 둔다)
+
+`prod_room.sh` 안에는 `python3 -c '…'` 로 넘기는 코드가 있고 그 안의
+`for n in d["nodes"]:` 도 **열 0 에서 시작한다.** 셸 루프로 잡으면 그 뒤 최상위 `chk`
+**두 건이 통째로 사라져 49** 가 나온다 — 실제로 그렇게 나왔다. 셸 `for` 는 줄이 `\` 나
+`; do` 로 끝난다. **세는 도구도 틀릴 수 있어서**, 그 함정을 검사에 그대로 심어 뒀다.
+
+### 인용은 위반이 아니다
+
+런북은 「옛 27/27 은 낡았다」고 **적는다.** 그건 주장이 아니라 설명이라, `「…」` 안을
+걷어내고 본다 — `#220` 이 백틱을 걷어낸 것과 같은 규율이다.
+
+### 날짜를 지우지 않았다
+
+체크리스트 항목은 `2026-08-16` 재현 기록이다. **숫자만 51 로 바꾸면 그 날의 기록이
+거짓이 된다.** 8/16 의 27 은 그때 값으로 두고, `prod_room` 은 **2026-09-04 재측정
+51/51** 로 따로 적었다. 재현 명령 둘을 같이 붙였다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 체크리스트를 다시 `27/27` 로 | `test_no_stale_room_number` |
+| `clean_room` 에 `step` 하나 추가 | 같은 검사 + `test_counts_match_todays_measurement` |
+| 계수기를 파이썬 `for` 에 속게 | `test_the_counter_is_not_fooled` (4 ≠ 2) |
+
+재현: `python3 scripts/room_check_count.py` · `python3 -m unittest tests.test_room_numbers_match_scripts`
+(7 검사 · 792 통과)
+
+## 주석이 금지한 것을 코드가 하고 있었다 — API 키가 `ps` 에 떴다 (큐 #47) — 2026-09-05
+
+`scripts/lib/*.sh` 의 판정 함수 셋 중 **하나만 검사 밖**이었다. 그리고 그 하나에서
+결함이 나왔다.
+
+| 함수 | 파일 | 단위 검사 (전) |
+|---|---|---|
+| `tally_verdict` | `lib/tally.sh` | ✅ `test_room_tally.py` |
+| `probe_verdict` | `lib/authprobe.sh` | ✅ `test_prod_room_auth_probe.py` |
+| **`ccurl`** | `lib/http.sh` | **없었다** |
+
+### 결함
+
+`lib/http.sh` 의 「시크릿 위생」은 이렇게 적혀 있다:
+
+> 키는 환경변수로만 받는다. **인자로 받으면 프로세스 목록(ps)에 남는다.**
+
+그래 놓고 헤더를 **curl 의 인자로** 넘기고 있었다. `-H` 의 값도 argv 다. 실측:
+
+```text
+$ pgrep -a curl
+9951 curl -H Authorization: CapNet-Key ck_deadbeef.SECRETVALUE123 -s --max-time 4 http://…
+```
+
+`ps` 는 기본 리눅스에서 **다른 사용자에게도 보인다** (`hidepid` 미설정). 데모·촬영은
+공용 워크스테이션에서 돈다 — 「환경변수로만 받는다」의 목적이 여기서 무너져 있었다.
+
+### 고친 방법 — `-H @파일`
+
+curl **7.55+** 는 헤더를 파일에서 읽는다. 파일은 `0600`, 호출이 끝나면 지운다.
+
+```text
+$ pgrep -a curl
+9980 curl -H @/tmp/capnet-hdr-JdOf7v -s --max-time 4 http://…     ← 키가 안 보인다
+```
+
+`|| rc=$?` 로 받는 데 이유가 있다. 호출자는 전부 `set -e` 다 — 그냥 두면 curl 실패 시
+**지우기 전에** 셸이 죽어 **시크릿 파일이 `/tmp` 에 남는다.** 고치면서 만들 뻔한 두 번째
+결함이라 검사로 못박았다.
+
+### 어떻게 쟀나 — 가짜 `curl`
+
+Docker 도 살아 있는 Core 도 필요 없다. `PATH` 앞에 **argv 를 받아 적는 `curl`** 을 놓고
+`ccurl` 을 부른다. 넘기는 것이 그대로 보인다 — `lib/tally.sh` 를 `source` 해서 부르는
+`test_room_tally` 와 같은 방식이다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 헤더를 다시 인자로 (원래 코드) | 5건 — argv 노출·파일 권한·삭제 |
+| `\|\| rc=$?` 제거 | `…removed_after_failure` — **`set -e` 로 파일이 남는다** |
+| 헤더 파일 `0600` → `0644` | `…is_not_world_readable` |
+| 검사 없는 새 lib 함수 추가 | `test_no_lib_function_is_unclaimed` |
+
+### 남은 자리 — 다음 줄
+
+`prod_room.sh` 는 `ccurl` 을 안 쓰고 **직접** `-H "Authorization: CapNet-Key $key"` 를
+**아홉 번** 넘긴다. 같은 노출이다. 다만 거기는 일회용 게이트 스택의 부트스트랩 키이고,
+그 스크립트는 Docker 없이 **돌려 볼 수 없다** — 다음 줄로 남긴다.
+
+재현: `python3 -m unittest tests.test_lib_http_never_leaks_the_key` (10 검사 · 785 통과)
+
+## 「인증이 조회보다 먼저」를 **규칙 두 줄**로 굳혔다 — 오늘 위반 0 (큐 #64) — 2026-09-05
+
+`#223` 은 `prod_room` 이 두 라우트에서 **401 이 아니라 422** 를 받던 것을 잡았다.
+구멍이 아니라 **검사가 인증에 닿지 못한** 것이었다. 그 사건을 일반화한다.
+
+### 규칙 1 — 인증 헬퍼가 `get_conn()` 보다 먼저 온다
+
+조회가 먼저면 무인증 요청이 **404** 로 끝난다. 401 과 404 는 다른 말이다:
+
+- **401** 「너는 누구인지 모르겠다」 — 그 id 가 있는지 **말하지 않는다**
+- **404** 「그런 건 없다」 — 이미 DB 를 봤다는 뜻이고, **존재 여부가 샌다**
+
+`GET /v1/tasks/{task_id}` 는 소유자가 아니면 404 를 준다 — **403 은 「그 id 는 존재한다」를
+흘리기 때문**이다(핸들러 주석). 그 설계가 성립하려면 **인증이 먼저**여야 한다.
+
+### 규칙 2 — 경로 파라미터는 파싱되는 타입이다
+
+`prod_room` §14 는 존재하지 않는 더미 id 로 누른다. 그 더미가 파싱 안 되면 **422** 고,
+그 절은 다시 인증을 재지 못한다.
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| 인증 헬퍼를 부르는 라우트 | **40** |
+| 그중 **조회가 인증보다 먼저** | **0** ✅ |
+| 경로 파라미터를 받는 인증 라우트 | **19** |
+| 타입이 `uuid.UUID` 인 것 | **19** — 전부 ✅ |
+| 이 순서를 세던 검사 | **0** |
+
+**오늘은 0 이다. 나기 전에 막는다.**
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `nodes_get` 에서 `_require` 를 `get_conn` 뒤로 | `test_no_route_looks_up_before_authenticating` |
+| `node_id: uuid.UUID` → `str` | `test_every_path_param_is_a_uuid` |
+| `prod_room` 의 `dummy` 를 UUID 아닌 값으로 | `test_prod_room_dummy_is_a_real_uuid` |
+
+재현: `python3 -m unittest tests.test_auth_comes_before_lookup` (6 검사 · 775 통과)
+
+## 쓰기 라우트 **스물둘 중 셋**만 무인증으로 눌러 보고 있었다 (큐 #49) — 2026-09-05
+
+`#223` 은 조회면에서 같은 것을 잡았다 — 인증 `GET` **열여덟 중 넷**. 고치고 나서
+**쓰기 쪽은 그대로 남았다.** 조회면이 열리면 정보가 새고, **쓰기가 열리면 남이 내
+플릿에 Node·Agent·작업을 만든다.**
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| 라우트 전체 | **46** |
+| 쓰기 (`POST`/`PUT`/`PATCH`/`DELETE`) | **22** |
+| 그중 인증을 부르는 것 | **22** — 공개 쓰기 **0** ✅ |
+| `prod_room` 이 **무인증으로** 재는 것 | **3** |
+
+```text
+POST /v1/nodes          (키 없음)   → 401   §5
+POST /v1/agents         (키 없음)   → 401   §5
+POST /v1/nodes/redeem   (토큰 없음) → 401   §8-2
+```
+
+나머지 **열아홉**은 강제 모드에서 한 번도 안 눌러 봤다. `ast` 검사는 「인증 헬퍼를
+불렀는가」만 보므로 헬퍼를 부르고도 401 이 안 나오는 경우를 못 잡는다 — `#223` 이
+실제로 그 자리에서 **두 건**을 찾았다.
+
+### 프로브를 안 늘렸다 — 몸통이 필요하고, 재 볼 수 없다
+
+FastAPI 는 핸들러 본문보다 **먼저** 요청 본문을 검증한다. 몸통 없이 `POST` 하면
+인증에 닿기 전에 **422** 고, 그 절은 **인증을 재지 못한다** — `#223` 이 `node_id` 로 겪은
+것과 같은 함정이다. 지금 도는 셋이 401 을 받는 것은 **유효한 몸통을 같이 보내기**
+때문이다.
+
+열아홉을 늘리려면 라우트마다 유효한 최소 몸통이 필요하고, 그게 맞는지는 **돌려 봐야**
+안다. 이 세션에는 Docker 데몬이 없다. 몸통을 잘못 지으면 게이트가 **422 를 인증 실패로
+세며 빨개진다.** 재 보지 않은 프로브를 게이트에 얹지 않는다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `POST /v1/agents` 무인증 프로브 삭제 | `test_the_three_unauthenticated_probes_are_still_there` |
+| 인증 없는 쓰기 라우트 `POST /v1/ops/wipe` 추가 | `test_no_write_route_is_public` |
+| 인증 있는 쓰기 라우트 추가 (재는 건 그대로) | `test_the_gap_is_stated_honestly` (19 → 20) |
+| 키 붙은 호출을 무인증으로 세도록 탐지기 훼손 | `test_the_probe_reader_discriminates` |
+
+재현: `python3 -m unittest tests.test_prod_room_write_probes` (6 검사 · 769 통과)
+
+## `!override` 는 **덮는다** — 그런데 문서가 요구 버전을 낮게 적었다 (큐 #45) — 2026-09-05
+
+제품 오버레이의 3번 주장은 「**postgres 를 호스트에 노출하지 않는다**」다. 그 주장 전체가
+**한 태그**에 걸려 있다:
+
+```yaml
+  postgres:
+    ports: !override []      # ← 없으면 병합이 「덧붙이기」라 5432 가 남는다
+```
+
+### 실측 — 데몬 없이 `config` 로 쟀다 (Compose v5.3.1)
+
+```bash
+export POSTGRES_USER=u POSTGRES_PASSWORD=p POSTGRES_DB=d \
+       DATABASE_URL=postgresql://u:p@postgres:5432/d
+docker compose -f compose.yaml config                     | grep -c published:   # 5
+docker compose -f compose.yaml -f compose.prod.yaml config | grep -c published:   # 1
+```
+
+| 무엇 | 결과 |
+|---|---|
+| `compose.yaml` 단독 공개 포트 | **5** |
+| `+ compose.prod.yaml` | **1** — `core:8000` 만 |
+| postgres `5432` | **사라진다** ✅ |
+| `!override` 를 지우고 다시 재면 | **2** · `published: "5432"` **부활** |
+
+**태그는 하중을 받고 있다.** 주장은 참이다.
+
+### 그런데 README 는 「Compose v2」라고만 적었다
+
+`!override` 는 **v2.24.0 (2024-01)** 에서 들어왔다. v2.0–v2.23 은 그 태그를 모른다.
+심사자가 그 버전으로 제품 오버레이를 띄우면 **postgres 가 열린 채**이거나 파싱이 깨진다.
+「v2」와 「v2.24+」는 다른 말이다 — README·운영 안내를 고쳤다.
+
+### 뮤테이션 3
+
+| 심은 것 | 결과 |
+|---|---|
+| `!override` 제거 (정적) | `test_postgres_is_closed` 외 3건 |
+| `!override` 제거 (**실제 병합**) | `published` 1 → **2** · `5432` 부활 |
+| README 를 「Compose v2」로 되돌림 | `test_readme_states_the_minimum` |
+| 해명 없는 새 공개 포트(`adminer`) 추가 | `test_every_open_port_is_closed_or_explained` |
+
+재현: 위 `docker compose … config` 두 줄 · `python3 -m unittest tests.test_compose_override_closes_ports`
+(8 검사 · 763 통과)
+
+## 통합 검사 **열다섯**은 CI 의 **한 줄**로만 돈다 — 그 줄을 못박은 검사는 0 (큐 #42) — 2026-09-05
+
+`#215` 가 잡은 것은 「**CI 가 본다**」가 거짓이던 자리였다. 같은 질문을
+`tests/integration/` 에 물었다.
+
+| 무엇 | 답 |
+|---|---|
+| `tests/integration/check_*.py` | **15** |
+| `scripts/run_tests.sh` 가 부르는가 | **아니다** — DB 가 필요하다 |
+| 그럼 누가 부르는가 | `ci.yml` 의 `migrate` 잡 **한 줄** |
+| 그 한 줄을 못박은 검사 | **0** |
+
+```yaml
+      - name: 통합 검사 (검사마다 깨끗한 DB)
+        run: scripts/run_integration.sh      # ← 유일한 실행 경로
+```
+
+### 왜 기존 둘 사이로 빠졌나
+
+- `test_integration_runner` 는 **러너의 glob** 만 본다 — 파일 이름이 패턴에 맞는가
+- `test_ci_matches_run_tests` 는 **`run_tests.sh` 가 부르는 도구**만 본다
+
+`run_integration.sh` 는 `run_tests.sh` 밖이라 **둘 다 안 본다.** 그 줄을 지우거나
+`if:` 를 붙이면 검사 열다섯이 **조용히 멈추고 CI 는 초록**이다.
+
+「검사를 짜 놓고 돌지 않는 것은 검사가 없는 것보다 나쁘다 — 있다고 믿게 되기
+때문이다」(`test_integration_runner` 머리말). 그 문장이 **러너 자신**에게도 해당했다.
+
+### `ci.yml` 은 고치지 않았다
+
+잡·설치 추가는 열린 Decision (`round9-ci-coverage-proposal`) 이다. **오늘 있는 것을
+못박기만** 한다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| CI 단계의 `run:` 을 다른 명령으로 | `test_ci_has_a_step_that_runs_the_runner` |
+| 그 단계에 `if: github.ref == …` 추가 | `test_that_step_is_not_conditional` |
+| 러너의 「0건은 통과가 아니다」 제거 | `test_runner_fails_when_it_finds_nothing` |
+| 러너의 glob 을 파일 하나로 고정 | `test_runner_still_globs` |
+
+재현: `python3 -m unittest tests.test_integration_checks_are_run_by_ci` (7 검사 · 755 통과)
+
+## 손으로 적은 **예외 목록 열둘**이 근거 없이 자랄 수 있었다 (큐 #43) — 2026-09-05
+
+이 회차가 세운 검사들은 거의 전부 예외 목록을 하나씩 달고 있다:
+
+```python
+ARCHIVES = ("inbox-cursor.md", "inbox-claude.md")   # #226
+WITHOUT_ERREXIT = {"prod_room.sh": "큐 #44"}         # #228
+OUTSIDE_CLEAN_ROOM = {…열하나…}                      # #229
+ALLOWED_READERS = {"_headers"}                       # #196
+```
+
+**목록에 한 줄 더 넣으면 검사가 조용히 약해진다.** 「지키는 척」의 마지막 통로다 —
+`#230`(바닥 등록부)과 같은 자리이고, 이번에는 **예외 목록** 쪽이다.
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| `tests/` 의 허용 목록성 상수 | **14** |
+| 그것이 든 파일 | **9** |
+| 원소 합 | **40** |
+| **진짜 예외 목록** | **12** |
+| **어휘 집합**(예외가 아님) | **2** — `SKIP_PARTS` · `SKIP_CALLS` |
+| 늘어나는 것을 막던 검사 | **0** |
+
+### 어휘를 예외로 세면 「열넷」이 된다 — 그건 틀린 숫자다
+
+`SKIP_PARTS = {"__pycache__", "node_modules"}` 와 `SKIP_CALLS = {"skip", "skipIf", …}` 는
+**무엇을 봐줄지**가 아니라 **무엇을 부르는지**를 적은 어휘다. 이름에 `SKIP` 이 들어가
+탐지기에 걸릴 뿐이다. `#218` 이 `$node_id` 문자열을 세어 「우회 일곱 건」이 될 뻔한 것과
+같은 함정이라, 표가 **종류를 함께** 적는다.
+
+### 표가 못박는 것
+
+1. **새 허용 목록은 등록된다** — 표에 없으면 운다
+2. **원소가 늘면 운다** — 줄이는 것은 자유다 (예외가 줄어드는 건 개선이다)
+3. **예외는 근거를 코드 옆에 둔다** — 바로 위 주석이거나 값이 이유 문자열이다
+4. 사라진 목록은 표에서 빠진다
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `ARCHIVES` 에 한 줄 추가 | `test_no_allowlist_grew` |
+| 표 밖에서 새 `ALLOWED_ROOMS` 생성 | `test_no_allowlist_is_unregistered` |
+| `EXEMPT` 위 근거 주석 삭제 | `test_every_exemption_carries_its_reason_in_the_code` |
+| 어휘를 예외로 옮김 | `test_exemption_count_is_twelve` · `…vocab_sets_are_marked` |
+
+재현: `python3 -m unittest tests.test_hand_allowlists_are_justified` (9 검사 · 748 통과)
+
+## 바닥을 내리면 **초록이었다** — 92건을 등록부로 못박는다 (큐 #50) — 2026-09-05
+
+이 회차들이 반복해서 잡아 온 결함은 **「0건인데 통과」**다 — `#180`(누출 검사가
+아무것도 안 보고 「깨끗하다」) · `#181`(통합 검사 0개도 초록) · `tally.sh`(`pass=0 ·
+fail=0` 이 「전부 재현된다」). 고치는 방법은 늘 같았다: **바닥**을 둔다.
+
+```python
+self.assertGreaterEqual(len(_sites()), 3, _sites())   # 이번 회차 #220
+REFERENCE_FLOOR = 355                                  # #221 · 큐 #41
+```
+
+**그런데 바닥 자체를 내리면 아무도 울지 않았다.** `355` → `0` 한 줄이면 전부 초록이고
+그 검사들은 **지키는 척**만 하게 된다.
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| 바닥 단언 `assertGreater[Equal](…, N)` | **90** |
+| 이름 붙은 바닥 상수 (`…FLOOR…`·`…MIN…`) | **2** — `REFERENCE_FLOOR` · `MIN_LIMIT` |
+| 그것이 든 파일 | **48** |
+| 바닥이 **내려가는 것**을 막던 검사 | **0** |
+
+### 상수를 빠뜨렸다가 뮤테이션에 걸렸다 (적어 둔다)
+
+첫 판은 **단언의 리터럴만** 봤다. 그래서 `REFERENCE_FLOOR = 355` 를 `0` 으로 바꾸는
+뮤테이션이 **그대로 통과했다** — `self.REFERENCE_FLOOR` 는 단언 자리에 숫자로 보이지
+않는다. **뮤테이션을 안 심었으면 절반짜리를 「됐다」고 적을 뻔했다.**
+
+### 등록부
+
+`scripts/floor_registry.py` 가 바닥을 전부 뽑아 `tests/floors.json` 에 적고,
+`test_floors_do_not_sag.py` 가 **지금 값이 등록 값보다 낮지 않은가**만 본다.
+
+- **올리는 것은 자유** — 실측이 늘면 `--write` 로 갱신한다
+- **내리려면 등록부를 같이 고쳐야 한다** — 한 줄로 조용히 못 낮춘다
+- **새 바닥은 등록된다** · **사라진 바닥은 빠진다** (유령을 「지킨다」고 세지 않는다)
+
+키는 `파일::함수#순번` 이다 — 줄 번호로 잡으면 한 줄만 넣어도 전부 어긋난다.
+
+### 뮤테이션 5
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `REFERENCE_FLOOR` 355 → 0 | `test_no_floor_was_lowered` |
+| `MIN_LIMIT` 100 → 30 | 같음 |
+| `assertGreaterEqual(len(_sites()), 3)` → `0` | 같음 |
+| 등록 없는 새 바닥 | `test_every_floor_is_registered` |
+| 검사를 지워 유령이 남음 | `test_registry_has_no_ghosts` |
+
+재현: `python3 scripts/floor_registry.py --check` · `python3 -m unittest tests.test_floors_do_not_sag`
+(9 검사 · 739 통과)
+
+## 「깨끗한 환경에서 **전부** 재현된다」 — 능력 열 종 중 **하나**였다 (큐 #46) — 2026-09-05
+
+`#223` 은 `prod_room.sh` 가 라우트 **스물넷 중 다섯**만 눌러 보면서 「제품 프로파일에서
+전부 재현된다」를 찍던 것을 잡았다. **형제가 남아 있었다** — `clean_room.sh` 다.
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| `scripts/` 의 데모 스크립트 | **13** |
+| `clean_room.sh` 가 부르는 것 | **2** — `demo.sh` · `demo_violations.sh` |
+| `prod_room.sh` 가 부르는 것 | **1** — `demo.sh` |
+| 카탈로그 「구현됨」 능력 | **10** |
+| 빈 볼륨에서 **종단으로** 도는 능력 | **1** — `image.classify` |
+
+마지막 줄은 이렇게 찍혔다:
+
+```text
+깨끗한 환경에서 전부 재현된다.
+```
+
+**「전부」가 무엇의 전부인지 적혀 있지 않았다.** 읽는 사람은 능력 열 종이 빈 볼륨에서
+재현된 것으로 읽는다. 실제로는 하나다.
+
+### 데모 열하나를 넣지 **않았다** — 재 볼 수 없다
+
+이 세션에는 Docker 가 없다 (`docker info` 실패). 넣은 단계가 실제로 도는지 못 재고
+게이트에 얹는 것은 이 저장소가 계속 잡아 온 **「됐을 것」**이다. 대신 두 가지를 했다:
+
+1. **말과 사실을 맞췄다** — 통과 문구가 범위를 밝힌다
+2. 새 데모가 **조용히 게이트 밖에서 태어나지 못하게** 못박았다 —
+   `OUTSIDE_CLEAN_ROOM` 열하나가 **각자 이유**를 들고 있고, 늘리면 핀이 운다
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `scripts/audio_demo.sh` 를 새로 만듦 | `test_no_demo_is_silently_outside_the_gate` |
+| 통과 문구를 「전부 재현된다」로 되돌림 | `test_clean_room_states_its_scope` |
+| 해명 목록에 `demo_violations.sh` 추가 | `test_the_outside_list_is_pinned` |
+| `clean_room` 에서 `demo_violations` 단계 제거 | 첫 검사 — **문구만 고치고 단계를 지우면 후퇴다** |
+
+재현: `python3 -m unittest tests.test_clean_room_covers_demos` (8 검사 · 730 통과)
+
+## 중간 실패를 삼키는 스크립트가 **하나** 있었다 — 세던 검사는 **0** (큐 #44) — 2026-09-05
+
+`set -e` 없이 돌면 중간 명령이 실패해도 다음 줄로 넘어간다. 마지막 줄이
+`echo "전부 통과"` 면 그 스크립트는 **실패한 채 초록**이다. 이 회차가 계속 잡아 온
+모양이다 — `#180`(누출 검사) · `#181`(통합 러너) · `tally.sh`(0건 통과).
+
+### 실측
+
+| 무엇 | 수 |
+|---|---|
+| `scripts/*.sh` | **37** |
+| `set -euo pipefail` | **36** |
+| `-e` 가 빠진 것 | **1** — `prod_room.sh` (`set -uo pipefail`) |
+| `scripts/lib/*.sh` | **3** — `set` 없음이 **맞다** |
+| 이것을 세던 검사 | **0** |
+
+### `prod_room.sh` 는 고치지 않았다 — **못 쟀기 때문이다**
+
+`chk()` 가 `if "$@"; then …` 이라 **`if` 조건 안의 실패는 `-e` 를 발동하지 않는다.**
+그래서 `clean_room.sh` 는 같은 모양으로 `-e` 를 켜고도 집계가 멀쩡하다. 즉
+`prod_room.sh` 도 켤 수 있어 **보인다.**
+
+그러나 **켠 채로 51/51 을 다시 재 보지 못했다.** 이 세션에는 Docker 가 없다
+(`docker info` 실패 — 10회차에는 있었다). 켜면 지금 세지 않는 중간 단계
+(`dc run … apikey_cli issue` 등)의 실패가 전체를 중단시킬 수 있고, 그건 실제로
+돌려 보고 정할 일이다. **못 쟀다고 적고 못박는다** — 스크립트 안에도 같은 이유를 남겼다.
+
+### `scripts/lib/*.sh` 는 예외가 아니라 규칙이다
+
+`source` 된 파일의 `set -e` 는 그 파일에서 끝나지 않고 **부른 셸의 옵션을 바꾼다.**
+라이브러리가 호출자의 오류 처리를 바꾸면 안 된다 — 셋이 `set` 을 안 두는 것이 맞다.
+아무도 `source` 하지 않는 lib 가 생기면 그 규칙이 공허해지므로 그것도 같이 본다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `set` 없는 새 스크립트 | `test_every_script_sets_euo_pipefail` · `…comes_before_any_command` |
+| `set` 앞에 실행 줄 하나 | 같은 둘 — **스무 줄 아래의 `set` 은 그 위를 못 지킨다** |
+| `lib/tally.sh` 에 `set -euo pipefail` | `test_libs_set_nothing` · 탐지기 검사 |
+| 예외 목록에 `clean_room.sh` 추가 | `…does_not_grow_silently` · `…carry_their_reason_in_the_file` |
+
+재현: `python3 -m unittest tests.test_scripts_set_errexit` (10 검사 · 722 통과)
+
+## 「뷰 컬럼은 정적으로 못 뽑는다」가 **틀렸다** — 사각 27건을 열었다 (큐 #41) — 2026-09-05
+
+`#221`(큐 #34)은 Core 의 SQL 이 없는 컬럼을 부르는지 세면서, 뷰만은
+**이름으로만** 알고 컬럼을 통째로 건너뛰었다. 머리말에 그렇게 적어 두었다:
+
+> **뷰의 컬럼** (10개). `CREATE VIEW … AS SELECT` 는 정적으로 컬럼을 못 뽑는다.
+
+**뽑힌다.** 이 저장소의 뷰 정의 12개(재정의 포함) **전부**가 명시 `SELECT` 목록을
+갖는다. 최상위 `SELECT *` 는 하나도 없다.
+
+### 걸림돌 셋 — 전부 넘었다
+
+| 모양 | 어디 | 어떻게 |
+|---|---|---|
+| `LEFT JOIN LATERAL (SELECT * FROM …)` | `node_liveness` | **깊이 0 의 `FROM`** 에서 끊으면 안쪽이 안 섞인다 |
+| `CASE … END AS reason` | `task_input_purge_due` | 꼬리의 `AS <이름>` |
+| `count(*) FILTER (WHERE …) AS x` | `provenance_drift_summary` | 같음 |
+
+`CREATE OR REPLACE` 재정의는 **뒤가 이긴다** — `0004` 의 `provenance_drift` 가
+`0002` 를 덮고, `0013` 의 `task_input_purge_due` 가 `0011` 을 덮는다.
+
+### 실측
+
+| 무엇 | 전 | 후 |
+|---|---|---|
+| 뷰 | 10 (이름만) | **10 · 컬럼 86** |
+| Core 참조 | 335 | **362** |
+| 뷰 컬럼 참조 | **0 — 전부 버려졌다** | **27** (뷰 6종) |
+| 없는 컬럼 | 0 | **0** |
+
+버려지던 27건에는 `claim.py:26`·`registry.py:294` 의 `node_liveness.is_fresh`
+— **큐를 집는 자리**가 들어 있다.
+
+### 못 뽑는 뷰가 생기면 조용히 넘어가지 않는다
+
+`_unresolved_views()` 가 세고 `test_no_view_is_silently_skipped` 가 오늘의 **0** 을
+못박는다. 건너뛴 채 두면 그 뷰의 참조가 말없이 사라져 검사가 **지키는 척**만 한다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `node_liveness` 의 `AS is_fresh` → `is_fresh_x` | `claim.py:26`·`registry.py:294` 를 짚었다 |
+| `agent_arch_unbound` 를 `SELECT *` 로 | `test_no_view_is_silently_skipped` |
+| 최상위 `FROM` 판정에서 깊이 무시 | `safety.py:68 agent_arch_unbound.routable` 이 사라졌다 |
+
+재현: `python3 -m unittest tests.test_core_sql_columns_exist` (8 검사 · 712 통과)
+
+## 새 런북이 생기자 `gh … list` 검사가 **눈을 감았다** — 2026-09-05
+
+`#220`(큐 #36)은 「`gh pr list` 는 `--limit 100` 없이 쓰지 않는다」를 못박으며
+런북 **셋을 상수로** 적었다:
+
+```python
+RUNBOOKS = (autonomous-mode.md, handoff-long-mode-claude.md, queue-expansion.md)
+```
+
+`#225` 가 **네 번째 런북** `docs/bridge/queue-batches.md` 를 만들고 「상태확인」
+S0–S7 복붙 블록을 그리로 옮겼다. 세션이 실제로 붙여 넣는 명령이 **검사 범위 밖으로**
+나간 것이다. 같은 커밋에서 `handoff` 의 두 자리는 산문(백틱)이 되었다.
+
+### 바닥이 있었기 때문에 알았다
+
+`main` 이 빨갰다 — `test_at_least_one_call_is_seen` 이 `2 not greater than or equal to 3`.
+
+```text
+docs/bridge/autonomous-mode.md:42   git fetch/pull main · gh pr list --limit 100
+docs/bridge/autonomous-mode.md:213  gh pr list --state open --limit 100
+```
+
+`queue-batches.md:42` 의 `gh pr list --state open --limit 100` 은 **세지지 않았다.**
+바닥(`≥3`)이 없었으면 검사는 **아무것도 안 지킨 채 초록**이었을 것이다 —
+`#210` 이 「바닥을 내리면 초록」으로 잡은 것과 같은 자리다.
+
+### 고친 것 — 목록을 버렸다
+
+손으로 적는 대신 `docs/bridge/*.md` 를 훑고 **우편함 둘**만 뺀다:
+
+```python
+ARCHIVES = ("inbox-cursor.md", "inbox-claude.md")   # 고쳐진 결함의 「이전」을 보존한다
+```
+
+새 런북이 생기면 **이 파일을 고치지 않아도** 들어온다.
+
+### 뮤테이션 3 — 새로 덮인 자리에서 심었다
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `queue-batches.md:42` 를 `--limit 30` | `test_every_limit_is_big_enough` |
+| `queue-batches.md:42` 에서 `--limit` 제거 | `test_every_call_passes_a_limit` |
+| `ARCHIVES` 에 `queue-batches.md` 추가 | 바닥·범위·핀 **3건** |
+
+재현: `python3 -m unittest tests.test_gh_list_is_never_truncated`
+(런북 4 · 자리 3 · 709 통과 · 건너뜀 7)
+
 ## 인증을 재는 절이 **두 라우트의 인증을 안 재고 있었다** — 2026-09-04
 
 `prod_room.sh` §14 는 「무인증이면 전부 401」을 **강제 모드에서 실제로** 재는

@@ -61,12 +61,25 @@ for b in $(gh pr list -R … --json …)          과거 결함의 인용 (고�
 `--limit 100` 이라는 글자를 품고 있어 초록이었던 것 — **검사가 지키는 척만 하고 있었다.**
 백틱을 걷어내는 쪽은 문서 구조에 기대지 않는다.
 
-## 범위에서 뺀 것 — `inbox-cursor.md`
+## 범위에서 뺀 것 — 우편함 둘
 
-**우편함 아카이브다.** 8천 줄이 지나간 회차의 기록이고, 위 인용처럼 **고쳐진
-결함의 「이전」**을 일부러 보존한다. 여기를 강제하면 **역사를 고쳐 쓰게 된다.**
+`inbox-cursor.md` · `inbox-claude.md` 는 **우편함 아카이브다.** 8천 줄이 지나간
+회차의 기록이고, 위 인용처럼 **고쳐진 결함의 「이전」**을 일부러 보존한다.
+여기를 강제하면 **역사를 고쳐 쓰게 된다.**
 
-보는 것은 **세션이 실제로 복붙하는 세 런북**과 **돌아가는 스크립트·CI** 다.
+보는 것은 **세션이 실제로 복붙하는 런북**과 **돌아가는 스크립트·CI** 다.
+
+## 런북 목록을 손으로 적지 않는다 (이 검사가 한 번 눈멀었다)
+
+첫 판은 런북 **셋을 상수로 적었다.** `#225` 가 **네 번째 런북**
+`queue-batches.md` 를 만들고 「상태확인」 복붙 명령을 그리로 옮기자,
+검사는 **새 파일을 보지 못했다.** 남은 자리가 둘로 줄어 바닥(≥3)이 깨졌고,
+그제서야 알았다 — **바닥이 없었으면 조용히 눈먼 채 초록이었다.**
+
+`#221`(손 허용 목록)·`#215`(CI 가 안 보는 검사)와 같은 모양이다. 그래서
+목록을 **버리고** `docs/bridge/*.md` 를 훑되 **우편함 둘만** 뺀다.
+새 런북이 생기면 **적지 않아도 들어온다.** 제외는 아래 `ARCHIVES` 로
+못박혀 있고, 늘리면 검사가 운다.
 
 ## 무엇을 고정하나
 
@@ -83,12 +96,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# 세션이 **복붙하는** 런북. 아카이브(`inbox-cursor.md`)는 위 머리말대로 뺀다.
-RUNBOOKS = (
-    ROOT / "docs" / "bridge" / "autonomous-mode.md",
-    ROOT / "docs" / "bridge" / "handoff-long-mode-claude.md",
-    ROOT / "docs" / "bridge" / "queue-expansion.md",
-)
+BRIDGE = ROOT / "docs" / "bridge"
+
+# 우편함 아카이브. 고쳐진 결함의 「이전」을 일부러 보존하므로 강제하지 않는다.
+# 늘리려면 `test_archive_exclusions_are_pinned` 를 같이 고쳐야 한다 — 근거 없이 못 늘린다.
+ARCHIVES = ("inbox-cursor.md", "inbox-claude.md")
+
+
+def _runbooks() -> list[Path]:
+    """세션이 **복붙하는** 런북 전부. 손 목록이 아니라 훑어서 찾는다.
+
+    상수로 적었더니 `#225` 가 만든 `queue-batches.md` 를 놓쳤다(머리말 참조).
+    """
+    if not BRIDGE.is_dir():
+        return []
+    return sorted(p for p in BRIDGE.glob("*.md") if p.name not in ARCHIVES)
 
 # `gh pr list` · `gh issue list` · `gh run list` · `gh release list`
 GH_LIST = re.compile(r"gh\s+(?:pr|issue|run|release)\s+list\b([^\n|;&]*)")
@@ -131,9 +153,8 @@ def _sites() -> list[tuple[str, int, str]]:
             if GH_LIST.search(line):
                 found.append((rel, lineno, line.strip()))
 
-    for path in RUNBOOKS:
-        if path.is_file():
-            scan(path, _runnable_lines(path))
+    for path in _runbooks():
+        scan(path, _runnable_lines(path))
     scripts = ROOT / "scripts"
     if scripts.is_dir():
         for path in sorted(scripts.glob("*.sh")):
@@ -172,12 +193,22 @@ class TestProbeActuallyScans(unittest.TestCase):
     """범위가 비면 위 둘이 **공허하게** 통과한다."""
 
     def test_runbooks_exist(self) -> None:
-        missing = [p.name for p in RUNBOOKS if not p.is_file()]
-        self.assertEqual([], missing, f"런북을 못 찾았다: {missing}")
+        self.assertGreaterEqual(len(_runbooks()), 4, f"런북을 못 찾았다: {_runbooks()}")
 
     def test_runbook_lines_are_read(self) -> None:
-        total = sum(len(_runnable_lines(p)) for p in RUNBOOKS if p.is_file())
+        total = sum(len(_runnable_lines(p)) for p in _runbooks())
         self.assertGreater(total, 200, f"런북에서 {total}줄밖에 못 읽었다")
+
+    def test_new_runbook_needs_no_edit_here(self) -> None:
+        """`#225` 가 만든 네 번째 런북 — 손 목록이었으면 여기서 빠져 있었다."""
+        names = {p.name for p in _runbooks()}
+        for must in ("queue-batches.md", "autonomous-mode.md",
+                     "handoff-long-mode-claude.md", "queue-expansion.md"):
+            self.assertIn(must, names, f"{must} 가 범위 밖이다")
+
+    def test_archive_exclusions_are_pinned(self) -> None:
+        """제외가 조용히 늘면 범위가 비어도 초록이 된다 — 우편함 둘뿐이다."""
+        self.assertEqual(("inbox-cursor.md", "inbox-claude.md"), ARCHIVES)
 
     def test_at_least_one_call_is_seen(self) -> None:
         """실제로 세고 있다는 증거. 0 이면 위 검사는 아무것도 안 지킨다."""

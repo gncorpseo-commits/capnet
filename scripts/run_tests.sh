@@ -34,13 +34,18 @@ echo "== 출품 패키지 기계 점검 =="
 python3 scripts/check_submission.py --skip-tree || fail=1
 
 echo
+# **skip 은 통과가 아니다.** 배너까지 끌고 올라오지 않으면 아무도 안 읽는다.
+#
+# **실패한 회차에도 찍는다 (큐 #58).** 예전에는 이 블록이 `전부 통과.` 아래에만 있어서,
+# `FAILED (failures=1, skipped=7)` 에서 숫자를 뽑아 놓고 **한 번도 안 보여 줬다** —
+# 위 sed 가 두 모양을 다 잡는 이유가 사라져 있었다. 고칠 게 있는 회차일수록
+# 「무엇이 안 돌았는가」가 필요하다.
+if [[ "$skipped" -gt 0 ]]; then
+  echo "  ${skipped}건은 **건너뛰었다** — 그 환경에 없는 것이 있다는 뜻이다."
+  echo "  사유 목록: tests/test_skip_reasons.py 의 ALLOWED · 전부 돌리는 법: docs/guide/testing.md §2·§4.6"
+fi
 if [[ "$fail" -ne 0 ]]; then
   echo "실패 — 위 항목을 고친다." >&2
   exit 1
 fi
 echo "전부 통과."
-# **skip 은 통과가 아니다.** 배너까지 끌고 올라오지 않으면 아무도 안 읽는다.
-if [[ "$skipped" -gt 0 ]]; then
-  echo "  다만 ${skipped}건은 **건너뛰었다** — 그 환경에 없는 것이 있다는 뜻이다."
-  echo "  사유 목록: tests/test_skip_reasons.py 의 ALLOWED · 전부 돌리는 법: docs/guide/testing.md §2·§4.6"
-fi

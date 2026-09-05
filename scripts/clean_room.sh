@@ -13,6 +13,11 @@
 #
 # 무엇을 건드리지 않는가
 #   운영 프로젝트(ai-agent-store)의 컨테이너·볼륨. 포트도 겹치지 않게 띄운다.
+#
+# 무엇을 돌리지 않는가 (큐 #46)
+#   데모 스크립트 13 중 여기서 도는 것은 demo.sh · demo_violations.sh **둘**이다.
+#   카탈로그 「구현됨」 10종 중 빈 볼륨에서 종단으로 도는 능력은 image.classify **하나**.
+#   나머지는 tests/test_clean_room_covers_demos.py 의 OUTSIDE_CLEAN_ROOM 이 이유와 함께 센다.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 # 판정 한 줄은 prod_room 과 공유한다 — 0건을 통과로 세지 않게.
@@ -107,4 +112,6 @@ step "Node 온보딩" bash -c '
   echo "$out" | grep -q "NODE_CREDENTIAL_FILE"'
 
 printf '\n'
-tally_verdict "$pass" "$fail" "깨끗한 환경에서 전부 재현된다." || exit 1
+# 「전부」가 무엇의 전부인지 밝힌다 — 능력 종단은 image.classify 하나다 (큐 #46).
+# 나머지 아홉 종의 데모는 여기서 안 돈다: tests/test_clean_room_covers_demos.py
+tally_verdict "$pass" "$fail" "깨끗한 환경에서 위 단계가 전부 재현된다 (능력 종단은 image.classify 하나)." || exit 1

@@ -105,9 +105,15 @@ python3 -m unittest discover -s tests -v    # 이름과 docstring 이 곧 목록
 
 | job | 무엇을 |
 |-----|--------|
-| **unit** | `tests/` 단위 테스트 + `check_golden_sha.py` + `check_submission.py`. **의존성 설치 없음** |
+| **unit** | `tests/` 단위 테스트 + `check_golden_sha.py` + **`check_release.sh`(G9 제출 zip 사전 검증)** + `check_submission.py`. **의존성 설치 없음** |
 | **capreq** | `capreq/tests` — `httpx`·`fastapi`·`python-multipart` 와 `node` 를 설치한다 (§2 와 같은 줄). 잡을 따로 둔 이유는 위 `unit` 의 「설치 없음」을 지키기 위해서다 |
-| **migrate** | postgres 서비스로 **실제 적용**. 마이그레이션 6단계 + **통합 검사 전부**(검사마다 깨끗한 DB) |
+| **migrate** | postgres 서비스로 **실제 적용**. 마이그레이션 **7단계** + **통합 검사 전부**(검사마다 깨끗한 DB) |
+
+> **이 절은 `ci.yml` 의 단계와 하나씩 대응한다** — `tests/test_ci_claims_match_the_workflow.py`
+> 가 대조한다. 예전에는 `unit` 의 제출 zip 검증과 `migrate` 의 마지막 단계가
+> **빠져 있었다** (큐 #59). 여기서 그 단계 이름을 다시 적지 않는다 — 적으면 아래
+> 목록에서 지워도 이 문장 때문에 검사가 통과한다:
+> 「CI 가 본다」고 적힌 목록이 실제보다 짧으면, 안 적힌 단계는 **없는 것처럼 읽힌다.**
 
 > 통합 검사 **개수를 적지 않는다.** 능력·강제 경로를 더할 때마다 느는 값이라
 > 문서에 못박으면 다음 사람이 숫자만 고치게 된다 (`test_doc_counts` 가 같은 이유로
@@ -121,8 +127,10 @@ migrate job 이 보는 것:
 4. **새 볼륨이면 증적 드리프트 0** — seed 와 매니페스트가 어긋나면 여기서 걸린다
 5. **체크섬 잠금** — 적용된 파일을 고치면 `verify`·`up` 이 둘 다 거부하는지
 6. **기존 볼륨 경로** — 구 sha 로 되돌린 뒤 `0003` 이 다시 올려주는지
+7. **새 볼륨에는 placeholder Agent 의 라우팅 증서가 없다** (SD-015)
 
 6단계는 CI 를 마이그레이션 **양쪽 경로**(빈 볼륨 · 기존 볼륨)의 회귀 시험으로 만든다.
+7단계는 seed 가 라우팅 가능한 placeholder 를 남기지 않는지 본다 — `#0005` 가 멈추던 자리다.
 이 리포에서 가장 깨지기 쉬운 지점이 거기였다.
 
 ---

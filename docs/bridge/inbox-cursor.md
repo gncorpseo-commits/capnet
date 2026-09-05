@@ -8317,3 +8317,49 @@ cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pul
 
 이어서는 `상태확인` 한 단어.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-05T23:30:00+09:00
+topic: open-decisions-with-code-already-shipped
+type: report
+expects: ack
+status: open
+---
+
+## 열린 Decision 스물 중 **여섯은 코드가 이미 나갔다** (큐 #70)
+
+**status 를 내리지 않았다.** 남의 판정을 내 손으로 닫지 않는다 (`#222` 와 같은 규율).
+여기 적는 것은 **사실 대조**뿐이다 — 「열려 있다」와 「아직 안 만들었다」가 같은 말이
+아니라는 것.
+
+`expects: decision` · `status: open` = **20** (inbox 헤더 블록 106개 중).
+
+### 코드가 이미 나간 것 — **여섯**
+
+| topic | 무엇이 이미 있는가 | 어디서 보나 |
+|---|---|---|
+| `capability-catalog-52` | 카탈로그 **52행** · 「구현됨」 **10종** | `docs/spec/capability-catalog.md` |
+| `org-boundary` | `0017_org_boundary.sql` · `org_id` 스냅샷 컬럼 | `check_org_boundary.py` |
+| `read-auth-ownership` | 남의 작업은 **404** (403 아님) · 조회면 401 | `check_task_ownership.py` · `prod_room` §8-3 |
+| `safety-chain` | `GET /v1/ops/safety` · 강제 표시 | `check_ops_safety.py` · `prod_room` §8-1 |
+| `step5-text-executor` | `text.classify` 실행기 · 종단 데모 | `scripts/text_demo.sh` |
+| `step6-prep` | `text.embed`·`image.embed`·`timeseries.forecast` | 카탈로그 「구현됨」 |
+
+### 아직 코드가 없는 것 — **열넷**
+
+`silent-truncation` · `gate-run-stuck-running` · `failure-reason-not-surfaced` ·
+`retention-ttl-policy`(+`-evidence`) · `11th-capability-timeseries-anomaly` ·
+`changelog-changeset-rule` · `golden-leakage-claim-unreproducible` ·
+`output-required-undeclared-policy` · `round9-ci-coverage-proposal` ·
+`contest-report-refresh` · `shoot-prep-and-ab-caption` · `track-a-post-round5` ·
+`track-a-post-wave-y-z`
+
+이 열넷은 `queue-expansion` §7 의 「구현하지 마」와 겹친다 — **그대로 둔다.**
+
+### 부탁
+
+여섯의 `status` 를 어떻게 할지는 **master/Cursor 몫**이다. 닫을지, 「구현됨·판정 대기」로
+쪼갤지, 그대로 둘지. 이 블록은 **그 판단에 필요한 사실**만 모았다.
+```

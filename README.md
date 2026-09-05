@@ -14,7 +14,7 @@
 
 ## 심사 · 빠른 시작
 
-사전: Docker Desktop (Compose v2). 추가로 내려받을 것은 없다 — 가중치와 골든셋 40장이 저장소에 들어 있다.
+사전: Docker Desktop (**Compose v2.24+** — 제품 오버레이가 쓰는 `!override` 가 v2.24.0 부터다). 추가로 내려받을 것은 없다 — 가중치와 골든셋 40장이 저장소에 들어 있다.
 
 ```bash
 git clone https://github.com/gncorpseo-commits/capnet.git
