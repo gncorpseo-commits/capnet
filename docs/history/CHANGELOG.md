@@ -1,5 +1,24 @@
 # Changelog
 
+## 두 방과 데모 스택은 포트·프로젝트명으로 **부딪히지 않는다** — 못박는다 (배치 B #96) — 2026-09-06
+
+방은 빈 볼륨에서 다시 올리므로 데모 스택 옆에서 돌아야 한다. 프로젝트명이 같으면 `down -v` 가 남의
+볼륨을 지우고, 호스트 포트가 겹치면 **남의 Core 를 두들기고 통과**한다. 전수:
+
+| 스택 | 프로젝트 | 호스트 포트 |
+|---|---|---|
+| 데모 `compose.yaml` | 디렉터리 이름 | 5432 · 8000 · 8001 · 8002 · 8003 |
+| `clean_room.sh` | `capnet-cleanroom` | 18800 · 18801 (나머지 셋은 `!override []`) |
+| `prod_room.sh` | `capnet-prod` | 18830 · 18831 (`compose.prod.yaml` 이 전부 닫고 둘만 연다) |
+
+세 집합은 서로 겹치지 않고, 런북·README 의 `8000`·`8001` 은 데모 이야기다.
+`tests/test_rooms_do_not_collide.py` 가 다섯을 고정. 뮤테이션 3/3 (prod 포트를 clean 과 같게 · clean
+프로젝트명을 prod 와 같게 · clean 이 postgres 포트를 안 닫음) 운다.
+
+```bash
+python3 -m unittest tests.test_rooms_do_not_collide
+```
+
 ## CI 는 시크릿 0 · 토큰 읽기 전용 — 단 선언이 아니라 **저장소 설정** 덕이다 (배치 B #95) — 2026-09-06
 
 `test_ci_never_logs_secrets` 는 「찍히는가」를 본다. 여기는 애초에 무엇이 있는가다: 워크플로 1개 ·
