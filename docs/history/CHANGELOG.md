@@ -1,5 +1,16 @@
 # Changelog
 
+## `.ps1` 만 있는 경로를 WSL 안내가 「돌린다」고 적은 곳은 **0** — 못박는다 (배치 B #97) — 2026-09-06
+
+`#206`·`#240` 의 반대 방향. `.sh` 쌍둥이 없는 `.ps1` 은 `smoke_w1.ps1` 하나이고, WSL 안내(`docs/guide/*` ·
+`CONTRIBUTING`)에 `pwsh`·`.ps1` 지시는 0, README 는 확장자를 드러내 적으며, 런북·제출 패킷·README 가 부르는
+`scripts\X.ps1` 은 전부 실재한다.
+
+`tests/test_ps1_only_paths_are_labelled.py` 가 넷을 고정. 뮤테이션 3/3 (README 가 확장자 없이 · 런북이 없는
+`.ps1` 을 부름 · WSL 안내에 `pwsh`) 운다.
+
+```bash
+python3 -m unittest tests.test_ps1_only_paths_are_labelled
 ## 두 방과 데모 스택은 포트·프로젝트명으로 **부딪히지 않는다** — 못박는다 (배치 B #96) — 2026-09-06
 
 방은 빈 볼륨에서 다시 올리므로 데모 스택 옆에서 돌아야 한다. 프로젝트명이 같으면 `down -v` 가 남의
