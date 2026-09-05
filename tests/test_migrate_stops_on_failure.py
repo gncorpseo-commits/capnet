@@ -44,9 +44,12 @@ from __future__ import annotations
 
 import ast
 import unittest
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402
 MIGRATE = ROOT / "apps" / "core" / "app" / "migrate.py"
 WRAPPER = ROOT / "scripts" / "migrate.sh"
 COMPOSE = ROOT / "compose.yaml"
@@ -85,13 +88,17 @@ class TestFailureStopsTheLoop(unittest.TestCase):
 
 class TestNothingRunsOnAHalfMigratedDb(unittest.TestCase):
     def test_core_waits_for_success_not_completion(self) -> None:
-        body = COMPOSE.read_text(encoding="utf-8")
+        # **주석을 걷고 본다.** 걷지 않으면 설정을 주석으로 옮겨도 통과한다 (G1).
+        body = hash_comment_free(COMPOSE)
         self.assertIn("condition: service_completed_successfully", body,
                       "core 가 migrate 의 **성공**을 기다리지 않는다")
 
     def test_migrate_does_not_restart(self) -> None:
-        """재시작하면 실패한 세대를 무한히 다시 민다."""
-        self.assertIn('restart: "no"', COMPOSE.read_text(encoding="utf-8"))
+        """재시작하면 실패한 세대를 무한히 다시 민다.
+
+        `# restart: "no"` 로 주석 처리해도 통과하던 자리다 (G1) — 주석을 걷고 본다.
+        """
+        self.assertIn('restart: "no"', hash_comment_free(COMPOSE))
 
     def test_the_wrapper_propagates_the_exit_code(self) -> None:
         body = WRAPPER.read_text(encoding="utf-8")
@@ -108,14 +115,14 @@ class TestTheWaitDoesNotExpireSilently(unittest.TestCase):
     """만료를 안 말하면 「왜 baseline 이 없지」를 처음부터 다시 찾는다 (큐 #57)."""
 
     def test_the_loop_reports_expiry(self) -> None:
-        body = COMPOSE.read_text(encoding="utf-8")
+        body = hash_comment_free(COMPOSE)
         self.assertIn("baseline 을 60초 안에 못 봤다", body,
                       "대기 루프가 만료를 조용히 넘긴다")
         self.assertIn("ok=1", body, "성공 여부를 기록하지 않는다")
 
     def test_it_still_runs_up_afterwards(self) -> None:
         """만료했다고 안 돌리면 **거기서 나는 더 구체적인 오류**를 못 본다."""
-        body = COMPOSE.read_text(encoding="utf-8")
+        body = hash_comment_free(COMPOSE)
         self.assertLess(body.index("baseline 을 60초 안에 못 봤다"),
                         body.index("exec python -m app.migrate up"))
 

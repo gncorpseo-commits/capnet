@@ -33,10 +33,13 @@ from __future__ import annotations
 
 import re
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402
 ONBOARD = ROOT / "scripts" / "node_onboard.sh"
 BIND = ROOT / "scripts" / "node_bind.sh"
 NODE_MAIN = ROOT / "apps" / "node" / "app" / "main.py"
@@ -52,12 +55,16 @@ class TestComposeGivesAPathNotAValue(unittest.TestCase):
         """**여기가 핵심이다.** 값을 주면 `docker inspect` 에 평문이 뜬다."""
         bad = []
         for path in COMPOSES:
-            if path.is_file() and ENV_VALUE.search(path.read_text(encoding="utf-8")):
+            if path.is_file() and ENV_VALUE.search(hash_comment_free(path)):
                 bad.append(path.name)
         self.assertEqual([], bad, f"compose 가 증서 값을 환경변수로 준다: {bad}")
 
     def test_prod_gives_the_file_path_to_every_node(self) -> None:
-        body = (ROOT / "compose.prod.yaml").read_text(encoding="utf-8")
+        """주석을 걷고 센다 — 하나를 `#` 로 막아도 통과하던 자리다 (G1).
+
+        그 Node 는 강제 모드에서 **증서 없이** 돌게 된다.
+        """
+        body = hash_comment_free(ROOT / "compose.prod.yaml")
         self.assertEqual(3, body.count("NODE_CREDENTIAL_FILE:"),
                          "제품 오버레이가 Node 셋 전부에 증서 파일을 안 준다")
 

@@ -1,5 +1,49 @@
 # Changelog
 
+## 설정을 **주석으로 옮겨도** 통과하던 검사 둘 (G1) — 2026-09-05
+
+`tests/_srcguard.py` 는 이 저장소가 **네 번** 겪은 사고에서 나왔다 — 「X 를 쓰지 않는다」를
+텍스트로 검사할 때 **그렇게 적어 둔 설명이 검사에 걸린** 자리들이다. 그 헬퍼는
+**파이썬**의 `#` 주석과 docstring 을 걷는다.
+
+**거울상이 남아 있었다.** 「설정이 **있다**」를 텍스트로 확인할 때, 그 설정을 **주석으로
+옮기면** 검사가 그대로 통과한다. 파이썬이 아니라 **YAML** 이라 `code_only` 가 못 닿았다.
+
+### 이번 회차에 **내가 쓴** 검사 둘이 걸렸다
+
+| 심은 것 | 그 전 | 무엇이 되나 |
+|---|---|---|
+| `# restart: "no"` | `test_migrate_does_not_restart` **통과** | migrate 가 실패한 세대를 **무한 재시작** |
+| `# NODE_CREDENTIAL_FILE: …` 하나 | `…file_path_to_every_node` **통과** | 그 Node 가 강제 모드에서 **증서 없이** 돈다 |
+
+둘 다 `#252`·`#251` 이다. 뮤테이션을 **「값을 바꾼다」로만** 심었고
+**「주석으로 옮긴다」는 안 심었다.** G1 이 정확히 그걸 물었다 — 「방금 PR 의 뮤테이션이
+안 덮는 우회 한 가지」.
+
+### 더한 것
+
+`_srcguard.hash_comment_free(path)` — YAML·셸의 `#` 주석을 비운다. 줄 번호는 유지하고
+**따옴표 안의 `#` 는 안 지운다** (`a: "x#y"` 는 값이다).
+
+| 무엇을 보나 | 어떻게 |
+|---|---|
+| 설정이 **있다** | **걷고** 본다 |
+| **이유**가 적혀 있다 (initdb 함정 주석 · 시크릿 위생) | **원문**을 본다 — 주석이 본체다 |
+
+「설명을 지워야 통과하는 검사를 만들지 않는다」(`_srcguard` 머리말)의 반대편도 같이 적는다 —
+**주석만 있어도 통과하는 검사도 만들지 않는다.**
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| `restart: "no"` 를 주석으로 | `test_migrate_does_not_restart` (고친 뒤) |
+| `NODE_CREDENTIAL_FILE` 하나를 주석으로 | `…gives_the_file_path_to_every_node` (고친 뒤) |
+| 따옴표 안 `#` 를 지우게 | `test_a_hash_inside_quotes_survives` |
+| 두 검사에서 헬퍼를 빼면 | `test_they_import_the_helper` |
+
+재현: `python3 -m unittest tests.test_srcguard_covers_hash_comments` (8 검사 · 949 통과)
+
 ## CHANGELOG 선두가 **가리키는 곳이 있는가** (큐 #69 · G4) — 2026-09-05
 
 `measured-claims` 규율은 「**측정 숫자는 재현 명령 없이 쓰지 않는다**」다. CHANGELOG 는 그
