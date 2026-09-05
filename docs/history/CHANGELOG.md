@@ -1,5 +1,40 @@
 # Changelog
 
+## CHANGELOG 선두가 **가리키는 곳이 있는가** (큐 #69 · G4) — 2026-09-05
+
+`measured-claims` 규율은 「**측정 숫자는 재현 명령 없이 쓰지 않는다**」다. CHANGELOG 는 그
+규율이 가장 자주 깨지는 자리다 — 항목마다 숫자가 있고, 그 숫자를 **다시 낼 방법**은 쓰는
+사람만 안다. G4 는 그것을 한 줄로 좁힌다: **선두 항목이 테스트와 같은 말을 하는가.**
+
+| 무엇 | 값 |
+|---|---|
+| CHANGELOG 항목 | **186** |
+| 최근 12개 중 재현 대상을 지목한 것 | **12** |
+| 지목한 이름 중 **실재하지 않는 것** | **0** |
+
+선두 항목(`큐 #60`)은 `capreq/tests` 디스커버리만 적고 있어 **모듈 이름을 하나 덧붙였다** —
+그게 이 검사가 요구하는 모양이다.
+
+### 왜 열둘만 보나
+
+옛 항목은 이 규율이 서기 전에 쓰였다. **거슬러 올라가 고쳐 쓰지 않는다** — `#238` 이
+체크리스트의 옛 날짜를 지우지 않은 것과 같다. 규율은 **지금부터** 지킨다.
+
+### 무엇을 안 보나
+
+**주장과 검사가 같은 것을 말하는지**는 사람이 읽어야 한다. 여기는 「지목했는가 · 그것이
+있는가」만 본다 — **없는 것을 가리키는 재현 명령은 없는 것보다 나쁘다.**
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 선두 항목의 재현 줄 삭제 | `test_every_recent_entry_names_something` |
+| 없는 모듈을 지목 | `test_recent_entries_name_real_files` |
+| 선두 항목의 날짜 삭제 | `test_it_has_a_date` |
+
+재현: `python3 -m unittest tests.test_changelog_top_names_a_check` (6 검사 · 941 통과)
+
 ## capreq 를 로컬에서 돌리면 **`FAILED (errors=3)`** 였다 (큐 #60) — 2026-09-05
 
 `STATE` 는 「capreq **72**」라고 적고 「정본은 CI」라고 단다. 그 72 는 이 환경에서
@@ -53,7 +88,7 @@ Ran 52 tests — OK (skipped=3)
 | 핀 없이 도는 모듈이 `httpx` 를 import | **실행 검사** (`Ran 46 · errors=1`) |
 
 재현: `PYTHONPATH=capreq/src python3 -m unittest discover -s capreq/tests -p "test_*.py"`
-→ `Ran 52 · OK (skipped=3)` · 935 통과
+→ `Ran 52 · OK (skipped=3)` · `python3 -m unittest tests.test_capreq_suite_is_countable` (7 검사 · 935 통과)
 
 ## 스크립트 서른넷 중 **스물여섯은 아무것도 안 돌린다** (큐 #63) — 2026-09-05
 
