@@ -61,6 +61,7 @@ class TestTheNumberIsReproducible(unittest.TestCase):
 
     def test_loop_lists_keep_their_size(self) -> None:
         """루프가 도는 목록이 줄면 28 도 조용히 준다 — 크기를 적어 둔다."""
+        self.assertTrue(LOOP_LISTS, "루프 목록 표가 비었다")
         for name, n in LOOP_LISTS.items():
             with self.subTest(list=name):
                 self.assertEqual(n, len(getattr(cs, name)), f"{name} 이 {len(getattr(cs, name))} 이다")
