@@ -7,6 +7,7 @@ r"""`acc=`·`f1=` 를 적은 줄 **옆에 재는 도구가 있는가** — §7 �
 2026-09-03 이후 `STATE.md`·카탈로그에 들어온 측정 숫자 줄을 재전수하니 위반은 **0** 이었다 — 전부
 같은 줄이나 바로 옆 줄에 `clean_room.sh`·`demo.sh`·`pass_rate.sh`·`route_bench.py` 가 있다.
 그 상태를 §7 의 모양 그대로 고정한다. **넓히지 않는다** — `acc=`·`f1=` 두 패턴, 두 파일, ±2 줄.
+(G1 · 2026-09-06: 처음 정규식 `acc=\d` 는 `acc=**0.85**` · `acc = 0.85` 를 못 봤다 — 굵게·띄어쓰기를 허용했다.)
 
 ## 재현
 
@@ -23,7 +24,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FILES = (ROOT / "STATE.md", ROOT / "docs" / "spec" / "capability-catalog.md")
-VALUE = re.compile(r"\b(?:acc|f1)=\d")
+# `acc=0.85` 만이 아니라 `acc=**0.85**` · `acc = 0.85` 도 값이다 — G1: 처음 정규식은 이 둘을 못 봤다.
+VALUE = re.compile(r"\b(?:acc|f1)\s*=\s*[*`]*\d")
 TOOL = re.compile(r"scripts/|\.sh\b|\.py\b|run_tests|check_submission|route_bench|demo_expectation")
 WINDOW = 2
 
