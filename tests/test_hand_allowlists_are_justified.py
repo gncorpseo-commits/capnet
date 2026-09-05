@@ -19,11 +19,11 @@ ALLOWED_READERS = {"_headers"}                            # #196
 
 | 무엇 | 수 |
 |---|---|
-| `tests/` 의 허용 목록성 상수 | **16** |
-| 그것이 든 파일 | **11** |
-| 원소 합 | **60** |
+| `tests/` 의 허용 목록성 상수 | **17** |
+| 그것이 든 파일 | **12** |
+| 원소 합 | **65** |
 | 그중 **진짜 예외 목록** | **14** |
-| **어휘 집합**(예외가 아님) | **2** — `SKIP_PARTS` · `SKIP_CALLS` |
+| **어휘 집합**(예외가 아님) | **3** — `SKIP_PARTS` · `SKIP_CALLS` · `SKIP_DIRS` |
 | 늘어나는 것을 막던 검사 | **0** |
 
 `SKIP_PARTS = {"__pycache__", "node_modules"}` 와
@@ -89,6 +89,8 @@ REGISTRY: dict[str, tuple[str, int, str]] = {
         (VOCAB, 2, "훑지 않는 디렉터리 이름 — 봐주는 목록이 아니다"),
     "test_skip_reasons.py::SKIP_CALLS":
         (VOCAB, 4, "`skip`·`skipIf` 등 호출 이름 — 봐주는 목록이 아니다"),
+    "test_dataset_ids_do_not_drift.py::SKIP_DIRS":
+        (VOCAB, 5, "훑지 않는 디렉터리 이름 — 봐주는 목록이 아니다 (큐 #66)"),
 }
 
 
@@ -170,10 +172,11 @@ class TestEveryAllowlistIsAccountedFor(unittest.TestCase):
 class TestVocabularyIsNotCountedAsAnExemption(unittest.TestCase):
     """어휘를 예외로 세면 **틀린 숫자**를 적게 된다 (`#218` 함정)."""
 
-    def test_the_two_vocab_sets_are_marked(self) -> None:
+    def test_the_vocab_sets_are_marked(self) -> None:
         vocab = sorted(k for k, (kind, _, _) in REGISTRY.items() if kind == VOCAB)
         self.assertEqual(
-            ["test_secrets_never_reach_output.py::SKIP_PARTS",
+            ["test_dataset_ids_do_not_drift.py::SKIP_DIRS",
+             "test_secrets_never_reach_output.py::SKIP_PARTS",
              "test_skip_reasons.py::SKIP_CALLS"], vocab)
 
     def test_exemption_count_is_fourteen(self) -> None:
