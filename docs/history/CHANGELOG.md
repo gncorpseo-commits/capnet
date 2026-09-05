@@ -1,5 +1,46 @@
 # Changelog
 
+## 능력 데모 아홉 — **막는 건 Docker 하나뿐이다** (배치 B #74) — 2026-09-06
+
+`#229`(큐 #46)는 `clean_room` 이 데모 **열셋 중 둘**만 돌리면서 「전부 재현된다」를 찍던
+것을 잡고, 아홉을 안 넣은 이유를 「Docker 가 없어 재 볼 수 없다」로 적었다.
+**그 문장은 「무엇이 더 필요한지 모른다」로도 읽힌다.** 재 봤다.
+
+| 데모 | 가중치 | 저장소에 | Ollama |
+|---|---|---|---|
+| `embed_demo` | `text_embed_scratch` | ✅ | 아니오 |
+| `image_embed_demo` | `eurosat_scratch` | ✅ | 아니오 |
+| `ner_demo` | `rule_ner` | ✅ | 아니오 |
+| `pii_demo` | `rule_pii` | ✅ | 아니오 |
+| `series_demo` | `series_scratch` | ✅ | 아니오 |
+| `table_demo` | `text_struct_scratch` | ✅ | 아니오 |
+| `text_demo` | `text_struct_scratch` | ✅ | 아니오 |
+| `text_extract_demo` | `rule_extract`·`rule_ner` | ✅ | 아니오 |
+| `text_rank_demo` | `rule_extract`·`rule_ner`·`rule_rank` | ✅ | 아니오 |
+
+**아홉 전부 추가 가능하다.** 새로 만들 가중치도, 내려받을 것도, Ollama 도 없다 —
+`docker compose up` 하나가 서면 `clean_room` 에 `step` 아홉 줄을 얹으면 된다.
+
+`capreq_demo` 는 다르다 — **Ollama 가 필요하다.** 그래서 `#229` 의 `OUTSIDE_CLEAN_ROOM` 에
+그대로 둔다. (그 대비가 없으면 이 분류가 무엇을 가르는지 알 수 없어, 검사에 같이 넣었다.)
+
+### 제출 정본과도 대조한다
+
+아홉이 쓰는 가중치가 `check_submission.REQUIRED_WEIGHTS` 에 전부 있다 — 심사본에서
+빠지면 그 데모가 못 돈다.
+
+### 뮤테이션 3
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 데모가 없는 가중치를 부름 | `test_all_needed_weights_are_in_the_repo` |
+| 후보가 Ollama 를 씀 | `test_none_of_them_needs_ollama` |
+| 가중치 파일을 트리에서 치움 | 첫 검사 |
+
+**돌려 보지 않았다** — `docker info` 실패 (규약 6). 여기서 답한 것은 「무엇이 더 필요한가」다.
+
+재현: `python3 -m unittest tests.test_capability_demos_are_ready_to_add` (7 검사 · 999 통과)
+
 ## 쓰기 라우트의 최소 몸통 — **열아홉이 아니라 열 개**만 필요하다 (배치 B #73) — 2026-09-06
 
 `#235`(큐 #49)는 쓰기 라우트 **스물둘 중 셋**만 무인증으로 눌러 본다는 것을 표로 남기고,
