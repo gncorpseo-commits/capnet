@@ -133,5 +133,8 @@
   "test_three_demos_same_claim.py::test_the_detector_finds_node_use#0": 2,
   "test_ui_invariants.py::test_catch_probe_actually_sees_catches#0": 5,
   "test_ui_invariants.py::test_finder_actually_finds_things#0": 4,
-  "test_version_strings_agree.py::test_found_the_fastapi_calls#0": 2
+  "test_version_strings_agree.py::test_found_the_fastapi_calls#0": 2,
+  "test_write_route_minimal_bodies.py::test_models_are_read#0": 15,
+  "test_write_route_minimal_bodies.py::test_most_routes_need_no_body#0": 10,
+  "test_write_route_minimal_bodies.py::test_write_routes_and_bodies#0": 20
 }
