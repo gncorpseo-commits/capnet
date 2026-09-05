@@ -1,5 +1,24 @@
 # Changelog
 
+## UI 의 관리 키가 나갈 길은 **헤더 한 줄**뿐 — 못박는다 (배치 B #80) — 2026-09-06
+
+`test_ui_invariants.test_key_never_in_url` 은 리터럴 `?key=` 만 본다. `searchParams.set("key", k)` 나
+페이지가 `getKey()` 를 직접 읽어 URL 에 넣는 모양은 안 걸린다. 길을 세어 보니:
+
+| 무엇 | 값 |
+|---|---|
+| `static/` 전체의 `fetch(` | **1** — `app.js` `_send()` 뿐, `path` 를 고치지 않는다 |
+| 페이지가 `getKey(`·`sessionStorage` 를 직접 읽는 곳 | **0** |
+| `searchParams`·`URLSearchParams` | **0** |
+| `getKey()` 를 값으로 쓰는 줄 | **2** — `keyPrefix()`(접두 표시) · `api()`(`Authorization` 헤더) |
+
+`tests/test_ui_key_travels_only_in_headers.py` 가 넷을 고정. 뮤테이션 3/3 (페이지에서 `?k=`+getKey ·
+`_send` 가 path 에 붙임 · `searchParams.set`) 운다.
+
+```bash
+python3 -m unittest tests.test_ui_key_travels_only_in_headers
+```
+
 ## 이미지·compose 에 구워진 시크릿 기본값은 **0건** — 못박는다 (배치 B #79) — 2026-09-06
 
 `ENV POSTGRES_PASSWORD=…` 가 이미지에 들어가면 그 이미지를 받은 모두가 안다. compose 의
