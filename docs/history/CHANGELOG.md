@@ -1,5 +1,25 @@
 # Changelog
 
+## Authorization 값이 **예외 문구·응답**으로 새는 자리는 0 — 못박는다 (배치 B #81) — 2026-09-06
+
+`test_secrets_never_reach_output` 은 로그·출력 **호출**의 인자를 본다. 키가 새는 길은 하나 더
+있다 — **예외 문구**다. `raise ApiKeyError(f"bad {authorization}")` 는 로그 호출이 아니지만,
+Node 가 `{exc}` 를 찍는 다섯 곳이 그 값을 받아 적는다. 전수했다:
+
+| 무엇 | 값 |
+|---|---|
+| `raise` 247 · `HTTPException(` 84 중 시크릿 값을 문구에 싣는 것 | **0** |
+| Core `return` 이 `authorization` 을 싣는 곳 | **2** — 둘 다 `verify_key`·`verify_credential` 의 **인자** |
+| Node `NODE_CREDENTIAL` 이 문자열로 합쳐지는 곳 | **1** — `headers["Authorization"]` 한 줄 |
+
+`tests/test_authorization_never_reaches_a_message.py` 가 셋을 고정. 뮤테이션 4/4 (`detail=f"…{authorization}"` ·
+`return {"auth": authorization}` · Node `print(NODE_CREDENTIAL)` · `CredentialError(f"…{token}")`) 운다.
+예외 한 건(`preprocess.py` 의 루프 변수 `key` = 설정 필드 이름)은 이유와 함께 등록부에 올렸다.
+
+```bash
+python3 -m unittest tests.test_authorization_never_reaches_a_message
+```
+
 ## UI 의 관리 키가 나갈 길은 **헤더 한 줄**뿐 — 못박는다 (배치 B #80) — 2026-09-06
 
 `test_ui_invariants.test_key_never_in_url` 은 리터럴 `?key=` 만 본다. `searchParams.set("key", k)` 나

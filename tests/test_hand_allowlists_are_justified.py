@@ -22,7 +22,7 @@ ALLOWED_READERS = {"_headers"}                            # #196
 | `tests/` 의 허용 목록성 상수 | **20** |
 | 그것이 든 파일 | **14** |
 | 원소 합 | **99** |
-| 그중 **진짜 예외 목록** | **17** |
+| 그중 **진짜 예외 목록** | **19** |
 | **어휘 집합**(예외가 아님) | **3** — `SKIP_PARTS` · `SKIP_CALLS` · `SKIP_DIRS` |
 | 늘어나는 것을 막던 검사 | **0** |
 
@@ -57,6 +57,8 @@ EXEMPT, VOCAB = "예외", "어휘"
 # `파일::이름` → (종류, 오늘 원소 수, 무엇을 봐주는가)
 # **늘리려면 이 표를 같이 고쳐야 한다.** 줄이는 것은 자유다.
 REGISTRY: dict[str, tuple[str, int, str]] = {
+    "test_authorization_never_reaches_a_message.py::EXEMPT":
+        (EXEMPT, 1, "preprocess 설정 필드 이름을 도는 루프 변수 `key` — 값이 아니다"),
     "test_agent_arch_wiring.py::EXEMPT":
         (EXEMPT, 1, "일부러 불완전한 본문을 보내는 자리"),
     "test_capability_catalog.py::LOCKED_UNTIL_ISOLATION":
@@ -77,6 +79,8 @@ REGISTRY: dict[str, tuple[str, int, str]] = {
         (EXEMPT, 1, "시크릿 낱말을 출력해도 되는 파이썬 자리"),
     "test_secrets_never_reach_output.py::ALLOWED_SH":
         (EXEMPT, 1, "같은 것의 셸 쪽"),
+    "test_authorization_never_reaches_a_message.py::NOT_SECRET":
+        (EXEMPT, 9, "이름에 시크릿 낱말이 들지만 값은 경로·존재 여부인 접미"),
     "test_secrets_never_reach_output.py::NOT_SECRET":
         (EXEMPT, 7, "이름에 시크릿 낱말이 들지만 값은 경로·존재 여부인 접미"),
     "test_skip_reasons.py::ALLOWED":
@@ -185,9 +189,9 @@ class TestVocabularyIsNotCountedAsAnExemption(unittest.TestCase):
              "test_secrets_never_reach_output.py::SKIP_PARTS",
              "test_skip_reasons.py::SKIP_CALLS"], vocab)
 
-    def test_exemption_count_is_seventeen(self) -> None:
+    def test_exemption_count_is_nineteen(self) -> None:
         n = sum(1 for kind, _, _ in REGISTRY.values() if kind == EXEMPT)
-        self.assertEqual(17, n, "예외 목록 수가 바뀌었다 — 표와 머리말을 같이 고친다")
+        self.assertEqual(19, n, "예외 목록 수가 바뀌었다 — 표와 머리말을 같이 고친다")
 
 
 class TestProbeActuallyScans(unittest.TestCase):
