@@ -1,5 +1,21 @@
 # Changelog
 
+## `check_submission` 의 「28/28」 은 `--skip-tree` 값이다 — 출처를 못박는다 (배치 B #83) — 2026-09-06
+
+`STATE.md` 가 회차마다 적는 **28/28** 은 두 조건에 묶여 있다: `--skip-tree` 로 돌린 값이고
+(플래그 없이 깨끗한 트리에서는 **29/29**), 정적 `check(` 16 자리 중 셋이 **상수 목록을 도는 루프**
+(`FORBIDDEN_TRACKED` 4 · `REQUIRED_WEIGHTS` 9 · `REQUIRED_FILES` 4 = 17건) 이어서 목록이 줄면
+숫자도 조용히 준다.
+
+`tests/test_check_submission_count_is_reproducible.py` 가 실행값 28/29 · 목록 크기 · 정적 자리 16/루프 3 ·
+`STATE.md` 「지금 어디인가」 절의 최신 `N/N` = 실행값 을 고정한다. 뮤테이션 3/3 (검사 하나 추가 ·
+`REQUIRED_FILES` 하나 삭제 · STATE 를 27/27 로) 운다.
+
+```bash
+python3 scripts/check_submission.py --skip-tree | tail -3
+python3 -m unittest tests.test_check_submission_count_is_reproducible
+```
+
 ## Authorization 값이 **예외 문구·응답**으로 새는 자리는 0 — 못박는다 (배치 B #81) — 2026-09-06
 
 `test_secrets_never_reach_output` 은 로그·출력 **호출**의 인자를 본다. 키가 새는 길은 하나 더
