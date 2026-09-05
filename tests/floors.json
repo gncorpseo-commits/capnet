@@ -19,6 +19,7 @@
   "test_capreq_binds_loopback.py::test_probe_found_both_servers#0": 2,
   "test_capreq_demo.py::test_not_vacuous#0": 2000,
   "test_capreq_demo.py::test_not_vacuous#1": 5,
+  "test_capreq_router_never_falls_back_silently.py::test_route_is_found#0": 40,
   "test_capreq_suite_is_countable.py::test_enough_files_are_seen#0": 7,
   "test_capreq_suite_is_countable.py::test_the_suite_runs_green_without_pins#0": 45,
   "test_catalog_has_a_registration_path.py::test_catalog_rows_are_parsed#0": 5,
