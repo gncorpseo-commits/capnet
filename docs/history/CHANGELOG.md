@@ -1,5 +1,17 @@
 # Changelog
 
+## CI 는 시크릿 0 · 토큰 읽기 전용 — 단 선언이 아니라 **저장소 설정** 덕이다 (배치 B #95) — 2026-09-06
+
+`test_ci_never_logs_secrets` 는 「찍히는가」를 본다. 여기는 애초에 무엇이 있는가다: 워크플로 1개 ·
+`secrets.*`/`GITHUB_TOKEN` 참조 **0** · `pull_request_target` 없음 · job `env` 는 일회용 `capnet` 과 경로뿐.
+`permissions:` 선언은 **없고** 저장소의 `default_workflow_permissions` 가 `read` 라 실효 권한이 읽기 전용이다 —
+설정이 바뀌면 조용히 풀리므로 `permissions: contents: read` 명시를 브리지에 올렸다(`ci.yml` 은 사람 몫).
+
+`tests/test_workflow_token_and_secrets_shape.py` 가 다섯을 고정. 뮤테이션 3/3 (`secrets.` 참조 ·
+`pull_request_target` · env 에 낯선 값) 운다.
+
+```bash
+python3 -m unittest tests.test_workflow_token_and_secrets_shape
 ## `run_tests` 의 discover 가 빠뜨리는 검사 파일은 **0** — 로더로 못박는다 (배치 B #94 · G5 옆) — 2026-09-06
 
 `discover -s tests` 는 기본 패턴 `test*.py` 로 최상위만 본다. 파일이 빠져도 「전부 통과」가 찍힌다.
