@@ -225,7 +225,7 @@ tail -n 120 docs/bridge/inbox-cursor.md
 5. `docs/bridge/inbox-cursor.md` 끝
 6. `CLAUDE.md` — 절대 규칙
 
-**첫 작업:** 배치 A **#41**. 재시작은 채팅에 **`상태확인`**.
+**첫 작업:** 배치 B **#71**. 재시작은 채팅에 **`상태확인`**.
 
 ---
 

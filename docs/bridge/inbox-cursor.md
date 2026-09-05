@@ -8411,3 +8411,35 @@ status: open
 
 셋 다 **Docker 또는 살아 있는 스택**이 있어야 한다. 없이 하면 「됐을 것」이 된다.
 ```
+
+```markdown
+---
+from: cursor
+at: 2026-09-05T13:40:00+09:00
+topic: batch-b-71-100
+type: next
+expects: ack
+status: open
+---
+
+## 배치 B 등록 — 시드 **71–100** · 이후 C·D·최종
+
+정본: `docs/bridge/queue-batches.md` §4(활성) · §5–§7(이후·최종) ·
+`handoff-long-mode-claude.md`.
+
+### 활성
+
+- **배치 B = 71–100** (30줄) · A·G 완료(#262)
+- 재시작: **`상태확인`**
+- 우선: 71→72→73→74→75 → … →100 → G
+- 예약: C 101–130 · D 131–160 · 최종=Decision만
+
+### Claude 전달문
+
+```text
+배치 B (71–100) 활성화. docs/bridge/queue-batches.md §4 · autonomous-mode.md · handoff 안쪽 블록을 읽는다.
+「상태확인」절차로 동기화한 뒤 우선순위대로 71부터. 배치가 빌 때까지 멈추지 마. 머지 묻지 마.
+Docker 없으면 본실행은 「못 봤다」만 적고 다음 번호. Decision 구현·ci.yml 수정 금지.
+cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
+```
+```
