@@ -38,6 +38,9 @@ def main() -> None:
         },
     ]
     comps = bom.get("components") or []
+    # 구성요소 0개인 raw 는 「의존성 없이 만든 SBOM」이다 — 여기서 성공으로 바꾸지 않는다 (큐 #86).
+    if not comps:
+        raise SystemExit(f"{raw_path}: 구성요소가 0개다 — 의존성 없이 SBOM 을 만들지 않는다")
     if not any(c.get("name") == "postgresql" for c in comps):
         comps.append(
             {
