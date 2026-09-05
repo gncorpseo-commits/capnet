@@ -1,5 +1,50 @@
 # Changelog
 
+## 데모가 등록하는 `arch` 이름은 **아무도 안 보고 있었다** (G2) — 2026-09-05
+
+G2 는 「같은 디렉터리의 형제 파일 전수」다. `apps/node/app/tiny_*.py` 는 **아홉**인데
+검사가 이름을 부르는 것은 **셋**뿐이었다.
+
+### 먼저 — **클래스 이름은 정본이 아니다**
+
+`tiny_cnn.py` 의 `ARCH_REGISTRY` 가 정본이고, 같은 구조를 다른 이름으로 등록하는 것이
+**의도**다:
+
+```text
+"TinyTableTyper": _text_classifier(),   # 표 열 타입 추론은 text.classify 와 같은 모델
+```
+
+**「클래스가 없으면 결함」이라고 셌으면 `table_demo.sh` 를 거짓 결함으로 적을 뻔했다** —
+`#218`·`#245` 와 같은 함정이다.
+
+### 진짜 공백
+
+| 곳 | 무엇 | 대조하던 검사 |
+|---|---|---|
+| `ARCH_REGISTRY` | 빌더 **11** | `test_contract_checks_by_arch` |
+| `ARCH_MODALITY` | 모달리티 **11** | 같음 |
+| `gate.REFERENCE_ARCHS` | 실행 가능 목록 **11** | 같음 |
+| **`scripts/*_demo.sh` 의 `arch="…"`** | **9** | **없었다** |
+
+데모의 `arch` 에 오타가 나면 **그 데모를 돌릴 때만** 드러난다. 그런데 그 데모들은
+`#254` 기준 **아무도 안 돌린다** — 오타가 무기한 산다.
+
+### 실측 — 오늘은 0건
+
+셋은 서로 같고(11), 데모 아홉은 전부 그 안에 있고, `tiny_*.py` 형제 아홉은 전부
+레지스트리가 부른다.
+
+### 뮤테이션 4
+
+| 심은 것 | 운 검사 |
+|---|---|
+| 데모의 `arch` 에 오타 (`TinyTableTyper2`) | `test_every_demo_arch_is_known` |
+| `ARCH_MODALITY` 에서 한 줄 삭제 | 레지스트리 ↔ 모달리티 대조 |
+| `gate` 허용 목록에서 하나 삭제 | `test_counts_are_what_we_measured` |
+| 레지스트리가 안 부르는 새 형제 파일 | `…is_imported_by_the_registry` |
+
+재현: `python3 -m unittest tests.test_arch_names_agree_everywhere` (8 검사 · 957 통과)
+
 ## 설정을 **주석으로 옮겨도** 통과하던 검사 둘 (G1) — 2026-09-05
 
 `tests/_srcguard.py` 는 이 저장소가 **네 번** 겪은 사고에서 나왔다 — 「X 를 쓰지 않는다」를
