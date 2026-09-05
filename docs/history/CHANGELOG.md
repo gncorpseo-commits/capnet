@@ -18,6 +18,58 @@
 
 ```bash
 python3 -m unittest tests.test_capreq_router_never_falls_back_silently
+## 배경 GC 가 **지우지 않은 바이트를 「회수했다」고 세고 있었다** (배치 B #90 · `#187` 계열) — 2026-09-06
+
+`#187` 은 관리자 purge 의 `purged_now: True` 거짓말을 고쳤다. 같은 자리가 하나 더 있었다 —
+`_gc_once` 는 `purge_blob` 의 결과(True=지금 지움 · False=이미 없음)를 **버리고**, 행을 PURGED 로
+바꾸기만 하면 `freed_bytes` 에 크기를 더했다. 관리자 purge 와 경쟁했거나 디스크에서 먼저 사라진
+입력도 회수량에 들어가, 로그의 숫자가 실제보다 컸다. 행 상태를 맞추는 것은 옳다 — 거짓은 **숫자**였다.
+
+`removed = purge_blob(…)` 를 잡아 `removed` 일 때만 더하고, 로그에 `file_removed=` 를 찍는다.
+`tests/test_gc_does_not_count_bytes_it_did_not_free.py` 가 AST 로 가드를 보고 `purge_blob` 의
+True/False 를 실제로 돌려 본다. 뮤테이션 3/3 (가드 제거 · 결과 안 잡음 · `purge_blob` 이 항상 True) 운다.
+
+```bash
+python3 -m unittest tests.test_gc_does_not_count_bytes_it_did_not_free
+## 설치가 일어나는 자리 여섯 전부 ↔ THIRD-PARTY-LICENSES — 베이스 이미지 하나가 빠져 있었다 (배치 B #85) — 2026-09-06
+
+`check_deps_declared` 는 `requirements.txt` 둘과 `capreq/pyproject.toml` 만 본다. 패키지가 깔리는
+자리는 그 셋만이 아니다 — `apps/node/Dockerfile` 이 `torch`·`torchvision` 을 직접 깔고, `ci.yml` 이
+두 잡에서 일곱을 리터럴로 깐다. 전수했다:
+
+| 자리 | 이름 | 표 누락 |
+|---|---|---|
+| requirements 둘 · pyproject | 5 · 5 · 4 | 0 |
+| `apps/node/Dockerfile` `pip install` 리터럴 | 2 | 0 |
+| `ci.yml` `pip install` 리터럴 | 7 | 0 |
+| 베이스 이미지 (`FROM`·`image:`) | `postgres:16` · `python:3.11-slim` | **1** → `Python 3.11 (Docker 이미지)` 한 줄 추가 |
+| 같은 이름의 `==` 핀이 자리마다 다른 것 | — | 0 |
+
+`tests/test_every_install_site_is_licensed.py` 가 여섯 자리·핀 일치·베이스 이미지를 고정.
+뮤테이션 3/3 (`ci.yml` 에 `requests` · 핀 3.2.9→3.2.8 · 표에서 python 줄 삭제) 운다.
+`sbom.json` 에도 `postgresql` 은 있고 python 베이스는 없다 — 생성기 쪽은 이 PR 밖 (브리지 표).
+
+```bash
+python3 -m unittest tests.test_every_install_site_is_licensed
+## non-GET 22 의 **본문 필수 여부** — 문서가 둘을 빠뜨리고 있었다 (배치 B #82) — 2026-09-06
+
+`test_openapi_drift` 는 `(메서드, 경로)` 를, `test_openapi_request_schema_agrees` 는 본문 **필드**를
+본다. 그 사이가 비어 있었다 — **본문 자체가 필수인가.** OpenAPI 의 `requestBody.required` 는
+빠지면 false 다. 표로 전수했다:
+
+| 축 | 값 |
+|---|---|
+| 핸들러가 본문 필수 | **19** (그중 `inputs` 는 raw 스트림) |
+| 핸들러가 본문 선택 (`X \| None = None`) | **2** — `internal/claim` · `nodes/{id}/credentials` |
+| 본문 없음 | **1** — `inputs/{id}/purge` |
+| 문서가 `required: true` 를 빠뜨린 곳 | **2** → `nodes/invites` · `nodes/invites/{id}/revoke` 에 두 줄 (두 사본 동일) |
+| 문서의 `security`·`securitySchemes` | **0** — 22 전부 Authorization 을 요구한다. 스펙 모양이라 브리지 표로 올린다 |
+
+`tests/test_write_routes_request_body_agrees.py` 가 22 쌍을 고정. 뮤테이션 4/4 (문서 `required` 제거 ·
+핸들러 본문 선택화 · 원래 드리프트 되돌리기 · `purge` 에 문서 본문 추가) 운다.
+
+```bash
+python3 -m unittest tests.test_write_routes_request_body_agrees
 ## G2 — Node 가 Core 를 부르는 다섯 자리 전부가 증서 헤더를 싣는다 (배치 B 뒤 G 라운드) — 2026-09-06
 
 `#89`(바이트 경로)·`#81`(증서 문자열 한 줄)의 형제 전수. `urllib.request.Request(` 5곳 전부 `headers=_core_headers()`,

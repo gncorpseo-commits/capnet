@@ -11,7 +11,8 @@
 | psycopg-pool | LGPL-3.0 | psycopg 커넥션 풀 (SD-017) |
 | Pydantic | MIT | 설정·요청 모델 |
 | pydantic-settings | MIT | 환경변수 설정 |
-| PostgreSQL 16 (Docker 이미지) | PostgreSQL License | DB |
+| PostgreSQL 16 (Docker 이미지 `postgres:16`) | PostgreSQL License | DB |
+| Python 3.11 (Docker 이미지 `python:3.11-slim`) | PSF-2.0 | Core·Node 런타임 베이스 이미지 |
 | safetensors | Apache-2.0 | Node 가중치 로드 (pickle 거부) |
 | numpy | BSD-3-Clause | safetensors numpy 백엔드 |
 | Pillow | MIT-CMU (HPND-derived) | 골든셋 JPEG 로드 |
