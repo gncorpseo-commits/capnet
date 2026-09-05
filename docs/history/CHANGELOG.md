@@ -1,5 +1,19 @@
 # Changelog
 
+## lease 만료 뒤에도 바이트를 읽는 길은 **0건** — 못박는다 (배치 B #89 · SD-010 옆) — 2026-09-06
+
+바이트가 나가는 길은 둘뿐이다. `GET /v1/internal/inputs/{id}/bytes` 는 `node_may_read`
+(`LEASED` ∧ `lease_expires_at > now()` ∧ node·task 일치) 뒤에야 `FileResponse` 를 만들고,
+`…/capabilities/{id}/sample` 은 lease 가 아니라 게이트러너 자격으로 준다(계약 검증은 배정 전).
+그 밖의 `FileResponse` 는 `GET /openapi.yaml`(정적 문서) 하나뿐. Node 쪽 `_fetch_input` 호출은 1 — 실행마다 받아 `finally` 에서 지운다.
+
+`tests/test_bytes_only_under_a_live_lease.py` 가 넷을 고정. 뮤테이션 3/3 (만료 조건 제거 ·
+lease 없는 `FileResponse` 라우트 추가 · Node 가 임시 파일을 안 지움) 운다.
+
+```bash
+python3 -m unittest tests.test_bytes_only_under_a_live_lease
+```
+
 ## 게이트 사슬의 상태 전이를 앱이 손으로 쓰는 UPDATE 는 **0건** — 못박는다 (배치 B #88) — 2026-09-06
 
 절대규칙 2 는 `assignment`·`gate_run` 의 INSERT 만 말한다. 사슬의 나머지 세 표와 UPDATE 는 검사 밖이었다.
