@@ -1,5 +1,15 @@
 # Changelog
 
+## `/health` 두 곳의 반환 칸을 못박는다 — 새 칸은 근거와 함께만 (배치 C #111) — 2026-09-06
+
+기존 핀은 증서 값이 안 나가는지만 본다. 무인증 `/health` 에 칸이 하나 늘면 그게 곧 공개다. Node 6칸(+가중치 항목 4칸) ·
+Core 3칸을 허용표로 고정하고, 반환식에 `CORE_URL`·`*_FILE`·`os.environ` 이 없음을 본다(실측 0).
+`tests/test_health_keys_are_pinned.py`. 뮤테이션 3/3 (`core_url` · `credential_file` · Core 에 `database_url`) 운다.
+
+```bash
+python3 -m unittest tests.test_health_keys_are_pinned
+```
+
 ## 역할 판정은 닫힌 쪽으로 실패한다 — 기본값·오타·강제 플래그 (배치 C #110 · `#193` 양방향) — 2026-09-06
 
 양방향은 이미 재고 있다(통합 `check_api_key` 가 DB 에서 · `test_route_roles_are_pinned` 가 라우트↔역할). 남은 사각은
