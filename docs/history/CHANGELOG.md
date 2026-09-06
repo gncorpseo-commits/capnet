@@ -1,5 +1,16 @@
 # Changelog
 
+## 시드 SQL · 카탈로그 · 등록 스크립트가 같은 능력 이름을 말한다 — 못박는다 (배치 C #121) — 2026-09-06
+
+시드(`seed.sql` v1 · `0006` v2 = `image.classify`) ∪ 데모 등록 9 = 카탈로그 「구현됨」 10. `apps/core`·`migrations`·`apps/core/sql`·
+`demo_violations.sql` 의 code 리터럴은 전부 카탈로그 52 안. 실행기는 code 를 이름으로 안 부르고 `ARCH_REGISTRY` 11 → 모달리티로
+잇는다(기존 핀). `tests/test_three_sheets_name_the_same_capabilities.py`. 뮤테이션 3/3 (행 하나를 구현됨으로 · 카탈로그 밖 code
+등록 · 데모의 code 오타) 운다.
+
+```bash
+python3 -m unittest tests.test_three_sheets_name_the_same_capabilities
+```
+
 ## `/health` 두 곳의 반환 칸을 못박는다 — 새 칸은 근거와 함께만 (배치 C #111) — 2026-09-06
 
 기존 핀은 증서 값이 안 나가는지만 본다. 무인증 `/health` 에 칸이 하나 늘면 그게 곧 공개다. Node 6칸(+가중치 항목 4칸) ·
