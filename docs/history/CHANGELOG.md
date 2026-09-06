@@ -1,5 +1,14 @@
 # Changelog
 
+## `.ps1` 11개 전부 첫 명령 전에 `$ErrorActionPreference = "Stop"` — 못박는다 (배치 D #132) — 2026-09-06
+
+`.sh` 쪽 `set -euo pipefail` 의 짝. `pwsh` 가 없어 소스만 본다: 11/11 있음 · 11/11 첫 명령 앞 · `SilentlyContinue` 는 탐색 명령에만.
+`tests/test_ps1_stop_on_first_error.py`. 뮤테이션 3/3 (Stop 삭제 · Stop 앞에 명령 · 실패 삼키기) 운다.
+
+```bash
+python3 -m unittest tests.test_ps1_stop_on_first_error
+```
+
 ## 저장소의 모든 `.sh` 가 bash shebang 이고 `scripts/` 안에만 있다 — 못박는다 (배치 D #131) — 2026-09-06
 
 `test_scripts_set_errexit` 는 `set -euo pipefail` 줄만 봤다. 첫 줄이 `#!/bin/sh` 로 바뀌면 `pipefail` 이 없는 셸에서 돌고,
