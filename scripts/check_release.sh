@@ -58,9 +58,12 @@ print(f"  {'OK  ' if not missing else 'FAIL'} 필수 파일 {len(must)}종", end
 print("" if not missing else f"  없음: {', '.join(missing[:3])}")
 
 # 넣지 말아야 할 것. 실험 가중치는 이름으로 거른다 (`.gitignore` 가 막지만 확인한다).
+# 큐 #122: 채점 산출물·골든 데이터·증서/키는 .gitignore 가 막지만, `git add -f` 로 들어오면 여기서 잡는다.
 bad = [
     n for n in inner
     if n.startswith(".git/") or n.endswith(".env") or n == ".env"
+    or n.startswith("artifacts/") or n.startswith("data/golden")
+    or n.endswith(".credential") or n.endswith(".key")
     or ("weights/" in n and n.endswith(".safetensors") and n.split("/")[-1] not in {
         "eurosat_scratch.safetensors", "eurosat_scratch_b.safetensors",
         "text_struct_scratch.safetensors", "text_embed_scratch.safetensors",

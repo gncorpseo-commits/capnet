@@ -1,5 +1,16 @@
 # Changelog
 
+## 채점 산출물·골든 데이터·키는 저장소에도 zip 에도 못 들어온다 — 금지 목록 확장 + 핀 (배치 C #122) — 2026-09-06
+
+`score_n300.sh` 는 `artifacts/` 에만 쓰고 `.gitignore`·`git ls-files`(0) 가 막는다. 그런데 `check_release.sh` 의 zip 금지 목록은
+`.git/`·`.env`·실험 가중치만 이름으로 봐서 `git add -f` 로 들어온 `artifacts/`·`data/golden*`·`*.credential`·`*.key` 는 못 잡았다 —
+넷을 목록에 넣었다. `tests/test_artifacts_never_reach_the_zip.py` 가 네 축(쓰기 경로·ignore·추적 0·zip 규칙)을 고정.
+뮤테이션 3/3 (ignore 에서 `artifacts/` 제거 · 채점을 루트에 씀 · 금지 목록에서 `.key` 제거) 운다.
+
+```bash
+python3 -m unittest tests.test_artifacts_never_reach_the_zip
+```
+
 ## 시드 SQL · 카탈로그 · 등록 스크립트가 같은 능력 이름을 말한다 — 못박는다 (배치 C #121) — 2026-09-06
 
 시드(`seed.sql` v1 · `0006` v2 = `image.classify`) ∪ 데모 등록 9 = 카탈로그 「구현됨」 10. `apps/core`·`migrations`·`apps/core/sql`·
