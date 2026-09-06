@@ -1,5 +1,20 @@
 # Changelog
 
+## CORE_URL 이 격리 방을 가리켜도 `docker compose` 는 운영 프로젝트를 봤다 (배치 R · R3) — 2026-09-06
+
+운영 스크립트는 주소를 `CORE_URL` 에서, 가중치 해시·`psql` 을 `docker compose exec` 에서 받는다.
+**두 축이 서로를 모른다.** R3 실측: `CORE_URL=…:18800`(clean_room)으로 `product_demo.sh` 를 돌렸는데
+`ner_demo.sh` 4단계가 운영 프로젝트를 봤다(`service "node-m-team" is not running`). 그때는 운영 스택이
+꺼져 있어 「없다」로 끝났지만 **켜져 있었으면 조용히 다른 스택의 값을 썼을 것이다.**
+`scripts/lib/http.sh` 에 가드를 둔다 — 루프백 `CORE_URL` 의 포트를 **다른 프로젝트의 core** 가 물고
+있으면 멈추고 `COMPOSE_PROJECT_NAME` 을 알려준다. 안 떠 있는 스택·원격 Core 는 판정하지 않는다.
+(`docker compose port` 가 설정이 아니라 런타임을 답한다는 것은 실측으로 확인 — `CORE_PORT=18999` 를 줘도 `8000`.)
+회귀: `clean_room` 9/0 · `prod_room` 51/0 그대로. 뮤테이션 3/3 (안 부름 · 주석 · 늘 통과) 운다.
+
+```bash
+python3 -m unittest tests.test_compose_project_follows_core_url
+```
+
 ## capreq_demo 가 자기가 띄운 capreq 에 Core 주소를 안 넘기고 있었다 (배치 R · R4) — 2026-09-06
 
 머리말은 `CORE_URL` 을 광고하는데 capreq 는 `CAPREQ_CORE_URL` 만 읽는다. 격리 방(18800)을 가리키면

@@ -51,3 +51,60 @@ ccurl() {
 ccode() {
   ccurl -s -o /dev/null -w '%{http_code}' -m 10 "$@"
 }
+
+# ── CORE_URL 이 가리키는 스택과 `docker compose` 가 고를 프로젝트가 같은가 (배치 R · R3)
+#
+# 왜 있는가
+#   이 스크립트들은 주소는 CORE_URL 에서 받고, 가중치 해시·psql 은 `docker compose exec`
+#   로 받는다. 그런데 compose 프로젝트는 CORE_URL 을 **따라가지 않는다** — 디렉터리
+#   이름(또는 COMPOSE_PROJECT_NAME)에서 온다. 두 축이 따로 논다.
+#
+#   R3 실측(2026-09-06):
+#
+#     CORE_URL=http://127.0.0.1:18800 bash scripts/product_demo.sh   # 격리 방을 가리켰다
+#     ...
+#     == 4) Agent 등록 ==
+#     service "node-m-team" is not running                            # 운영 프로젝트를 봤다
+#
+#   그때는 운영 스택이 꺼져 있어 「없다」로 끝났다. **켜져 있었으면 조용히 성공했을
+#   것이다** — 격리 방에 등록할 Agent 의 가중치 해시를 다른 스택에서 읽어서. 배치 R 이
+#   「운영 스택을 건드리지 마」라고 적은 바로 그 사고다.
+#
+# 무엇을 하나
+#   CORE_URL 이 **루프백**이고 그 포트를 실제로 물고 있는 core 컨테이너가 있는데 그것이
+#   지금 프로젝트의 것이 아니면 **멈춘다**. `docker compose port` 는 설정이 아니라
+#   **런타임**을 본다 (CORE_PORT=18999 를 줘도 실제로 뜬 8000 을 답한다 — 실측).
+#
+# 무엇을 안 하나
+#   스택이 안 떠 있으면 판단하지 않는다 (종전 「service … is not running」 그대로).
+#   원격 Core 도 보지 않는다 — 거기엔 compose 가 없다.
+#   끄려면 CAPNET_SKIP_COMPOSE_GUARD=1.
+_capnet_compose_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+_capnet_assert_compose_matches_core() {
+  [ -n "${CORE_URL:-}" ] || return 0
+  [ -z "${CAPNET_SKIP_COMPOSE_GUARD:-}" ] || return 0
+  case "${CORE_URL}" in
+    http://127.0.0.1:*|http://localhost:*|http://0.0.0.0:*) ;;
+    *) return 0 ;;
+  esac
+  command -v docker >/dev/null 2>&1 || return 0
+
+  local want published
+  want="${CORE_URL##*:}"; want="${want%%/*}"
+  case "$want" in ''|*[!0-9]*) return 0 ;; esac
+
+  published="$(docker compose --project-directory "$_capnet_compose_root" port core 8000 2>/dev/null | tail -1)"
+  published="${published##*:}"
+  case "$published" in ''|*[!0-9]*) return 0 ;; esac
+  [ "$published" = "$want" ] && return 0
+
+  echo "CORE_URL 과 compose 프로젝트가 다른 스택을 가리킨다." >&2
+  echo "  CORE_URL      = ${CORE_URL}            (포트 ${want})" >&2
+  echo "  compose 프로젝트 = ${COMPOSE_PROJECT_NAME:-<디렉터리 이름>} 의 core 는 ${published} 를 물고 있다" >&2
+  echo "  이대로 두면 가중치 해시·psql 을 **다른 스택**에서 읽는다." >&2
+  echo "  고치는 법: COMPOSE_PROJECT_NAME=<그 방 이름> 을 같이 준다 (clean_room=capnet-cleanroom · prod_room=capnet-prod)." >&2
+  exit 1
+}
+
+_capnet_assert_compose_matches_core
