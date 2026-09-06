@@ -8648,3 +8648,82 @@ main 의 그 커밋 CI 는 뒤에 초록이었지만, 조건 「CI 3/3 green」�
 배치 C(101–130)는 §5 초안이다 — **Cursor 가 활성으로 올릴 때까지 번호를 발명하지 않는다.**
 ```
 
+
+```markdown
+---
+from: claude
+at: 2026-09-06T23:59:00+09:00
+topic: batch-c-114-119-tables
+type: report
+expects: ack
+status: open
+---
+
+## 배치 C #114–#119 — **표·문서만** (구현 0 · 정책 숫자 0 · Decision 그대로)
+
+여섯 줄은 §5 가 「표·문서만」으로 못박은 것이다. 코드를 읽어 **사실**만 적는다. status 는 내리지 않는다.
+
+### #114 — 출력 `required` 미선언 시 동작 (Decision `output-required-undeclared-policy` · 코드 0)
+
+| 상황 | 지금 코드가 하는 것 | 어디 |
+|---|---|---|
+| 계약 등록 시 `output_schema` 에 `properties`/`required` 가 있음 | `checks.output_schema = True` · 단 「**출력 값은 검증하지 않았다**」고 note 에 적는다 | `contract_check.py` `_declared_checks` |
+| 계약 등록 시 둘 다 없음 | `checks.output_schema = False` (`output_schema 가 비어 있다`) — 계약 게이트 판정에 들어간다 | 같은 곳 |
+| 값 검증 시 `required` 가 선언됨 | 빠진 키마다 `required 누락: <경로>` 로 거절 | `_check_object` |
+| 값 검증 시 `required` 가 **없음** | **아무 키도 요구하지 않는다** — 빈 객체도 통과. `additionalProperties: false` 만 선언됐으면 낯선 키만 거절 | `_check_object` |
+
+즉 「미선언 = 아무것도 요구 안 함」이 현재 동작이고, 그걸 바꾸는 것이 Decision 이다. 여기서 안 바꿨다.
+
+### #115 — `silent-truncation` 실측 표 (정책 변경 0)
+
+| 잘리는 자리 | 무엇이 | 누가 아나 |
+|---|---|---|
+| `preprocess.max_chars` (계약값) | 입력 텍스트 앞부분만 남긴다 — Decision 블록의 `tail.txt → entities: []` | **사용자 모름** (응답에 잘림 표시 없음) — Decision 대상 |
+| Node 실패 보고 `reason[:500]` | 실패 사유 문자열 | `audit_log` 증적에만 (「증적이지 로그가 아니다」 주석) |
+| Core `FAIL_AUDIT_SQL` `reason[:500]` | 같은 값 | 같은 곳 |
+| capreq 프롬프트 `desc[:177] + "..."` | 카탈로그 설명을 LLM 프롬프트에 넣을 때 | 라우팅 결과만 보이고 잘림은 안 보인다 (라우팅 품질 문제지 결과 잘림 아님) |
+| capreq `OllamaError` `r.text[:300]` · `[:200]` | 오류 문구 | 오류 메시지 안 |
+
+계약 상한 자체(`max_chars`)는 건드리지 않았다. 표시 여부는 Decision.
+
+### #116 — `gate_run` RUNNING 장기 방치 (Decision `gate-run-stuck-running` · 기록만)
+
+| 무엇 | 값 |
+|---|---|
+| 코드에서 `gate_run.status='RUNNING'` 을 시한으로 회수하는 자리 | **0** (`grep RUNNING` ∩ `now()`/interval/expire = 0) — 회수는 `assignment` lease 에만 있다 (`RECLAIM_SQL`) |
+| DB 의 RUNNING 행 수·나이 | **못 봤다** — Docker 없음. Decision 블록(2026-09-02)의 「23일째」가 마지막 실측 |
+| finish 가 받는 상태 | `WHERE status = 'RUNNING'` — 늦게라도 러너가 finish 하면 닫힌다; 아무도 안 부르면 영원히 RUNNING |
+
+「얼마나 지나면 죽은 것으로 보나」는 정책 숫자라 그대로 둔다.
+
+### #117 — failure reason 이 API/UI 에 안 가는 경로 (Decision `failure-reason-not-surfaced` · 표만)
+
+| 단계 | reason 이 있는가 | 어디 |
+|---|---|---|
+| Node → Core `/fail` 보고 | 있음 (`reason[:500]`) | `apps/node/app/main.py` `_report_failure` |
+| Core 저장 | `audit_log.payload.reason` 에만 · `assignment`·`task` 행에는 칸이 없다 | `claim.py` `FAIL_AUDIT_SQL` |
+| `GET /v1/tasks/{id}` | **없음** — 응답 SELECT 에 reason 칸 없음 (`grep reason` 0) | `main.py` |
+| UI (`static/*.html`) | 보여 주는 곳 **0** — `reason` 은 폐기 사유를 **보내는** 자리뿐 | `nodes.html`·`invite.html` |
+| capreq 가 사용자에게 | `Task 미완료 status=FAILED` 한 줄 | Decision 블록 실측 |
+
+응답 모양 변경은 Decision. 안 바꿨다.
+
+### #118 — 골든 겹침 주장 ↔ 재현 명령 (표만 · 원고 본문 미수정)
+
+| 보고서 주장 (`contest-report-draft.md`) | 재현 | 판정 |
+|---|---|---|
+| 「골든셋이 학습셋과 겹친 것을 발견해 홀드아웃으로 고쳤다 (겹침 0/300, `scripts/check_golden_leakage.py`)」 | `docs/spec/golden/README.md` §누출 검사: `python scripts/check_golden_leakage.py` · 종료 0=전부 보고 겹침 없음 · 2=겹침 · 3=부분 검사(#180 이 「부분 검사=초록」을 막았다) | 명령 있음 ✅ · **이 환경엔 `data/golden-*` 가 없어 돌려 보지 못했다** |
+| 「n=300 에서 SE≈0.026」 | √(0.7·0.3/300)=0.0265 — 식으로 재현 | ✅ |
+
+### #119 — `changelog-changeset-rule` (문서 핀만 · `CLAUDE.md` 개정 안 함)
+
+Proposal(A 규율안)은 열려 있다. 이번 세션의 실측이 (A) 를 뒷받침한다:
+
+| 방식 | PR | CHANGELOG 충돌 |
+|---|---|---|
+| 배치 B 초반 — 여러 PR 을 병렬로 열고 각자 선두에 항목 | `#277`–`#298` | rebase **8회** (CRLF 충돌 해결 스크립트까지 만들었다) |
+| 배치 C — **직렬** (앞 PR 머지 뒤 다음 브랜치) | `#301`–`#306` | **0** |
+
+기계 쪽은 `test_changelog_integrity`(중복·헤더) · `test_changelog_top_names_a_check`(선두가 검사를 가리키는가) ·
+`test_no_conflict_markers` 가 본다. 문장을 `CLAUDE.md` 에 넣을지는 Decision — 여기 적어만 둔다.
+```
