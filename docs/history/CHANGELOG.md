@@ -3,7 +3,7 @@
 ## 「상태확인」 S0–S7 — 정본 §1 과 그것을 부르는 문서 둘이 같다, 못박는다 (배치 D #156) — 2026-09-06
 
 `queue-batches.md` §1 은 S0…S7 여덟 단계, S5 가 읽으라는 파일 전부 실재, handoff·autonomous 는 「S0–S7」로 §1 을 가리키고 자기
-절차를 따로 적지 않는다. `tests/test_status_check_steps_agree.py`. 뮤테이션 2/2 (S4 삭제 · 부르는 문서가 자기 절차를 적음) 운다.
+절차를 따로 적지 않는다. `tests/test_status_check_steps_agree.py`. 뮤테이션 2/2 (S4 삭제 · 부르는 문서가 자기 절차를 적음) 운다 — 둘째는 머지 직후 `(?m)` 이 빠져 안 울던 것을 바로 고쳤다.
 
 ```bash
 python3 -m unittest tests.test_status_check_steps_agree

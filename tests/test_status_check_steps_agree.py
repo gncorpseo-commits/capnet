@@ -54,7 +54,7 @@ class TestStepsAgree(unittest.TestCase):
             with self.subTest(doc=c.name):
                 body = c.read_text(encoding="utf-8")
                 self.assertRegex(body, r"S0[–\-~]S7")
-                self.assertNotRegex(body, r"^S[0-7]\. ", "부르는 문서가 자기 절차를 따로 적는다 — 정본이 둘이 된다")
+                self.assertNotRegex(body, r"(?m)^S[0-7]\. ", "부르는 문서가 자기 절차를 따로 적는다 — 정본이 둘이 된다")   # (?m): 머지 직후 뮤테이션이 안 울어 고침
 
 
 if __name__ == "__main__":
