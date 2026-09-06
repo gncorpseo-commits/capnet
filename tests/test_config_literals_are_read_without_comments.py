@@ -29,6 +29,12 @@ r"""`#` 주석 파일에서 **설정을 볼 때는 주석을 걷는다** (배치
 
 - **파이썬**을 읽는 검사 — `code_only()` 가 따로 있다 (`_srcguard`)
 - **문서**(README·INDEX·체크리스트)를 읽는 검사 — 거기선 산문이 본체다
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_config_literals_are_read_without_comments
+```
 """
 
 from __future__ import annotations

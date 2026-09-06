@@ -41,6 +41,12 @@ chk "demo.sh 강제 모드 통과" test "$rc" = "0"
 
 **실행하지 않는다.** `-e` 를 실제로 켜고 `prod_room` 을 돌리는 것은 Docker 가 필요하다
 (이 세션에는 데몬이 없다 — `docker info` 실패). 여기는 **어법**만 본다.
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_exit_code_capture_is_errexit_safe
+```
 """
 
 from __future__ import annotations

@@ -1,5 +1,15 @@
 # Changelog
 
+## 새 검사 파일의 머리말 규약 — 문서에 적고 핀 (배치 C #128 · `#215` 계열) — 2026-09-06
+
+배치 B 초반 검사 6개에 「## 재현」이 없었다 — 붙였다. `testing.md` §4.8 에 규약(왜 있는가 · 실측 · 무엇을 안 보나 · 재현 ·
+skip 사유는 `ALLOWED`)을 적고, `tests/test_new_tests_follow_the_header_convention.py` 가 「배치 B/C·G 라운드」를 말하는 39개에
+대해 재현 절과 자기 모듈을 부르는 명령을 고정한다(모듈 docstring 없는 검사 0/121). 뮤테이션 3/3 운다.
+
+```bash
+python3 -m unittest tests.test_new_tests_follow_the_header_convention
+```
+
 ## 검사 순서에 기대는 공유 상태 — 역순·단독 실행으로 재니 0 (배치 C #127) — 2026-09-06
 
 `sys.modules` 스텁·`os.environ` 을 모듈 수준에서 만지는 검사가 여럿이라 순서 의존을 의심했다. `scripts/check_test_order.py` 로

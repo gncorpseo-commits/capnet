@@ -22,6 +22,12 @@ r"""등록된 바닥이 **실제로 무는가** (배치 B #77 · `#230` 잔여).
 1. `tests/` 어디에도 `assertGreaterEqual(…, 0)` 이 없다
 2. 값 0 으로 등록된 바닥은 전부 **strict**(`assertGreater`)다
 3. 세는 대상이 비지 않는다
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_floors_actually_bite
+```
 """
 
 from __future__ import annotations

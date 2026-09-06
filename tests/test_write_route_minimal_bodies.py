@@ -35,6 +35,12 @@ r"""쓰기 라우트의 **최소 몸통**을 모델에서 뽑아 둔다 (배치 
 
 **실제 응답.** 401 이 나오는지는 강제 모드에서 `prod_room` 이 잰다 (Docker 필요 ·
 이 세션에는 데몬이 없다). 여기는 **몸통이 계약과 맞는가**만 본다.
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_write_route_minimal_bodies
+```
 """
 
 from __future__ import annotations
