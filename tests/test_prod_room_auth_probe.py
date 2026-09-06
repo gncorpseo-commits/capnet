@@ -51,6 +51,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136
 PROD = ROOT / "scripts" / "prod_room.sh"
 LIB = ROOT / "scripts" / "lib" / "authprobe.sh"
 
@@ -248,7 +250,7 @@ class TestRequiredQueryParams(unittest.TestCase):
 class TestVerdictIsShared(unittest.TestCase):
     def test_prod_room_sources_the_lib(self) -> None:
         """인라인으로 되돌아가면 이 검사가 판정을 못 본다."""
-        text = PROD.read_text(encoding="utf-8")
+        text = hash_comment_free(PROD)
         self.assertIn("lib/authprobe.sh", text, "prod_room 이 판정 lib 를 안 쓴다")
         self.assertIn("probe_verdict", text, "prod_room 이 probe_verdict 를 안 부른다")
 

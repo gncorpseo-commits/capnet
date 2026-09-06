@@ -49,6 +49,12 @@ MUTATIONS: list[dict[str, str | None]] = [
      "test": "tests.test_ps1_stop_on_first_error", "why": "PowerShell 이 실패 뒤로 흐른다 (#132)"},
     {"id": "demo-no-verdict", "file": "scripts/series_demo.sh", "find": 'if d["status"] != "COMPLETED":', "replace": "if False:",
      "test": "tests.test_demos_fail_red", "why": "데모가 실패해도 초록 (#126)"},
+    {"id": "comment-only-dry-run", "file": "scripts/regate.sh", "find": "--dry-run", "replace": "--dryrun",
+     "test": "tests.test_regate_and_proof_ab_readiness", "why": "플래그를 주석에만 남기고 지움 (#136)"},
+    {"id": "comment-only-capreq-in-sbom", "file": "scripts/generate_sbom.sh", "find": "capreq/pyproject.toml", "replace": "capreq/pyproject_toml",
+     "test": "tests.test_sbom_coverage", "why": "생성기가 capreq 를 안 읽는데 주석엔 남음 (#136)"},
+    {"id": "comment-only-skip-tree", "file": "scripts/run_tests.sh", "find": "check_submission.py --skip-tree", "replace": "check_submission.py",
+     "test": "tests.test_check_submission_count_is_reproducible", "why": "run_tests 가 플랫으로 돌면서 문서 숫자만 유지 (#136)"},
     {"id": "role-unknown-minimum-opens", "file": "apps/core/app/apikey.py", "find": "need = ROLE_RANK.get(minimum, 99)",
      "replace": "need = ROLE_RANK.get(minimum, 0)", "test": "tests.test_role_rank_fails_closed", "why": "오타 난 최소역할이 열린다 (#110)"},
 ]

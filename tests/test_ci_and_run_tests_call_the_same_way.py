@@ -50,6 +50,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136
 RUN_TESTS = ROOT / "scripts" / "run_tests.sh"
 CI = ROOT / ".github" / "workflows" / "ci.yml"
 CHECKLIST = ROOT / "docs" / "ops" / "contest-submission-checklist.md"
@@ -88,8 +90,8 @@ def _count(args: list[str]) -> int:
 class TestSameToolSameArgs(unittest.TestCase):
     def test_check_submission_is_called_the_same(self) -> None:
         """**여기가 핵심이다.** 한쪽만 약한 인자를 주면 로컬 초록이 거짓말이 된다."""
-        local = _args_in(RUN_TESTS.read_text(encoding="utf-8"), "check_submission.py")
-        ci = _args_in(CI.read_text(encoding="utf-8"), "check_submission.py")
+        local = _args_in(hash_comment_free(RUN_TESTS), "check_submission.py")
+        ci = _args_in(hash_comment_free(CI), "check_submission.py")
         self.assertTrue(local or ci, "check_submission 호출을 못 찾았다")
         self.assertEqual(local, ci, f"인자가 갈린다 — 로컬={sorted(local)} CI={sorted(ci)}")
 
@@ -123,7 +125,7 @@ class TestTheSkippedCheckIsExactlyOne(unittest.TestCase):
                         "체크리스트에 「패키징 직전에 맨몸으로」 안내가 없다")
 
     def test_run_tests_says_why_it_skips(self) -> None:
-        body = RUN_TESTS.read_text(encoding="utf-8")
+        body = (RUN_TESTS).read_text(encoding="utf-8")
         self.assertTrue("--skip-tree" in body, "run_tests 가 --skip-tree 를 안 쓴다")
         self.assertTrue("패키징 직전에는" in body,
                         "run_tests 에 왜 워킹트리 검사를 빼는지 안 적혀 있다")

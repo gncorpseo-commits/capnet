@@ -1,5 +1,18 @@
 # Changelog
 
+## `_srcguard` 적용 확대 — 주석에만 남겨도 통과하던 검사 열다섯 (배치 D #136 · G1 확장) — 2026-09-06
+
+`#258`(G1)의 메타 검사는 단언 호출문 **안**에서만 `.sh`/`.yaml` 을 찾아, `body = (…).read_text(); assertIn(lit, body)` 모양을
+놓쳤다. 실측: `regate.sh` 의 `--dry-run`, `generate_sbom.sh` 의 `capreq/pyproject.toml`, `run_tests.sh` 의 `--skip-tree`,
+`image_embed_demo.sh` 의 가중치 이름 — 넷 다 **주석에만 남기고 지워도 초록**이었다. 탐지를 데이터 흐름(그 변수)으로 좁혀 17곳을
+잡고, 15곳을 `hash_comment_free` 로 바꾸고, 주석이 본체인 둘은 `COMMENT_IS_THE_POINT` 에 이유와 함께 등록했다. 변이 셋을
+`mutation_harness.py` 에 추가(15/15 운다).
+
+```bash
+python3 -m unittest tests.test_config_literals_are_read_without_comments
+python3 scripts/mutation_harness.py --only comment-only-dry-run
+```
+
 ## 뮤테이션 하네스 — 핀 검사가 정말 무는지 다시 돌릴 길이 없었다 (배치 D #135) — 2026-09-06
 
 배치 A–C 의 핀 PR 은 뮤테이션을 세션 안에서만 돌렸고 저장소엔 「울었다」는 문장만 남았다. `scripts/mutation_harness.py` 에

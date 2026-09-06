@@ -99,7 +99,7 @@ class TestTheNumberIsPrintedEvenOnFailure(unittest.TestCase):
                         "건너뜀 줄이 실패 분기 뒤에 있다 — 실패하면 아무도 못 본다")
 
     def test_the_banner_points_at_the_reason_list(self) -> None:
-        body = RUN_TESTS.read_text(encoding="utf-8")
+        body = hash_comment_free(RUN_TESTS)
         self.assertIn("tests/test_skip_reasons.py", body)
         self.assertIn("docs/guide/testing.md", body)
 

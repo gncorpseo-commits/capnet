@@ -101,7 +101,7 @@ class TestNothingRunsOnAHalfMigratedDb(unittest.TestCase):
         self.assertIn('restart: "no"', hash_comment_free(COMPOSE))
 
     def test_the_wrapper_propagates_the_exit_code(self) -> None:
-        body = WRAPPER.read_text(encoding="utf-8")
+        body = hash_comment_free(WRAPPER)
         self.assertIn("set -euo pipefail", body)
         # `shift || true` 는 인자가 없을 때라 정상이다 (`#239` 의 ALLOWED_SWALLOW).
         # 삼키면 안 되는 것은 **러너를 부르는 줄**이다.
