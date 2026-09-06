@@ -26,10 +26,13 @@ from __future__ import annotations
 
 import ast
 import re
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136
 INTEGRATION = ROOT / "tests" / "integration"
 RUNNER = ROOT / "scripts" / "run_integration.sh"
 SKIP_NAMES = {"SkipTest", "skipTest", "skipUnless", "skipIf", "skip"}
@@ -75,7 +78,7 @@ class TestNoSkipCalls(unittest.TestCase):
 
 class TestRunnerCountsOnlyPassAndFail(unittest.TestCase):
     def test_no_skip_bucket(self) -> None:
-        body = RUNNER.read_text(encoding="utf-8")
+        body = hash_comment_free(RUNNER)
         self.assertIn("통합 검사: 통과 %d · 실패 %d", body)
         self.assertNotRegex(body, r"skip=|건너뜀|skipped", "러너에 건너뜀 칸이 생겼다 — 사유 대조가 필요하다")
         self.assertIn('if DATABASE_URL="$(url_for "$db")" python3 "$script"; then', body)

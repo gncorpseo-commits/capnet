@@ -40,6 +40,12 @@ G2 는 「같은 디렉터리의 형제 파일 전수」다. `apps/node/app/tiny
 
 - **클래스 이름과 arch 이름이 같은가.** 같을 필요가 없다 — 위가 그 이유다
 - 모델이 **무엇을 내는가.** 그건 `test_output_schema` · 모달리티 검사들이 본다
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_arch_names_agree_everywhere
+```
 """
 
 from __future__ import annotations

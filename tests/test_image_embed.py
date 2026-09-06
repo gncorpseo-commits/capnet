@@ -23,6 +23,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136: 주석의 리터럴을 본체로 세지 않는다
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _srcguard import code_only  # noqa: E402
 
@@ -35,7 +37,7 @@ CONTRACT = ROOT / "apps" / "node" / "app" / "contract_check.py"
 class TestNoNewWeights(unittest.TestCase):
     def test_reuses_existing_file(self) -> None:
         """데모가 **기존** 가중치를 가리킨다 — 새로 학습·커밋하지 않았다."""
-        demo = (ROOT / "scripts" / "image_embed_demo.sh").read_text(encoding="utf-8")
+        demo = hash_comment_free(ROOT / "scripts" / "image_embed_demo.sh")
         self.assertIn("eurosat_scratch.safetensors", demo)
 
     def test_no_new_weight_file_added(self) -> None:
@@ -107,7 +109,7 @@ class TestNoSimilarityClaim(unittest.TestCase):
         self.assertIn("의미적 유사도", src)
 
     def test_demo_disclaims(self) -> None:
-        demo = (ROOT / "scripts" / "image_embed_demo.sh").read_text(encoding="utf-8")
+        demo = hash_comment_free(ROOT / "scripts" / "image_embed_demo.sh")
         self.assertIn("주장하지 않는다", demo)
 
 

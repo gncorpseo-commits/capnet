@@ -65,6 +65,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136
 PROD = ROOT / "scripts" / "prod_room.sh"
 
 sys.path.insert(0, str(ROOT / "tests"))
@@ -148,7 +150,7 @@ class TestProbeActuallyScans(unittest.TestCase):
         self.assertIn(("POST", "/v1/nodes"), probes)
         # §8 은 admin 키로 같은 경로를 부른다 — 그건 무인증이 아니다.
         # 큐 #72 이후 그 자리는 `ccode`/`ccurl` 이라 헤더가 argv 에 안 보인다.
-        body = PROD.read_text(encoding="utf-8")
+        body = hash_comment_free(PROD)
         self.assertIn("ccode -X POST", body, "기준 파일이 바뀌었다")
         self.assertNotIn("Authorization: CapNet-Key $key", body,
                          "키가 다시 argv 로 넘어간다 (큐 #72)")

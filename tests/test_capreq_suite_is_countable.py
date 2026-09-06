@@ -53,6 +53,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136
 CAPREQ_TESTS = ROOT / "capreq" / "tests"
 CI = ROOT / ".github" / "workflows" / "ci.yml"
 
@@ -104,7 +106,7 @@ class TestTheNumberHasAnOwner(unittest.TestCase):
     """숫자를 옮겨 적지 않는다 — **어디서 나오는지**를 못박는다."""
 
     def test_ci_installs_the_pins_and_runs_the_suite(self) -> None:
-        body = CI.read_text(encoding="utf-8")
+        body = hash_comment_free(CI)
         # **설치 줄만** 본다. 파일 전체를 보면 바로 위 주석에 `fastapi` 가 있어서,
         # 설치에서 빼는 뮤테이션이 그대로 통과한다 — `#242` 에서 겪은 것과 같다.
         install = [l for l in body.splitlines() if "pip install" in l and "httpx" in l]

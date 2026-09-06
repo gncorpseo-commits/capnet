@@ -33,6 +33,12 @@ r"""**설정을 주석으로 옮겨도 통과하는 검사**를 막는다 (G1 ·
 
 **설명을 지워야 통과하는 검사를 만들지 않는다** (`_srcguard` 머리말). 반대로,
 **주석만 있어도 통과하는 검사도 만들지 않는다.**
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_srcguard_covers_hash_comments
+```
 """
 
 from __future__ import annotations

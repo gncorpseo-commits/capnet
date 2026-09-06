@@ -31,10 +31,13 @@ from __future__ import annotations
 import os
 import subprocess
 import tempfile
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136
 INTEGRATION = ROOT / "tests" / "integration"
 RUNNER = ROOT / "scripts" / "run_integration.sh"
 
@@ -61,7 +64,7 @@ class TestNothingIsSilentlySkipped(unittest.TestCase):
 
     def test_runner_uses_a_glob_not_a_list(self) -> None:
         """하드코딩 목록으로 바뀌면 `testing.md` §4.5 의 「등록부가 없다」가 거짓이 된다."""
-        text = RUNNER.read_text(encoding="utf-8")
+        text = hash_comment_free(RUNNER)
         self.assertIn("check_*.py", text, "러너가 패턴으로 안 집는다")
         self.assertIn("find", text, "glob 대신 목록을 쓰는 것으로 보인다")
 

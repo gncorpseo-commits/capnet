@@ -9,6 +9,230 @@ Node 는 실행기 예외를 stdout(`{exc}`)과 실패 보고(`audit_log.reason`
 
 ```bash
 python3 -m unittest tests.test_error_messages_carry_no_input_values
+```
+
+## 최종 G1 — `#338` 의 검사가 `-q` 없는 무버전 설치를 놓쳤다 — 2026-09-06
+
+`pip install -q torch` 만 보던 부정 정규식을 `pip install(?: -플래그)* torch` 로. 뮤테이션 2/2 (`-q` 없음 · `--no-cache-dir`) 운다.
+이것으로 최종 G 한 바퀴(G1 정정 · G2 #338 · G3–G5 0+재현) 끝.
+
+```bash
+python3 -m unittest tests.test_training_pins_match_the_runtime
+```
+
+## 최종 G2 — 학습 스크립트 다섯이 torch 를 무버전으로 깔고 있었다 (`#151` 형제) — 2026-09-06
+
+Dockerfile 은 `TORCH_VERSION=2.13.0+cpu` 로 핀하는데 `train_*.sh` 넷·`train_scratch.ps1` 은 `pip install -q torch …` 무버전이라
+2차 심사(F4) 재학습 때 다른 가중치가 나올 수 있었다. 정본을 두 번 적지 않고 읽는다 — torch/torchvision 은 Dockerfile ARG,
+safetensors/numpy/pillow 는 `apps/node/requirements.txt` — 못 읽으면 멈춘다. `tests/test_training_pins_match_the_runtime.py`.
+뮤테이션 2/2 (무버전 되돌림 · 멈춤 제거) 운다. 학습 자체는 Docker 없어 **못 돌렸다**(문법 `bash -n` 만).
+
+```bash
+python3 -m unittest tests.test_training_pins_match_the_runtime
+```
+
+## 「상태확인」 S0–S7 — 정본 §1 과 그것을 부르는 문서 둘이 같다, 못박는다 (배치 D #156) — 2026-09-06
+
+`queue-batches.md` §1 은 S0…S7 여덟 단계, S5 가 읽으라는 파일 전부 실재, handoff·autonomous 는 「S0–S7」로 §1 을 가리키고 자기
+절차를 따로 적지 않는다. `tests/test_status_check_steps_agree.py`. 뮤테이션 2/2 (S4 삭제 · 부르는 문서가 자기 절차를 적음) 운다 — 둘째는 머지 직후 `(?m)` 이 빠져 안 울던 것을 바로 고쳤다.
+
+```bash
+python3 -m unittest tests.test_status_check_steps_agree
+```
+
+## 활성 배치 — `queue-batches` §0 와 STATE 「다음:」이 같은 배치를 말한다, 못박는다 (배치 D #155) — 2026-09-06
+
+`tests/test_active_batch_agrees_with_state.py`. 뮤테이션 1/1 (활성 행만 D 로 옮김) 운다.
+
+```bash
+python3 -m unittest tests.test_active_batch_agrees_with_state
+```
+
+## 열린 `expects: decision` 을 기계가 센다 — 23 (배치 D #154 · `#39`/`#222` 계열) — 2026-09-06
+
+지금까지 사람이 세어 적던 「열린 Decision 수」를 헤더 블록 파싱으로 센다: 126 블록 중 `expects: decision` ∧ `status: open` = **23**.
+status 는 내리지 않는다. `tests/test_open_decisions_are_counted.py`. 뮤테이션 1/1 (하나를 done 으로) 운다.
+
+```bash
+python3 -m unittest tests.test_open_decisions_are_counted
+```
+
+## DDL 이 어느 Decision 에서 왔는지 머리에 적혀 있는가 — 정적 탐지 (배치 D #153) — 2026-09-06
+
+마이그레이션 18개 중 16개가 머리 6줄 안에 `D24`·`SD-013`·`B2`·`P2-1`·`I1`·`G2`·`Decision` 표식을 갖는다. `0001`·`0002` 는 브리지 이전,
+`0015` 는 근거가 inbox 블록(`assignment-attempt-cap`)에 있다 — `migrations/` 는 사람 몫이라 머리는 안 고치고 표에 이유를 적었다.
+`tests/test_ddl_cites_its_decision.py`. 뮤테이션 1/1 (근거 없는 DDL 추가) 운다 (DDL 을 만들지 않는 항목이라 변이는 사본 하나).
+
+```bash
+python3 -m unittest tests.test_ddl_cites_its_decision
+```
+
+## LICENSE·NOTICE 트리 — 루트 둘 · capreq 선언 일치 · README 문장만 비어 있음 (배치 D #152) — 2026-09-06
+
+루트 `LICENSE`(Apache 2.0)·`NOTICE`(THIRD-PARTY 표·EuroSAT 출처) · `capreq/pyproject.toml` Apache-2.0 일치. `capreq/README.md` 에
+라이선스 문장이 없다 — `capreq/` 는 내 경계 밖이라 표로만(한 줄이면 된다). `tests/test_license_tree_is_whole.py`. 뮤테이션 2/2 운다.
+
+```bash
+python3 -m unittest tests.test_license_tree_is_whole
+```
+
+## SBOM 생성 도구가 무버전이었다 — sbom.json 이 기록한 버전으로 핀 (배치 D #151 · `#239` 형제) — 2026-09-06
+
+`generate_sbom.sh`·`.ps1` 이 `pip install cyclonedx-bom` 을 무버전으로 깔았다. 도구 메이저가 바뀌면 SBOM 모양이 달라지는데 이름만 보는
+검사는 조용하다. `sbom.json` `metadata.tools` 의 버전(7.3.1)으로 둘 다 핀. `tests/test_sbom_tool_version_pinned.py` 가 「핀 = 기록」을 고정.
+뮤테이션 2/2 (무버전 · 다른 버전) 운다.
+
+```bash
+python3 -m unittest tests.test_sbom_tool_version_pinned
+```
+
+## EuroSAT 라이선스 문구 — 기계 핀·README·규정 문서가 같다, 못박는다 (배치 D #150) — 2026-09-06
+
+`eurosat-rgb.json` `license: MIT`·Zenodo 7711810 과 README·`regulation-compliance.md` 의 문구가 같다. 원본 zip 안 LICENSE 는
+저장소 밖(미동봉)이라 **못 봤다**. `tests/test_eurosat_license_wording_agrees.py`. 뮤테이션 2/2 운다.
+
+```bash
+python3 -m unittest tests.test_eurosat_license_wording_agrees
+```
+
+## 입력 상한의 경계값 검사 둘 신설 — 상한과 같으면 받고 +1 이면 거절 (배치 D #147 · D22 옆) — 2026-09-06
+
+기존 검사는 「넘으면 끊는다」만 봤다. `store_stream` 의 `>` 가 `>=` 로 바뀌면 정확히 상한인 입력이 거절되는데 아무도 안 울었다.
+`test_input_contract_rejections_actually_run` 에 경계 둘(=25 받음 · 26 거절·잔여 0)을 실제 실행으로 추가. 뮤테이션 2/2 (`>`→`>=` · 상한 검사 제거) 운다.
+
+```bash
+python3 -m unittest tests.test_input_contract_rejections_actually_run
+```
+
+## API 오류 문구·Node 예외에 내부 경로 0 — 못박는다 (배치 D #146) — 2026-09-06
+
+`HTTPException(detail=…)`·`raise …(…)` 247개 중 경로형 값을 포맷하거나 `/app/`·`/weights/` 류 리터럴을 담은 것 0
+(`migrate_lint.py` 는 CLI 린트 도구라 basename 을 말한다 — 제외, 이유 적음). `tests/test_error_messages_carry_no_internal_path.py`.
+뮤테이션 2/2 운다.
+
+```bash
+python3 -m unittest tests.test_error_messages_carry_no_internal_path
+```
+
+## 단위 검사는 네트워크·Docker 를 안 부른다 — AST 전수 0, 못박는다 (배치 D #144) — 2026-09-06
+
+`urlopen`·`socket`·`httpx`·`requests` 0 · `subprocess` argv[0] 은 `bash`·`git`·`sed`·`sys.executable` 뿐(`docker`·`curl`·`pip`·`gh` 0).
+`tests/test_tests_touch_no_network_or_docker.py`. 뮤테이션 2/2 (`docker info` · `urlopen`) 운다.
+
+```bash
+python3 -m unittest tests.test_tests_touch_no_network_or_docker
+```
+
+## 강제 모드 키 — 프로드 오버레이만 `"1"` · 데모는 안 정함 · 커밋된 `.env` 0 (배치 D #143) — 2026-09-06
+
+`REQUIRE_API_KEY`·`REQUIRE_NODE_CREDENTIAL` 은 `compose.prod.yaml` 에만 `"1"`, `compose.yaml` 엔 없음(코드 기본 0), `.env.example` 은 0,
+추적된 `.env*` 는 example 하나. `tests/test_enforcement_toggles_live_in_prod_only.py`. 뮤테이션 2/2 (프로드가 증서 강제를 끔 · 데모가 강제를 켬) 운다.
+
+```bash
+python3 -m unittest tests.test_enforcement_toggles_live_in_prod_only
+```
+
+## Node 운영 안내의 플래그를 스크립트가 전부 받는다 — 못박는다 (배치 D #142) — 2026-09-06
+
+`operate-node.md` 의 `node_onboard.sh`(3줄)·`node_bind.sh`(2줄) 호출이 보여 주는 플래그 전부가 각 스크립트의 `case` 에 있다.
+`tests/test_node_docs_flags_match_scripts.py`. 뮤테이션 2/2 (문서에 없는 플래그 · 스크립트가 `--tier` 를 버림) 운다.
+
+```bash
+python3 -m unittest tests.test_node_docs_flags_match_scripts
+```
+
+## 사용자 안내가 부르는 스크립트·능력 code 는 전부 실재 — 못박는다 (배치 D #140) — 2026-09-06
+
+`user-guide-ko.md` 는 라우트를 말하지 않고(0) 스크립트 2·능력 code 2 를 부른다 — 전부 실재. `tests/test_user_guide_names_real_things.py`.
+뮤테이션 2/2 (없는 스크립트 · 카탈로그 밖 code) 운다.
+
+```bash
+python3 -m unittest tests.test_user_guide_names_real_things
+```
+
+## README·INDEX 의 상대 링크와 README 명령이 부르는 경로 — 전부 실재, 못박는다 (배치 D #139) — 2026-09-06
+
+README 링크 29(상대 27 전부 존재 · 외부 2 는 오프라인이라 못 봤다) · 명령 12 가 부르는 `scripts/`·`docs/` 경로 전부 존재 · INDEX 상대 링크
+전부 존재. `tests/test_readme_links_and_commands_resolve.py`. 뮤테이션 2/2 (깨진 링크 · 없는 스크립트 명령) 운다.
+
+```bash
+python3 -m unittest tests.test_readme_links_and_commands_resolve
+```
+
+## `migrations.md` 의 세대 표가 0003 에서 멈춰 있었다 — 18행으로, 파일과 묶는다 (배치 D #137) — 2026-09-06
+
+파일은 0018 까지 열여덟인데 문서 표는 셋. 15행을 각 파일의 머리 주석대로 채우고, `tests/test_migration_ledger_matches_the_docs.py` 가
+「번호 연속 · 파일 ↔ 행 이름 동일」을 고정한다. 뮤테이션 3/3 (행 삭제 · 파일만 추가 · 이름 오타) 운다.
+같은 PR: `mutation_harness.py` 가 첫 등장만 바꿔 주석 안 문자열을 건드리던 것을 전부 바꾸도록(15/15 운다).
+
+```bash
+python3 -m unittest tests.test_migration_ledger_matches_the_docs
+```
+
+## `_srcguard` 적용 확대 — 주석에만 남겨도 통과하던 검사 열다섯 (배치 D #136 · G1 확장) — 2026-09-06
+
+`#258`(G1)의 메타 검사는 단언 호출문 **안**에서만 `.sh`/`.yaml` 을 찾아, `body = (…).read_text(); assertIn(lit, body)` 모양을
+놓쳤다. 실측: `regate.sh` 의 `--dry-run`, `generate_sbom.sh` 의 `capreq/pyproject.toml`, `run_tests.sh` 의 `--skip-tree`,
+`image_embed_demo.sh` 의 가중치 이름 — 넷 다 **주석에만 남기고 지워도 초록**이었다. 탐지를 데이터 흐름(그 변수)으로 좁혀 17곳을
+잡고, 15곳을 `hash_comment_free` 로 바꾸고, 주석이 본체인 둘은 `COMMENT_IS_THE_POINT` 에 이유와 함께 등록했다. 변이 셋을
+`mutation_harness.py` 에 추가(15/15 운다).
+
+```bash
+python3 -m unittest tests.test_config_literals_are_read_without_comments
+python3 scripts/mutation_harness.py --only comment-only-dry-run
+```
+
+## 뮤테이션 하네스 — 핀 검사가 정말 무는지 다시 돌릴 길이 없었다 (배치 D #135) — 2026-09-06
+
+배치 A–C 의 핀 PR 은 뮤테이션을 세션 안에서만 돌렸고 저장소엔 「울었다」는 문장만 남았다. `scripts/mutation_harness.py` 에
+변이 12개(autocommit·finish 가드·손 순위표·FROM 없는 SELECT·UPDATE node·/health 칸·무인증 GET·gitignore·shebang·ps1 Stop·
+데모 판정·역할 기본값)를 등록하고 심고→울고→되돌린다 (12/12 운다). `tests/test_mutation_harness_registry.py` 가 등록부의 실재를
+본다. `testing.md` §4.9.
+
+```bash
+python3 -m unittest tests.test_mutation_harness_registry
+python3 scripts/mutation_harness.py
+```
+
+## CI 3잡 ↔ 로컬 `run_tests` 의 파일 집합 diff — 표로 고정 (배치 D #133 · G5 확장) — 2026-09-06
+
+로컬 = `tests/`(discover) + 도구 3 = CI `unit`; CI `capreq` = `capreq/tests` 7; CI `migrate` = `tests/integration` 15 + 마이그레이션 단계.
+세 나무 밖의 `test_*.py`·`check_*.py` 0. CI 합집합이 저장소의 검사 파일 전부를 덮고, 로컬이 안 도는 둘은 `testing.md` §4.6 에 있다.
+`tests/test_ci_and_local_file_sets.py`. 잡 추가는 `ci.yml` 이라 Proposal 만. 뮤테이션 2/2 (나무 밖 검사 파일 · CI 가 capreq 를 안 돌림) 운다.
+
+```bash
+python3 -m unittest tests.test_ci_and_local_file_sets
+```
+
+## `.ps1` 11개 전부 첫 명령 전에 `$ErrorActionPreference = "Stop"` — 못박는다 (배치 D #132) — 2026-09-06
+
+`.sh` 쪽 `set -euo pipefail` 의 짝. `pwsh` 가 없어 소스만 본다: 11/11 있음 · 11/11 첫 명령 앞 · `SilentlyContinue` 는 탐색 명령에만.
+`tests/test_ps1_stop_on_first_error.py`. 뮤테이션 3/3 (Stop 삭제 · Stop 앞에 명령 · 실패 삼키기) 운다.
+
+```bash
+python3 -m unittest tests.test_ps1_stop_on_first_error
+```
+
+## 저장소의 모든 `.sh` 가 bash shebang 이고 `scripts/` 안에만 있다 — 못박는다 (배치 D #131) — 2026-09-06
+
+`test_scripts_set_errexit` 는 `set -euo pipefail` 줄만 봤다. 첫 줄이 `#!/bin/sh` 로 바뀌면 `pipefail` 이 없는 셸에서 돌고,
+`scripts/` 밖의 `.sh` 는 아예 검사 밖이었다. 전수: `.sh` 전부 `#!/usr/bin/env bash` · 전부 `scripts/`(+`lib/`) 안 · 실행 스크립트는
+전부 `set -euo pipefail`(prod_room 만 `-uo`, 근거 있음) · `lib/*.sh` 셋은 source 용이라 `set` 없음(의도, 기존 핀).
+뮤테이션 2/2 (lib shebang 을 sh 로 · scripts 밖 .sh) 운다.
+
+```bash
+python3 -m unittest tests.test_scripts_set_errexit
+```
+
+## G1 — 머리말 규약 검사가 「배치 X」 표식 없는 새 검사를 비켜 보내고 있었다 (배치 C 뒤 G 라운드) — 2026-09-06
+
+`#314` 의 검사는 docstring 에 「배치 B/C」·「G 라운드」가 있는 파일만 봤다. 「큐 #999」·「최종 G」만 적은 새 검사는 재현 절이
+없어도 통과했다(뮤테이션으로 실측). 표식을 `큐 #\d`·`최종 G`·`G[1-5] `·`배치 D` 까지 넓혔다. 뮤테이션 2/2 운다.
+
+```bash
+python3 -m unittest tests.test_new_tests_follow_the_header_convention
+```
+
 ## 새 검사 파일의 머리말 규약 — 문서에 적고 핀 (배치 C #128 · `#215` 계열) — 2026-09-06
 
 배치 B 초반 검사 6개에 「## 재현」이 없었다 — 붙였다. `testing.md` §4.8 에 규약(왜 있는가 · 실측 · 무엇을 안 보나 · 재현 ·

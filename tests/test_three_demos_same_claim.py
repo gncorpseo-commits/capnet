@@ -35,10 +35,13 @@ r"""세 데모가 **같은 주장을 서로 다른 경로로** 보이는가 (큐
 from __future__ import annotations
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136: 주석의 리터럴을 본체로 세지 않는다
 SCRIPTS = ROOT / "scripts"
 README = ROOT / "README.md"
 
@@ -100,7 +103,7 @@ class TestCapreqDemoGoesThroughTheEntrance(unittest.TestCase):
         self.assertEqual([], hits, f"capreq_demo 가 Core 에 직접 작업을 만든다: {hits}")
 
     def test_it_talks_to_capreq(self) -> None:
-        body = (SCRIPTS / "capreq_demo.sh").read_text(encoding="utf-8")
+        body = hash_comment_free(SCRIPTS / "capreq_demo.sh")
         self.assertIn("capreq", body)
         self.assertRegex(body, r"\$capreq\b", "capreq 주소를 안 쓴다")
 

@@ -27,10 +27,13 @@ python3 -m unittest tests.test_discover_loads_every_test_file
 from __future__ import annotations
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136
 TESTS = ROOT / "tests"
 RUN_TESTS = ROOT / "scripts" / "run_tests.sh"
 
@@ -79,7 +82,7 @@ class TestNothingSitsOutsideThePattern(unittest.TestCase):
         self.assertEqual([], stray, f"__init__.py 없는 폴더의 검사 — discover 가 안 들어간다: {stray}")
 
     def test_run_tests_does_not_narrow_the_pattern(self) -> None:
-        line = next(l for l in RUN_TESTS.read_text(encoding="utf-8").splitlines() if "unittest discover" in l)
+        line = next(l for l in hash_comment_free(RUN_TESTS).splitlines() if "unittest discover" in l)
         self.assertIn("-s tests", line)
         self.assertNotRegex(line, r"-p\s+", f"discover 에 -p 좁힘이 생겼다: {line.strip()}")
 
