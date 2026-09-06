@@ -61,7 +61,14 @@ echo "  OK   Ollama      $ollama"
 if ! curl -sf -m 5 -o /dev/null "$capreq/"; then
   # 안 떠 있으면 우리가 띄운다. 띄운 것만 우리가 내린다.
   echo "  ..   capreq 가 없다 — 띄운다 (port $port)"
-  ( cd "$root" && PYTHONPATH=capreq/src python3 -m capreq serve --port "$port" >"$tmp/capreq.log" 2>&1 & echo $! > "$tmp/pid" )
+  # **주소를 넘겨준다.** capreq 는 `CAPREQ_CORE_URL` 만 읽는다 (`capreq/src/capreq/config.py`).
+  # 안 넘기면 우리가 띄운 capreq 가 기본 `:8000` 을 보고, 이 스크립트는 그걸
+  # 「capreq→Core 배선이 끊겼다」로 읽는다 — 실제로는 **다른 Core 를 본 것**이다.
+  # 강제 모드도 같다: 관리 키는 `CAPREQ_API_KEY` 로만 들어간다.
+  ( cd "$root" && PYTHONPATH=capreq/src \
+      CAPREQ_CORE_URL="${CAPREQ_CORE_URL:-$core}" \
+      CAPREQ_API_KEY="${CAPREQ_API_KEY:-$CAPNET_API_KEY}" \
+      python3 -m capreq serve --port "$port" >"$tmp/capreq.log" 2>&1 & echo $! > "$tmp/pid" )
   started="$(cat "$tmp/pid")"
   for _ in $(seq 1 30); do
     curl -sf -m 2 -o /dev/null "$capreq/" && break
