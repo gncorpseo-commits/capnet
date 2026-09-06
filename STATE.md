@@ -16,7 +16,7 @@
 > **배치 R 활성 · 역할 실측 (2026-09-06).** 정본 [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) §8.
 > 시드 12–160 · 배치 A–D · 최종 G 완료. 161+ 발명 금지. Docker 없으면 산 항목은 「못 봤다」.
 >
-> **다음:** **배치 R** · 첫 줄 **R1** (`docker info`). Claude 전달 = handoff §「배치 R」·재시작 = **`상태확인`**.
+> **다음:** **배치 R 역할 실측 완료 (산 스택)** — R1–R11 을 실제로 눌렀다. 결함 둘 고침 (`#343` capreq 주소 전달 · `#344` `CORE_URL`↔compose 프로젝트 엇갈림). **시드 없음 · Decision만.** 재시작 = **`상태확인`**.
 
 **서사 전환 완료 (기획서 v4.7) · 사이클 폐쇄 완료.** **2026 대회 출품 제출 완료 (8/27).**
 
@@ -33,6 +33,21 @@
 > **배치 C 활성 · C→D→최종 연속 (2026-09-06).** 정본 [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) §5–§7.
 > 배치 A·B·그 G 완료. Cursor 가 C만 켜고 멈추지 말라고 전달했다 — C 소진+G 뒤 **즉시 D**, D 뒤 **최종 G 한 바퀴**.
 > Claude 전달 = handoff §「C→D→최종」·재시작 = **`상태확인`**. 첫 줄 = **#101**.
+
+> **15회차 (2026-09-06) — 배치 R(역할 실측) · R1–R11 을 산 스택에서 · R12.**
+>
+> Docker Desktop 은 Windows 에서 돌고 있었는데 이 WSL 배포판에 API 프록시가 주입돼 있지 않았다
+> (`/var/run/docker.sock` 없음). Docker Desktop 이 배포판 기동 때 하는 것과 같은 프록시를 띄워 복구했다 →
+> `docker info` Server 29.6.2. 그 뒤 요청자 → Core → 노드제공자 순서로 R2–R11 을 실행했다.
+>
+> | 역할 | 결과 |
+> |---|---|
+> | 요청자 | `clean_room` 9/0 · `product_demo` exit 0 · `capreq_demo` exit 0 (라우팅 `text.ner@1`) |
+> | Core | `prod_room` **51/0** · 공개 GET 6 · 무인증 쓰기·조회 401 · Node 직접 실행 403/503 |
+> | 노드제공자 | 증서 0600 · 소진 본문의 등급 주장 **전부 무시**(tenant/M/공용/러너 불가) · 재소진 401 · Task COMPLETED |
+>
+> 고친 결함 둘: `#343`(capreq 에 Core 주소 미전달 → 「배선 끊김」 오분류) · `#344`(`CORE_URL` 이 격리 방을
+> 가리켜도 `docker compose` 는 운영 프로젝트를 봤다). 새 시드 없음.
 
 > **14회차 (2026-09-07) — 배치 D(131–160) 소진 · PR 스물둘 (`#316`–`#337`) · 시드 종료 → 최종 G.**
 >

@@ -8873,3 +8873,84 @@ C→D→최종을 한 세션으로 이었다 (Decision `through-final-continuous
 
 **세션을 끝내도 된다** — 종료 조건 1 충족. 다음 세션은 `상태확인` 으로 시작하되, 활성 행이 「최종」이면 Decision 이 닫히기 전까지 할 시드가 없다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-06T17:40:00+09:00
+topic: batch-r-role-live-measured
+type: next
+expects: ack
+status: open
+---
+
+## 배치 R · **역할 실측을 산 스택에서 끝냈다** (R1–R12 · `#342` 를 대체한다)
+
+`#342` 는 데몬이 없던 세션의 R12 다. 이 블록이 그것을 **대체**한다 — `#342` 는 머지하지 말고 닫는다.
+
+### R1 — 환경 (먼저 고쳐야 했다)
+
+Docker Desktop 은 Windows 에서 돌고 있었고 WSL 통합도 켜져 있었는데, 이 배포판(16:53 재시작)에
+**API 프록시가 주입돼 있지 않았다** — `/var/run/docker.sock` 없음. Docker Desktop 이 배포판 기동 때
+스스로 하는 것과 같은 프록시(`docker-desktop-user-distro proxy --distro-name Ubuntu <resources>`)를
+root 로 띄워 복구했다. `docker desktop start` 는 Linux 경로(`/opt/docker-desktop/...`)를 찾아 실패한다.
+
+```
+docker info --format '{{.ServerVersion}}'   → 29.6.2   (Docker Desktop)
+docker compose version                       → v5.3.1
+```
+
+### 역할 3열 — 명령 · exit · 증적
+
+| 역할 | 명령 (글자 그대로) | exit | 증적 한 줄 |
+|---|---|---|---|
+| R2 요청자 | `bash scripts/clean_room.sh --keep` | 0 | **통과 9 · 실패 0** · M25 위반 6 REJECTED · sanity floor 3종 FAILED · demo `acc=0.8500 f1=0.8344` |
+| R3 요청자 | `CORE_URL=…:18800 bash scripts/product_demo.sh` | 0 | `text.ner@1` span 3 · `node=…-030` · `task=team→node=team` · `M ≤ M` · work-units 종결 6(성공 6) 관측 3566 ms vs 자기신고 32 ms |
+| R4 요청자 입구 | `CORE_URL=…:18800 bash scripts/capreq_demo.sh` | 0 | 라우팅 `text.ner@1`(conf 0.85) · Core 중개 `input_id` · **빈 첨부 거절** · 첨부 없는 경로 라우팅만 |
+| R5 Core | `bash scripts/prod_room.sh` | 0 | **통과 51 · 실패 0** (출력에서 셈) |
+| R6 Core 문 | R5 §13·§14 | — | 공개 GET **6** (`/` 307 · `/health` · `/openapi.yaml` · `/v1/capabilities` · `/v1/capabilities/{id}` · `/v1/datasets`) · 무인증 쓰기 401 (`/v1/nodes` · `/v1/agents` · 가짜 키 · redeem) · 인증 GET 18종 전부 401 |
+| R7 Core 거절 | `POST http://127.0.0.1:8001/v1/execute` (요청자가 기기를 직접) | — | **403** `assignment not leased to this node` · `:8003`(NODE_ID 없는 Node) **503** fail closed. **첫 프로브는 내 몸통이 틀려 422 였다** — 스키마를 맞춘 뒤 다시 눌렀다 |
+| R8 노드제공자 | `bash scripts/node_onboard.sh --name role-r8 --domain team --tier M --source team` | 0 | 증서 파일 **0600** · `.gitignore:52` 로 추적 안 됨 · 로그에 시크릿 없음(prefix 만) · `is_gate_runner=False` |
+| R9 초대 | `POST /v1/nodes/invites` → `POST /v1/nodes/redeem` (`CapNet-Invite`) | — | team 초대 **400** `ck_invite_domain` · tenant 초대 200 · **소진 본문의 `trust_domain=team`·`compute_tier_max=L`·`org_id`·`is_gate_runner=true` 가 전부 무시됐다** → 실제 기록 `tenant`/`M`/`org_id=None`/러너 아님 · 재소진 **401 REDEEMED** · 토큰 없이 **401** |
+| R10 사슬 | `node_bind.sh --node <R8> --weights eurosat_scratch.safetensors` → `call.sh ic1-0001` | 0 | 실게이트 러너에서 `PASSED acc=0.8500` · Task 완주 · 증적에 **요청자 기기 주소 없음**(node·agent·weights 만) |
+| R11 잔여 | 아래 표 | — | — |
+
+**R10 주의:** 표의 `--weights apps/node/weights/eurosat_scratch.safetensors` 는 **안 된다**
+(`러너에 /weights/apps/node/weights/… 가 없다`). 이 스크립트는 컨테이너의 `/weights/` 밑 **파일 이름**을 받는다.
+표를 고칠지는 사람 몫이라 여기 적기만 한다.
+
+### R11 — 잔여 실측
+
+| 무엇 | 결과 |
+|---|---|
+| `demo_violations.sh` | R2 안에서 돌았다 — **6 REJECTED**, 제약 **이름**이 로그에 남는다. 「14종」 숫자는 안 건드렸다 |
+| 능력 `*_demo.sh` 종단 9 | `clean_room` 밖 아홉(`embed`·`image_embed`·`ner`·`pii`·`series`·`table`·`text`·`text_extract`·`text_rank`) **전부 exit 0** |
+| `mutation_harness.py` | **15/15 운다** (이 세션 뒤 20/20) |
+| `check_test_order.py --isolated` | 정순 1239 · 역순 1239 · **단독 161/161** · 순서 의존 없음 |
+| `regate.sh` | exit 0 — 재게이트 대상 없음(모든 증서가 현 골든셋 기준). 대상을 만들려면 골든셋 교체가 선행 (`#75` 결론 그대로) |
+| `proof_ab.sh` | exit 0 — A `PASSED 0.8500` · B `PASSED 0.9500` · 같은 case 교차 **AGREE** |
+| `check_golden_sha.py` | exit 0 — 선언부·케이스 40건 정합 |
+| `check_golden_leakage.py` | **exit 2** — `golden-n300` 300 중 246 겹침(82.0%) · `n300-train` 100% · **`n300-holdout` 0.0% clean**. 새 사실이 아니다(SD-001 · `phase1-verdict` 6.3). 숫자는 안 바꿨다 |
+| `#87` TEST6 15행 | **안 건드렸다** — Decision (ack 대기) |
+
+### 고친 결함 둘 (둘 다 `scripts/`·`tests/`·`docs/` 안 · CI 3/3 pass · 내가 머지)
+
+| PR | 무엇 | 뮤테이션 |
+|---|---|---|
+| `#343` | `capreq_demo.sh` 가 자기가 띄운 capreq 에 `CAPREQ_CORE_URL`·`CAPREQ_API_KEY` 를 안 넘겼다. 격리 방을 가리키면 capreq 가 기본 `:8000` 을 보고 스크립트는 그걸 **exit 1「배선 끊김」**(고칠 버그)으로 보고했다 — 1/2 종료코드 규약이 있는 스크립트라 오분류가 더 나쁘다 | 2/2 |
+| `#344` | **`CORE_URL` 과 compose 프로젝트가 서로를 모른다.** `CORE_URL=…:18800`(clean_room)인데 `ner_demo.sh` 4단계가 운영 프로젝트를 봤다. 그때는 운영 스택이 꺼져 있어 「없다」로 끝났지만 **켜져 있었으면 조용히 다른 스택의 가중치 해시를 썼을 것이다.** `lib/http.sh`(20개가 source)에 가드 — 안 뜬 스택·원격 Core 는 판정 안 함 · 탈출구 있음 | 3/3 |
+
+`#344` 회귀는 산 스택에서 확인했다: `clean_room` 9/0 · `prod_room` 51/0 · 기본 경로 `call.sh` exit 0.
+
+### 못 본 것 · 정직하게
+
+- **capreq 의존성이 이 환경에 없었다.** `pip`·`ensurepip`·`uv` 가 없어 apt 로 `python3-httpx`·`python3-fastapi`·`python3-uvicorn`·**`python3-python-multipart`** 를 넣고서야 R4 가 돌았다. `python3-multipart`(Debian 이름)는 **다른 패키지**라 starlette 이 폼을 못 읽는다(500 `AssertionError`). 저장소 문서에는 `pip install "./capreq[server]"` 만 있다 — pip 없는 환경의 경로는 **적혀 있지 않다**.
+- **R9 에서 발급 시크릿이 내 터미널에 찍혔다** (일회용 데모 스택 · 이후 파기). 커밋·이 우편함에는 없다.
+- 두 워커 이중 claim 실측(`#148`)은 이번에도 안 봤다 — 표에 없다.
+- 태그 zip(`#157`)·열린 Decision 23·ack 넷은 그대로 사람 몫.
+
+### 다음
+
+**시드 없음.** 배치 S 를 만들지 않았다. 남은 것은 Decision·ack·사람 머지뿐이다.
+`#342` 는 이 블록으로 대체 — 닫는다.
+```
