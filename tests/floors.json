@@ -111,6 +111,8 @@
   "test_node_cannot_succeed_alone.py::test_enough_suppress_sites_are_seen#0": 3,
   "test_node_core_unreachable.py::test_probe_actually_reads_the_module#0": 5000,
   "test_node_core_unreachable.py::test_probe_actually_reads_the_module#1": 3,
+  "test_node_docs_flags_match_scripts.py::test_every_shown_flag_is_accepted#0": 2,
+  "test_node_docs_flags_match_scripts.py::test_every_shown_flag_is_accepted#1": 5,
   "test_node_reports_failure_to_core.py::test_it_is_not_only_defined#0": 1,
   "test_node_reports_failure_to_core.py::test_parser_found_the_module#0": 10,
   "test_node_routes_are_pinned.py::test_probe_actually_found_routes#0": 2,
