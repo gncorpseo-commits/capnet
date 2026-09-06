@@ -304,3 +304,15 @@ python3 scripts/check_test_order.py --isolated   # + 모듈마다 새 프로세�
 
 건너뜀 사유는 자유 문장이 아니다 — `tests/test_skip_reasons.py` 의 `ALLOWED` 에 **왜 괜찮은지**와 함께 등록된 문장만 쓴다 (§4.6).
 
+## 4.9 핀 검사가 정말 무는가 — 뮤테이션 하네스 (큐 #135)
+
+핀 검사는 「오늘 0」을 고정한다. 그 검사가 정말 무는지는 **결함을 심어 봐야** 안다. 배치 A–C 는 그걸 세션 안에서만 했다.
+
+```bash
+python3 scripts/mutation_harness.py --list     # 등록된 변이
+python3 scripts/mutation_harness.py            # 심고 → 검사가 우는지 → 되돌린다 (깨끗한 트리에서)
+```
+
+`tests/test_mutation_harness_registry.py` 가 등록부(파일·찾을 문자열·검사 모듈)가 낡지 않게 본다. 새 핀 검사를 넣을 때
+그 검사를 울리는 변이 하나를 `MUTATIONS` 에 같이 적는다.
+
