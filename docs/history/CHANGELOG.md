@@ -1,5 +1,14 @@
 # Changelog
 
+## 단위 검사는 네트워크·Docker 를 안 부른다 — AST 전수 0, 못박는다 (배치 D #144) — 2026-09-06
+
+`urlopen`·`socket`·`httpx`·`requests` 0 · `subprocess` argv[0] 은 `bash`·`git`·`sed`·`sys.executable` 뿐(`docker`·`curl`·`pip`·`gh` 0).
+`tests/test_tests_touch_no_network_or_docker.py`. 뮤테이션 2/2 (`docker info` · `urlopen`) 운다.
+
+```bash
+python3 -m unittest tests.test_tests_touch_no_network_or_docker
+```
+
 ## 강제 모드 키 — 프로드 오버레이만 `"1"` · 데모는 안 정함 · 커밋된 `.env` 0 (배치 D #143) — 2026-09-06
 
 `REQUIRE_API_KEY`·`REQUIRE_NODE_CREDENTIAL` 은 `compose.prod.yaml` 에만 `"1"`, `compose.yaml` 엔 없음(코드 기본 0), `.env.example` 은 0,
