@@ -38,7 +38,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCKERFILES = tuple(sorted(ROOT.glob("apps/*/Dockerfile")))
-TREES = (ROOT / "apps", ROOT / "capreq" / "src")
+TREES = (ROOT / "apps", ROOT / "capreq" / "src", ROOT / "scripts")   # scripts/ 는 큐 #105 에서 넣었다
 
 # 오늘의 빌드 ARG. 늘리면 **무엇을 여는지** 여기서 답하게 한다.
 ALLOWED_ARGS = {
@@ -96,6 +96,20 @@ class TestNoPretrainedPathInCode(unittest.TestCase):
                 if PRETRAINED.search(line):
                     bad.append(f"{path.relative_to(ROOT).as_posix()}:{i}")
         self.assertEqual([], bad, f"사전학습 가중치 경로: {bad}")
+
+    def test_shell_and_powershell_never_fetch_weights(self) -> None:
+        """`.sh`·`.ps1` 은 파이썬 스캔 밖이었다 (큐 #105) — 같은 정규식 + 가중치 배포 호스트."""
+        hosts = re.compile(r"download\.pytorch\.org/models|huggingface\.co|hf_hub|zenodo\.org/records/\d+/files/.*\.(pt|pth|safetensors)")
+        files = sorted(list((ROOT / "scripts").glob("*.sh")) + list((ROOT / "scripts").glob("*.ps1")))
+        self.assertGreaterEqual(len(files), 30, len(files))
+        bad = []
+        for path in files:
+            for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if line.lstrip().startswith("#"):
+                    continue
+                if PRETRAINED.search(line) or hosts.search(line):
+                    bad.append(f"{path.name}:{i}")
+        self.assertEqual([], bad, f"스크립트가 사전학습 가중치를 가져온다: {bad}")
 
     def test_training_scripts_record_pretrained_false(self) -> None:
         """산출물에 남아야 나중에 「안 썼다」를 증명할 수 있다."""
