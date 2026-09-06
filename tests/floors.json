@@ -58,6 +58,8 @@
   "test_dataset_ids_do_not_drift.py::test_enough_payloads_are_seen#0": 15,
   "test_dataset_sha_consistency.py::test_site_list_did_not_shrink#0": 9,
   "test_discover_loads_every_test_file.py::test_glob_and_loader_agree#0": 100,
+  "test_error_messages_carry_no_input_values.py::test_no_content_word_in_log_args#0": 15,
+  "test_error_messages_carry_no_input_values.py::test_zero_raises_format_an_input_name#0": 15,
   "test_every_install_site_is_licensed.py::test_base_images_are_in_the_table#0": 2,
   "test_every_install_site_is_licensed.py::test_dockerfile_and_ci_are_actually_read#0": 6,
   "test_every_install_site_is_licensed.py::test_no_installed_name_is_missing#0": 5,

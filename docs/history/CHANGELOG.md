@@ -1,5 +1,14 @@
 # Changelog
 
+## 예외 문구가 CSV 셀 값을 로그·증적으로 흘리고 있었다 (배치 C #125 · `#196` 형제) — 2026-09-06
+
+Node 는 실행기 예외를 stdout(`{exc}`)과 실패 보고(`audit_log.reason`)에 싣는다. `series_features.py` 가 「숫자가 아니다」
+문구에 CSV 셀·JSON 원소 값을 `!r` 로 넣고 있었다 — 숫자 열의 「숫자 아님」은 전화번호일 수 있다. 값 대신 타입·길이로.
+`tests/test_error_messages_carry_no_input_values.py` 가 Node 예외 문구의 입력 이름 0(예외: preprocess 설정값) · Core 로그 인자의
+내용 낱말 0 을 고정. 뮤테이션 2/2 운다.
+
+```bash
+python3 -m unittest tests.test_error_messages_carry_no_input_values
 ## 새 검사 파일의 머리말 규약 — 문서에 적고 핀 (배치 C #128 · `#215` 계열) — 2026-09-06
 
 배치 B 초반 검사 6개에 「## 재현」이 없었다 — 붙였다. `testing.md` §4.8 에 규약(왜 있는가 · 실측 · 무엇을 안 보나 · 재현 ·

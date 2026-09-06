@@ -47,7 +47,7 @@ def parse_series(path: str | Path, *, encoding: str, max_rows: int | None) -> li
             raise ValueError("JSON 최상위가 배열이 아니다")
         for i, v in enumerate(data):
             if isinstance(v, bool) or not isinstance(v, (int, float)):
-                raise ValueError(f"{i}번째 값이 숫자가 아니다: {v!r}")
+                raise ValueError(f"{i}번째 값이 숫자가 아니다 (type={type(v).__name__})")  # 값을 문구에 싣지 않는다 — reason 은 증적·stdout 으로 간다 (큐 #125)
             values.append(float(v))
     else:
         for i, line in enumerate(stripped.splitlines()):
@@ -59,7 +59,7 @@ def parse_series(path: str | Path, *, encoding: str, max_rows: int | None) -> li
             except ValueError:
                 if i == 0:
                     continue  # 헤더 한 줄은 넘어간다
-                raise ValueError(f"{i + 1}행이 숫자가 아니다: {cell!r}") from None
+                raise ValueError(f"{i + 1}행이 숫자가 아니다 ({len(cell)}자)") from None  # 셀 값은 PII 일 수 있다 (큐 #125)
 
     if max_rows is not None and len(values) > max_rows:
         raise ValueError(f"행이 {len(values)}개로 max_rows({max_rows})를 넘는다")
