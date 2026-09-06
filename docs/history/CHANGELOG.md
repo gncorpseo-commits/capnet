@@ -1,5 +1,15 @@
 # Changelog
 
+## `check_release` 가 막는 것 ↔ 체크리스트의 제출물 목록 — 같다, 못박는다 (배치 C #123 · `#238` 형제) — 2026-09-06
+
+체크리스트 S3 의 필수 파일 5 는 `check_release.sh` `must` 21 의 부분집합, 가중치 10 은 `check_submission.REQUIRED_WEIGHTS` 와
+같고, zip 상한은 양쪽 50MB, `must` 전부 추적 파일. `tests/test_release_must_covers_the_checklist.py`.
+뮤테이션 3/3 (must 에서 NOTICE 제거 · 상한 60 · 가중치 하나 제거) 운다.
+
+```bash
+python3 -m unittest tests.test_release_must_covers_the_checklist
+```
+
 ## 채점 산출물·골든 데이터·키는 저장소에도 zip 에도 못 들어온다 — 금지 목록 확장 + 핀 (배치 C #122) — 2026-09-06
 
 `score_n300.sh` 는 `artifacts/` 에만 쓰고 `.gitignore`·`git ls-files`(0) 가 막는다. 그런데 `check_release.sh` 의 zip 금지 목록은
