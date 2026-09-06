@@ -1,4 +1,4 @@
-r"""`queue-batches.md` §0 의 **활성 배치**와 `STATE.md` 의 첫 「다음:」이 같은 배치를 말하는가 (배치 D #155).
+r"""`queue-batches.md` §0 의 **활성 배치**와 `STATE.md` 의 첫 「다음:」이 같은 배치를 말하는가 (배치 D #155 · 배치 R 연장).
 
 ## 왜 있는가
 
@@ -9,8 +9,10 @@ r"""`queue-batches.md` §0 의 **활성 배치**와 `STATE.md` 의 첫 「다음
 
 | 어디 | 값 |
 |---|---|
-| `queue-batches.md` §0 「활성 — 지금 여기」 행 | 배치 한 글자 (A–D) 또는 「최종」 |
+| `queue-batches.md` §0 「활성 — 지금 여기」 행 | 배치 한 글자 (A–D · **R**) 또는 「최종」 |
 | `STATE.md` 「지금 어디인가」의 **첫** 「다음:」 줄 | 같은 글자를 말한다 |
+
+시드가 끝나면 §7 최종이 활성이었고, 역할 실측이 열리면 **배치 R** 이 활성 행이다.
 
 ## 재현
 
@@ -31,8 +33,12 @@ STATE = ROOT / "STATE.md"
 
 
 def _active_letter() -> str:
-    """배치 글자(A–D) 또는 「최종」 — 시드가 끝나면 §7 최종이 활성 행이다 (배치 D Step 0 에서 넓혔다)."""
-    rows = re.findall(r"^\| \**(?:배치 ([A-D])|(최종))\** \| [^|]+\| \**활성 — 지금 여기", QUEUE.read_text(encoding="utf-8"), re.M)
+    """배치 글자(A–D · R) 또는 「최종」 — 역할 실측이 열리면 R 이 활성 행이다."""
+    rows = re.findall(
+        r"^\| \**(?:배치 ([A-DR])|(최종))\** \| [^|]+\| \**활성 — 지금 여기",
+        QUEUE.read_text(encoding="utf-8"),
+        re.M,
+    )
     assert len(rows) == 1, rows
     letter, final = rows[0]
     return letter or final
@@ -52,6 +58,10 @@ class TestTheyAgree(unittest.TestCase):
         nxt = _state_next()
         needle = "최종" if letter == "최종" else f"배치 {letter}"
         self.assertIn(needle, nxt, f"STATE 의 다음 「{nxt.strip()[:60]}」 이 활성 {needle} 을 말하지 않는다")
+
+    def test_the_regex_accepts_role_batch_r(self) -> None:
+        """A–D 만 보면 배치 R 활성 행을 못 읽고 검사가 공허해진다."""
+        self.assertIn("[A-DR]", Path(__file__).read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

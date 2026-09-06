@@ -30,7 +30,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TESTS = ROOT / "tests"
 # G1 (2026-09-07): 「배치 X」만 보면 「큐 #N」·「최종」만 적은 새 검사가 규약을 비켜간다 — 표식을 넓혔다.
-NEW_MARK = re.compile(r"배치 [BCD]|G 라운드|배치 B 뒤|큐 #(?:7\d|8\d|9\d|1\d\d)\b|최종 G|G[1-5] ")   # 큐 #71(배치 B) 부터
+NEW_MARK = re.compile(r"배치 [BCDR]|G 라운드|배치 B 뒤|큐 #(?:7\d|8\d|9\d|1\d\d)\b|최종 G|G[1-5] ")   # 큐 #71(배치 B) 부터 · 배치 R
 
 
 def _docstrings() -> dict[str, str]:
