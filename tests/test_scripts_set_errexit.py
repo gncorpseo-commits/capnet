@@ -119,6 +119,18 @@ class TestScriptsFailLoudly(unittest.TestCase):
 class TestSourcedLibrariesDoNotSetOptions(unittest.TestCase):
     """`source` 된 `set -e` 는 **호출자의 셸 옵션을 바꾼다**."""
 
+    def test_every_shell_file_in_the_repo_has_the_bash_shebang(self) -> None:
+        """배치 D #131: `set` 줄만 봤지 첫 줄은 안 봤다 — `#!/bin/sh` 로 바꾸면 `pipefail` 이 없는 셸에서 돈다.
+        `scripts/` 밖의 `.sh` 도 여기서 처음 센다."""
+        files = sorted(p for p in ROOT.rglob("*.sh")
+                       if not any(part in (".git", "node_modules", ".venv") for part in p.parts))
+        self.assertGreaterEqual(len(files), 40, len(files))
+        bad = [str(p.relative_to(ROOT)) for p in files
+               if p.read_text(encoding="utf-8").splitlines()[:1] != ["#!/usr/bin/env bash"]]
+        self.assertEqual([], bad, f"bash shebang 이 아닌 .sh: {bad}")
+        outside = [str(p.relative_to(ROOT)) for p in files if p.parts[len(ROOT.parts)] != "scripts"]
+        self.assertEqual([], outside, f"scripts/ 밖의 .sh — set 줄 검사 밖이다: {outside}")
+
     def test_libs_set_nothing(self) -> None:
         bad = [p.name for p in _libs() if _set_line(p) is not None]
         self.assertEqual([], bad, f"source 되는 파일이 셸 옵션을 바꾼다: {bad}")

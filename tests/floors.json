@@ -158,6 +158,7 @@
   "test_scripts_do_not_swallow_failures.py::test_enough_http_code_sites_are_seen#0": 8,
   "test_scripts_go_through_core.py::test_found_scripts_that_touch_the_node#0": 5,
   "test_scripts_set_errexit.py::test_enough_scripts_are_seen#0": 30,
+  "test_scripts_set_errexit.py::test_every_shell_file_in_the_repo_has_the_bash_shebang#0": 40,
   "test_scripts_set_errexit.py::test_libs_are_seen#0": 3,
   "test_scripts_take_addresses_from_env.py::test_found_enough_scripts#0": 15,
   "test_secrets_never_reach_output.py::test_scanner_reads_many_files#0": 30,
