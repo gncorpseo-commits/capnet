@@ -1,5 +1,15 @@
 # Changelog
 
+## 공개 GET 여섯 — 코드 · `PUBLIC` · `prod_room` · D24 네 곳이 같다 (배치 C #109 · `#192` 핀) — 2026-09-06
+
+`authorization` 을 안 받는 `@app.get` 6 = `test_every_route_declares_its_auth.PUBLIC` 6 = `prod_room` 공개 루프 6,
+D24 는 「공용 카탈로그」를 말한다. `tests/test_public_get_set_agrees_everywhere.py` 가 넷을 서로 묶는다
+(STATE 의 「6→1」 은 연대기라 안 맞춘다). 뮤테이션 3/3 (무인증 GET 추가 · 루프에서 하나 뺌 · D24 문구 삭제) 운다.
+
+```bash
+python3 -m unittest tests.test_public_get_set_agrees_everywhere
+```
+
 ## 절대규칙 2 검사가 못 잡던 둘 — FROM 없는 SELECT · 조각으로 붙인 INSERT (배치 C #108) — 2026-09-06
 
 `INSERT INTO assignment … SELECT %(t)s, %(n)s, %(d)s` 는 SELECT 라는 낱말만 있지 값은 앱이 넣는 것이고,
