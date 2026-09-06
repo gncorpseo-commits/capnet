@@ -1,5 +1,14 @@
 # Changelog
 
+## 검사 순서에 기대는 공유 상태 — 역순·단독 실행으로 재니 0 (배치 C #127) — 2026-09-06
+
+`sys.modules` 스텁·`os.environ` 을 모듈 수준에서 만지는 검사가 여럿이라 순서 의존을 의심했다. `scripts/check_test_order.py` 로
+정순·역순·모듈 단독(120 프로세스) 세 번 돌리니 전부 0 실패. `run_tests` 엔 안 넣고(시간 두 배) `testing.md` §4.7 에 재현 명령을 적었다.
+
+```bash
+python3 scripts/check_test_order.py
+```
+
 ## 데모 10 이 실패하면 빨갛게 끝난다 — 못박는다 (배치 C #126 · 「0건 초록」 계열) — 2026-09-06
 
 작업을 돌리는 데모 10 전부 `set -euo pipefail` · 폴링 상한 · `status != COMPLETED → SystemExit`, `|| true` 는 capid 조회에만.
