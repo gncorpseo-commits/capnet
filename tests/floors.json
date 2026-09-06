@@ -76,6 +76,7 @@
   "test_gh_list_is_never_truncated.py::test_at_least_one_call_is_seen#0": 3,
   "test_gh_list_is_never_truncated.py::test_runbook_lines_are_read#0": 200,
   "test_gh_list_is_never_truncated.py::test_runbooks_exist#0": 4,
+  "test_grades_are_never_rewritten_by_the_app.py::test_no_set_of_a_grade_column#0": 10,
   "test_hand_allowlists_are_justified.py::test_enough_allowlists_are_seen#0": 12,
   "test_input_contract_rejections_actually_run.py::test_file_grows_while_the_stream_is_still_being_read#0": 0,
   "test_integration_checks_are_run_by_ci.py::test_enough_checks_exist#0": 12,
