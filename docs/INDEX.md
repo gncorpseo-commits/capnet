@@ -19,7 +19,7 @@
 5. 필요할 때만 [`design/capnet-plan.md`](./design/capnet-plan.md)
 
 **장기 모드 (Claude Code · WSL):** 채팅에 **`상태확인`** →  
-[`bridge/queue-batches.md`](./bridge/queue-batches.md) (C→D→최종) · [`bridge/handoff-long-mode-claude.md`](./bridge/handoff-long-mode-claude.md) · [`bridge/autonomous-mode.md`](./bridge/autonomous-mode.md)
+[`bridge/queue-batches.md`](./bridge/queue-batches.md) (배치 R · 역할 실측) · [`bridge/handoff-long-mode-claude.md`](./bridge/handoff-long-mode-claude.md) · [`bridge/autonomous-mode.md`](./bridge/autonomous-mode.md)
 
 협업만: [`guide/github-team-guide.md`](./guide/github-team-guide.md) · [`../CONTRIBUTING.md`](../CONTRIBUTING.md)
 

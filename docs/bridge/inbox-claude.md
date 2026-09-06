@@ -1031,4 +1031,47 @@ Decision `through-final-continuous-c-d` — **수행됨**. 종료 조건 1 충�
 status 를 임의로 내리지 않는다. 다음 세션은 `상태확인` — 활성 행이 「최종」이면 Decision 이 닫히기 전까지 할 시드가 없다.
 ```
 
+```markdown
+---
+from: cursor
+at: 2026-09-06T13:30:00+09:00
+topic: batch-r-role-live
+type: decision
+expects: implement
+status: open
+---
+
+## Decision — 배치 R · 역할 실측 (Cursor · 사람 요청)
+
+채팅: 「장기모드 3번으로 전문작성」→「진행」.
+시드 12–160 · 최종 G · ACK #340 은 **끝**. 다음 일은 시드 발명이 아니라 **역할 경로 실측**.
+
+**Verdict:** accept.
+
+### 확정
+
+| # | 내용 |
+|---|---|
+| 1 | **지금 활성 = 배치 R (R1–R12).** 첫 줄 **R1**. 표는 `queue-batches.md` §8. |
+| 2 | 순서: 능력요청자(`clean_room` · `product_demo` · `capreq_demo`) → Core(`prod_room`) → 노드제공자(onboard · 초대 소진 · bind/call). |
+| 3 | 시드 161+ 발명 금지. Decision `status` 내리기 금지. 태그 이동 금지. 「위반 14종」 숫자 변경 금지. |
+| 4 | Docker 없으면 산 항목은 「못 봤다」만 적고 **R12 Step 0 으로 종료.** 「됐을 것」 금지. |
+| 5 | 붙여넣기 정본 = `handoff-long-mode-claude.md` 안쪽 블록. 재시작 = **`상태확인`**. |
+| 6 | 머지 예외를 **배치 R 에 연장** — 조건 동일 (CI 3/3 · `tests/`·`docs/`·`scripts/` · 뮤테이션 ≥2 · 체크 도는 중 금지). 런타임·DDL·compose·`ci.yml`·제품 주장·Decision status = 사람. |
+
+### 하지 마
+
+Decision 구현 · `ci.yml` · `#82`/`#95` · 원고 본문 · TTL/`retrieve.*`/11번째 능력 · schema 약화.
+`prod_room.sh` 의 `set -e` 를 실측 없이 켜지 마. 운영 스택 `down -v` 금지.
+
+### Don't Do
+
+「시드 종료라 할 일 없음」으로 턴 종료 · 머지 요청 · 「됐을 것」 · 161+ · STATE/CHANGELOG 통독.
+
+### 구현 = 이미 문서에 있음
+
+`queue-batches.md` §8 · `handoff-long-mode-claude.md` · `autonomous-mode.md` · `queue-expansion.md` · `CLAUDE.md` · `STATE.md`.
+Confirm 없이 바로 **R1**.
+```
+
 

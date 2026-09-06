@@ -1,6 +1,6 @@
 # CapNet — 큐 배치 (30개 단위)
 
-> **이 파일이 정본인 것:** 활성 배치 · 배치별 시드 표 · 「상태확인」 · **C→D→최종 연속 로드맵**  
+> **이 파일이 정본인 것:** 활성 배치 · 배치별 시드 표 · 「상태확인」 · **배치 R (역할 실측)**  
 > **루프:** [`autonomous-mode.md`](./autonomous-mode.md)  
 > **종료·G:** [`queue-expansion.md`](./queue-expansion.md)  
 > **붙여넣기:** [`handoff-long-mode-claude.md`](./handoff-long-mode-claude.md)
@@ -9,7 +9,7 @@
 
 ## 한 줄
 
-**C가 빌 때까지 멈추지 마. 비면 G → Step 0 → 즉시 D. D가 비면 G → Step 0 → 최종 G 한 바퀴 → 시드 종료. 머지 묻지 마. Cursor 재전달을 기다리지 마.**
+**R이 빌 때까지 멈추지 마. Docker 없으면 산 항목은 「못 봤다」만 적고 R12. 시드 161+ 발명 금지. 머지 묻지 마.**
 
 ---
 
@@ -21,17 +21,18 @@
 | 배치 B | 71–100 | **완료** (#266–#294 · G · Step 0) |
 | 배치 C | 101–130 | **완료** (#297–#314 · Step 0) |
 | 배치 D | 131–160 | **완료** (#316–#337 · Step 0) |
-| **최종** | — | **활성 — 지금 여기** · G 한 바퀴 **완료**(#338·#339) · 시드 종료 · Decision 만 (§7) |
+| 최종 | — | **완료** · G 한 바퀴(#338·#339) · 시드 종료 · Decision 표는 사람 (§7) |
+| **배치 R** | R1–R12 | **활성 — 지금 여기** · 역할 실측 (§8) |
 
 규칙:
 
-1. **이번 전달 = C→D→최종 연속.** 배치를 하나씩 켜 주기를 기다리지 않는다.
-2. Claude는 **현재 표**만 소진한다. 161+ 와 표 밖 시드를 발명하지 않는다 (G1–G5 예외).
+1. **이번 전달 = 배치 R.** 시드 12–160 과 최종 G 는 끝났다. 다시 하지 마.
+2. Claude는 **현재 표**만 소진한다. 161+ 와 표 밖 시드를 발명하지 않는다.
 3. 배치 안 우선순위를 따른다. 막히면 **다음 번호**.
-4. 배치 소진 + G 한 바퀴 → 그 배치 Step 0 → **다음 행을 즉시 활성** (C→D, D→최종).
-5. **배치 소진 ≠ 세션 종료.** 종료는 `queue-expansion.md` §2 · 이 파일 §7 끝.
-6. **Docker 데몬 없으면** 본실행 항목은 「못 봤다+이유」만 적고 **다음 #** — 「됐을 것」 금지.
-7. 런타임·DDL·`compose`·`ci.yml` 수정이 필요하면 **PR만** (또는 표만) 남기고 다음 #. 묻지 마.
+4. **시드 종료 ≠ 이번 세션 종료.** 「최종」에서 멈추지 마 — 활성은 R 이다.
+5. 종료는 `queue-expansion.md` §2 · 이 파일 §8 끝 (R12).
+6. **Docker 데몬 없으면** 산 항목은 「못 봤다+이유」만 적고 **다음 R** — 「됐을 것」 금지. 산 항목이 전부 못 보면 **R12로 가서 종료**.
+7. 런타임·DDL·`compose`·`ci.yml` 수정이 필요하면 **PR만** (또는 표만) 남기고 다음 R. 묻지 마.
 
 ---
 
@@ -47,13 +48,13 @@ S3. git log -1 --oneline
 S4. bash scripts/run_tests.sh 2>&1 | tail -8
 S5. 읽기: queue-batches.md → queue-expansion §2·§4 → autonomous-mode §2–3
          → handoff 안쪽 → inbox-claude 끝 80줄 · inbox-cursor 끝 80줄 → CLAUDE.md
-S6. 한 줄: main=<sha> · PR=<n> · tests=<요약> · 다음=#N <제목>
-S7. 즉시 #N 착수. 「계속?」 금지.
+S6. 한 줄: main=<sha> · PR=<n> · tests=<요약> · 다음=R1 <제목>
+S7. 즉시 다음 줄 착수. 「계속?」 금지.
 ```
 
 STATE·CHANGELOG·옛 inbox 통독 **금지**.
 
-다음 # 고르기: 미완료인 **가장 앞 번호**. C가 비었으면 D 131. D가 비었으면 최종 G.
+다음 줄 고르기: 미완료인 **가장 앞 R**. R이 비었으면 R12가 이미 있어야 하고, 없으면 R12를 적고 종료. 161+ 발명 금지.
 
 ---
 
@@ -67,7 +68,8 @@ STATE·CHANGELOG·옛 inbox 통독 **금지**.
 | **배치 B 71–100** | #266–#294 · G · Step0 |
 | **배치 C 101–130** | #297–#314 · Step0 |
 | **배치 D 131–160** | #316–#337 · Step0 |
-| main (배치 C 시작 전) | `git log -1` 로 재확인 — 숫자 기억 금지 |
+| **최종 G** | #338·#339 · ACK #340 |
+| main (배치 R 시작 전) | `git log -1` 로 재확인 — 숫자 기억 금지 |
 
 ---
 
@@ -204,30 +206,97 @@ C의 「하지 마」 전부 + 새 능력 · 새 Wave · 161+ 발명.
 
 ---
 
-## 7. 최종 (D #160 뒤 · 시드 끝)
+## 7. 최종 (D #160 뒤 · 시드 끝 · **완료 · 아카이브**)
 
-Cursor를 기다리지 말고 들어간다.
-
-1. **새 번호 시드 발명 중단.** G1–G5 **한 바퀴만** (같은 파일 3회 반복 시 그 G는 접고 다음 G. 다섯이 다 접히면 중단 신호).
-2. **Decision 구현 금지.** 열린 것은 표로만 모아 Step 0에 붙인다. 구현은 Confirm 후 별 세션.
-3. 사람 Decision 우선(구현하지 마, 목록만): `round9-ci-coverage-proposal` · `silent-truncation` · `gate-run-stuck-running` · `failure-reason-not-surfaced` · `retention-ttl-policy` · `output-required-undeclared-policy` · `openapi-response-schemas` · `contest-report-device-address-claim` · `11th-capability` · B #82/#87/#95 ack · 나머지.
-4. 코드 이미 나간 여섯(`#70` 표) — status는 **사람 손**.
-5. G 한 바퀴 + 「시드 종료 · Decision만 남음」 Step 0 을 `inbox-cursor.md`에 남기면 **세션을 끝내도 된다.**
-
-이게 `queue-expansion.md` §2 조건 1이 충족되는 순간이다.
+시드 종료 Step 0 · ACK #340. **다시 하지 마.** 열린 Decision 구현은 사람 Confirm 후 별 세션.
+배치 R 은 시드를 발명하지 않는다. G를 이유로 새 검사 파일만 양산하지 마.
 
 ---
 
-## 8. 배치 전달 문구 (사람이 Claude에 줌)
+## 8. 배치 R — 역할 실측 (R1–R12) (**활성**)
 
-### 지금 전달 — C→D→최종 연속
+시드가 아니다. 요청자 · Core · 노드제공자 경로를 **살아 있는 스택에서** 한 번 누른다.
+한 줄 = 한 PR(또는 코드 없으면 근거 3줄 → 다음 R).
+
+### 우선순위
 
 ```text
-최종까지 연속 활성화 (C 101–130 → D 131–160 → 최종 G). Cursor 재전달을 기다리지 마.
-docs/bridge/queue-batches.md §5·§6·§7 · autonomous-mode.md · handoff 안쪽 블록을 읽는다.
-「상태확인」절차로 동기화한 뒤 우선순위대로 101부터. 배치가 비면 G 한 바퀴 후 다음 예약 배치로 즉시.
-머지 묻지 마. Docker 없으면 본실행은 「못 봤다」만 적고 다음 번호.
-Decision 구현·ci.yml 수정·status 내리기 금지. 114–119는 표·문서만.
+R1 → R2 → R3 → R4
+→ R5 → R6 → R7
+→ R8 → R9 → R10
+→ R11 → R12
+```
+
+### Docker 분기 (R1 에서 한 번만)
+
+```bash
+docker info >/dev/null 2>&1
+```
+
+- **실패:** R2–R11 마다 inbox에 「못 봤다 · docker info 실패」. 스크립트를 「됐을 것」으로 적지 마. **R12로 가서 세션 종료.**
+- **성공:** 아래 표. 격리 방(`clean_room` · `prod_room`)은 운영 compose 프로젝트를 건드리지 않는다.
+
+역할 순서: **요청자 → Core → 노드제공자.** 방을 먼저 비우고, 노드제공자(R8–R10)는 데모 Core(`:8000`)가 이미 떠 있으면 그것을 쓴다 — `down -v` 금지.
+
+### 표
+
+| # | 역할 | 명령 (글자 그대로) | 완료 모양 | 주장하지 마 |
+|---|---|---|---|---|
+| **R1** | 환경 | `docker info` · `docker compose version` | 됨/안 됨 + 이유. 안 되면 R2–R11 전부 「못 봄」표시 후 R12 | 「로컬에 있을 것」 |
+| **R2** | 요청자 | `bash scripts/clean_room.sh --keep` (프로젝트 `capnet-cleanroom` · 포트 18800/18801 · 운영 스택 금지) | 통과/실패 표. 재현 명령을 PR에. `--keep` 은 R3·R4 가 같은 Core 를 쓰게 | 품질 `acc=` |
+| **R3** | 요청자 | `CORE_URL=http://127.0.0.1:18800 bash scripts/product_demo.sh` — Core 공개 API만 · 기기 주소 없음 | exit 0 · 출력에 배정 증적(node·domain·tier) · `GET /v1/ops/work-units` 줄 | `text.ner` 정확도 |
+| **R4** | 요청자 입구 | `CORE_URL=http://127.0.0.1:18800 bash scripts/capreq_demo.sh` | exit 0=경로 이어짐 · **2=라우팅 빗나감(배선 실패 아님)** · Ollama/capreq 없으면 「못 봄」+다음 | 라우팅 N/M 을 성적으로 |
+| **R5** | Core | R2 방 정리 후 `bash scripts/prod_room.sh` (프로젝트 `capnet-prod` · 18830/18831). 스크립트는 `set -uo pipefail` (`-e` 없음 · #44). **파일의 `-e` 를 먼저 켜지 마.** 단계가 실패인데 초록이면 그게 결함 — scripts PR | 통과 N / 실패 0 을 **출력에서** 적는다 | 옛 `27/27` |
+| **R6** | Core 문 | R5 로그에서 확인: 공개 GET **6** (키 없음) · 쓰기 최소몸통 **401**. 안 보이면 스크립트/프로브 결함으로 PR | 「인증은 있을 것」 | |
+| **R7** | Core 거절 | 요청자가 기기 URL로 Node를 직접 치면 거절되는지 — `prod_room`/`clean_room` 이 이미 누르면 그 줄 인용. 없으면 최소 1호출 + 검사 | 직접 호출 성공을 제품으로 | |
+| **R8** | 노드제공자 | 데모 Core(`CORE_URL=http://127.0.0.1:8000`)가 살아 있으면 그것을 쓴다. 없으면 `docker compose up -d` (이미 떠 있는 운영 프로젝트에 `down -v` 하지 마). `bash scripts/node_onboard.sh --name role-r8 --domain team --tier M --source team` | 증서 파일 `data/node-secrets/role-r8.credential` · 모드 0600 · 로그에 시크릿 없음 | 등급을 Node가 골랐다 |
+| **R9** | 노드제공자 초대 | admin으로 `POST /v1/nodes/invites` (`trust_domain=tenant`, **team 초대는 DB 거절이 정상**) → 키 **없이** `POST /v1/nodes/redeem` + `Authorization: CapNet-Invite …` · body는 `name`·`device_type`만 (`trust_domain`/`org_id`/`tier` 칸을 넣어도 **적용되면 결함**) | 소진 1회 · 재소진 거절 · 초대한 Node는 gate-runner 불가 | 초대 본문에 등급 필드 추가 |
+| **R10** | 노드제공자 사슬 | `bash scripts/node_bind.sh --node <R8 uuid> --weights apps/node/weights/eurosat_scratch.safetensors` 후 `bash scripts/call.sh ic1-0001` | Task COMPLETED · 증적에 요청자 기기 주소 없음 · 게이트는 runner Node | 제출자 Node에서 게이트 |
+| **R11** | 잔여 실측 | **아직 못 본 것만.** 이미 R2/R5에 있으면 건너뜀. 후보: `bash scripts/demo_violations.sh`(제약 **이름**을 로그에 남김 · 「14종」을 15로 올리지 마) · `bash scripts/regate.sh` · `bash scripts/proof_ab.sh` · `python3 scripts/mutation_harness.py` · `python3 scripts/check_test_order.py --isolated` · 능력 `*_demo.sh` 종단은 clean_room이 안 덮는 것만 · 골든 누출은 `data/golden-*` 있을 때만 | 표: 돌림/못 봄/결함. #87 SQL 고침은 **CONSTRAINT_NAME 실측 후** 소PR. 숫자 「위반 14종」은 Proposal만 | 「전부 돌았을 것」 |
+| **R12** | Step 0 | inbox-cursor 한 블록: 역할 3열 표(명령·exit·증적 한 줄) · 못 본 것 · 고친 결함 PR · **다음 시드 없음** | 코드 0 · STATE 「다음」을 역할 실측 완료로. 활성 행을 「역할 실측 완료 · Decision만」으로 | 배치 S 발명 |
+
+R2 `--keep` 뒤 R4까지 끝나면 방이 안내한 `down -v` 로 **그 프로젝트만** 정리한 다음 R5.
+
+### 역할별로 반드시 볼 것
+
+**요청자**
+- POST `/v1/tasks` 본문에 기기 주소·Node URL이 **없다**
+- 입력은 Core 중개(`inputId`) — 빈 첨부 → 데모 데이터셋으로 몰래 성공하면 **결함**(#154 회귀)
+- 조회 `GET /v1/tasks/{id}` 는 자기 것만 (남은 것은 404)
+
+**Core**
+- 워커만 claim · `FOR UPDATE SKIP LOCKED`
+- 강제 모드에서 쓰기 무인증 401 (422로 인증을 건너뛴 줄은 프로브 결함)
+- 공개 GET은 여섯뿐
+- 키는 `ccurl` 파일 헤더. argv 금지 (#237)
+
+**노드제공자**
+- 소진/등록 본문에 `trust_domain`·`compute_tier_max`를 넣어도 **적용되지 않거나 거절**
+- 큐 pull 없음
+- pickle/`.pt` 로드 없음 (이미 핀 — 재발명 금지)
+
+### 배치 R에서 하지 마
+
+- 161+ · G를 이유로 새 검사 파일만 양산
+- Decision 23개 status 일괄 `done`
+- `ci.yml` 잡 추가 · `#95 permissions` · `#82` securitySchemes
+- 태그 `v0.1.0-contest` 이동
+- `retrieve.*` · TTL · 11번째 능력 · schema CHECK 약화
+- 운영 compose 볼륨을 `down -v` 로 지우는 일
+- `prod_room.sh` 의 `set -e` 를 실측 없이 켜는 일
+
+---
+
+## 9. 배치 전달 문구 (사람이 Claude에 줌)
+
+### 지금 전달 — 배치 R
+
+```text
+배치 R (역할 실측) 활성화. 시드 161+ 발명 금지. 번호는 R1–R12 만.
+docs/bridge/queue-batches.md §8 · autonomous-mode.md · handoff 안쪽 블록을 읽는다.
+「상태확인」절차로 동기화한 뒤 우선순위대로 R1부터.
+머지 묻지 마. Docker 없으면 산 항목은 「못 봤다」만 적고 R12.
+Decision 구현·ci.yml 수정·status 내리기·태그 이동 금지.
 cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pull
 ```
 
@@ -237,14 +306,15 @@ cd ~/pjt/ai-agent-store && git fetch origin main && git checkout main && git pul
 상태확인
 ```
 
-(아카이브 · 쓰지 마) 배치 C만 / 배치 D만 따로 켜던 문구는 이번 전달로 대체됐다.
+(아카이브 · 쓰지 마) C→D→최종 연속 / 배치 C만 / 배치 D만 따로 켜던 문구는 이번 전달로 대체됐다.
 
 ---
 
-## 9. 갱신 이력
+## 10. 갱신 이력
 
 | 날짜 | 비고 |
 |---|---|
+| 2026-09-06 | **배치 R 활성 · 역할 실측** · 최종 아카이브 · 시드 종료 유지 |
 | 2026-09-06 | **C 활성 · C→D→최종 연속** · B 아카이브 · 표 4칸 |
 | 2026-09-05 | **배치 B 71–100** · C/D/최종 로드맵 · A 완료 |
 | 2026-09-05 | 최초 — 배치 A · 상태확인 |
