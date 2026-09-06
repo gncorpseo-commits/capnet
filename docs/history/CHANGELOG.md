@@ -1,5 +1,16 @@
 # Changelog
 
+## 절대규칙 2 검사가 못 잡던 둘 — FROM 없는 SELECT · 조각으로 붙인 INSERT (배치 C #108) — 2026-09-06
+
+`INSERT INTO assignment … SELECT %(t)s, %(n)s, %(d)s` 는 SELECT 라는 낱말만 있지 값은 앱이 넣는 것이고,
+`"INSERT INTO " + "assignment"` 는 정규식이 표 이름을 못 본다 — 둘 다 뮤테이션으로 통과함을 실측했다.
+`TestRule2InsertSelectOnly` 에 「SELECT 에 FROM 이 있어야 한다」와 조각 INSERT 탐지(문자열·f-string)를 보탰다.
+저장소 실측 0. 뮤테이션 3/3 운다.
+
+```bash
+python3 -m unittest tests.test_absolute_rules_are_enforced
+```
+
 ## 절대규칙 3 검사가 못 잡던 우회 셋 — 손 순위표 · `sorted(key=tier)` · SQL 안 `>=` (배치 C #107) — 2026-09-06
 
 `compute_tier` 직접 비교(`>=`)는 잡히지만 `{"S":1,"M":2,"L":3}` 손 순위표, `sorted(nodes, key=lambda n: n["compute_tier_max"])`,

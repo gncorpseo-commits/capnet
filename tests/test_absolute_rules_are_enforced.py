@@ -149,10 +149,27 @@ class TestRule2InsertSelectOnly(unittest.TestCase):
             head = block.split(";")[0]
             if re.search(r"\bVALUES\b", head, re.I) or not re.search(r"\bSELECT\b", head, re.I):
                 bad.append(f"{rel}:{lineno}")
+            # 큐 #108: `SELECT %(a)s, %(b)s` 처럼 **FROM 없는 SELECT** 는 이름만 SELECT 지 값은 앱이 넣는 것이다.
+            elif not re.search(r"\bFROM\b", head, re.I):
+                bad.append(f"{rel}:{lineno} (SELECT 에 FROM 이 없다 — 리터럴 스냅샷)")
         self.assertEqual(
             [], bad,
             "assignment/gate_run 에 VALUES 로 넣는다 — 스냅샷을 앱이 계산하면 안 된다: " f"{bad}",
         )
+
+    def test_no_insert_is_assembled_from_fragments(self) -> None:
+        """큐 #108: `"INSERT INTO " + table` 처럼 조각으로 만들면 위 정규식이 표 이름을 못 본다."""
+        hits = []
+        for path, tree in _parsed():
+            for s in _live_strings(tree):
+                if re.search(r"INSERT\s+INTO\s*$", s.value.strip(), re.I) or re.match(r"^\s*INSERT\s+INTO\s*[\"']?$", s.value, re.I):
+                    hits.append(f"{path.relative_to(ROOT)}:{s.lineno}")
+            for n in ast.walk(tree):
+                if isinstance(n, ast.JoinedStr):
+                    text = "".join(v.value for v in n.values if isinstance(v, ast.Constant) and isinstance(v.value, str))
+                    if re.search(r"INSERT\s+INTO\s*$", text.strip(), re.I):
+                        hits.append(f"{path.relative_to(ROOT)}:{n.lineno} (f-string)")
+        self.assertEqual([], hits, f"표 이름을 조각으로 붙이는 INSERT: {hits}")
 
     def test_probe_found_the_inserts(self) -> None:
         """0개를 훑으며 통과하는 상태를 막는다."""
