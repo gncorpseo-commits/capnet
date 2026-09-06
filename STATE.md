@@ -16,7 +16,7 @@
 > **배치 R 활성 · 역할 실측 (2026-09-06).** 정본 [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) §8.
 > 시드 12–160 · 배치 A–D · 최종 G 완료. 161+ 발명 금지. Docker 없으면 산 항목은 「못 봤다」.
 >
-> **다음:** **배치 R** · 첫 줄 **R1** (`docker info`). Claude 전달 = handoff §「배치 R」·재시작 = **`상태확인`**.
+> **다음:** **배치 R 역할 실측 — R1 에서 Docker 데몬 없음**(rc 1 · sock·dockerd 없음 · sudo 불가) → R2–R11 「못 봤다」, R12 Step 0 완료 (inbox `batch-r-role-live-docker-absent`). **시드 없음 · Decision만.** Docker 붙는 사람 세션이 표의 명령을 그대로 누른다.
 
 **서사 전환 완료 (기획서 v4.7) · 사이클 폐쇄 완료.** **2026 대회 출품 제출 완료 (8/27).**
 
@@ -33,6 +33,12 @@
 > **배치 C 활성 · C→D→최종 연속 (2026-09-06).** 정본 [`docs/bridge/queue-batches.md`](docs/bridge/queue-batches.md) §5–§7.
 > 배치 A·B·그 G 완료. Cursor 가 C만 켜고 멈추지 말라고 전달했다 — C 소진+G 뒤 **즉시 D**, D 뒤 **최종 G 한 바퀴**.
 > Claude 전달 = handoff §「C→D→최종」·재시작 = **`상태확인`**. 첫 줄 = **#101**.
+
+> **15회차 (2026-09-07) — 배치 R(역할 실측) · R1 Docker 없음 → R2–R11 못 봄 · R12.**
+>
+> `docker info` rc 1 (클라이언트 29.6.2 · 데몬 없음 · `dockerd` 없음 · sudo 불가) · compose v5.3.1 CLI 만 · 데모 Core 응답 없음.
+> §8 분기대로 R2–R11 은 「못 봤다」로만 적고(inbox 표 · 명령 글자 그대로) 고친 결함 PR 0. 정적으로 같은 문을 보는 검사는
+> 표에 인용했다(공개 GET 6 · 쓰기 401 · lease 없는 실행 거절 · 소진 본문 등급 무시).
 
 > **14회차 (2026-09-07) — 배치 D(131–160) 소진 · PR 스물둘 (`#316`–`#337`) · 시드 종료 → 최종 G.**
 >

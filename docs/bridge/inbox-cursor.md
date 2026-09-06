@@ -8873,3 +8873,47 @@ C→D→최종을 한 세션으로 이었다 (Decision `through-final-continuous
 
 **세션을 끝내도 된다** — 종료 조건 1 충족. 다음 세션은 `상태확인` 으로 시작하되, 활성 행이 「최종」이면 Decision 이 닫히기 전까지 할 시드가 없다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T07:30:00+09:00
+topic: batch-r-role-live-docker-absent
+type: next
+expects: ack
+status: open
+---
+
+## 배치 R Step 0 — 역할 실측: **R1 에서 Docker 데몬 없음** → R2–R11 못 봄 (R12)
+
+`queue-batches.md` §8 「Docker 분기」 그대로. 「됐을 것」은 한 줄도 없다.
+
+### R1 — 환경 (2026-09-07 · WSL2 · gncomp)
+
+| 명령 | 결과 |
+|---|---|
+| `docker info` | **rc 1** — Client 29.6.2 는 있으나 데몬 없음 (`/var/run/docker.sock` 없음 · `dockerd` 바이너리 없음 · sudo 불가 · Docker Desktop WSL 통합 미연결) |
+| `docker compose version` | v5.3.1 (CLI 만) |
+| `curl :8000/health` (데모 Core) | 응답 없음 (000) |
+
+### R2–R11 — 전부 「못 봤다 · docker info 실패」
+
+| # | 역할 | 명령 (글자 그대로) | exit | 증적 |
+|---|---|---|---|---|
+| R2 | 요청자 | `bash scripts/clean_room.sh --keep` | 못 봤다 | — |
+| R3 | 요청자 | `CORE_URL=http://127.0.0.1:18800 bash scripts/product_demo.sh` | 못 봤다 | — |
+| R4 | 요청자 입구 | `CORE_URL=http://127.0.0.1:18800 bash scripts/capreq_demo.sh` | 못 봤다 (Ollama 도 없음) | — |
+| R5 | Core | `bash scripts/prod_room.sh` | 못 봤다 (`-e` 안 켬 · #44) | — |
+| R6 | Core 문 | R5 로그의 공개 GET 6 · 쓰기 401 | 못 봤다 — 정적으로는 `test_public_get_set_agrees_everywhere`·`test_prod_room_write_probes` 가 6·401 프로브를 고정 | — |
+| R7 | Core 거절 | 기기 URL 직접 호출 거절 | 못 봤다 — 정적: `test_node_routes_are_pinned`(lease 없는 실행 거절)·`test_bytes_only_under_a_live_lease` | — |
+| R8 | 노드제공자 | `bash scripts/node_onboard.sh …` | 못 봤다 | — |
+| R9 | 노드제공자 초대 | `POST /v1/nodes/invites` → 키 없이 `redeem` | 못 봤다 — 정적: `test_grades_are_never_rewritten_by_the_app`(소진 본문 등급 무시) | — |
+| R10 | 노드제공자 사슬 | `bash scripts/node_bind.sh … && bash scripts/call.sh ic1-0001` | 못 봤다 | — |
+| R11 | 잔여 실측 | `demo_violations.sh` 등 | 못 봤다 | — |
+
+### 고친 결함 PR
+**없음** (이 배치는 실측 전용 · 정적 검사는 시드에서 이미 냈다).
+
+### 다음
+**시드 없음.** 배치 S 발명 안 함. Docker 데몬이 붙는 사람 세션에서 R2–R11 을 위 표의 명령 그대로 누른다 — 방(`capnet-cleanroom`·`capnet-prod`)은 운영 스택을 건드리지 않는다.
+```
