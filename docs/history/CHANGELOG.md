@@ -1,5 +1,14 @@
 # Changelog
 
+## 최종 G1 — `#338` 의 검사가 `-q` 없는 무버전 설치를 놓쳤다 — 2026-09-06
+
+`pip install -q torch` 만 보던 부정 정규식을 `pip install(?: -플래그)* torch` 로. 뮤테이션 2/2 (`-q` 없음 · `--no-cache-dir`) 운다.
+이것으로 최종 G 한 바퀴(G1 정정 · G2 #338 · G3–G5 0+재현) 끝.
+
+```bash
+python3 -m unittest tests.test_training_pins_match_the_runtime
+```
+
 ## 최종 G2 — 학습 스크립트 다섯이 torch 를 무버전으로 깔고 있었다 (`#151` 형제) — 2026-09-06
 
 Dockerfile 은 `TORCH_VERSION=2.13.0+cpu` 로 핀하는데 `train_*.sh` 넷·`train_scratch.ps1` 은 `pip install -q torch …` 무버전이라

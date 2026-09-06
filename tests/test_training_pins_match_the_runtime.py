@@ -45,7 +45,8 @@ class TestTrainingReadsTheRuntimePins(unittest.TestCase):
                 self.assertIn("s/^safetensors==//p", body, "requirements 에서 safetensors 핀을 안 읽는다")
                 self.assertRegex(body, r'torch==\$torch_ver', "torch 를 핀 없이 깐다")
                 self.assertRegex(body, r'safetensors==\$sf_ver')
-                self.assertNotRegex(body, r"pip install -q (torch|safetensors|numpy|pillow)\b", "무버전 설치가 남아 있다")
+                # 최종 G1: `-q` 없는 `pip install torch` 가 빠져나갔다 — 플래그를 선택으로
+                self.assertNotRegex(body, r"pip install(?: -\w+)* (torch|torchvision|safetensors|numpy|pillow)\b", "무버전 설치가 남아 있다")
                 self.assertIn('exit 1', body[body.index("torch_ver="):body.index("docker run")], "핀을 못 읽으면 멈춰야 한다")
 
     def test_powershell_twin(self) -> None:
@@ -53,7 +54,7 @@ class TestTrainingReadsTheRuntimePins(unittest.TestCase):
         self.assertIn('Select-String "^ARG TORCH_VERSION=(.+)$"', body)
         self.assertIn('Select-String "^safetensors==(.+)$"', body)
         self.assertIn('torch==$torchVer', body)
-        self.assertNotRegex(body, r"pip install -q (torch|safetensors|pillow)\b")
+        self.assertNotRegex(body, r"pip install(?: -\w+)* (torch|torchvision|safetensors|pillow)\b")
 
     def test_the_pins_exist_at_the_sources(self) -> None:
         df = (ROOT / "apps" / "node" / "Dockerfile").read_text(encoding="utf-8")
