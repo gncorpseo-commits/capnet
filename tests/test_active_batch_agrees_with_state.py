@@ -9,7 +9,7 @@ r"""`queue-batches.md` §0 의 **활성 배치**와 `STATE.md` 의 첫 「다음
 
 | 어디 | 값 |
 |---|---|
-| `queue-batches.md` §0 「활성 — 지금 여기」 행 | 배치 한 글자 (A–D) |
+| `queue-batches.md` §0 「활성 — 지금 여기」 행 | 배치 한 글자 (A–D) 또는 「최종」 |
 | `STATE.md` 「지금 어디인가」의 **첫** 「다음:」 줄 | 같은 글자를 말한다 |
 
 ## 재현
@@ -31,9 +31,11 @@ STATE = ROOT / "STATE.md"
 
 
 def _active_letter() -> str:
-    rows = re.findall(r"^\| \**배치 ([A-D])\** \| [^|]+\| \**활성 — 지금 여기", QUEUE.read_text(encoding="utf-8"), re.M)
+    """배치 글자(A–D) 또는 「최종」 — 시드가 끝나면 §7 최종이 활성 행이다 (배치 D Step 0 에서 넓혔다)."""
+    rows = re.findall(r"^\| \**(?:배치 ([A-D])|(최종))\** \| [^|]+\| \**활성 — 지금 여기", QUEUE.read_text(encoding="utf-8"), re.M)
     assert len(rows) == 1, rows
-    return rows[0]
+    letter, final = rows[0]
+    return letter or final
 
 
 def _state_next() -> str:
@@ -48,7 +50,8 @@ class TestTheyAgree(unittest.TestCase):
     def test_state_next_names_the_active_batch(self) -> None:
         letter = _active_letter()
         nxt = _state_next()
-        self.assertIn(f"배치 {letter}", nxt, f"STATE 의 다음 「{nxt.strip()[:60]}」 이 활성 배치 {letter} 를 말하지 않는다")
+        needle = "최종" if letter == "최종" else f"배치 {letter}"
+        self.assertIn(needle, nxt, f"STATE 의 다음 「{nxt.strip()[:60]}」 이 활성 {needle} 을 말하지 않는다")
 
 
 if __name__ == "__main__":

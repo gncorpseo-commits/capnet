@@ -8727,3 +8727,149 @@ Proposal(A 규율안)은 열려 있다. 이번 세션의 실측이 (A) 를 뒷�
 기계 쪽은 `test_changelog_integrity`(중복·헤더) · `test_changelog_top_names_a_check`(선두가 검사를 가리키는가) ·
 `test_no_conflict_markers` 가 본다. 문장을 `CLAUDE.md` 에 넣을지는 Decision — 여기 적어만 둔다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T01:30:00+09:00
+topic: open-decisions-facts-after-batch-c
+type: next
+expects: ack
+status: open
+---
+
+## 열린 Decision 스물 — **사실 갱신** (큐 #129 · status 내리지 않는다)
+
+배치 C 는 Decision 을 **하나도 구현하지 않았다**. 바뀐 사실은 「표가 생겼다」뿐이다.
+
+| topic | 배치 C 뒤 사실 |
+|---|---|
+| `silent-truncation` · `gate-run-stuck-running` · `failure-reason-not-surfaced` · `output-required-undeclared-policy` | inbox `batch-c-114-119-tables` 에 **코드 사실 표** (잘리는 자리 5 · RUNNING 회수 장치 0 · reason 은 `audit_log` 에만 · required 미선언 = 아무것도 요구 안 함). 구현 0 |
+| `changelog-changeset-rule` | 같은 블록 §#119 — 직렬 PR 충돌 0 vs 병렬 rebase 8 실측. (A) 뒷받침. `CLAUDE.md` 안 건드림 |
+| `golden-leakage-claim-unreproducible` | 같은 블록 §#118 — 보고서 주장 ↔ `check_golden_leakage.py` 재현 명령 일치 · 데이터 없어 실행 못 봄 |
+| `round9-ci-coverage-proposal` · `retention-ttl-policy`(+evidence) · `openapi-response-schemas` · `11th-capability-timeseries-anomaly` · `contest-report-refresh` · `shoot-prep-and-ab-caption` · `track-a-post-round5` · `track-a-post-wave-y-z` | 변화 없음 |
+| 코드 이미 나간 여섯 (`#70` 표) | 변화 없음 — status 는 사람 손 |
+
+배치 B 가 연 ack 셋(`#82` securitySchemes · `#87` CONSTRAINT_NAME · `#95` permissions)도 그대로 열려 있다 — C 에서 구현하지 않았다(「하지 마」).
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T01:40:00+09:00
+topic: batch-c-done-starting-d
+type: next
+expects: ack
+status: open
+---
+
+## 배치 C 소진 — **즉시 D 착수** (큐 #130)
+
+시드 101–130 을 우선순위대로 비웠다. Cursor 재전달을 기다리지 않는다 (Decision `through-final-continuous-c-d`).
+
+| 무엇 | 값 |
+|---|---|
+| PR | **18** (`#297`–`#314`) — 내가 머지 17 · **master 대기 1** (`#311`, Node 런타임 두 줄 · main 에 rebase 해 둠) |
+| 검사 | 1135 → **1187** (건너뜀 7 · 실패 0) — 재현 `bash scripts/run_tests.sh` |
+| 실제 결함으로 고친 것 | **5** — #107 규칙 3 우회 셋 · #108 규칙 2 우회 둘 · #122 zip 금지 목록 · #125 예외 문구의 셀 값 · #128 재현 절 없던 검사 여섯 |
+| 0건으로 못박은 것 | **11** — #101 #102 #103 #104 #109 #110 #111 #121 #123 #126 #127 |
+| 0 + 재현(기존 검사) | **5** — #105·#106(범위만 넓힘) · #112 · #113 · #120 |
+| 표·문서만 | **7** — #114–#119 · #124 |
+| 직렬 규칙 | #301 부터 앞 PR 머지 뒤 다음 브랜치 — CHANGELOG 충돌 **0** (B 초반 8회와 대조) |
+
+### Docker·데이터가 없어 **못 본 것**
+
+두 워커를 실제로 붙인 이중 claim(#101) · `gate_run` RUNNING 행 수·나이(#116) · `check_golden_leakage.py` 실행(#118 · `data/golden-*` 없음).
+
+### 다음
+
+G1–G5 한 바퀴 → **즉시 배치 D #131**. 배치 D 표는 §6.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T04:30:00+09:00
+topic: final-cleanup-checklist-for-humans
+type: next
+expects: ack
+status: open
+---
+
+## 사람용 최종 정리 체크리스트 (큐 #159 · 코드 0)
+
+시드 12–160 이 끝났다. 아래는 **사람(master/Cursor)만 할 수 있는 것**이다 — 순서대로.
+
+| # | 무엇 | 왜 사람인가 | 어디 |
+|---|---|---|---|
+| 1 | master 머지 대기 PR 둘 — `#311`(Node 예외 문구 두 줄) · `#315`(Step 0 C+D · STATE·inbox·queue) | 런타임·STATE | GitHub |
+| 2 | **태그 zip 이 지금 검사로는 빨강** — `bash scripts/check_release.sh v0.1.0-contest` → rc 1, 필수 21종 중 `rule_ner`·`rule_extract`·`rule_rank` 없음(태그 뒤 늘어난 가중치). 태그는 옮기지 않는다(D25). must 를 ref 의 트리에서 읽게 할지, 「태그 검증은 태그 당시 검사로」라고 적을지 | 제출 재현 주장 | Decision |
+| 3 | Docker 세션 한 번 — `clean_room`(9) · `prod_room`(51/51 재측 · `-e` 켜기 #44/#71) · 능력 데모 아홉(#74) · `regate`/`proof_ab`(#75) · 위반 시연 TEST6 의 실제 제약(#87) · 두 워커 이중 claim(#101) · RUNNING 행 나이(#116) · 골든 누출 검사(#118) · `check_test_order --isolated`·`mutation_harness` | 데몬 없음 | 이 목록 = 배치 B·C·D 「못 봤다」 전부 |
+| 4 | ack 대기 넷 — `#82` securitySchemes · `#87` CONSTRAINT_NAME 단언·15행 · `#95` `permissions: contents: read` · `capreq/README` 라이선스 한 줄(#152) | 스펙 모양·ci.yml·경계 밖 | inbox 블록 |
+| 5 | 열린 Decision **23** (`test_open_decisions_are_counted` 가 센다) — 닫을 때 그 상수도 같이 내린다. 코드 이미 나간 여섯은 `#70`·`#99` 표 | status 는 사람 손 | inbox |
+| 6 | `migrations/0015` 머리에 근거(`assignment-attempt-cap`) 한 줄 — `test_ddl_cites_its_decision` 의 예외를 지울 수 있다 | `migrations/` 는 사람 몫 | #153 |
+| 7 | CHANGELOG 날짜 마찰 — 이 세션은 09-07 새벽까지 항목을 **09-06** 으로 적었다(갱신일 검사가 네 문서를 같이 올리게 만들어서 · inbox-claude 에 기록된 Decision). 다음 회차 첫 Step 0 에서 네 문서 갱신일을 올리면 풀린다 | STATE 는 사람 몫 | `test_doc_counts` |
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T04:40:00+09:00
+topic: seeds-exhausted-entering-final
+type: next
+expects: ack
+status: open
+---
+
+## 배치 D 소진 · **시드 종료** — 이후는 Decision·G 만 (큐 #160)
+
+131–158 을 비웠다 (159·160 = 이 블록). 새 번호(161+)는 만들지 않는다. 이제 §7 최종 — G1–G5 **한 바퀴** 뒤 「시드 종료 · Decision만 남음」 Step 0 으로 세션을 닫는다.
+
+| 무엇 | 값 |
+|---|---|
+| PR | **22** (`#316`–`#337`, G1 하나·정정 하나 포함) — 전부 내가 머지 (경계 안 · CI pass 게이트) |
+| 검사 | 1187 → **1232** (건너뜀 7 · 실패 0) — 재현 `bash scripts/run_tests.sh` |
+| 실제 결함으로 고친 것 | **6** — #135 하네스 부재 · #136 주석에만 남겨도 통과 15곳 · #137 세대 표 0003 정지 · #151 SBOM 도구 무버전 · #156 자기 검사의 `(?m)` · #147 경계값 검사 부재 |
+| 0건 핀 | **13** — #131 #132 #133 #139 #140 #142 #143 #144 #146 #150 #153 #154 #155 |
+| 0 + 재현 / 표만 | **8** — #134 #138 #141 #148 #149 #152 #157(태그 빨강 발견) #158(못 봤다) |
+| 새 수동 도구 | `scripts/check_test_order.py` · `scripts/mutation_harness.py`(15 변이, 15/15 운다) |
+
+### Docker·데이터 없어 못 본 것 (D)
+두 워커 이중 claim(#148 실측) · `clean_room`+`prod_room` 본실행(#158) · 태그 zip 안 실파일(#157 은 archive 로 봤다).
+
+### 다음
+**즉시 §7 최종 G** — G1–G5 한 바퀴 → 마지막 Step 0 → 세션 종료 조건 1 충족.
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T06:10:00+09:00
+topic: seeds-done-only-decisions-remain
+type: next
+expects: ack
+status: open
+---
+
+## 시드 종료 · **Decision만 남음** — 최종 G 한 바퀴 끝 (`queue-expansion` §2 조건 1)
+
+C→D→최종을 한 세션으로 이었다 (Decision `through-final-continuous-c-d`). 새 시드 번호는 만들지 않았다.
+
+| 구간 | PR | 머지 |
+|---|---|---|
+| 배치 C 101–130 | `#297`–`#314` (18) | 17 내가 · `#311` master 대기 |
+| 배치 D 131–160 | `#316`–`#337` (22) | 전부 내가 |
+| 최종 G | G1 `#339` · G2 `#338` · G3–G5 0+재현 | 둘 내가 |
+| Step 0 | `#315` (C·D·최종 · STATE·inbox·queue) | master 대기 |
+
+검사 1135 → **1235** (건너뜀 7 · 실패 0) — 재현 `bash scripts/run_tests.sh`.
+
+### 정직하게 적는 것 둘
+- 최종 G1(`#339`)의 「놓쳤다」는 과장이다 — 옛 검사도 양성 단언(`torch==$torch_ver` 있어야 함)으로 이미 울었다. 부정 정규식을 넓힌 것뿐. CHANGELOG 선두 문구는 그대로 두고 여기 바로잡는다.
+- 이 세션의 CHANGELOG 항목은 09-07 새벽 것까지 **09-06** 으로 적었다(갱신일 검사 마찰 · #159 표 7번).
+
+### 사람 몫만 남았다
+`#159` 표 일곱 줄 그대로 — master 머지 둘(`#311` `#315`) · **태그 zip rc 1**(Decision) · Docker 세션 한 번 · ack 넷 · 열린 Decision 23 · `0015` 머리 · 갱신일.
+
+**세션을 끝내도 된다** — 종료 조건 1 충족. 다음 세션은 `상태확인` 으로 시작하되, 활성 행이 「최종」이면 Decision 이 닫히기 전까지 할 시드가 없다.
+```
