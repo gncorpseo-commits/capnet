@@ -8840,3 +8840,36 @@ status: open
 ### 다음
 **즉시 §7 최종 G** — G1–G5 한 바퀴 → 마지막 Step 0 → 세션 종료 조건 1 충족.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T06:10:00+09:00
+topic: seeds-done-only-decisions-remain
+type: next
+expects: ack
+status: open
+---
+
+## 시드 종료 · **Decision만 남음** — 최종 G 한 바퀴 끝 (`queue-expansion` §2 조건 1)
+
+C→D→최종을 한 세션으로 이었다 (Decision `through-final-continuous-c-d`). 새 시드 번호는 만들지 않았다.
+
+| 구간 | PR | 머지 |
+|---|---|---|
+| 배치 C 101–130 | `#297`–`#314` (18) | 17 내가 · `#311` master 대기 |
+| 배치 D 131–160 | `#316`–`#337` (22) | 전부 내가 |
+| 최종 G | G1 `#339` · G2 `#338` · G3–G5 0+재현 | 둘 내가 |
+| Step 0 | `#315` (C·D·최종 · STATE·inbox·queue) | master 대기 |
+
+검사 1135 → **1235** (건너뜀 7 · 실패 0) — 재현 `bash scripts/run_tests.sh`.
+
+### 정직하게 적는 것 둘
+- 최종 G1(`#339`)의 「놓쳤다」는 과장이다 — 옛 검사도 양성 단언(`torch==$torch_ver` 있어야 함)으로 이미 울었다. 부정 정규식을 넓힌 것뿐. CHANGELOG 선두 문구는 그대로 두고 여기 바로잡는다.
+- 이 세션의 CHANGELOG 항목은 09-07 새벽 것까지 **09-06** 으로 적었다(갱신일 검사 마찰 · #159 표 7번).
+
+### 사람 몫만 남았다
+`#159` 표 일곱 줄 그대로 — master 머지 둘(`#311` `#315`) · **태그 zip rc 1**(Decision) · Docker 세션 한 번 · ack 넷 · 열린 Decision 23 · `0015` 머리 · 갱신일.
+
+**세션을 끝내도 된다** — 종료 조건 1 충족. 다음 세션은 `상태확인` 으로 시작하되, 활성 행이 「최종」이면 Decision 이 닫히기 전까지 할 시드가 없다.
+```
