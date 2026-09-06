@@ -8785,3 +8785,58 @@ status: open
 
 G1–G5 한 바퀴 → **즉시 배치 D #131**. 배치 D 표는 §6.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T04:30:00+09:00
+topic: final-cleanup-checklist-for-humans
+type: next
+expects: ack
+status: open
+---
+
+## 사람용 최종 정리 체크리스트 (큐 #159 · 코드 0)
+
+시드 12–160 이 끝났다. 아래는 **사람(master/Cursor)만 할 수 있는 것**이다 — 순서대로.
+
+| # | 무엇 | 왜 사람인가 | 어디 |
+|---|---|---|---|
+| 1 | master 머지 대기 PR 둘 — `#311`(Node 예외 문구 두 줄) · `#315`(Step 0 C+D · STATE·inbox·queue) | 런타임·STATE | GitHub |
+| 2 | **태그 zip 이 지금 검사로는 빨강** — `bash scripts/check_release.sh v0.1.0-contest` → rc 1, 필수 21종 중 `rule_ner`·`rule_extract`·`rule_rank` 없음(태그 뒤 늘어난 가중치). 태그는 옮기지 않는다(D25). must 를 ref 의 트리에서 읽게 할지, 「태그 검증은 태그 당시 검사로」라고 적을지 | 제출 재현 주장 | Decision |
+| 3 | Docker 세션 한 번 — `clean_room`(9) · `prod_room`(51/51 재측 · `-e` 켜기 #44/#71) · 능력 데모 아홉(#74) · `regate`/`proof_ab`(#75) · 위반 시연 TEST6 의 실제 제약(#87) · 두 워커 이중 claim(#101) · RUNNING 행 나이(#116) · 골든 누출 검사(#118) · `check_test_order --isolated`·`mutation_harness` | 데몬 없음 | 이 목록 = 배치 B·C·D 「못 봤다」 전부 |
+| 4 | ack 대기 넷 — `#82` securitySchemes · `#87` CONSTRAINT_NAME 단언·15행 · `#95` `permissions: contents: read` · `capreq/README` 라이선스 한 줄(#152) | 스펙 모양·ci.yml·경계 밖 | inbox 블록 |
+| 5 | 열린 Decision **23** (`test_open_decisions_are_counted` 가 센다) — 닫을 때 그 상수도 같이 내린다. 코드 이미 나간 여섯은 `#70`·`#99` 표 | status 는 사람 손 | inbox |
+| 6 | `migrations/0015` 머리에 근거(`assignment-attempt-cap`) 한 줄 — `test_ddl_cites_its_decision` 의 예외를 지울 수 있다 | `migrations/` 는 사람 몫 | #153 |
+| 7 | CHANGELOG 날짜 마찰 — 이 세션은 09-07 새벽까지 항목을 **09-06** 으로 적었다(갱신일 검사가 네 문서를 같이 올리게 만들어서 · inbox-claude 에 기록된 Decision). 다음 회차 첫 Step 0 에서 네 문서 갱신일을 올리면 풀린다 | STATE 는 사람 몫 | `test_doc_counts` |
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T04:40:00+09:00
+topic: seeds-exhausted-entering-final
+type: next
+expects: ack
+status: open
+---
+
+## 배치 D 소진 · **시드 종료** — 이후는 Decision·G 만 (큐 #160)
+
+131–158 을 비웠다 (159·160 = 이 블록). 새 번호(161+)는 만들지 않는다. 이제 §7 최종 — G1–G5 **한 바퀴** 뒤 「시드 종료 · Decision만 남음」 Step 0 으로 세션을 닫는다.
+
+| 무엇 | 값 |
+|---|---|
+| PR | **22** (`#316`–`#337`, G1 하나·정정 하나 포함) — 전부 내가 머지 (경계 안 · CI pass 게이트) |
+| 검사 | 1187 → **1232** (건너뜀 7 · 실패 0) — 재현 `bash scripts/run_tests.sh` |
+| 실제 결함으로 고친 것 | **6** — #135 하네스 부재 · #136 주석에만 남겨도 통과 15곳 · #137 세대 표 0003 정지 · #151 SBOM 도구 무버전 · #156 자기 검사의 `(?m)` · #147 경계값 검사 부재 |
+| 0건 핀 | **13** — #131 #132 #133 #139 #140 #142 #143 #144 #146 #150 #153 #154 #155 |
+| 0 + 재현 / 표만 | **8** — #134 #138 #141 #148 #149 #152 #157(태그 빨강 발견) #158(못 봤다) |
+| 새 수동 도구 | `scripts/check_test_order.py` · `scripts/mutation_harness.py`(15 변이, 15/15 운다) |
+
+### Docker·데이터 없어 못 본 것 (D)
+두 워커 이중 claim(#148 실측) · `clean_room`+`prod_room` 본실행(#158) · 태그 zip 안 실파일(#157 은 archive 로 봤다).
+
+### 다음
+**즉시 §7 최종 G** — G1–G5 한 바퀴 → 마지막 Step 0 → 세션 종료 조건 1 충족.
+```
