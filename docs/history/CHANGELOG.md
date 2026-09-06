@@ -1,5 +1,16 @@
 # Changelog
 
+## 최종 G2 — 학습 스크립트 다섯이 torch 를 무버전으로 깔고 있었다 (`#151` 형제) — 2026-09-06
+
+Dockerfile 은 `TORCH_VERSION=2.13.0+cpu` 로 핀하는데 `train_*.sh` 넷·`train_scratch.ps1` 은 `pip install -q torch …` 무버전이라
+2차 심사(F4) 재학습 때 다른 가중치가 나올 수 있었다. 정본을 두 번 적지 않고 읽는다 — torch/torchvision 은 Dockerfile ARG,
+safetensors/numpy/pillow 는 `apps/node/requirements.txt` — 못 읽으면 멈춘다. `tests/test_training_pins_match_the_runtime.py`.
+뮤테이션 2/2 (무버전 되돌림 · 멈춤 제거) 운다. 학습 자체는 Docker 없어 **못 돌렸다**(문법 `bash -n` 만).
+
+```bash
+python3 -m unittest tests.test_training_pins_match_the_runtime
+```
+
 ## 「상태확인」 S0–S7 — 정본 §1 과 그것을 부르는 문서 둘이 같다, 못박는다 (배치 D #156) — 2026-09-06
 
 `queue-batches.md` §1 은 S0…S7 여덟 단계, S5 가 읽으라는 파일 전부 실재, handoff·autonomous 는 「S0–S7」로 §1 을 가리키고 자기
