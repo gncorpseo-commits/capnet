@@ -1,5 +1,15 @@
 # Changelog
 
+## API 오류 문구·Node 예외에 내부 경로 0 — 못박는다 (배치 D #146) — 2026-09-06
+
+`HTTPException(detail=…)`·`raise …(…)` 247개 중 경로형 값을 포맷하거나 `/app/`·`/weights/` 류 리터럴을 담은 것 0
+(`migrate_lint.py` 는 CLI 린트 도구라 basename 을 말한다 — 제외, 이유 적음). `tests/test_error_messages_carry_no_internal_path.py`.
+뮤테이션 2/2 운다.
+
+```bash
+python3 -m unittest tests.test_error_messages_carry_no_internal_path
+```
+
 ## 단위 검사는 네트워크·Docker 를 안 부른다 — AST 전수 0, 못박는다 (배치 D #144) — 2026-09-06
 
 `urlopen`·`socket`·`httpx`·`requests` 0 · `subprocess` argv[0] 은 `bash`·`git`·`sed`·`sys.executable` 뿐(`docker`·`curl`·`pip`·`gh` 0).
