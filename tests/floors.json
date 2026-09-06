@@ -62,6 +62,7 @@
   "test_every_install_site_is_licensed.py::test_no_installed_name_is_missing#1": 8,
   "test_every_route_declares_its_auth.py::test_probe_actually_found_routes#0": 20,
   "test_every_script_is_accounted_for.py::test_enough_scripts_are_parsed#0": 30,
+  "test_every_weight_loader_is_safetensors.py::test_no_pickle_shaped_loader_anywhere#0": 40,
   "test_executor_dispatch_covers_vocabulary.py::test_imported_executors_exist#0": 3,
   "test_executor_dispatch_covers_vocabulary.py::test_probe_actually_read_both_sides#0": 5,
   "test_executor_dispatch_covers_vocabulary.py::test_probe_actually_read_both_sides#1": 5,

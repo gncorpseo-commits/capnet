@@ -1,5 +1,14 @@
 # Changelog
 
+## 가중치 로더 14곳 전부 safetensors — `scripts/` 까지 못박는다 (배치 C #104 · 절대규칙 5) — 2026-09-06
+
+기존 검사는 `apps`·`capreq/src` 에서 pickle 호출이 없음을 본다. 반대로 **있는 것**을 세었다 — `load_file`·`safe_open`
+호출 14곳 전부 `safetensors` 에서 import, `torch.load`·`pickle`·`joblib`·`allow_pickle=True`·`torch.hub` 0, `.pt`/`.pth`
+리터럴 0 — `scripts/*.py` 를 범위에 넣어서. `tests/test_every_weight_loader_is_safetensors.py`.
+뮤테이션 3/3 (scripts 에 `torch.load` · 실행기 로더를 torch 로 · `np.load(allow_pickle=True)`) 운다.
+
+```bash
+python3 -m unittest tests.test_every_weight_loader_is_safetensors
 ## 게이트러너가 아닌 Node 에서 게이트를 돌릴 길은 **0** — 못박는다 (배치 C #103 · 절대규칙 8) — 2026-09-06
 
 Node 앱 라우트는 `/health`·`/v1/execute` 둘뿐(게이트 라우트 없음) · 채점을 exec 하는 스크립트 7곳 전부
