@@ -1,5 +1,16 @@
 # Changelog
 
+## 역할 판정은 닫힌 쪽으로 실패한다 — 기본값·오타·강제 플래그 (배치 C #110 · `#193` 양방향) — 2026-09-06
+
+양방향은 이미 재고 있다(통합 `check_api_key` 가 DB 에서 · `test_route_roles_are_pinned` 가 라우트↔역할). 남은 사각은
+기본값이다: 모르는 역할은 0, 모르는 최소역할(`_require("admn")` 오타)은 99 라 **아무도 못 넘는다**; `_require` 에 적힌
+최소역할 리터럴은 전부 `ROLE_RANK` 키(오타 0); 키가 있으면 강제 플래그와 무관하게 역할을 본다; 남의 작업은 같은 org 의
+developer 또는 org 없는 admin 만 본다(D24). `tests/test_role_rank_fails_closed.py`. 뮤테이션 3/3 운다.
+
+```bash
+python3 -m unittest tests.test_role_rank_fails_closed
+```
+
 ## 공개 GET 여섯 — 코드 · `PUBLIC` · `prod_room` · D24 네 곳이 같다 (배치 C #109 · `#192` 핀) — 2026-09-06
 
 `authorization` 을 안 받는 `@app.get` 6 = `test_every_route_declares_its_auth.PUBLIC` 6 = `prod_room` 공개 루프 6,
