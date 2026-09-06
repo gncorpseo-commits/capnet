@@ -32,6 +32,12 @@ G4 는 그것을 한 줄로 좁힌다: **선두 항목이 테스트와 같은 �
 - **주장과 검사가 같은 것을 말하는가.** 그건 사람이 읽어야 한다. 여기는 「지목했는가 ·
   그것이 있는가」만 본다 — 없는 것을 가리키는 재현 명령은 **없는 것보다 나쁘다**
 - 숫자 자체. 다시 내는 것은 그 명령의 몫이다
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_changelog_top_names_a_check
+```
 """
 
 from __future__ import annotations

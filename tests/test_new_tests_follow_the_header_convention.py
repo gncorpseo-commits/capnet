@@ -10,7 +10,7 @@ skip 사유가 자유 문장이면 `test_skip_reasons` 의 허가제 밖으로 �
 | 무엇 | 값 |
 |---|---|
 | 모듈 docstring 없는 검사 | **0** / 121 |
-| 「배치 B/C」·「G 라운드」를 말하는 새 검사 | 39 — 전부 `## 재현` + 자기 모듈을 부르는 `python3 -m unittest` 줄 |
+| 「배치 B/C/D」·「G 라운드」·「큐 #N」·「최종 G」를 말하는 새 검사 | 전부 `## 재현` + 자기 모듈을 부르는 `python3 -m unittest` 줄 (G1 에서 표식을 넓혔다) |
 | skip 사유 | `test_skip_reasons.ALLOWED` 가 본다 (여기서 다시 안 센다) |
 
 ## 재현
@@ -29,7 +29,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TESTS = ROOT / "tests"
-NEW_MARK = re.compile(r"배치 [BCD]|G 라운드|배치 B 뒤")
+# G1 (2026-09-07): 「배치 X」만 보면 「큐 #N」·「최종」만 적은 새 검사가 규약을 비켜간다 — 표식을 넓혔다.
+NEW_MARK = re.compile(r"배치 [BCD]|G 라운드|배치 B 뒤|큐 #(?:7\d|8\d|9\d|1\d\d)\b|최종 G|G[1-5] ")   # 큐 #71(배치 B) 부터
 
 
 def _docstrings() -> dict[str, str]:
