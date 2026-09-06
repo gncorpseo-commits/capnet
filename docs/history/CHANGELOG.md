@@ -1,5 +1,15 @@
 # Changelog
 
+## 절대규칙 3 검사가 못 잡던 우회 셋 — 손 순위표 · `sorted(key=tier)` · SQL 안 `>=` (배치 C #107) — 2026-09-06
+
+`compute_tier` 직접 비교(`>=`)는 잡히지만 `{"S":1,"M":2,"L":3}` 손 순위표, `sorted(nodes, key=lambda n: n["compute_tier_max"])`,
+SQL 문자열 안 `n.compute_tier_max >= c.compute_tier` 는 통과했다(뮤테이션으로 실측). 셋을 `TestRule3NoTierStringCompare` 에
+보탰다. 저장소 실측은 셋 다 **0**. 뮤테이션 3/3 운다.
+
+```bash
+python3 -m unittest tests.test_absolute_rules_are_enforced
+```
+
 ## 사전학습·비통제 수집 검사가 `scripts/` 를 안 보고 있었다 — 범위 확장, 실측 0 (배치 C #105·#106) — 2026-09-06
 
 절대규칙 6·7 을 보는 두 검사는 `apps`·`capreq/src` 의 파이썬만 훑었다. `scripts/` 의 `.py`·`.sh`·`.ps1` 을

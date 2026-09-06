@@ -290,6 +290,22 @@ class TestRule3NoTierStringCompare(unittest.TestCase):
                         and n.func.attr == "sort"
                         and "tier" in self._name_of(n.func.value).lower()):
                     hits.append(f"{path.relative_to(ROOT)}:{n.lineno} .sort")
+                # ── 큐 #107 에서 잡은 우회 셋 ──
+                # (a) `sorted(nodes, key=lambda n: n["compute_tier_max"])` — 첫 인자가 아니라 key= 가 tier 다
+                if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                        and n.func.id in ("sorted", "max", "min")):
+                    for kw in n.keywords:
+                        if kw.arg == "key" and any("tier" in self._name_of(x).lower() for x in ast.walk(kw.value)):
+                            hits.append(f"{path.relative_to(ROOT)}:{n.lineno} {n.func.id}(key=tier)")
+                # (b) `{"S": 1, "M": 2, "L": 3}` — 손으로 만든 순위표는 행렬을 우회한다
+                if isinstance(n, ast.Dict) and n.keys:
+                    keys = {k.value for k in n.keys if isinstance(k, ast.Constant)}
+                    if keys == {"S", "M", "L"}:
+                        hits.append(f"{path.relative_to(ROOT)}:{n.lineno} 손 순위표")
+            # (c) SQL 문자열 안의 `tier … >=` — 파이썬 비교가 아니라 DB 에서 텍스트 정렬을 시킨다
+            for s in _live_strings(tree):
+                if re.search(r"tier\w*\s*(?:>=|<=|<|>)\s*[\w.'\"]", s.value) and "CHECK" not in s.value:
+                    hits.append(f"{path.relative_to(ROOT)}:{s.lineno} SQL 비교")
         self.assertEqual(
             [], hits,
             "compute_tier 를 앱이 직접 비교·정렬한다 — tier_compatible 행렬에 맡긴다: " f"{hits}",
