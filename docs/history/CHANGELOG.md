@@ -1,5 +1,14 @@
 # Changelog
 
+## EuroSAT 라이선스 문구 — 기계 핀·README·규정 문서가 같다, 못박는다 (배치 D #150) — 2026-09-06
+
+`eurosat-rgb.json` `license: MIT`·Zenodo 7711810 과 README·`regulation-compliance.md` 의 문구가 같다. 원본 zip 안 LICENSE 는
+저장소 밖(미동봉)이라 **못 봤다**. `tests/test_eurosat_license_wording_agrees.py`. 뮤테이션 2/2 운다.
+
+```bash
+python3 -m unittest tests.test_eurosat_license_wording_agrees
+```
+
 ## 입력 상한의 경계값 검사 둘 신설 — 상한과 같으면 받고 +1 이면 거절 (배치 D #147 · D22 옆) — 2026-09-06
 
 기존 검사는 「넘으면 끊는다」만 봤다. `store_stream` 의 `>` 가 `>=` 로 바뀌면 정확히 상한인 입력이 거절되는데 아무도 안 울었다.
