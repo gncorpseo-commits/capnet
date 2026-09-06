@@ -1,5 +1,15 @@
 # Changelog
 
+## CI 3잡 ↔ 로컬 `run_tests` 의 파일 집합 diff — 표로 고정 (배치 D #133 · G5 확장) — 2026-09-06
+
+로컬 = `tests/`(discover) + 도구 3 = CI `unit`; CI `capreq` = `capreq/tests` 7; CI `migrate` = `tests/integration` 15 + 마이그레이션 단계.
+세 나무 밖의 `test_*.py`·`check_*.py` 0. CI 합집합이 저장소의 검사 파일 전부를 덮고, 로컬이 안 도는 둘은 `testing.md` §4.6 에 있다.
+`tests/test_ci_and_local_file_sets.py`. 잡 추가는 `ci.yml` 이라 Proposal 만. 뮤테이션 2/2 (나무 밖 검사 파일 · CI 가 capreq 를 안 돌림) 운다.
+
+```bash
+python3 -m unittest tests.test_ci_and_local_file_sets
+```
+
 ## `.ps1` 11개 전부 첫 명령 전에 `$ErrorActionPreference = "Stop"` — 못박는다 (배치 D #132) — 2026-09-06
 
 `.sh` 쪽 `set -euo pipefail` 의 짝. `pwsh` 가 없어 소스만 본다: 11/11 있음 · 11/11 첫 명령 앞 · `SilentlyContinue` 는 탐색 명령에만.
