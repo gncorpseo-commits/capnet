@@ -1,5 +1,14 @@
 # Changelog
 
+## 등급·스냅샷을 앱이 덮어쓰는 경로는 **0** — 못박는다 (배치 C #102 · 절대규칙 4) — 2026-09-06
+
+여섯 컬럼(`trust_domain`·`compute_tier_max`·배정 스냅샷 넷)을 `SET` 하는 UPDATE 0 · `UPDATE node` 0 ·
+등급을 본문으로 받는 모델은 셋뿐(`TaskCreate` 는 요청자 도메인이라 DB FK 가 판정 · `InviteCreate`·`NodeCreate` 는 admin) ·
+Node 앱에 등급 낱말 0. `tests/test_grades_are_never_rewritten_by_the_app.py` 가 고정.
+뮤테이션 3/3 (`UPDATE node SET trust_domain` · `NodeRedeem` 에 등급 필드 · Node 가 등급을 보냄) 운다.
+
+```bash
+python3 -m unittest tests.test_grades_are_never_rewritten_by_the_app
 ## 이중 claim 이 불가능한 이유 넷 — 못박는다 (배치 C #101 · 절대규칙 2 · pitfalls §4) — 2026-09-06
 
 `test_claim_takes_the_lock` 은 `SKIP LOCKED` 와 순서를 본다. lock 은 트랜잭션 끝까지만 잡히므로 넷이 더 필요하다:
