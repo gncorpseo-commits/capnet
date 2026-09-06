@@ -205,6 +205,7 @@ class TestEveryLibFunctionHasAUnitCheck(unittest.TestCase):
         "probe_verdict": "test_prod_room_auth_probe.py",
         "ccurl": "test_lib_http_never_leaks_the_key.py",
         "ccode": "test_lib_http_never_leaks_the_key.py",
+        "_capnet_assert_compose_matches_core": "test_compose_project_follows_core_url.py",
     }
 
     def test_every_function_is_named_by_a_test(self) -> None:
