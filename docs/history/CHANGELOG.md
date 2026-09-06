@@ -1,5 +1,14 @@
 # Changelog
 
+## LICENSE·NOTICE 트리 — 루트 둘 · capreq 선언 일치 · README 문장만 비어 있음 (배치 D #152) — 2026-09-06
+
+루트 `LICENSE`(Apache 2.0)·`NOTICE`(THIRD-PARTY 표·EuroSAT 출처) · `capreq/pyproject.toml` Apache-2.0 일치. `capreq/README.md` 에
+라이선스 문장이 없다 — `capreq/` 는 내 경계 밖이라 표로만(한 줄이면 된다). `tests/test_license_tree_is_whole.py`. 뮤테이션 2/2 운다.
+
+```bash
+python3 -m unittest tests.test_license_tree_is_whole
+```
+
 ## SBOM 생성 도구가 무버전이었다 — sbom.json 이 기록한 버전으로 핀 (배치 D #151 · `#239` 형제) — 2026-09-06
 
 `generate_sbom.sh`·`.ps1` 이 `pip install cyclonedx-bom` 을 무버전으로 깔았다. 도구 메이저가 바뀌면 SBOM 모양이 달라지는데 이름만 보는
