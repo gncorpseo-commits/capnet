@@ -1,5 +1,17 @@
 # Changelog
 
+## 뮤테이션 하네스 — 핀 검사가 정말 무는지 다시 돌릴 길이 없었다 (배치 D #135) — 2026-09-06
+
+배치 A–C 의 핀 PR 은 뮤테이션을 세션 안에서만 돌렸고 저장소엔 「울었다」는 문장만 남았다. `scripts/mutation_harness.py` 에
+변이 12개(autocommit·finish 가드·손 순위표·FROM 없는 SELECT·UPDATE node·/health 칸·무인증 GET·gitignore·shebang·ps1 Stop·
+데모 판정·역할 기본값)를 등록하고 심고→울고→되돌린다 (12/12 운다). `tests/test_mutation_harness_registry.py` 가 등록부의 실재를
+본다. `testing.md` §4.9.
+
+```bash
+python3 -m unittest tests.test_mutation_harness_registry
+python3 scripts/mutation_harness.py
+```
+
 ## CI 3잡 ↔ 로컬 `run_tests` 의 파일 집합 diff — 표로 고정 (배치 D #133 · G5 확장) — 2026-09-06
 
 로컬 = `tests/`(discover) + 도구 3 = CI `unit`; CI `capreq` = `capreq/tests` 7; CI `migrate` = `tests/integration` 15 + 마이그레이션 단계.

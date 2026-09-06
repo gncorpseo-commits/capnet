@@ -95,6 +95,7 @@
   "test_migrate_lint.py::test_repo_migrations_load#0": 1,
   "test_modality_fallback.py::test_every_modality_is_decided#0": 5,
   "test_modality_fallback.py::test_probe_actually_read_the_vocabulary#0": 5,
+  "test_mutation_harness_registry.py::test_enough_and_unique#0": 10,
   "test_new_tests_follow_the_header_convention.py::test_every_module_has_a_docstring#0": 100,
   "test_new_tests_follow_the_header_convention.py::test_new_modules_carry_why_and_reproduce#0": 30,
   "test_no_conflict_markers.py::test_probe_actually_watches_something#0": 2,
