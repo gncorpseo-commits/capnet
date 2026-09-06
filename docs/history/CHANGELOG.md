@@ -1,5 +1,14 @@
 # Changelog
 
+## 열린 `expects: decision` 을 기계가 센다 — 23 (배치 D #154 · `#39`/`#222` 계열) — 2026-09-06
+
+지금까지 사람이 세어 적던 「열린 Decision 수」를 헤더 블록 파싱으로 센다: 126 블록 중 `expects: decision` ∧ `status: open` = **23**.
+status 는 내리지 않는다. `tests/test_open_decisions_are_counted.py`. 뮤테이션 1/1 (하나를 done 으로) 운다.
+
+```bash
+python3 -m unittest tests.test_open_decisions_are_counted
+```
+
 ## DDL 이 어느 Decision 에서 왔는지 머리에 적혀 있는가 — 정적 탐지 (배치 D #153) — 2026-09-06
 
 마이그레이션 18개 중 16개가 머리 6줄 안에 `D24`·`SD-013`·`B2`·`P2-1`·`I1`·`G2`·`Decision` 표식을 갖는다. `0001`·`0002` 는 브리지 이전,
