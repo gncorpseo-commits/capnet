@@ -1,5 +1,13 @@
 # Changelog
 
+## 활성 배치 — `queue-batches` §0 와 STATE 「다음:」이 같은 배치를 말한다, 못박는다 (배치 D #155) — 2026-09-06
+
+`tests/test_active_batch_agrees_with_state.py`. 뮤테이션 1/1 (활성 행만 D 로 옮김) 운다.
+
+```bash
+python3 -m unittest tests.test_active_batch_agrees_with_state
+```
+
 ## 열린 `expects: decision` 을 기계가 센다 — 23 (배치 D #154 · `#39`/`#222` 계열) — 2026-09-06
 
 지금까지 사람이 세어 적던 「열린 Decision 수」를 헤더 블록 파싱으로 센다: 126 블록 중 `expects: decision` ∧ `status: open` = **23**.
