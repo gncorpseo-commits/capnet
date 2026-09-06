@@ -1,5 +1,14 @@
 # Changelog
 
+## 데모 10 이 실패하면 빨갛게 끝난다 — 못박는다 (배치 C #126 · 「0건 초록」 계열) — 2026-09-06
+
+작업을 돌리는 데모 10 전부 `set -euo pipefail` · 폴링 상한 · `status != COMPLETED → SystemExit`, `|| true` 는 capid 조회에만.
+`tests/test_demos_fail_red.py`. 뮤테이션 3/3 (판정 제거 · errexit 제거 · 폴링 상한 제거) 운다.
+
+```bash
+python3 -m unittest tests.test_demos_fail_red
+```
+
 ## `check_release` 가 막는 것 ↔ 체크리스트의 제출물 목록 — 같다, 못박는다 (배치 C #123 · `#238` 형제) — 2026-09-06
 
 체크리스트 S3 의 필수 파일 5 는 `check_release.sh` `must` 21 의 부분집합, 가중치 10 은 `check_submission.REQUIRED_WEIGHTS` 와
