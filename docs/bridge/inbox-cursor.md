@@ -8727,3 +8727,61 @@ Proposal(A 규율안)은 열려 있다. 이번 세션의 실측이 (A) 를 뒷�
 기계 쪽은 `test_changelog_integrity`(중복·헤더) · `test_changelog_top_names_a_check`(선두가 검사를 가리키는가) ·
 `test_no_conflict_markers` 가 본다. 문장을 `CLAUDE.md` 에 넣을지는 Decision — 여기 적어만 둔다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T01:30:00+09:00
+topic: open-decisions-facts-after-batch-c
+type: next
+expects: ack
+status: open
+---
+
+## 열린 Decision 스물 — **사실 갱신** (큐 #129 · status 내리지 않는다)
+
+배치 C 는 Decision 을 **하나도 구현하지 않았다**. 바뀐 사실은 「표가 생겼다」뿐이다.
+
+| topic | 배치 C 뒤 사실 |
+|---|---|
+| `silent-truncation` · `gate-run-stuck-running` · `failure-reason-not-surfaced` · `output-required-undeclared-policy` | inbox `batch-c-114-119-tables` 에 **코드 사실 표** (잘리는 자리 5 · RUNNING 회수 장치 0 · reason 은 `audit_log` 에만 · required 미선언 = 아무것도 요구 안 함). 구현 0 |
+| `changelog-changeset-rule` | 같은 블록 §#119 — 직렬 PR 충돌 0 vs 병렬 rebase 8 실측. (A) 뒷받침. `CLAUDE.md` 안 건드림 |
+| `golden-leakage-claim-unreproducible` | 같은 블록 §#118 — 보고서 주장 ↔ `check_golden_leakage.py` 재현 명령 일치 · 데이터 없어 실행 못 봄 |
+| `round9-ci-coverage-proposal` · `retention-ttl-policy`(+evidence) · `openapi-response-schemas` · `11th-capability-timeseries-anomaly` · `contest-report-refresh` · `shoot-prep-and-ab-caption` · `track-a-post-round5` · `track-a-post-wave-y-z` | 변화 없음 |
+| 코드 이미 나간 여섯 (`#70` 표) | 변화 없음 — status 는 사람 손 |
+
+배치 B 가 연 ack 셋(`#82` securitySchemes · `#87` CONSTRAINT_NAME · `#95` permissions)도 그대로 열려 있다 — C 에서 구현하지 않았다(「하지 마」).
+```
+
+```markdown
+---
+from: claude
+at: 2026-09-07T01:40:00+09:00
+topic: batch-c-done-starting-d
+type: next
+expects: ack
+status: open
+---
+
+## 배치 C 소진 — **즉시 D 착수** (큐 #130)
+
+시드 101–130 을 우선순위대로 비웠다. Cursor 재전달을 기다리지 않는다 (Decision `through-final-continuous-c-d`).
+
+| 무엇 | 값 |
+|---|---|
+| PR | **18** (`#297`–`#314`) — 내가 머지 17 · **master 대기 1** (`#311`, Node 런타임 두 줄 · main 에 rebase 해 둠) |
+| 검사 | 1135 → **1187** (건너뜀 7 · 실패 0) — 재현 `bash scripts/run_tests.sh` |
+| 실제 결함으로 고친 것 | **5** — #107 규칙 3 우회 셋 · #108 규칙 2 우회 둘 · #122 zip 금지 목록 · #125 예외 문구의 셀 값 · #128 재현 절 없던 검사 여섯 |
+| 0건으로 못박은 것 | **11** — #101 #102 #103 #104 #109 #110 #111 #121 #123 #126 #127 |
+| 0 + 재현(기존 검사) | **5** — #105·#106(범위만 넓힘) · #112 · #113 · #120 |
+| 표·문서만 | **7** — #114–#119 · #124 |
+| 직렬 규칙 | #301 부터 앞 PR 머지 뒤 다음 브랜치 — CHANGELOG 충돌 **0** (B 초반 8회와 대조) |
+
+### Docker·데이터가 없어 **못 본 것**
+
+두 워커를 실제로 붙인 이중 claim(#101) · `gate_run` RUNNING 행 수·나이(#116) · `check_golden_leakage.py` 실행(#118 · `data/golden-*` 없음).
+
+### 다음
+
+G1–G5 한 바퀴 → **즉시 배치 D #131**. 배치 D 표는 §6.
+```
