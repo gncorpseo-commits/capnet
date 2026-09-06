@@ -275,3 +275,17 @@ scripts/capreq_demo.sh
   「브라우저에서 봤다」고 쓰지 않는 이유다.
 
 새 판정 도구를 만들면 **테스트를 같이 넣는다.** 그게 이 문서의 요점이다.
+
+## 4.7 검사 순서에 기대는 공유 상태 — 역순·단독으로 본다 (큐 #127)
+
+`unittest discover` 는 언제나 파일 이름순으로 돈다. 앞 검사가 `sys.modules` 에 스텁을 꽂아 두거나
+`os.environ` 을 바꿔 둔 덕에 뒤 검사가 통과하는 모양은 그 순서에서는 안 보인다.
+
+```bash
+python3 scripts/check_test_order.py              # 정순 + 역순 (~1분)
+python3 scripts/check_test_order.py --isolated   # + 모듈마다 새 프로세스 (2–3분)
+```
+
+`run_tests.sh` 에는 넣지 않는다(시간이 두 배). 실측 2026-09-06: 정순·역순 각 1184 · 단독 120/120 — 실패 0.
+새 검사가 `sys.modules[...] =` 나 `os.environ[...] =` 를 **모듈 수준**에서 하면 이 도구로 한 번 돌려 본다.
+
