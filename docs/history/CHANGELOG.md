@@ -1,5 +1,14 @@
 # Changelog
 
+## 사용자 안내가 부르는 스크립트·능력 code 는 전부 실재 — 못박는다 (배치 D #140) — 2026-09-06
+
+`user-guide-ko.md` 는 라우트를 말하지 않고(0) 스크립트 2·능력 code 2 를 부른다 — 전부 실재. `tests/test_user_guide_names_real_things.py`.
+뮤테이션 2/2 (없는 스크립트 · 카탈로그 밖 code) 운다.
+
+```bash
+python3 -m unittest tests.test_user_guide_names_real_things
+```
+
 ## README·INDEX 의 상대 링크와 README 명령이 부르는 경로 — 전부 실재, 못박는다 (배치 D #139) — 2026-09-06
 
 README 링크 29(상대 27 전부 존재 · 외부 2 는 오프라인이라 못 봤다) · 명령 12 가 부르는 `scripts/`·`docs/` 경로 전부 존재 · INDEX 상대 링크
