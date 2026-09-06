@@ -1,5 +1,19 @@
 # Changelog
 
+## 게이트러너가 아닌 Node 에서 게이트를 돌릴 길은 **0** — 못박는다 (배치 C #103 · 절대규칙 8) — 2026-09-06
+
+Node 앱 라우트는 `/health`·`/v1/execute` 둘뿐(게이트 라우트 없음) · 채점을 exec 하는 스크립트 7곳 전부
+`node-m-team` 또는 기본값이 그것인 `$runner_svc` · 러너 자격은 admin `NodeCreate` 에서만 생기고 소진은 `False` 강제 ·
+스키마의 `CHECK (runner_is_gate_runner)`·`ck_gate_runner_team`. `/finish` 는 developer 키라 어느 기기가 셈했는지
+Core 가 못 보므로, 스크립트의 exec 대상이 실질적 문이다 — 그것을 센다.
+
+`tests/test_gate_runs_only_on_the_runner.py`. 뮤테이션 3/3 (demo 가 s-public 에서 채점 · 소진이 본문 플래그를 씀 ·
+Node 에 게이트 라우트) 운다.
+
+```bash
+python3 -m unittest tests.test_gate_runs_only_on_the_runner
+```
+
 ## 등급·스냅샷을 앱이 덮어쓰는 경로는 **0** — 못박는다 (배치 C #102 · 절대규칙 4) — 2026-09-06
 
 여섯 컬럼(`trust_domain`·`compute_tier_max`·배정 스냅샷 넷)을 `SET` 하는 UPDATE 0 · `UPDATE node` 0 ·
