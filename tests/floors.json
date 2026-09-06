@@ -93,6 +93,7 @@
   "test_measured_values_name_their_tool.py::test_zero_bare_values#0": 5,
   "test_migrate_lint.py::test_repo_migrations_lint_clean#0": 1,
   "test_migrate_lint.py::test_repo_migrations_load#0": 1,
+  "test_migration_ledger_matches_the_docs.py::test_numbers_are_contiguous#0": 18,
   "test_modality_fallback.py::test_every_modality_is_decided#0": 5,
   "test_modality_fallback.py::test_probe_actually_read_the_vocabulary#0": 5,
   "test_mutation_harness_registry.py::test_enough_and_unique#0": 10,
