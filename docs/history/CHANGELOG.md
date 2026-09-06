@@ -1,5 +1,16 @@
 # Changelog
 
+## 저장소의 모든 `.sh` 가 bash shebang 이고 `scripts/` 안에만 있다 — 못박는다 (배치 D #131) — 2026-09-06
+
+`test_scripts_set_errexit` 는 `set -euo pipefail` 줄만 봤다. 첫 줄이 `#!/bin/sh` 로 바뀌면 `pipefail` 이 없는 셸에서 돌고,
+`scripts/` 밖의 `.sh` 는 아예 검사 밖이었다. 전수: `.sh` 전부 `#!/usr/bin/env bash` · 전부 `scripts/`(+`lib/`) 안 · 실행 스크립트는
+전부 `set -euo pipefail`(prod_room 만 `-uo`, 근거 있음) · `lib/*.sh` 셋은 source 용이라 `set` 없음(의도, 기존 핀).
+뮤테이션 2/2 (lib shebang 을 sh 로 · scripts 밖 .sh) 운다.
+
+```bash
+python3 -m unittest tests.test_scripts_set_errexit
+```
+
 ## G1 — 머리말 규약 검사가 「배치 X」 표식 없는 새 검사를 비켜 보내고 있었다 (배치 C 뒤 G 라운드) — 2026-09-06
 
 `#314` 의 검사는 docstring 에 「배치 B/C」·「G 라운드」가 있는 파일만 봤다. 「큐 #999」·「최종 G」만 적은 새 검사는 재현 절이
