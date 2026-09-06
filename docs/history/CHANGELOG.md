@@ -1,5 +1,16 @@
 # Changelog
 
+## 사전학습·비통제 수집 검사가 `scripts/` 를 안 보고 있었다 — 범위 확장, 실측 0 (배치 C #105·#106) — 2026-09-06
+
+절대규칙 6·7 을 보는 두 검사는 `apps`·`capreq/src` 의 파이썬만 훑었다. `scripts/` 의 `.py`·`.sh`·`.ps1` 을
+넣고(사전학습은 배포 호스트 `download.pytorch.org/models`·`huggingface.co` 까지) 전수하니 둘 다 **0**.
+`test_build_args_open_no_pretrained_path`(+ 셸/ps1 검사 하나) · `test_absolute_rules_are_enforced` 의 `CODE_ROOTS`.
+뮤테이션 3/3 (scripts 에 `from_pretrained` · `.sh` 가 hub 에서 받음 · scripts 에 `fileToken`) 운다.
+
+```bash
+python3 -m unittest tests.test_build_args_open_no_pretrained_path tests.test_absolute_rules_are_enforced
+```
+
 ## 가중치 로더 14곳 전부 safetensors — `scripts/` 까지 못박는다 (배치 C #104 · 절대규칙 5) — 2026-09-06
 
 기존 검사는 `apps`·`capreq/src` 에서 pickle 호출이 없음을 본다. 반대로 **있는 것**을 세었다 — `load_file`·`safe_open`

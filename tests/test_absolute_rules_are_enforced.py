@@ -42,7 +42,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CODE_ROOTS = (ROOT / "apps", ROOT / "capreq" / "src")
+CODE_ROOTS = (ROOT / "apps", ROOT / "capreq" / "src", ROOT / "scripts")   # scripts/ 는 큐 #106 에서 넣었다
 SCHEMA = ROOT / "docs" / "spec" / "schema.sql"
 CORE_MAIN = ROOT / "apps" / "core" / "app" / "main.py"
 REGISTRY = ROOT / "apps" / "core" / "app" / "registry.py"
