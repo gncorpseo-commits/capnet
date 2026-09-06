@@ -33,6 +33,12 @@ python3 scripts/check_submission.py               → 29/29
 
 - CI 가 **더 보는 것**은 막지 않는다 (`migrate`·`capreq` 잡이 그렇다 — `#215` 규율)
 - 출력 인자(`-v`·`--verbose`)
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_ci_and_run_tests_call_the_same_way
+```
 """
 
 from __future__ import annotations

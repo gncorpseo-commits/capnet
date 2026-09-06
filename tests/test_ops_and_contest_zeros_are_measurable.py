@@ -36,6 +36,12 @@ torch 다 — 그 사실을 코드에서 다시 낸다.
 
 **응답을 실제로 받아 보지 않는다** — 살아 있는 Core 가 필요하다. 여기는 **이름이 SQL 에
 있는가**만 본다. 값이 0 인지는 운영자가 위 `curl` 로 본다.
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_ops_and_contest_zeros_are_measurable
+```
 """
 
 from __future__ import annotations

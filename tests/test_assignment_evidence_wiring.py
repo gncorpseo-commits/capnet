@@ -20,6 +20,12 @@
 「이름은 있지만 다른 쿼리에 실려 있는」 경우는 못 잡는다. 실행해서 확인하는 것은
 `clean_room.sh` / `prod_room.sh` 의 몫이고, 이 검사는 그 둘을 **못 돌리는 환경에서도**
 사슬이 끊긴 것을 알아채기 위한 것이다.
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_assignment_evidence_wiring
+```
 """
 
 from __future__ import annotations
