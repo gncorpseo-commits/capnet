@@ -1,5 +1,14 @@
 # Changelog
 
+## Node 운영 안내의 플래그를 스크립트가 전부 받는다 — 못박는다 (배치 D #142) — 2026-09-06
+
+`operate-node.md` 의 `node_onboard.sh`(3줄)·`node_bind.sh`(2줄) 호출이 보여 주는 플래그 전부가 각 스크립트의 `case` 에 있다.
+`tests/test_node_docs_flags_match_scripts.py`. 뮤테이션 2/2 (문서에 없는 플래그 · 스크립트가 `--tier` 를 버림) 운다.
+
+```bash
+python3 -m unittest tests.test_node_docs_flags_match_scripts
+```
+
 ## 사용자 안내가 부르는 스크립트·능력 code 는 전부 실재 — 못박는다 (배치 D #140) — 2026-09-06
 
 `user-guide-ko.md` 는 라우트를 말하지 않고(0) 스크립트 2·능력 code 2 를 부른다 — 전부 실재. `tests/test_user_guide_names_real_things.py`.
