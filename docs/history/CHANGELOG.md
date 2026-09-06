@@ -1,5 +1,14 @@
 # Changelog
 
+## 「상태확인」 S0–S7 — 정본 §1 과 그것을 부르는 문서 둘이 같다, 못박는다 (배치 D #156) — 2026-09-06
+
+`queue-batches.md` §1 은 S0…S7 여덟 단계, S5 가 읽으라는 파일 전부 실재, handoff·autonomous 는 「S0–S7」로 §1 을 가리키고 자기
+절차를 따로 적지 않는다. `tests/test_status_check_steps_agree.py`. 뮤테이션 2/2 (S4 삭제 · 부르는 문서가 자기 절차를 적음) 운다.
+
+```bash
+python3 -m unittest tests.test_status_check_steps_agree
+```
+
 ## 활성 배치 — `queue-batches` §0 와 STATE 「다음:」이 같은 배치를 말한다, 못박는다 (배치 D #155) — 2026-09-06
 
 `tests/test_active_batch_agrees_with_state.py`. 뮤테이션 1/1 (활성 행만 D 로 옮김) 운다.
