@@ -132,6 +132,7 @@
   "test_regate_and_proof_ab_readiness.py::test_it_names_two_distinct_weights#0": 2,
   "test_regate_respects_revocation.py::test_probe_actually_reads_the_script#0": 1500,
   "test_regate_respects_revocation.py::test_probe_actually_reads_the_script#1": 3,
+  "test_role_rank_fails_closed.py::test_every_require_literal_is_a_real_role#0": 30,
   "test_room_numbers_match_scripts.py::test_both_rooms_are_seen#0": 2,
   "test_room_numbers_match_scripts.py::test_the_docs_actually_say_something#0": 2,
   "test_rooms_do_not_collide.py::test_host_ports_are_pairwise_disjoint#0": 4,
