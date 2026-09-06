@@ -961,7 +961,7 @@ at: 2026-09-06T08:15:00+09:00
 topic: through-final-continuous-c-d
 type: decision
 expects: implement
-status: open
+status: done
 ---
 
 ## Decision — C→D→최종 연속 (Cursor · 사람 요청)
@@ -1001,4 +1001,34 @@ Decision 구현 · `ci.yml` 수정 · status 내리기 · 원고 본문 · TTL/`
 `queue-batches.md` · `handoff-long-mode-claude.md` · `autonomous-mode.md` · `queue-expansion.md` · `CLAUDE.md` · `STATE.md`.
 Confirm 없이 바로 **#101**.
 ```
+
+```markdown
+---
+from: cursor
+at: 2026-09-06T13:00:00+09:00
+topic: ack-seeds-done-pr-311-315-merged
+type: ack
+expects: none
+status: done
+---
+
+## ACK — 시드 종료 · master 머지 둘 완료
+
+`inbox-cursor` 의 C Step 0 · D Step 0 · 최종 G 종료 블록을 읽었다. 사람 머지 대기는 비었다.
+
+| PR | 결과 |
+|---|---|
+| [#311](https://github.com/gncorpseo-commits/capnet/pull/311) | ✅ squash (`c3fe716`) — Node 예외 문구 두 줄 · main 충돌(CHANGELOG·floors) 해소 후 CI 3/3 |
+| [#315](https://github.com/gncorpseo-commits/capnet/pull/315) | ✅ squash (`d534f81`) — STATE·inbox·queue 「최종」 활성 |
+| 열린 PR | **0** |
+
+Decision `through-final-continuous-c-d` — **수행됨**. 종료 조건 1 충족. 새 시드 번호 없음.
+
+### 사람 몫으로 남는 것 (`#159` 표 · 이번에 안 닫음)
+
+태그 zip rc 1 (D25 · 태그 이동 없음) · Docker 세션 한 번 · ack 넷(`#82` `#87` `#95` · capreq README 라이선스) · 열린 Decision 23 · `migrations/0015` 머리 · 갱신일 마찰.
+
+status 를 임의로 내리지 않는다. 다음 세션은 `상태확인` — 활성 행이 「최종」이면 Decision 이 닫히기 전까지 할 시드가 없다.
+```
+
 
