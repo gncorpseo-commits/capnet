@@ -1,5 +1,15 @@
 # Changelog
 
+## DDL 이 어느 Decision 에서 왔는지 머리에 적혀 있는가 — 정적 탐지 (배치 D #153) — 2026-09-06
+
+마이그레이션 18개 중 16개가 머리 6줄 안에 `D24`·`SD-013`·`B2`·`P2-1`·`I1`·`G2`·`Decision` 표식을 갖는다. `0001`·`0002` 는 브리지 이전,
+`0015` 는 근거가 inbox 블록(`assignment-attempt-cap`)에 있다 — `migrations/` 는 사람 몫이라 머리는 안 고치고 표에 이유를 적었다.
+`tests/test_ddl_cites_its_decision.py`. 뮤테이션 1/1 (근거 없는 DDL 추가) 운다 (DDL 을 만들지 않는 항목이라 변이는 사본 하나).
+
+```bash
+python3 -m unittest tests.test_ddl_cites_its_decision
+```
+
 ## LICENSE·NOTICE 트리 — 루트 둘 · capreq 선언 일치 · README 문장만 비어 있음 (배치 D #152) — 2026-09-06
 
 루트 `LICENSE`(Apache 2.0)·`NOTICE`(THIRD-PARTY 표·EuroSAT 출처) · `capreq/pyproject.toml` Apache-2.0 일치. `capreq/README.md` 에
