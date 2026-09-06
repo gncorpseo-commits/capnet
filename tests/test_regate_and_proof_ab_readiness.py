@@ -62,7 +62,7 @@ class TestProofAbHasItsMaterials(unittest.TestCase):
     """A/B 교차 실행은 **가중치 둘**이 있어야 한다 — 없으면 Docker 가 있어도 못 돈다."""
 
     def test_both_weights_are_in_the_repo(self) -> None:
-        needs = SAFETENSORS.findall((SCRIPTS / "proof_ab.sh").read_text(encoding="utf-8"))
+        needs = SAFETENSORS.findall(hash_comment_free(SCRIPTS / "proof_ab.sh"))
         self.assertTrue(needs, "proof_ab 이 가중치를 안 부른다")
         have = {p.name for p in WEIGHTS.glob("*.safetensors")}
         missing = sorted(set(needs) - have)
@@ -70,7 +70,7 @@ class TestProofAbHasItsMaterials(unittest.TestCase):
 
     def test_it_names_two_distinct_weights(self) -> None:
         """하나만 부르면 그건 A/B 가 아니다."""
-        needs = set(SAFETENSORS.findall((SCRIPTS / "proof_ab.sh").read_text(encoding="utf-8")))
+        needs = set(SAFETENSORS.findall(hash_comment_free(SCRIPTS / "proof_ab.sh")))
         self.assertGreaterEqual(len(needs), 2, sorted(needs))
 
 
@@ -79,17 +79,17 @@ class TestRegateNeedsMoreThanDocker(unittest.TestCase):
 
     def test_it_has_a_dry_run(self) -> None:
         """대상 0 을 확인하는 **무해한 첫 걸음**이다. 없으면 첫 실행이 곧 본실행이다."""
-        body = (SCRIPTS / "regate.sh").read_text(encoding="utf-8")
+        body = hash_comment_free(SCRIPTS / "regate.sh")
         self.assertTrue("--dry-run" in body, "regate.sh 에 --dry-run 이 없다")
 
     def test_it_reads_the_drift_view(self) -> None:
-        body = (SCRIPTS / "regate.sh").read_text(encoding="utf-8")
+        body = hash_comment_free(SCRIPTS / "regate.sh")
         self.assertIn("provenance_drift", body,
                       "regate 가 드리프트 뷰를 안 본다 — 대상 판정 근거가 바뀌었다")
 
     def test_the_clean_room_expects_zero_drift(self) -> None:
         """`clean_room` 이 「드리프트 0」을 확인한다 — 그래서 재게이트 대상이 **보통 없다**."""
-        body = (SCRIPTS / "clean_room.sh").read_text(encoding="utf-8")
+        body = hash_comment_free(SCRIPTS / "clean_room.sh")
         self.assertIn("증적 드리프트 0", body,
                       "clean_room 이 드리프트 0 을 안 본다 — 이 절의 전제가 바뀌었다")
 

@@ -58,6 +58,10 @@ READS = re.compile(r"read_text|\bbody\b")
 
 # **주석이 본체인** 자리 — 걷으면 안 된다. `테스트파일::함수` 로 못박는다.
 COMMENT_IS_THE_POINT = {
+    "test_ci_and_run_tests_call_the_same_way.py::test_run_tests_says_why_it_skips":
+        "run_tests 가 왜 한 검사를 건너뛰는지 **주석으로** 적어 뒀는가 — 주석 자체를 본다 (큐 #136)",
+    "test_exit_code_capture_is_errexit_safe.py::test_the_exception_reason_is_written":
+        "prod_room 이 -e 를 못 켜는 사유가 **주석으로** 남아 있는가 — 같은 부류 (큐 #136)",
     "test_compose_healthchecks_can_fail.py::test_the_caveat_comment_is_there":
         "initdb 함정 주석이 남아 있는가 — 주석 자체를 본다",
     "test_node_secrets_live_in_files.py::test_the_reason_stays_written":
@@ -89,15 +93,26 @@ def _offenders() -> list[str]:
             # 줄 단위로 보면 같은 함수에서 원문·걷은 것을 같이 쓰는 자리를 못 읽는다.
             if "hash_comment_free" in ast.unparse(fn):
                 continue
+            # 큐 #136: `body = (X / "a.sh").read_text(); self.assertIn(lit, body)` 처럼 **앞 줄에서 읽고**
+            # 단언은 이름만 쓰는 모양을 처음엔 놓쳤다. 함수 전체를 보면 `.py` 를 읽는 자리까지 오탐이 나서(26곳),
+            # **데이터 흐름**으로 좁힌다 — `#` 파일 경로의 read_text 가 담긴 그 변수를 단언에 쓰는 함수만.
+            tainted: set[str] = set()
+            for st in ast.walk(fn):
+                if isinstance(st, ast.Assign) and len(st.targets) == 1 and isinstance(st.targets[0], ast.Name):
+                    rhs = ast.unparse(st.value)
+                    if "read_text" in rhs and HASH_FILE.search(rhs) and "hash_comment_free" not in rhs:
+                        tainted.add(st.targets[0].id)
             for node in ast.walk(fn):
                 if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)):
                     continue
-                if node.func.attr not in ("assertIn", "assertTrue", "assertNotIn"):
+                if node.func.attr not in ("assertIn", "assertTrue", "assertNotIn", "assertRegex"):
                     continue
                 code = ast.unparse(node)
                 if "hash_comment_free" in code:
                     continue
-                if not (HASH_FILE.search(code) and READS.search(code)):
+                direct = HASH_FILE.search(code) and READS.search(code)
+                via_name = any(isinstance(n, ast.Name) and n.id in tainted for n in ast.walk(node))
+                if not (direct or via_name):
                     continue
                 out.append(f"{path.name}::{fn.name}")
                 break

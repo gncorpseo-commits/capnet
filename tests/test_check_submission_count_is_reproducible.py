@@ -31,6 +31,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136: 주석의 리터럴을 본체로 세지 않는다
 SCRIPT = ROOT / "scripts" / "check_submission.py"
 STATE = ROOT / "STATE.md"
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -89,7 +91,7 @@ class TestStateQuotesTheRunValue(unittest.TestCase):
                          f"STATE 는 {m.group(1)}/{m.group(2)} 라 하는데 실행값은 {SKIP_TREE_TOTAL}")
 
     def test_run_tests_calls_it_with_skip_tree(self) -> None:
-        body = (ROOT / "scripts" / "run_tests.sh").read_text(encoding="utf-8")
+        body = hash_comment_free(ROOT / "scripts" / "run_tests.sh")
         self.assertIn("check_submission.py --skip-tree", body)
 
 

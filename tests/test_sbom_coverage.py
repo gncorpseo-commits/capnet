@@ -31,10 +31,13 @@ from __future__ import annotations
 import json
 import re
 import tomllib
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136: 주석의 리터럴을 본체로 세지 않는다
 SBOM = ROOT / "sbom.json"
 DOCKERFILE = ROOT / "apps" / "node" / "Dockerfile"
 
@@ -89,7 +92,7 @@ class TestSbomCoversDeclaredDeps(unittest.TestCase):
 
     def test_generator_reads_capreq(self) -> None:
         """`sbom.json` 만 고치면 다음 생성에서 되돌아간다."""
-        gen = (ROOT / "scripts" / "generate_sbom.sh").read_text(encoding="utf-8")
+        gen = hash_comment_free(ROOT / "scripts" / "generate_sbom.sh")
         self.assertIn("capreq/pyproject.toml", gen, "생성기가 capreq 를 안 본다")
 
     def test_probe_actually_finds_things(self) -> None:

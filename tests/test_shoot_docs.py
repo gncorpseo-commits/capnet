@@ -24,10 +24,13 @@
 from __future__ import annotations
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136
 README = ROOT / "README.md"
 RUNBOOK = ROOT / "docs" / "ops" / "shoot-day-runbook.md"
 
@@ -82,7 +85,7 @@ class TestShootScopeIsHonest(unittest.TestCase):
     def test_each_demo_disclaims_at_the_end(self) -> None:
         """런북의 근거 ③ — 각 데모가 스스로 「주장하지 않는다」를 출력한다."""
         for d in DEMOS:
-            tail = (ROOT / "scripts" / f"{d}.sh").read_text(encoding="utf-8").rstrip().splitlines()[-1]
+            tail = hash_comment_free(ROOT / "scripts" / f"{d}.sh").rstrip().splitlines()[-1]
             self.assertIn("주장하지 않는다", tail, f"{d}.sh 마지막 줄에 한계 문구가 없다")
 
     def test_excluded_demos_have_no_powershell_twin(self) -> None:

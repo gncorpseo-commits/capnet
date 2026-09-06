@@ -76,23 +76,23 @@ class TestComposeGivesAPathNotAValue(unittest.TestCase):
 
 class TestOnboardKeepsTheSecretOffTheScreen(unittest.TestCase):
     def test_it_prints_only_the_prefix(self) -> None:
-        body = ONBOARD.read_text(encoding="utf-8")
+        body = hash_comment_free(ONBOARD)
         self.assertIn('d["key_prefix"]', body, "prefix 대신 무엇을 찍는지 확인하라")
         self.assertIn("시크릿은 파일에만", body)
 
     def test_it_writes_the_secret_to_a_file(self) -> None:
-        body = ONBOARD.read_text(encoding="utf-8")
+        body = hash_comment_free(ONBOARD)
         self.assertRegex(body, r'\["secret"\][^\n]*>\s*"\$secret_file"',
                          "시크릿을 파일로 안 쓴다")
 
     def test_permissions_are_tight(self) -> None:
-        body = ONBOARD.read_text(encoding="utf-8")
+        body = hash_comment_free(ONBOARD)
         self.assertIn('chmod 700 "$outdir"', body, "시크릿 디렉터리가 0700 이 아니다")
         self.assertIn('chmod 600 "$secret_file"', body, "시크릿 파일이 0600 이 아니다")
 
     def test_the_snippet_hands_over_a_path(self) -> None:
         """안내 문구가 값을 붙여 넣게 하면 사람이 그대로 한다."""
-        body = ONBOARD.read_text(encoding="utf-8")
+        body = hash_comment_free(ONBOARD)
         self.assertIn("NODE_CREDENTIAL_FILE=$secret_file", body)
         self.assertNotIn("NODE_CREDENTIAL=$cred", body)
 

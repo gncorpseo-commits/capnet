@@ -31,6 +31,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tests"))
+from _srcguard import hash_comment_free  # noqa: E402  # 큐 #136
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _srcguard import code_only as _code_only  # noqa: E402
 MAIN = ROOT / "apps" / "core" / "app" / "main.py"
@@ -83,8 +85,8 @@ class TestEndpointDiscipline(unittest.TestCase):
 
     def test_documented_in_both_openapi_copies(self) -> None:
         """`test_openapi_drift` 는 경로만 본다 — 두 사본이 같은지도 여기서 본다."""
-        a = (ROOT / "apps" / "core" / "openapi.yaml").read_text(encoding="utf-8")
-        b = (ROOT / "docs" / "spec" / "openapi.yaml").read_text(encoding="utf-8")
+        a = hash_comment_free(ROOT / "apps" / "core" / "openapi.yaml")
+        b = hash_comment_free(ROOT / "docs" / "spec" / "openapi.yaml")
         self.assertIn("/v1/arches:", a)
         self.assertEqual(a, b, "openapi.yaml 두 사본이 다르다")
 
