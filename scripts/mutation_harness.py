@@ -55,6 +55,13 @@ MUTATIONS: list[dict[str, str | None]] = [
      "test": "tests.test_sbom_coverage", "why": "생성기가 capreq 를 안 읽는데 주석엔 남음 (#136)"},
     {"id": "comment-only-skip-tree", "file": "scripts/run_tests.sh", "find": "check_submission.py --skip-tree", "replace": "check_submission.py",
      "test": "tests.test_check_submission_count_is_reproducible", "why": "run_tests 가 플랫으로 돌면서 문서 숫자만 유지 (#136)"},
+    {"id": "capreq-demo-drops-core-url", "file": "scripts/capreq_demo.sh",
+     "find": '      CAPREQ_CORE_URL="${CAPREQ_CORE_URL:-$core}" \\\n', "replace": "",
+     "test": "tests.test_capreq_demo_hands_over_the_core_url", "why": "띄운 capreq 가 기본 :8000 을 본다 (R4)"},
+    {"id": "comment-only-capreq-core-url", "file": "scripts/capreq_demo.sh",
+     "find": '      CAPREQ_CORE_URL="${CAPREQ_CORE_URL:-$core}" \\\n',
+     "replace": '      # CAPREQ_CORE_URL="${CAPREQ_CORE_URL:-$core}"\n',
+     "test": "tests.test_capreq_demo_hands_over_the_core_url", "why": "주석으로 옮겨 전달을 끈다 (R4)"},
     {"id": "role-unknown-minimum-opens", "file": "apps/core/app/apikey.py", "find": "need = ROLE_RANK.get(minimum, 99)",
      "replace": "need = ROLE_RANK.get(minimum, 0)", "test": "tests.test_role_rank_fails_closed", "why": "오타 난 최소역할이 열린다 (#110)"},
 ]
