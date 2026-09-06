@@ -1,5 +1,16 @@
 # Changelog
 
+## 예외 문구가 CSV 셀 값을 로그·증적으로 흘리고 있었다 (배치 C #125 · `#196` 형제) — 2026-09-06
+
+Node 는 실행기 예외를 stdout(`{exc}`)과 실패 보고(`audit_log.reason`)에 싣는다. `series_features.py` 가 「숫자가 아니다」
+문구에 CSV 셀·JSON 원소 값을 `!r` 로 넣고 있었다 — 숫자 열의 「숫자 아님」은 전화번호일 수 있다. 값 대신 타입·길이로.
+`tests/test_error_messages_carry_no_input_values.py` 가 Node 예외 문구의 입력 이름 0(예외: preprocess 설정값) · Core 로그 인자의
+내용 낱말 0 을 고정. 뮤테이션 2/2 운다.
+
+```bash
+python3 -m unittest tests.test_error_messages_carry_no_input_values
+```
+
 ## 최종 G1 — `#338` 의 검사가 `-q` 없는 무버전 설치를 놓쳤다 — 2026-09-06
 
 `pip install -q torch` 만 보던 부정 정규식을 `pip install(?: -플래그)* torch` 로. 뮤테이션 2/2 (`-q` 없음 · `--no-cache-dir`) 운다.
