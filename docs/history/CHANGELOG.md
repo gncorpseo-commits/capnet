@@ -1,5 +1,14 @@
 # Changelog
 
+## README·INDEX 의 상대 링크와 README 명령이 부르는 경로 — 전부 실재, 못박는다 (배치 D #139) — 2026-09-06
+
+README 링크 29(상대 27 전부 존재 · 외부 2 는 오프라인이라 못 봤다) · 명령 12 가 부르는 `scripts/`·`docs/` 경로 전부 존재 · INDEX 상대 링크
+전부 존재. `tests/test_readme_links_and_commands_resolve.py`. 뮤테이션 2/2 (깨진 링크 · 없는 스크립트 명령) 운다.
+
+```bash
+python3 -m unittest tests.test_readme_links_and_commands_resolve
+```
+
 ## `migrations.md` 의 세대 표가 0003 에서 멈춰 있었다 — 18행으로, 파일과 묶는다 (배치 D #137) — 2026-09-06
 
 파일은 0018 까지 열여덟인데 문서 표는 셋. 15행을 각 파일의 머리 주석대로 채우고, `tests/test_migration_ledger_matches_the_docs.py` 가
