@@ -1,5 +1,15 @@
 # Changelog
 
+## SBOM 생성 도구가 무버전이었다 — sbom.json 이 기록한 버전으로 핀 (배치 D #151 · `#239` 형제) — 2026-09-06
+
+`generate_sbom.sh`·`.ps1` 이 `pip install cyclonedx-bom` 을 무버전으로 깔았다. 도구 메이저가 바뀌면 SBOM 모양이 달라지는데 이름만 보는
+검사는 조용하다. `sbom.json` `metadata.tools` 의 버전(7.3.1)으로 둘 다 핀. `tests/test_sbom_tool_version_pinned.py` 가 「핀 = 기록」을 고정.
+뮤테이션 2/2 (무버전 · 다른 버전) 운다.
+
+```bash
+python3 -m unittest tests.test_sbom_tool_version_pinned
+```
+
 ## EuroSAT 라이선스 문구 — 기계 핀·README·규정 문서가 같다, 못박는다 (배치 D #150) — 2026-09-06
 
 `eurosat-rgb.json` `license: MIT`·Zenodo 7711810 과 README·`regulation-compliance.md` 의 문구가 같다. 원본 zip 안 LICENSE 는

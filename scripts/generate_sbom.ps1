@@ -21,7 +21,7 @@ if (-not $py) {
 
 Write-Host "python=$py"
 & $py --version
-& $py -m pip install -q cyclonedx-bom
+& $py -m pip install -q "cyclonedx-bom==7.3.1"   # 큐 #151: .sh 와 같은 핀
 
 # torch 버전은 Dockerfile 의 ARG 가 정본이다 — 여기에 다시 적으면 둘이 어긋난다.
 $dockerfile = Get-Content (Join-Path $root "apps\node\Dockerfile")

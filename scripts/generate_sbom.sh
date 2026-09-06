@@ -11,7 +11,7 @@ command -v "$py" >/dev/null || { echo "need python3"; exit 1; }
 for f in "$root/apps/core/requirements.txt" "$root/apps/node/requirements.txt"; do
   [ -r "$f" ] || { echo "의존성 파일을 못 읽는다: $f" >&2; exit 1; }
 done
-"$py" -m pip install -q cyclonedx-bom
+"$py" -m pip install -q "cyclonedx-bom==7.3.1"   # 큐 #151: sbom.json 이 기록한 버전으로 핀 — 무버전이면 재빌드마다 SBOM 모양이 달라진다
 req="$(mktemp)"
 raw="$(mktemp)"
 trap 'rm -f "$req" "$raw"' EXIT
