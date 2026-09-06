@@ -69,7 +69,8 @@ def _apply(m: dict[str, str | None]) -> bytes:
     else:
         if str(m["find"]) not in text:
             raise RuntimeError(f"{m['id']}: 찾을 문자열이 없다 — 등록부가 낡았다")
-        text = text.replace(str(m["find"]), str(m["replace"]), 1)
+        # 전부 바꾼다 — 첫 등장이 주석이면 실제 코드가 남아 「조용함」이 거짓이 된다 (#136 에서 겪었다)
+        text = text.replace(str(m["find"]), str(m["replace"]))
     p.write_bytes(text.encode("utf-8"))
     return original
 

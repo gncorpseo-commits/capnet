@@ -103,6 +103,21 @@ DDL 은 **추가만** 한다 (절대규칙 1). 컬럼 추가는 `NOT NULL DEFAUL
 | 0001 | `baseline` | schema v4.4 를 계보 출발점으로 선언 (no-op · 검증만) |
 | 0002 | `provenance_drift_view` | `provenance_drift` · `provenance_drift_summary` 뷰 추가 (읽기 전용) |
 | 0003 | `golden_set_sha256_holdout` | SD-013 — `capability.golden_set_sha256` 을 홀드아웃 매니페스트 정본으로. 구 값 한정 UPDATE 라 멱등 |
+| 0004 | `capability_revocation` | 능력 증서 폐기 경로 (SD-014) |
+| 0005 | `seed_agent_not_routable` | seed-agent 의 라우팅 증서를 끊는다 (SD-015) |
+| 0006 | `tenant_operation` | tenant 신뢰 경계 운용 (P2-1 · D19) |
+| 0007 | `node_credential` | `node_credential` (P2-4 · SD-002) |
+| 0008 | `agent_arch` | 아키텍처를 계약에 묶는다 (I1) |
+| 0009 | `api_key_hardening` | `api_key` 보강 — 관리 API 인증 (SD-010 나머지 절반) |
+| 0010 | `quality_profile` | 품질 프로파일 — 게이트 없는 Capability 도 라우팅된다 (D18·D20) |
+| 0011 | `task_input` | `task_input` — Core 중개 입력 수집 (D22 · D8′) |
+| 0012 | `declare_media_types` | 입력 MIME 선언 (D8′) |
+| 0013 | `contract_sample` | 계약 검증 샘플 (B2) |
+| 0014 | `declare_preprocess` | 전처리 선언 (B2 잔여) |
+| 0015 | `attempt_cap` | 배정 재시도 상한 — 조용한 무한 재시도를 닫는다 |
+| 0016 | `node_invite` | 초대 경로 (G2 · `provision_source='invited'`) |
+| 0017 | `org_boundary` | 조직 경계 — 등급과 소속을 분리한다 (D24) |
+| 0018 | `no_golden_on_freeform` | freeform 능력에 골든 품질 프로파일을 붙이지 못하게 한다 |
 
 마이그레이션이 `RAISE NOTICE` 로 남긴 경고는 러너가 `[db]` 접두사로 그대로 흘린다.
 0003 처럼 「적용은 됐지만 사람이 알아야 하는 것」을 알리는 통로다.

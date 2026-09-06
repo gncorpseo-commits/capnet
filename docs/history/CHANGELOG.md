@@ -1,5 +1,15 @@
 # Changelog
 
+## `migrations.md` 의 세대 표가 0003 에서 멈춰 있었다 — 18행으로, 파일과 묶는다 (배치 D #137) — 2026-09-06
+
+파일은 0018 까지 열여덟인데 문서 표는 셋. 15행을 각 파일의 머리 주석대로 채우고, `tests/test_migration_ledger_matches_the_docs.py` 가
+「번호 연속 · 파일 ↔ 행 이름 동일」을 고정한다. 뮤테이션 3/3 (행 삭제 · 파일만 추가 · 이름 오타) 운다.
+같은 PR: `mutation_harness.py` 가 첫 등장만 바꿔 주석 안 문자열을 건드리던 것을 전부 바꾸도록(15/15 운다).
+
+```bash
+python3 -m unittest tests.test_migration_ledger_matches_the_docs
+```
+
 ## `_srcguard` 적용 확대 — 주석에만 남겨도 통과하던 검사 열다섯 (배치 D #136 · G1 확장) — 2026-09-06
 
 `#258`(G1)의 메타 검사는 단언 호출문 **안**에서만 `.sh`/`.yaml` 을 찾아, `body = (…).read_text(); assertIn(lit, body)` 모양을
