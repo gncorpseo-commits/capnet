@@ -1,5 +1,14 @@
 # Changelog
 
+## 강제 모드 키 — 프로드 오버레이만 `"1"` · 데모는 안 정함 · 커밋된 `.env` 0 (배치 D #143) — 2026-09-06
+
+`REQUIRE_API_KEY`·`REQUIRE_NODE_CREDENTIAL` 은 `compose.prod.yaml` 에만 `"1"`, `compose.yaml` 엔 없음(코드 기본 0), `.env.example` 은 0,
+추적된 `.env*` 는 example 하나. `tests/test_enforcement_toggles_live_in_prod_only.py`. 뮤테이션 2/2 (프로드가 증서 강제를 끔 · 데모가 강제를 켬) 운다.
+
+```bash
+python3 -m unittest tests.test_enforcement_toggles_live_in_prod_only
+```
+
 ## Node 운영 안내의 플래그를 스크립트가 전부 받는다 — 못박는다 (배치 D #142) — 2026-09-06
 
 `operate-node.md` 의 `node_onboard.sh`(3줄)·`node_bind.sh`(2줄) 호출이 보여 주는 플래그 전부가 각 스크립트의 `case` 에 있다.
