@@ -197,6 +197,20 @@ class TestStoreStreamWritesAsItGoes(unittest.TestCase):
         self.assertLess(len(seen), len(chunks), f"상한을 넘고도 끝까지 읽었다: {len(seen)}")
         self.assertFalse(self.path.exists(), "거절했는데 바이트가 남았다")
 
+    def test_exactly_the_limit_is_accepted(self) -> None:
+        """배치 D #147: 경계값 — 상한과 **같은** 크기는 받는다 (`>` 가 `>=` 로 바뀌면 여기서 운다)."""
+        chunks = [b"z" * 10, b"z" * 15]
+        sha, total = _run(inputs.store_stream(_agen(chunks), input_id=self.iid, max_bytes=25))
+        self.assertEqual(25, total)
+        self.assertEqual(25, len(self.path.read_bytes()))
+
+    def test_one_byte_over_the_limit_is_refused(self) -> None:
+        """배치 D #147: 경계값 — 상한 + 1 은 거절하고 아무것도 남기지 않는다."""
+        chunks = [b"z" * 10, b"z" * 16]
+        with self.assertRaises(inputs.InputTooLarge):
+            _run(inputs.store_stream(_agen(chunks), input_id=self.iid, max_bytes=25))
+        self.assertFalse(self.path.exists())
+
     def test_empty_input_is_refused_and_leaves_nothing(self) -> None:
         with self.assertRaises(inputs.InputRejected):
             _run(inputs.store_stream(_agen([b"", b""]), input_id=self.iid, max_bytes=100))

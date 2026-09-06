@@ -1,5 +1,14 @@
 # Changelog
 
+## 입력 상한의 경계값 검사 둘 신설 — 상한과 같으면 받고 +1 이면 거절 (배치 D #147 · D22 옆) — 2026-09-06
+
+기존 검사는 「넘으면 끊는다」만 봤다. `store_stream` 의 `>` 가 `>=` 로 바뀌면 정확히 상한인 입력이 거절되는데 아무도 안 울었다.
+`test_input_contract_rejections_actually_run` 에 경계 둘(=25 받음 · 26 거절·잔여 0)을 실제 실행으로 추가. 뮤테이션 2/2 (`>`→`>=` · 상한 검사 제거) 운다.
+
+```bash
+python3 -m unittest tests.test_input_contract_rejections_actually_run
+```
+
 ## API 오류 문구·Node 예외에 내부 경로 0 — 못박는다 (배치 D #146) — 2026-09-06
 
 `HTTPException(detail=…)`·`raise …(…)` 247개 중 경로형 값을 포맷하거나 `/app/`·`/weights/` 류 리터럴을 담은 것 0
