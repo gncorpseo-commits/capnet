@@ -1,5 +1,18 @@
 # Changelog
 
+## 이중 claim 이 불가능한 이유 넷 — 못박는다 (배치 C #101 · 절대규칙 2 · pitfalls §4) — 2026-09-06
+
+`test_claim_takes_the_lock` 은 `SKIP LOCKED` 와 순서를 본다. lock 은 트랜잭션 끝까지만 잡히므로 넷이 더 필요하다:
+연결 `autocommit=False`(두 자리) · `claim_next` 안에 `commit()` 없음 · 스키마의 `assignment_one_live_per_task`
+(task 당 LEASED/RUNNING 하나) · 완료 보고는 `LEASED/RUNNING` 만 받아 EXPIRED 뒤 재배정된 작업을 옛 Node 가 못 닫는다.
+Docker 가 없어 두 워커를 실제로 붙여 보지는 못했다 (DB 쪽은 `check_pg_violations` 가 CI 에서 실측).
+
+`tests/test_claim_cannot_double.py`. 뮤테이션 4/4 (autocommit True · lock 뒤 commit · 유니크 삭제 · 완료 가드 제거) 운다.
+
+```bash
+python3 -m unittest tests.test_claim_cannot_double
+```
+
 ## 측정값 재전수 — 위반 0 · §7 이 정한 모양의 좁은 검사 하나 (배치 B #98 · `#30` 재전수) — 2026-09-06
 
 2026-09-03 이후 `STATE.md`·카탈로그에 들어온 `acc=`·`f1=`·`N/M`·ms 줄을 다시 봤다. 전부 같은 줄이나 바로
