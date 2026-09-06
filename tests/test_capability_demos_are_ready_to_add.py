@@ -39,6 +39,12 @@ r"""능력 종단 데모 아홉이 **clean_room 에 들어갈 준비가 됐는�
 
 **돌려 보지 않는다.** 아홉이 실제로 완주하는지는 `docker compose up` 이 서야 안다
 (이 세션에는 데몬이 없다 — `docker info` 실패 · 규약 6).
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_capability_demos_are_ready_to_add
+```
 """
 
 from __future__ import annotations

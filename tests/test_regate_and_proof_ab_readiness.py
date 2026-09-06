@@ -34,6 +34,12 @@ r"""`regate.sh` · `proof_ab.sh` — **무엇이 있어야 도는가** (배치 B
 ## 무엇을 안 보나
 
 **돌려 보지 않는다** (`docker info` 실패 · 규약 6). 「무엇이 있어야 도는가」만 답한다.
+
+## 재현
+
+```bash
+python3 -m unittest tests.test_regate_and_proof_ab_readiness
+```
 """
 
 from __future__ import annotations

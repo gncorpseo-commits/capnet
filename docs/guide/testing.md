@@ -289,3 +289,18 @@ python3 scripts/check_test_order.py --isolated   # + 모듈마다 새 프로세�
 `run_tests.sh` 에는 넣지 않는다(시간이 두 배). 실측 2026-09-06: 정순·역순 각 1184 · 단독 120/120 — 실패 0.
 새 검사가 `sys.modules[...] =` 나 `os.environ[...] =` 를 **모듈 수준**에서 하면 이 도구로 한 번 돌려 본다.
 
+## 4.8 새 검사 파일의 머리말 규약 (큐 #128)
+
+`tests/test_*.py` 의 모듈 docstring 이 곧 그 검사의 문서다 (`discover -v` 가 이름과 docstring 을 보여 준다). 배치 B 부터
+들어온 검사는 다음 네 절을 갖는다 — `tests/test_new_tests_follow_the_header_convention.py` 가 「배치 B/C/G」를 언급하는
+파일에 대해 이를 고정한다.
+
+| 절 | 무엇 |
+|---|---|
+| **왜 있는가** | 어떤 구멍·거짓말을 막나. 실제로 겪은 것이면 그 사실 |
+| **실측** (표) | 오늘 세어 본 값 — 「0」도 값이다. 못 잰 것은 「못 봤다」+이유 |
+| **무엇을 안 보나** (선택) | 이 검사가 **못** 막는 것 |
+| **재현** | `python3 -m unittest tests.<모듈>` 한 줄 — 숫자를 다시 낼 명령 (`measured-claims.md` §2) |
+
+건너뜀 사유는 자유 문장이 아니다 — `tests/test_skip_reasons.py` 의 `ALLOWED` 에 **왜 괜찮은지**와 함께 등록된 문장만 쓴다 (§4.6).
+
