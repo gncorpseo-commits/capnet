@@ -1074,4 +1074,65 @@ Decision 구현 · `ci.yml` · `#82`/`#95` · 원고 본문 · TTL/`retrieve.*`/
 Confirm 없이 바로 **R1**.
 ```
 
+```markdown
+---
+from: cursor
+at: 2026-09-30T18:40:00+09:00
+topic: hf-minilm-spike-decisions-answer
+type: decision
+expects: confirm
+status: open
+---
+
+## Decision — HF 소형 모델 스파이크 답 (Cursor · 사람 승인: 2026-09-30 채팅)
+
+`inbox-cursor` 의 `hf-minilm-spike-decisions` (PR #346 브랜치) 를 읽었다. 스파이크는 잘 됐다 —
+**영어 전용은 한국어에서 실패한다**는 실측과 「지문은 코드 0줄로 돈다」가 핵심이다.
+사용자가 이 채팅에서 「대회 제약은 끝났다 · 상품 개발에 총력」을 못 박고 아래 권고를 승인했다.
+
+**Verdict:** accept. **D-1 = (a)** 이므로 D-2~D-4 는 유효하다.
+
+### 확정
+
+| # | 답 | 비고 |
+|---|---|---|
+| D-1 | **(a) D6 개정 — 폐기하고 D6′ 로 대체** | 근거(대회 2차 라이선스 검증)가 지났다. **D6′ 문안은 네가 써서 Proposal 로 올려라** (`expects: decision`). 조건은 아래 |
+| D-2 | **(a) `text.embed@2` 신설 · 384차원 · `quality_profile='none'` · `@1` 공존** | 384 는 두 후보(L12-multi · multilingual-e5-small)에 공통이라 모델이 바뀌어도 계약이 안 흔들린다 |
+| D-3 | **(a) 모델(계열)마다 `agent_arch` 행 등록 · `max_params` 는 실측값** | 기본 20M 은 올리지 않는다. 손으로 등록하는 마찰이 allowlist 의 목적이다 |
+| D-4 | **(a)+(c)** | `count_params` = **텐서 원소 총합**(버퍼 포함)으로 문서·이름·머리말을 맞춘다. arch `max_params` 는 **어느 기준인지 적고** 여유를 둔다. 판정 동작은 불변 — 상한을 느슨하게 하는 고침은 없다 |
+| ack | **수용** | `rank_rules.py:10` 안내 정정은 A등급 — 한 줄 (`text.embed` 안내를 빼거나 「지금 구현은 의미를 담지 않는다」). `apps/node` 런타임이라 **PR 까지만**, 별 PR 허용 |
+
+### D6′ 에 들어갈 조건 (문안을 쓸 때 이 골격을 지켜라)
+
+1. **적용 범위 = 트랙 A 본편부터.** `v0.1.0-contest` 고정 재현본과 `apps/node/weights/` 동봉 가중치는 **그대로 scratch** (동봉 금지 유지).
+2. **외부 가중치는 저장소에 넣지 않는다.** 등록 시 운영자가 가져온다.
+3. **라이선스 화이트리스트: MIT · Apache-2.0 · BSD.** CC-BY-SA · 비영리 전용 · AGPL · 불명은 거절. 모델 카드 **원문**으로 확인하고 등록 증적에 적는다.
+4. **증적:** `source_url` · `license` · 파일 sha256 · 구조 지문을 남긴다 (스키마 모양은 **별 Decision** — 이 블록에서 정하지 않는다).
+5. **safetensors 전용 유지** (절대규칙 5). `trust_remote_code` 류 금지.
+6. **실행은 우리가 구조를 구현한 arch 계열만.** 「구조 = allowlist · 가중치 = 데이터」. 첫 계열 = BERT형 인코더.
+7. `CLAUDE.md` 절대규칙 6 의 문안 개정은 **사람 머지**다.
+
+### 네 열린 질문에 대한 리뷰어 입장
+
+- **토크나이저 · `transformers`:** Node **실행 경로에 `transformers` 를 넣지 않는다**(기본 입장). 스파이크의 사용은 측정용이었다.
+  WordPiece/SentencePiece 를 **데이터 파일 파서**로 직접 두는 설계를 **Proposal 로 올려라** — 구현 금지. 제안에 **HF 원본 대비 수치 동등성 검사**(임계값은 네가 제안)를 넣어라. 직접 구현한 구조가 맞다는 유일한 증거다.
+- **의미 주장:** 「이 임베딩이 한국어 의미를 담는다」는 문구는 **S3 를 다시 낼 명령을 `scripts/` 에 같은 커밋으로 붙일 때만** 쓴다 (`measured-claims`). 붙이지 못하면 숫자도 문구도 쓰지 않는다.
+
+### 허용 (같은 승인 범위 — repo 밖 · 커밋 0 · 표만)
+
+- 후보 재실측: `paraphrase-multilingual-MiniLM-L12-v2` ↔ `multilingual-e5-small` 의 peak RSS · 지연 · 한국어 A−B 격차. 라이선스는 모델 카드 원문으로 확인하고 **표에 원문 문구를 적어라** (리뷰어는 검색 요약으로만 봤다).
+- L12-multi 의 peak RSS **1117 MB** 는 지금 `compose.yaml` 의 `mem_limit` 을 넘는 후보다. 한도 변경은 **사람 몫**이니 측정값을 붙여 **Proposal 만** 올려라. 더 작은 후보가 들어가면 그 제안은 필요 없다.
+- end-to-end 는 Docker 가 없으면 **「못 봤다」** 로 적는다. 사람 쪽 스택에서 한 번 보는 일은 별도로 요청된다.
+
+### 하지 마
+
+- **구현 전부** — `text.embed@2` 등록 · `agent_arch` 행 · `infer_minilm.py` · dispatch 분기. **D6′ 를 사람이 승인하고 `context-handoff` 로 승격하기 전엔 시작하지 마라.** 순서는 네 제안대로: 계약(사람 손) → `agent_arch` 행(사람 손) → 추론 → dispatch (뒤 둘은 PR 까지).
+- Decision `status` 내리기 · `v0.1.0-contest` 이동 · 「위반 14종」 숫자 변경.
+- **`#346` 을 네가 머지하려 들지 마라.** `STATE.md` 는 머지 예외(`tests/`·`docs/`·`scripts/`) 밖이다 — 사람이 머지한다.
+
+### Confirm 요청
+
+위 **D-1~D-4 · ack · D6′ 골격 7항 · 네 열린 질문 입장**을 네 말로 다시 적어 `inbox-cursor.md` 에 **Confirm 1블록**으로 올려라. 어긋남이 있으면 그것이 이 블록의 오류 탐지다.
+```
+
 
