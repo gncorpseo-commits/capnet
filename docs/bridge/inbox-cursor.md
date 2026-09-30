@@ -8954,3 +8954,183 @@ docker compose version                       → v5.3.1
 **시드 없음.** 배치 S 를 만들지 않았다. 남은 것은 Decision·ack·사람 머지뿐이다.
 `#342` 는 이 블록으로 대체 — 닫는다.
 ```
+
+
+```markdown
+---
+from: claude
+at: 2026-09-30T15:40:00+09:00
+topic: hf-minilm-spike-decisions
+type: proposal
+expects: decision
+status: open
+---
+
+## HF 소형 모델 스파이크 — 돌았다. Decision 4 · ack 1
+
+**맥락:** 사람이 「K-AI Hub = HF를 카탈로그로 쓰고 CapNet이 실행·증적층」(B안)을 검토하라고 했다.
+그 방향의 유일한 미지수가 **「HF 모델이 이 Node 구조에서 실제로 돌아가나」**였고, 그걸 모르는 채로
+D6·arch·계약 결정을 먼저 내리면 안 돌아갈 경우 전부 쓰레기가 된다. 그래서 **스파이크**를 먼저 했다.
+
+**사람 승인 범위 (2026-09-30 채팅):** repo 밖 · 커밋 0 · Apache-2.0 단일 safetensors · 결과는 표만.
+`v0.1.0-contest` 재현본은 손대지 않았다. 아래 표가 그 결과다. **구현은 하나도 안 했다.**
+
+물건은 남겨 뒀다 (repo 밖): `~/.cache/capnet-spike-minilm/` — venv 1.2G · 모델 537M.
+
+### S1 — 지문: `fingerprint.py` **무수정**으로 HF 모델에 돈다
+
+```bash
+PYTHONPATH=apps/node python3 -c \
+  "from app.fingerprint import fingerprint; print(fingerprint('<model.safetensors>'))"
+```
+
+| | `all-MiniLM-L6-v2` | `paraphrase-multilingual-MiniLM-L12-v2` |
+|---|---|---|
+| 지문 sha256 | `838e93268221a1ab…` | `c745776f8f7d48d2…` |
+| tensor_count | 104 | 200 |
+| param_count | 22,713,728 | 117,654,272 |
+| 소요 | **0.7 ms** (torch 없이) | — |
+| 파일 sha256 | `53aa51172d142c89…` | — |
+
+`fingerprint.py` 머리말이 「임의 모델로 넓히려면 격리 러너(C3)가 선행한다」고 한계를 적어 뒀는데,
+**구조 지문 자체는 이미 동작한다.** 헤더 JSON만 읽는 설계가 그대로 값을 냈다 — 코드 0줄 수정.
+
+### S2 — 로드·추론: 이 하드웨어(RAM 7.4G · GPU 없음)에서 돈다
+
+```bash
+~/.cache/capnet-spike-minilm/.venv/bin/python <scratch>/s2_s3.py
+```
+
+| | L6-v2 | L12-multi |
+|---|---|---|
+| safetensors 로드 | 0.32 s | 2.76 s |
+| 추론 warm (n=10) | **14 ms** | **29 ms** |
+| peak RSS | 518 MB | **1117 MB** |
+| 벡터 차원 | 384 | 384 |
+
+환경은 `pip`·`ensurepip`·`torch`·Docker 가 **없어서** `get-pip.py` 로 venv 부트스트랩했다
+(R4 가 만난 것과 같은 벽 — 그 사실은 이미 `#345` 에 있다).
+
+### S3 — 의미 검증: **영어 전용 모델은 한국어에서 실패한다**
+
+```text
+쌍                         L6-v2   L12-multi   tiny-사영   ngram생
+EN-A 의미같음/철자다름       0.672     0.857      0.138     0.236
+EN-B 철자겹침/의미다름       0.460     0.206      0.281     0.334
+EN-C 완전무관              -0.068     0.083      0.422     0.227
+KO-A 의미같음/철자다름       0.743     0.845      0.183     0.083
+KO-B 철자겹침/의미다름       0.865     0.631      0.143     0.201
+
+A−B 격차 (양수 = 의미를 담는다)
+  EN   L6 +0.212   L12-multi +0.651   tiny −0.143
+  KO   L6 −0.122   L12-multi +0.214   tiny −0.117
+```
+
+**L6(영어 전용)은 한국어에서 「은행/강 은행」(0.865)을 「강아지/개」(0.743)보다 유사하다고 한다** — 철자로 떨어진다.
+다국어 L12 는 EN·KO 둘 다 통과. **한국어를 볼 거면 다국어 모델이어야 한다.**
+
+가장 강한 관측은 `tiny` 의 **EN-C 0.422** 다 — 완전 무관한 쌍이 의미 같은 쌍(0.138)보다 3배 유사하다.
+**D27 이 `retrieve.dense` 기각 근거로 쓴 「그 벡터가 의미가 아니다」가 실측으로 확증됐다.**
+동시에 **그 근거가 해소 가능하다**는 것도 확인됐다 (L12-multi KO +0.214).
+
+주의 — 표의 `tiny` KO A−B `+0.040` 은 0.183 vs 0.143 으로 **노이즈**다. 내 판정 스크립트가
+단순히 부호만 봐서 「의미 O」로 찍었다. tiny 가 한국어 의미를 담는다는 뜻이 **아니다.**
+
+---
+
+## Decision 요청 4건
+
+### D-1. D6 — 본편에서 HF 사전학습 가중치를 쓸 수 있는가
+
+D6(「사전학습 가중치 금지. EuroSAT scratch 학습만」)의 근거는 **「대회 2차 라이선스 검증」** 이었다.
+출품은 끝났고 재현본은 `v0.1.0-contest` 로 고정돼 있다(D25). 근거가 겨눈 위험이 지난 것으로 보이지만,
+**이건 내가 판정할 것이 아니다.**
+
+- (a) D6 를 개정한다 — 허용 조건을 명시(OSI 승인 라이선스 · safetensors · arch 등록 · 출처 URL+sha256 증적)
+- (b) 스파이크까지만 허용하고 본편은 계속 금지
+- (c) 그대로 유지 — B안 전체를 접는다
+
+(a) 면 D6′ 문안을 내가 써서 다시 올린다. **(b)·(c) 면 아래 D-2~D-4 는 무효다.**
+
+### D-2. `text.embed` 차원 — 계약 64 vs 모델 384
+
+`scripts/embed_demo.sh:51` 의 계약이 `minItems:64, maxItems:64` 다. MiniLM 계열은 **384**.
+
+- (a) **`text.embed@2` 신설** (384차원 · `quality_profile='none'`). `@1` 은 그대로 살아 공존
+- (b) 384 → 64 랜덤 사영. 계약 그대로. 단 의미 손실을 재야 함
+- (c) `@1` 의 64 를 384 로 수정 → **내가 기각한다.** 계약 칸은 `task_input`·`gate_run`·`assignment`
+  스냅샷의 원본이고, 원본이 움직이면 **이미 찍힌 증적이 거짓말이 된다** (`main.py:1060` 주석)
+
+(a) 를 제안한다. `(code, version)` UNIQUE 라 추가만으로 끝나고 기존 증서가 안 흔들린다.
+
+### D-3. `max_params` — 실측이 기본 상한에 걸렸다
+
+```python
+# apps/node/app/limits.py:15
+MAX_PARAMS_DEFAULT = int(os.environ.get("NODE_MAX_PARAMS", 20_000_000))
+```
+
+| 모델 | 파라미터 | 기본 상한 20M |
+|---|---|---|
+| L6-v2 | 22,713,216 | **초과** |
+| L12-multi | 117,653,760 | **초과 (5.9×)** |
+
+즉 **arch allowlist 가 실제로 작동하는 방벽**임이 확인됐다 — 기본값으로는 둘 다 거절된다.
+`agent_arch` 에 행을 넣어야 통과한다. 그런데 `arch.py` 는 의도적으로 **와일드카드·UPDATE·DELETE 가 없다.**
+
+- (a) 모델마다 arch 를 하나씩 등록 (`MiniLML6v2` · `MiniLML12Multi`). `max_params` 는 **실측값**을 박는다
+- (b) `NODE_MAX_PARAMS` 기본값을 올린다 → **내가 기각한다.** 상한을 전역으로 올리면 arch 별 상한의 의미가 사라진다
+- (c) 상한 축을 파라미터 수에서 **RSS/메모리**로 바꾼다 (별건 · 큰 변경)
+
+(a) 를 제안한다. 손으로 하나씩 등록하는 마찰이 **그 allowlist 의 목적**이다.
+
+### D-4. 파라미터를 **무엇으로 세는가** — 두 경로가 512 다르다
+
+```text
+fingerprint.count_params : 22,713,728   (헤더 shape 합계 · torch 없이)
+torch  numel 합계        : 22,713,216
+차이                     : 512  =  embeddings.position_ids [1, 512]  (I64 버퍼)
+```
+
+`count_params` 는 **버퍼를 파라미터로 센다.** 지금은 `count_params` 머리말이 「필수 검사로 올리려면 별
+Decision 이 필요하다」고 해서 실행 판정에 안 쓰이므로 **사고가 안 났다.** 그런데 경계값에서
+지문 경로와 실행 경로의 판정이 **갈릴 수 있다** — arch 상한을 실측값으로 박으면 바로 닿는다.
+
+- (a) 「`count_params` 는 **텐서 원소 총합**이다」를 문서에 명시하고 이름·머리말을 그렇게 맞춘다 (코드 동작 불변)
+- (b) 버퍼를 제외하도록 고친다 → 헤더만으로는 「무엇이 버퍼인가」를 알 수 없다. **비용이 크고 신뢰도가 낮다**
+- (c) arch `max_params` 를 **어느 쪽 기준인지 명시**하고 여유를 둔다
+
+(a)+(c) 를 제안한다. 「칸 이름이 거짓말이 되게 하지 않는다」(D26)와 같은 규율이다.
+
+---
+
+## ack 1건 — 문서 드리프트 (고치지 않았다)
+
+`apps/node/app/rank_rules.py:10` 이 안내한다:
+
+> 의미 유사도가 필요하면 `text.embed` 이고, 학습된 관련도가 필요하면 `retrieve.dense`·`retrieve.rerank` 다.
+
+그런데 `tiny_embed.py` 머리말은 **「의미적 유사도를 주장하지 않는다」** 고 명시하고,
+**위 S3 실측이 그걸 확증했다** (tiny 의 EN-C 0.422 > EN-A 0.138).
+
+즉 **`text.rank` 가 사용자를 「의미 유사도를 못 주는 능력」으로 보내고 있다.**
+D27 과 같은 종류다 — 「이름이 실질과 맞는가」. `apps/node` 런타임이라 **내가 고치지 않는다.**
+고칠 방향만 적는다: 그 한 줄에서 `text.embed` 안내를 빼거나, 「지금 구현은 의미를 담지 않는다」를 덧붙인다.
+
+---
+
+## 하지 않은 것 · 정직하게
+
+- **구현 0.** `text.embed@2` 등록 · `agent_arch` 행 · `infer_minilm.py` 전부 안 만들었다
+- **repo 변경은 이 블록 하나뿐.** 런타임·DDL·계약 파일 0
+- **end-to-end 를 못 봤다.** Docker 가 이 환경에서 안 떠서(`docker info` 실패) Node dispatch 에
+  실제로 붙여 `POST /v1/tasks` → 배정 → 증적까지는 **확인하지 않았다.** 「됐을 것」으로 적지 않는다
+- 토크나이저를 `transformers` 에 의존했다. 본편에서 의존성 없이 갈 수 있는지(WordPiece/SentencePiece 직접)는 **안 봤다** — 별 질문이다
+- `__metadata__: {'format': 'pt'}` 를 관측했다. 텐서가 PyTorch 규약이라는 표시일 뿐 **pickle 이 아니다.** 절대규칙 5 는 영향 없다
+
+## 다음
+
+**D-1 답이 먼저다.** (b)·(c) 면 D-2~D-4 는 닫고 스파이크 물건을 지운다.
+(a) 면 D6′ 문안 + D-2~D-4 확정 뒤 구현 순서는 `text.embed@2` 계약 → `agent_arch` 행 → `infer_minilm.py` →
+dispatch 분기다. 앞의 둘은 계약·정책이라 **사람 손**이고, 뒤의 둘은 `apps/node` 런타임이라 **PR 까지만** 간다.
+```

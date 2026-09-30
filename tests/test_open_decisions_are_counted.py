@@ -5,12 +5,12 @@ r"""inbox 의 `expects: decision` **열린 수를 기계가 센다** (배치 D #
 「열린 Decision 스물」 같은 수는 지금까지 사람이 세어 적었다. 세는 법(헤더 블록 · `expects: decision` · `status: open`)을
 코드로 두면 다음 Step 0 이 같은 수를 낸다. **status 는 내리지 않는다** — 이 검사는 세기만 한다.
 
-## 실측 (2026-09-06)
+## 실측
 
-| 무엇 | 값 |
-|---|---|
-| 헤더 블록(`---` … `---`) | 126 |
-| `expects: decision` ∧ `status: open` | **23** |
+| 날짜 | 헤더 블록(`---` … `---`) | `expects: decision` ∧ `status: open` |
+|---|---|---|
+| 2026-09-06 | 126 | 23 |
+| 2026-09-30 | 133 | **24** — `hf-minilm-spike-decisions` 가 열렸다 |
 
 수가 바뀌면(사람이 닫거나 새 Proposal 이 열리면) 아래 상수를 같이 고친다 — 그게 「누가 언제 바꿨나」의 기록이 된다.
 
@@ -29,7 +29,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INBOX = ROOT / "docs" / "bridge" / "inbox-cursor.md"
-OPEN_DECISIONS_TODAY = 23
+OPEN_DECISIONS_TODAY = 24
 
 
 def _open_decision_topics() -> list[str]:
