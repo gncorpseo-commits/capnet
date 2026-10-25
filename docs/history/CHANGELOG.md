@@ -1,5 +1,17 @@
 # Changelog
 
+## `text.rank` 가 의미 유사도를 못 주는 능력으로 안내하고 있었다 (HF 스파이크 ack) — 2026-10-25
+
+`rank_rules.py` 머리말과 카탈로그 `text.rank` 절이 「의미 유사도가 필요하면 `text.embed`」라고 안내했다.
+그런데 `text.embed@1` 은 문자 n-gram 해시의 선형 사영이라 **의미를 담지 않는다**(D27 · `tiny_embed.py` 머리말).
+HF 스파이크 S3 에서 무관한 쌍이 의미 같은 쌍보다 높게 나온 것으로 다시 확인됐다(브리지 `hf-minilm-spike-decisions`).
+안내를 「지금 CapNet 에 의미 유사도는 없다」로 고쳤다. 동작 변경 0 · 문서 문장 두 곳.
+뮤테이션 2/2 (`rank_rules.py` 원복 · 카탈로그 원복) 운다.
+
+```bash
+python3 -m unittest tests.test_text_rank.TestHonestClaims
+```
+
 ## CORE_URL 이 격리 방을 가리켜도 `docker compose` 는 운영 프로젝트를 봤다 (배치 R · R3) — 2026-09-06
 
 운영 스크립트는 주소를 `CORE_URL` 에서, 가중치 해시·`psql` 을 `docker compose exec` 에서 받는다.
