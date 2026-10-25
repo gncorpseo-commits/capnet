@@ -1,6 +1,6 @@
 # STATE — 현재 작업 상태
 
-> **갱신: 2026-09-30** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
+> **갱신: 2026-10-25** · 종착점 = **Phase 3+ 전체** (D16) · 제품 유통 = **D19** · 출품 후 = **D25 트랙 A** · README는 상태 비보유(링크만)
 
 ---
 
@@ -19,6 +19,8 @@
 > **다음:** **배치 R 역할 실측 완료 (산 스택)** — R1–R11 을 실제로 눌렀다. 결함 둘 고침 (`#343` capreq 주소 전달 · `#344` `CORE_URL`↔compose 프로젝트 엇갈림). **시드 없음 · Decision만.** 재시작 = **`상태확인`**.
 >
 > **HF 소형 모델 스파이크 (2026-09-30 · 사람 승인 · repo 밖 · 커밋 0).** `fingerprint.py` **무수정**으로 HF safetensors 지문이 나왔고, CPU 에서 로드·추론이 돌았다 (측정값은 재현 도구가 repo 에 없어 여기 적지 않는다 — inbox 블록 참조). **영어 전용 모델은 한국어 의미 검증 실패** — 다국어 모델이어야 한다. `tiny_embed` 가 의미를 담지 않음이 실측으로 확증됐다 (D27 근거 확증 + 해소 가능). Decision 4 · ack 1 을 inbox `hf-minilm-spike-decisions` 로 올렸다 — **D-1(D6 개정 여부)이 먼저다.** 구현 0.
+>
+> **HF 스파이크 Decision 수령 (2026-10-25).** Cursor Decision(#347): D-1 (a) D6 → D6′ · D-2~D-4 (a). Confirm 과 **D6′ 문안 Proposal**(`d6-prime-wording` · `expects: decision`)을 올렸다(#348) — 어긋남 3: 한국어 후보 토크나이저는 **Unigram** · RSS 측정 구성이 Node 와 다름 · 증적 스키마 Decision 이 순서에서 빠짐. ack(`text.rank` 가 의미 유사도를 `text.embed` 로 안내)는 런타임 PR 로. **다음: D6′ 사람 승인 → `context-handoff` 승격 · `CLAUDE.md` 6 개정 → 증적 스키마 Proposal.** 구현 0.
 
 **서사 전환 완료 (기획서 v4.7) · 사이클 폐쇄 완료.** **2026 대회 출품 제출 완료 (8/27).**
 

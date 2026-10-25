@@ -2,7 +2,7 @@
 
 > **정본.** 능력 `code` · `output_kind` · 기본 `quality_profile` · 모달리티 · 유통 세대는 여기서만 읽는다.
 > 근거: 브리지 Decision 2 (2026-08-15) — A 채택 · B 채택 · C2 · E · F · G.
-> 갱신: 2026-09-06
+> 갱신: 2026-10-25
 
 ---
 
@@ -497,8 +497,8 @@ gate_run PASSED → 바인딩 → COMPLETED · fields 3건 (Ticket·Severity·As
 
 **뜻을 안다고 주장하지 않는다.** 첫 줄을 질의로 보고 나머지 줄들을 **질의와 같은 낱말을
 얼마나 쓰는가**로 줄 세운다. 동의어·어형 변화·문맥을 보지 않는다 — 「자동차」와 「차량」은
-**안 겹친다**. 의미 유사도가 필요하면 `text.embed`, 학습된 관련도가 필요하면
-`retrieve.dense`·`retrieve.rerank` 다. 여기가 아니다.
+**안 겹친다**. 의미 유사도는 지금 CapNet 어디에도 없다 — `text.embed` 도 문자 n-gram
+해시라 의미를 담지 않고(D27), `retrieve.dense`·`retrieve.rerank` 는 선언만 있다.
 
 텍스트를 읽는 능력이 넷이 됐고, 넷이 **내놓는 것**이 다르다.
 

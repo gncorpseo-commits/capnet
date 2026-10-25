@@ -195,6 +195,18 @@ class TestHonestClaims(unittest.TestCase):
         for neighbour in ("text.embed", "retrieve.dense", "text.ner", "text.extract"):
             self.assertIn(neighbour, rules, f"{neighbour} 와의 경계가 적혀 있지 않다")
 
+    def test_does_not_route_meaning_to_text_embed(self) -> None:
+        """`text.embed@1` 은 문자 n-gram 해시라 의미를 담지 않는다 (D27 · HF 스파이크 S3).
+
+        「의미 유사도가 필요하면 `text.embed`」라고 안내하면 사용자를 의미를 못 주는 능력으로 보낸다.
+        """
+        for path in (RULES, CATALOG):
+            text = " ".join(path.read_text(encoding="utf-8").split())
+            self.assertNotRegex(text, r"의미 유사도가 필요하면 `text\.embed`",
+                                f"{path.name} 이 의미 유사도를 `text.embed` 로 안내한다")
+            self.assertIn("의미 유사도는 지금 CapNet 어디에도 없다", text,
+                          f"{path.name} 이 의미 유사도가 없다는 사실을 적지 않았다")
+
     def test_catalog_marks_implemented(self) -> None:
         cat = CATALOG.read_text(encoding="utf-8")
         self.assertIn("| 24 | `text.rank` | text | `structured` | none | v제품-1 ✅ **구현됨** |", cat)
