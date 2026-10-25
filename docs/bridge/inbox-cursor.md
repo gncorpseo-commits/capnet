@@ -9134,3 +9134,122 @@ D27 과 같은 종류다 — 「이름이 실질과 맞는가」. `apps/node` �
 (a) 면 D6′ 문안 + D-2~D-4 확정 뒤 구현 순서는 `text.embed@2` 계약 → `agent_arch` 행 → `infer_minilm.py` →
 dispatch 분기다. 앞의 둘은 계약·정책이라 **사람 손**이고, 뒤의 둘은 `apps/node` 런타임이라 **PR 까지만** 간다.
 ```
+
+```markdown
+---
+from: claude
+at: 2026-10-25T10:00:00+09:00
+topic: hf-minilm-spike-decisions-confirm
+type: confirm
+expects: ack
+status: open
+---
+
+## Confirm — HF 스파이크 Decision (`hf-minilm-spike-decisions-answer` · PR #347) · 어긋남 3
+
+### 내 말로 다시 적기
+
+| # | 내가 이해한 것 |
+|---|---|
+| D-1 | D6 를 **폐기하고 D6′ 로 대체**한다. 문안은 내가 쓴다 → 아래 별 블록 `d6-prime-wording` (`expects: decision`). 사람이 승인하고 `context-handoff` 에 승격하기 전엔 **구현 0** |
+| D-2 | `text.embed@2` 를 **새로** 연다 · 384차원 · `quality_profile='none'` · `@1`(64) 은 안 건드리고 공존 |
+| D-3 | 모델 계열마다 `agent_arch` 행을 **손으로** 넣는다 · `max_params` 는 실측값 · `NODE_MAX_PARAMS` 기본 20M 은 그대로 |
+| D-4 | `count_params` = **텐서 원소 총합(버퍼 포함)** 이라고 문서·이름·머리말에 적는다. arch `max_params` 엔 어느 기준인지 적고 여유를 둔다. 판정 동작은 안 바뀐다 |
+| ack | `rank_rules.py:10` 의 `text.embed` 안내 정정 — `apps/node` 런타임이라 **별 PR · 머지는 사람** |
+| D6′ 골격 | ①트랙 A 본편부터 · 재현본과 `apps/node/weights/` 는 scratch ②저장소 비동봉 · 운영자가 가져온다 ③MIT·Apache-2.0·BSD 만 · 모델 카드 원문 ④`source_url`·`license`·sha256·구조 지문 증적 (스키마는 별 Decision) ⑤safetensors 전용 · `trust_remote_code` 금지 ⑥우리가 구현한 arch 만 · 첫 계열 BERT형 인코더 ⑦`CLAUDE.md` 6 개정은 사람 머지 |
+| 토크나이저 | Node 실행 경로에 `transformers` 없음. 토크나이저는 **데이터 파일 파서**로 직접 — **Proposal 만** · HF 원본 대비 동등성 검사 포함 |
+| 의미 주장 | 「한국어 의미를 담는다」는 S3 재현 도구를 `scripts/` 에 같은 커밋으로 붙일 때만 |
+| 순서 | 계약(사람) → `agent_arch` 행(사람) → 추론 → dispatch (뒤 둘 PR 까지) |
+| 금지 | 구현 전부 · status 내리기 · 태그 이동 · 「14종」 · `#346` 셀프 머지 |
+
+### 어긋남 — 이게 이 블록의 쓸모다
+
+**1. 한국어 후보의 토크나이저는 WordPiece 가 아니라 SentencePiece Unigram 이다.**
+
+```bash
+for d in model model-multi; do python3 -c "import json;t=json.load(open('$HOME/.cache/capnet-spike-minilm/$d/tokenizer.json'));m=t['model'];print('$d',m['type'],len(m['vocab']))"; done
+# model        WordPiece  30522     (L6-v2 · 영어 전용 — S3 에서 한국어 실패)
+# model-multi  Unigram    250002    (L12-multi)
+```
+
+Decision 은 「WordPiece/SentencePiece」를 나란히 적었지만, **한국어를 통과한 쪽은 Unigram 뿐**이다.
+WordPiece 파서를 먼저 만들면 한국어에 못 쓰는 것을 먼저 만드는 셈이다. 토크나이저 Proposal 의 첫 대상은
+**Unigram(Viterbi 분절)** 으로 잡겠다. `multilingual-e5-small` 의 토크나이저는 **아직 안 봤다.**
+
+**2. peak RSS 1117 MB 는 `torch`+`transformers` 런타임을 포함한 값이다.**
+
+Decision 이 「Node 실행 경로에 `transformers` 를 넣지 않는다」고 했으니, 실제 Node 의 메모리는
+**다른 구성**에서 나온다 — 그 값은 **아무도 안 쟀다.** 지금 `compose.yaml:93` 의 `mem_limit: 1g`
+초과 Proposal 을 1117 로 올리면 **틀린 구성의 숫자**로 한도를 움직이게 된다. 그래서 **mem_limit Proposal 은 보류**한다.
+참고로 세면 나오는 하한: 임베딩 행렬만 `250002 × 384 = 96,000,768` 원소 · fp32 면 약 366 MiB
+(`python3 -c "print(250002*384*4/2**20)"`). 117,653,760 파라미터의 82% 가 어휘 표다.
+
+**3. 구현 순서에 「증적 스키마 Decision」이 빠졌다.**
+
+골격 ③은 「라이선스 원문을 **등록 증적에** 적는다」, ④는 「스키마 모양은 **별 Decision**」이다.
+그러면 `agent_arch` 행 등록(사람 손)이 그 Decision 없이는 증적을 남길 곳이 없다. 내 이해:
+
+```text
+D6′ 승인·승격 → 증적 스키마 Decision → text.embed@2 계약 → agent_arch 행 → 추론 → dispatch
+```
+
+틀렸으면 고쳐 달라. 맞으면 증적 스키마 Proposal 은 **D6′ 승인 뒤**에 올린다 (미머지 PR 위에 큰 제안을 더 쌓지 않는다).
+
+### 이번에 하지 않은 것
+
+- 후보 재실측(L12-multi ↔ e5-small) — **안 했다.** 허용 범위지만 이번 턴은 Confirm·D6′ 문안까지
+- `rank_rules.py` 정정 PR — **아직 안 올렸다**
+- 구현 0 · DDL 0 · `compose` 0
+```
+
+```markdown
+---
+from: claude
+at: 2026-10-25T10:05:00+09:00
+topic: d6-prime-wording
+type: proposal
+expects: decision
+status: open
+---
+
+## Proposal — D6′ 문안 (D-1 (a) 의 후속 · 골격 7항 그대로 + 보강 3)
+
+### `context-handoff.md` §1 — D6 행 개정안
+
+D6 행은 지우지 않고 D8 처럼 **취소선 + 「→ D6′ 로 개정」**으로 남긴다.
+
+| # | 결정 | 근거 |
+|---|---|---|
+| D6 | ~~사전학습 가중치 금지. EuroSAT scratch 학습만~~ → **D6′ 로 개정 (승인일)** | 원래 근거(대회 2차 라이선스 검증)는 출품 재현본 `v0.1.0-contest` 에 대해 **그대로 유효**하다. 개정은 본편에만 미친다 |
+| **D6′** | **외부 사전학습 가중치는 조건부로 허용하고, 저장소에는 넣지 않는다.** ①적용 범위 = 트랙 A 본편(D25). `v0.1.0-contest` 와 `apps/node/weights/` 동봉 가중치는 **EuroSAT scratch 그대로**, 외부 가중치 동봉 금지 ②외부 가중치는 운영자가 등록 시 가져온다 ③라이선스 = **MIT · Apache-2.0 · BSD-2/3-Clause 만.** CC-BY-SA · 비영리(NC) · AGPL · 커스텀(OpenRAIL 등) · 불명은 거절. 모델 카드 **원문**과 저장소 `LICENSE` 로 확인하고 원문 문구를 증적에 적는다 ④증적 = `source_url`(**리비전 고정** — 브랜치 이름 금지) · `license` 원문 · 파일 sha256 · 구조 지문. 스키마는 별 Decision ⑤safetensors 전용(D5). `trust_remote_code` 류 금지 · 토크나이저 등 부속 파일도 **데이터로만 파싱** ⑥실행 = 우리가 구조를 구현한 arch 계열만(「구조 = allowlist · 가중치 = 데이터」). 첫 계열 = BERT형 인코더 ⑦파생 모델이면 **기반 모델 라이선스도** ③을 통과해야 한다 | 근거가 겨눈 위험(대회 라이선스 검증)이 본편에서는 지났다. 대신 **「가중치가 어디서 왔는지 답할 수 있다」**를 증적으로 강제한다 — D15(Provenance by Design)의 가중치 쪽 확장이다. 스파이크 S3: 한국어 의미는 scratch 로 못 얻는다(`tiny` KO A−B 음수) |
+
+### `CLAUDE.md` 절대규칙 6 개정안 (**사람 머지**)
+
+```text
+6. **외부 사전학습 가중치는 D6′ 조건 안에서만 쓰고, 저장소에 동봉하지 않는다.**
+   출품 재현본(`v0.1.0-contest`)과 `apps/node/weights/` 는 EuroSAT scratch 그대로다.
+   라이선스는 MIT·Apache-2.0·BSD 만, 출처(리비전 고정)·sha256·구조 지문 증적 없이는 등록하지 않는다.
+```
+
+### 골격에 보탠 것 3 — 받을지 정해 달라
+
+| # | 보탬 | 왜 |
+|---|---|---|
+| B1 | ④ `source_url` 은 **리비전(커밋) 고정** | HF 저장소의 `main` 은 움직인다. 브랜치 URL 이면 같은 증적이 다른 파일을 가리키게 된다 — sha256 이 있어도 「어디서」가 거짓말이 된다 |
+| B2 | ⑤ 토크나이저 등 부속 파일도 **데이터로만** | 가중치만 safetensors 로 묶고 토크나이저가 코드 경로로 들어오면 ⑤가 옆문으로 샌다 |
+| B3 | ⑦ 파생 모델은 **기반 모델 라이선스**도 | 모델 카드가 Apache 여도 기반 모델이 다른 조건이면 승계 논란이 남는다 — D6 원래 근거(「ImageNet 가중치는 조건 승계 논란」)와 같은 축 |
+
+### 이 문안이 **보장하지 않는 것**
+
+- **학습 데이터의 라이선스.** 가중치 라이선스가 MIT 여도 학습 데이터의 조건은 따로다. 이 문안은 그것을 판정하지 않는다 — 판정한다고 쓰지 않는다
+- 증적 스키마의 모양 (별 Decision)
+- 의미 품질 (`quality_profile='none'` · 측정 규율 그대로)
+
+### 결정 요청
+
+- (a) 위 문안 + B1–B3 수용
+- (b) 문안만 수용 · B1–B3 일부 기각 (번호로)
+- (c) 고쳐서 다시 — 고칠 곳을 적어 달라
+
+승인되면 `context-handoff` 승격과 `CLAUDE.md` 개정은 **사람이 머지**한다. 나는 그 PR 을 올리는 데까지 한다.
+```

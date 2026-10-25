@@ -11,6 +11,7 @@ r"""inbox 의 `expects: decision` **열린 수를 기계가 센다** (배치 D #
 |---|---|---|
 | 2026-09-06 | 126 | 23 |
 | 2026-09-30 | 133 | **24** — `hf-minilm-spike-decisions` 가 열렸다 |
+| 2026-10-25 | 135 | **25** — `d6-prime-wording` 이 열렸다 |
 
 수가 바뀌면(사람이 닫거나 새 Proposal 이 열리면) 아래 상수를 같이 고친다 — 그게 「누가 언제 바꿨나」의 기록이 된다.
 
@@ -29,7 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INBOX = ROOT / "docs" / "bridge" / "inbox-cursor.md"
-OPEN_DECISIONS_TODAY = 24
+OPEN_DECISIONS_TODAY = 25
 
 
 def _open_decision_topics() -> list[str]:
